@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "build": "tsc && esbuild src/background/*.ts --bundle --format=esm --outdir=dist",
+    "watch": "npm run build -- --watch",
+    "package": "zip -r ../navigraph.zip * --exclude @.gitignore"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.250",
+    "@types/node": "^22.13.5",
+    "@types/webextension-polyfill": "^0.12.2",
+    "esbuild": "^0.18.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "esbuild-plugin-copy": "^2.1.1"
+  }
+}
