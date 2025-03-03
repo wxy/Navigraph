@@ -286,6 +286,289 @@
         align-items: flex-start;
       }
     }
+    
+    /* 添加下面的样式到现有CSS中 */
+  
+    /* 确保所有深度级别的节点可见 */
+    .node-children {
+      display: block !important; /* 防止深层节点被隐藏 */
+      margin-left: 20px !important;
+      padding-left: 10px;
+      border-left: 1px dashed var(--border-color, #ddd);
+    }
+    
+    /* 为不同深度的节点添加视觉区分 */
+    .navigation-node[data-depth="0"] > .node-title {
+      border-left: 3px solid #4285f4;
+      padding-left: 5px;
+    }
+    
+    .navigation-node[data-depth="1"] > .node-title {
+      border-left: 3px solid #5e97f6;
+      padding-left: 5px;
+    }
+    
+    .navigation-node[data-depth="2"] > .node-title {
+      border-left: 3px solid #7baaf7;
+      padding-left: 5px;
+    }
+    
+    .navigation-node[data-depth="3"] > .node-title {
+      border-left: 3px solid #a1c2f9;
+      padding-left: 5px;
+    }
+    
+    .navigation-node[data-depth="4"] > .node-title,
+    .navigation-node[data-depth="5"] > .node-title,
+    .navigation-node[data-depth="6"] > .node-title {
+      border-left: 3px solid #c6dafc;
+      padding-left: 5px;
+    }
+    
+    /* 为深层节点添加额外视觉提示 */
+    .navigation-node[data-depth="3"] > .node-title::after,
+    .navigation-node[data-depth="4"] > .node-title::after,
+    .navigation-node[data-depth="5"] > .node-title::after {
+      content: " (层级: " attr(data-depth) ")";
+      font-size: 11px;
+      color: #888;
+      margin-left: 5px;
+    }
+
+    /* 高亮链用于调试 */
+    .highlight-chain {
+      background-color: rgba(236, 65, 65, 0.2) !important;
+      border: 2px solid #ec4141 !important;
+      padding: 2px !important;
+      transition: all 0.3s ease;
+    }
+    
+    .highlight-chain > .node-title {
+      font-weight: bold !important;
+    }
+
+    /* 确保所有深度的节点正确显示 */
+    .navigation-node {
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+
+    /* 添加到您的样式表 */
+    .navigation-node {
+      position: relative;
+      margin: 4px 0;
+      transition: background-color 0.2s;
+    }
+
+    .node-title {
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: default;
+      background-color: var(--node-bg, #f5f5f5);
+      transition: all 0.2s;
+    }
+
+    .node-title:hover {
+      background-color: var(--node-hover-bg, #e8e8e8);
+    }
+
+    .expandable {
+      cursor: pointer;
+    }
+
+    .toggle-icon {
+      display: inline-block;
+      width: 16px;
+      text-align: center;
+      transition: transform 0.3s ease;
+      color: var(--icon-color, #555);
+    }
+
+    .node-children {
+      margin-left: 16px;
+      overflow: hidden;
+      transition: all 0.3s ease-out;
+      border-left: 1px dashed var(--border-color, #ddd);
+    }
+
+    .node-children.expanded {
+      max-height: 5000px; /* 足够大的高度 */
+      opacity: 1;
+    }
+
+    .node-children.collapsed {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .depth-indicator {
+      color: var(--depth-color, #aaa);
+      margin-right: 5px;
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    .node-content {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      gap: 3px;
+    }
+
+    .favicon {
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
+      vertical-align: middle;
+      border-radius: 2px;
+    }
+
+    .page-title {
+      font-size: 14px;
+      color: var(--text-color, #333);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 450px;
+      display: inline-block;
+    }
+
+    .meta-info {
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--meta-color, #666);
+    }
+
+    .nav-type, .open-target {
+      padding: 1px 6px;
+      border-radius: 3px;
+      background-color: var(--tag-bg, #eee);
+    }
+
+    .nav-type {
+      color: var(--nav-type-color, #0078d7);
+    }
+
+    .open-target {
+      color: var(--open-target-color, #107c10);
+    }
+
+    /* 为不同深度的节点添加不同的左边距和样式 */
+    [data-depth="0"] > .node-title {
+      font-weight: bold;
+      background-color: var(--depth-0-bg, #f8f8f8);
+    }
+
+    [data-depth="1"] > .node-title {
+      background-color: var(--depth-1-bg, #f5f5f5);
+    }
+
+    [data-depth="2"] > .node-title {
+      background-color: var(--depth-2-bg, #f2f2f2);
+    }
+
+    /* 添加到您的样式表 */
+    /* 节点详情面板 */
+    #node-detail-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      width: 480px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .detail-content {
+      padding: 15px;
+    }
+
+    .detail-item {
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+
+    .detail-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 10px 15px;
+      border-top: 1px solid #eee;
+      gap: 10px;
+    }
+
+    .action-button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: #0078d7;
+      color: white;
+      cursor: pointer;
+    }
+
+    .action-button:hover {
+      background-color: #006cc1;
+    }
+
+    /* 高亮样式 */
+    .navigation-node.highlight > .node-title {
+      background-color: var(--highlight-bg, rgba(255, 213, 0, 0.2)) !important;
+      border-left: 3px solid var(--highlight-border, #ffd500);
+    }
+
+    /* 提示消息 */
+    #toast {
+      visibility: hidden;
+      max-width: 300px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 5px;
+      padding: 15px;
+      position: fixed;
+      z-index: 1001;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #toast.show {
+      visibility: visible;
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>

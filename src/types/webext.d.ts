@@ -1,24 +1,36 @@
+// 导航类型 - 描述如何发起导航
+export type NavigationType = 
+  'link_click' |    // 链接点击
+  'address_bar' |   // 地址栏输入/粘贴
+  'form_submit' |   // 表单提交
+  'history_back' |  // 历史后退
+  'history_forward' | // 历史前进
+  'reload' |        // 页面重新加载
+  'javascript' |    // JavaScript导航
+  'initial';        // 初始页面加载
+
+// 打开位置 - 描述导航的目标位置
+export type OpenTarget = 
+  'same_tab' |      // 当前标签页
+  'new_tab' |       // 新标签页
+  'new_window' |    // 新窗口
+  'popup';          // 弹出窗口
+
 // 导航记录
 export interface NavigationRecord {
-  id?: number;
-  url: string;
-  title?: string;
-  timestamp: number;
-  tabId: number;
-  windowId?: number;
-  parentTabId?: number;
-  referrer?: string;
-  favicon?: string;
-  openMethod?: NavigationMethod;
-  isNewTab?: boolean;
-  loadTime?: number;
-  date?: string;
-}
+  url: string;                 // 页面URL
+  title?: string;              // 页面标题
+  timestamp: number;           // 时间戳
+  tabId: number;               // 标签页ID (技术实现需要)
+  windowId?: number;           // 窗口ID (技术实现需要)
+  favicon?: string;            // 网站图标
+  navigationType?: NavigationType; // 导航类型
+  openTarget?: OpenTarget;      // 打开位置
+  referrer?: string;           // 来源页面
+  loadTime?: number;           // 加载时间
+  date?: string;               // 日期字符串 (YYYY-MM-DD)
 
-// 导航方法
-export type NavigationMethod = 
-  'link' | 'address_bar' | 'history_back' | 'history_forward' | 
-  'new_tab' | 'new_window' | 'popup' | 'form_submit' | 'reload' | 'same_tab';
+}
 
 // 日期组
 export interface DayGroup {
@@ -36,15 +48,20 @@ export interface TabGroup {
 
 // 导航节点
 export interface NavigationNode {
-  id: string;
-  depth: number;
-  record: NavigationRecord;
-  children: string[]; // 修改为字符串数组，存储节点ID而非节点对象
+  id: string;           // 节点唯一标识符
+  record: NavigationRecord; // 关联的导航记录
+  children: string[];   // 子节点ID列表
+  depth: number;        // 节点在树中的深度
 }
 
 // 序列化的导航树
 export interface SerializedNavigationTree {
   days: Record<string, DayGroup>;
+}
+
+// 父子关系映射
+export interface NavigationRelations {
+  [childNodeId: string]: string; // childNodeId -> parentNodeId
 }
 
 // 声明Chrome API扩展

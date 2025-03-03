@@ -184,130 +184,7 @@ export class SecureStorage {
    */
   public async getNavigationTree(): Promise<SerializedNavigationTree> {
     try {
-      // 获取所有记录
-      const allRecords = await this.getAllRecords();
-      
-      // 获取所有父子关系
-      const parentChildRelations = await this.getParentChildRelations();
-      console.log('获取到父子关系数据:', Object.keys(parentChildRelations).length, '条');
-      
-      // 创建所有节点的索引，方便快速查找
-      const globalNodeIndex: Record<string, { record: NavigationRecord }> = {};
-      allRecords.forEach(record => {
-        const nodeId = `${record.tabId}-${record.timestamp}`;
-        globalNodeIndex[nodeId] = { record };
-      });
-      
-      // 按日期分组
-      const recordsByDate = this.groupRecordsByDate(allRecords);
-      
-      // 构建序列化导航树 - 新结构
-      const tree: SerializedNavigationTree = { days: {} };
-      
-      // 处理每个日期分组
-      Object.entries(recordsByDate).forEach(([date, dateRecords]) => {
-        // 创建日期节点
-        tree.days[date] = {
-          rootNodeIds: [], // 初始为空，将在后面填充
-          nodes: {}       // 所有节点
-        };
-        
-        // 排序记录（按时间升序）
-        dateRecords.sort((a, b) => a.timestamp - b.timestamp);
-        
-        // 先创建所有节点
-        dateRecords.forEach(record => {
-          const nodeId = `${record.tabId}-${record.timestamp}`;
-          tree.days[date].nodes[nodeId] = {
-            id: nodeId,
-            depth: 0, // 初始深度为0，在构建树时更新
-            record,
-            children: [] // 这里类型应该是NavigationNode[]
-          };
-        });
-        
-        // 初步确定可能的根节点
-        const potentialRootNodeIds: string[] = [];
-        
-        // 如果有明确的根节点（新标签页）
-        const rootRecords = dateRecords.filter(r => r.isNewTab || !r.parentTabId);
-        if (rootRecords.length > 0) {
-          rootRecords.forEach(rootRecord => {
-            const rootNodeId = `${rootRecord.tabId}-${rootRecord.timestamp}`;
-            potentialRootNodeIds.push(rootNodeId);
-          });
-        } 
-        // 否则使用每个标签页的第一条记录
-        else {
-          const recordsByTab = this.groupRecordsByTab(dateRecords);
-          Object.entries(recordsByTab).forEach(([_, tabRecords]) => {
-            if (tabRecords.length > 0) {
-              tabRecords.sort((a, b) => a.timestamp - b.timestamp);
-              const firstRecord = tabRecords[0];
-              const rootNodeId = `${firstRecord.tabId}-${firstRecord.timestamp}`;
-              potentialRootNodeIds.push(rootNodeId);
-            }
-          });
-        }
-        
-        // 构建父子关系前，先追踪哪些节点会成为子节点
-        const childNodeIds = new Set<string>();
-        
-        // 构建父子关系
-        this.buildDayTree(
-          dateRecords,
-          tree.days[date].nodes,
-          parentChildRelations,
-          globalNodeIndex,
-          childNodeIds // 新增参数，传入集合用于收集子节点ID
-        );
-        
-        // 修改这部分代码，避免节点消失
-        const filteredRootNodeIds = potentialRootNodeIds.filter(id => {
-          // 如果节点是子节点，但在当前日期中找不到其父节点，则保留为根节点
-          if (childNodeIds.has(id)) {
-            // 检查是否有父节点在当前日期中
-            const hasVisibleParentInCurrentDay = Object.values(tree.days[date].nodes).some(node => 
-              node.children && node.children.includes(id)
-            );
-            
-            // 如果在当前日期中找不到可见的父节点，则保留为根节点
-            return !hasVisibleParentInCurrentDay;
-          }
-          // 其他情况（不是子节点或其他情况）保留为根节点
-          return true;
-        });
-        
-        // 简化孤立节点处理逻辑
-        // 先获取所有节点ID
-        const allNodeIds = Object.keys(tree.days[date].nodes);
-        
-        // 找出已经作为根节点或子节点处理过的节点ID
-        const processedNodeIds = new Set([
-          ...filteredRootNodeIds,
-          ...Array.from(childNodeIds).filter(id => {
-            return Object.values(tree.days[date].nodes).some(node => 
-              node.children && node.children.includes(id)
-            );
-          })
-        ]);
-        
-        // 找出未处理的节点（真正孤立的节点）
-        const orphanNodeIds = allNodeIds.filter(id => !processedNodeIds.has(id));
-        
-        // 将孤立节点添加为根节点
-        orphanNodeIds.forEach(id => {
-          console.log(`日期 ${date}: 添加孤立节点 ${id} 到根节点列表`);
-          tree.days[date].rootNodeIds.push(id);
-        });
-        
-        tree.days[date].rootNodeIds = filteredRootNodeIds;
-        
-        console.log(`日期 ${date}: 潜在根节点 ${potentialRootNodeIds.length}个, ` + 
-                    `过滤后根节点 ${filteredRootNodeIds.length}个, ` +
-                    `孤立节点 ${orphanNodeIds.length}个, ` +
-                    `最终根节点 ${tree.days[date].rootNodeIds.length}个`);
-      });
+      const tree = await this.buildNavigationTree();
       
       // 在控制台输出树结构，便于调试
       console.log('导航树构建完成:', {
@@ -320,6 +197,61 @@ export class SecureStorage {
     } catch (error) {
       console.error('获取导航树时出错:', error);
       return { days: {} };
+    }
+  }
+
+  /**
+   * 获取指定日期的导航树
+   */
+  public async getDayTree(date: string): Promise<DayGroup | null> {
+    try {
+      const dayRecords = await this.getRecordsByDate(date);
+      if (!dayRecords || dayRecords.length === 0) {
+        return null;
+      }
+      
+      // 获取父子关系
+      const parentChildRelations = await this.getParentChildRelations();
+      console.log(`获取到 ${date} 的父子关系: ${Object.keys(parentChildRelations).length} 条`);
+      
+      // 创建树结构
+      const nodes: Record<string, NavigationNode> = {};
+      const childNodeIds = new Set<string>();
+      
+      // 构建树结构 - 确保传递父子关系参数
+      this.buildDayTree(dayRecords, nodes, parentChildRelations, childNodeIds);
+      
+      // 找出根节点
+      const rootNodeIds = Object.keys(nodes).filter(id => !childNodeIds.has(id));
+      console.log(`${date} 的根节点数: ${rootNodeIds.length}`);
+      
+      return { nodes, rootNodeIds };
+    } catch (error) {
+      console.error(`获取日期树失败: ${date}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取指定日期的记录
+   */
+  public async getRecordsForDay(dateStr: string): Promise<{
+    records: NavigationRecord[];
+    rootRecords: NavigationRecord[];
+  }> {
+    try {
+      const records = await this.getRecordsByDate(dateStr);
+      if (!records || records.length === 0) {
+        return { records: [], rootRecords: [] };
+      }
+      
+      // 使用新的判断标准确定根记录
+      const rootRecords = records.filter((r: NavigationRecord) => this.isRootRecord(r));
+      
+      return { records, rootRecords };
+    } catch (error) {
+      console.error(`获取日期记录失败: ${dateStr}`, error);
+      return { records: [], rootRecords: [] };
     }
   }
 
@@ -365,110 +297,154 @@ export class SecureStorage {
   private buildDayTree(
     records: NavigationRecord[], 
     nodes: Record<string, NavigationNode>,
-    parentChildRelations?: Record<string, any>,
-    globalNodeIndex?: Record<string, { record: NavigationRecord }>,
-    childNodeIds?: Set<string> // 新增参数，用于收集子节点ID
+    parentChildRelations?: Record<string, string>,
+    childNodeIds?: Set<string>
   ): void {
-    // 所有节点按时间排序
-    records.sort((a, b) => a.timestamp - b.timestamp);
-    
-    // 构建父子关系
-    records.forEach((record, index) => {
-      if (index === 0) return; // 跳过第一条记录
+    try {
+      // 按时间排序
+      records.sort((a, b) => a.timestamp - b.timestamp);
       
-      const nodeId = `${record.tabId}-${record.timestamp}`;
-      const currentNode = nodes[nodeId];
+      const explicitParentChildRelations = new Map<string, string>();
       
-      // 跳过不存在的节点
-      if (!currentNode) return;
-      
-      // 寻找合适的父节点
-      let parentNodeId: string | null = null;
-      let parentNode: NavigationNode | null = null; // 新增变量保存父节点引用
-      
-      // 首先检查是否有明确设置的父子关系
-      const tabIdStr = record.tabId.toString();
-      if (parentChildRelations && parentChildRelations[tabIdStr]) {
-        const relation = parentChildRelations[tabIdStr];
-        parentNodeId = relation.parentNodeId;
+      // 提取明确的父子关系
+      if (parentChildRelations) {
+        console.log(`应用父子关系映射 - 共 ${Object.keys(parentChildRelations).length} 个关系`);
         
-        // 检查父节点是否存在
-        if (parentNodeId && nodes[parentNodeId]) {
-          parentNode = nodes[parentNodeId]; // 保存父节点引用
-          console.log(`应用父子关系: ${parentNodeId} -> ${nodeId}`);
-        } else {
-          console.log(`找到父节点关系 ${parentNodeId}，但该节点不存在，尝试默认逻辑`);
-          parentNodeId = null;
+        Object.entries(parentChildRelations).forEach(([childId, parentId]) => {
+          if (childId && parentId) {
+            explicitParentChildRelations.set(childId, parentId);
+            console.log(`映射父子关系: ${childId} <- ${parentId}`);
+          }
+        });
+      }
+      
+      // 先创建所有节点，但不设置关系
+      for (const record of records) {
+        const nodeId = `${record.tabId}-${record.timestamp}`;
+        if (!nodes[nodeId]) {
+          nodes[nodeId] = {
+            id: nodeId,
+            record,
+            children: [],
+            depth: 0
+          };
         }
       }
       
-      // 如果没有明确的父子关系，使用默认逻辑
-      if (!parentNodeId) {
-        // 如果有parentTabId且不是自己，查找该父标签的最近一条记录
-        if (record.parentTabId && record.parentTabId !== record.tabId) {
-          const parentRecords = records.filter(
-            r => r.tabId === record.parentTabId && r.timestamp < record.timestamp
-          );
+      // 收集的子节点ID，用于后面确定根节点
+      const allChildIds = new Set<string>();
+      
+      // 构建父子关系映射 - 从子节点到父节点
+      const childToParent = new Map<string, string>();
+      
+      // 父节点到子节点列表的映射
+      const parentToChildren = new Map<string, string[]>();
+      
+      // 第一步：建立父子关系映射
+      for (const [childId, parentId] of explicitParentChildRelations.entries()) {
+        if (nodes[childId] && nodes[parentId]) {
+          childToParent.set(childId, parentId);
+          allChildIds.add(childId);
           
-          if (parentRecords.length > 0) {
-            // 找出时间上最近的父记录
-            const parentRecord = parentRecords.sort(
-              (a, b) => b.timestamp - a.timestamp
-            )[0];
-            
-            parentNodeId = `${parentRecord.tabId}-${parentRecord.timestamp}`;
-            parentNode = nodes[parentNodeId]; // 保存父节点引用
+          if (!parentToChildren.has(parentId)) {
+            parentToChildren.set(parentId, []);
+          }
+          parentToChildren.get(parentId)!.push(childId);
+        }
+      }
+      
+      // 传递收集的子节点ID
+      if (childNodeIds) {
+        allChildIds.forEach(id => childNodeIds.add(id));
+      }
+      
+      // 确定根节点 - 不是任何节点的子节点
+      const rootNodeIds = Object.keys(nodes).filter(id => !allChildIds.has(id));
+      
+      // 使用BFS计算深度，从所有根节点开始
+      const queue: {id: string, depth: number}[] = [];
+      rootNodeIds.forEach(id => queue.push({id, depth: 0}));
+      
+      // 记录已处理的节点，防止循环
+      const processed = new Set<string>();
+      
+      // BFS算法处理所有可达节点
+      while (queue.length > 0) {
+        const {id, depth} = queue.shift()!;
+        
+        if (processed.has(id)) continue;
+        
+        // 获取当前节点
+        const node = nodes[id];
+        if (!node) continue;
+        
+        // 设置节点深度
+        node.depth = depth;
+        processed.add(id);
+        
+        // 获取此节点的所有子节点ID
+        const children = parentToChildren.get(id) || [];
+        
+        // 将子节点引用存储到当前节点
+        node.children = children;
+        
+        // 把所有子节点加入队列，深度+1
+        for (const childId of children) {
+          const child = nodes[childId];
+          if (child) {
+            queue.push({id: childId, depth: depth + 1});
           }
         }
-        
-        // 如果没有找到父标签页记录，则尝试使用同一标签页的前一条记录
-        if (!parentNodeId) {
-          const prevRecords = records.filter(
-            r => r.tabId === record.tabId && r.timestamp < record.timestamp
-          );
-          
-          if (prevRecords.length > 0) {
-            const prevRecord = prevRecords.sort(
-              (a, b) => b.timestamp - a.timestamp
-            )[0]; 
-            
-            parentNodeId = `${prevRecord.tabId}-${prevRecord.timestamp}`;
-            parentNode = nodes[parentNodeId]; // 保存父节点引用
-          }
+      }
+      
+      // 验证深度计算的正确性
+      console.log(`处理了 ${processed.size} 个节点，其中根节点 ${rootNodeIds.length} 个`);
+      
+      // 计算最大深度，用于调试
+      let maxDepth = 0;
+      for (const id in nodes) {
+        if (nodes[id].depth > maxDepth) {
+          maxDepth = nodes[id].depth;
         }
       }
       
-      // 将当前节点添加为父节点的子节点
-      if (parentNode) {
-        // 添加子节点
-        if (!parentNode.children.includes(nodeId)) { // 避免重复添加
-          parentNode.children.push(nodeId);
-        }
-        
-        // 记录此节点已成为子节点
-        if (childNodeIds) {
-          childNodeIds.add(nodeId);
-        }
-      } else {
-        // 如果没有找到父节点，记录下来，便于调试
-        console.log(`节点 ${nodeId} (${record.title || record.url}) 没有找到父节点`);
-      }
+      console.log(`树的最大深度: ${maxDepth}`);
       
-      // 更新当前节点的深度
-      currentNode.depth = parentNode ? parentNode.depth + 1 : 0;
-    });
-    
-    // 检查是否有孤立节点（不是任何节点的子节点也不是根节点）
-    if (childNodeIds) {
-      let orphanCount = 0;
-      Object.keys(nodes).forEach(nodeId => {
-        if (!childNodeIds.has(nodeId)) {
-          // 这是一个潜在的根节点或孤立节点
-          orphanCount++;
-        }
-      });
-      console.log(`潜在根节点/孤立节点数量: ${orphanCount}`);
+      // 检查有无三级以上节点
+      const deepNodeCount = Object.values(nodes).filter(n => n.depth > 1).length;
+      console.log(`深度大于1的节点数量: ${deepNodeCount}`);
+      
+    } catch (error) {
+      console.error('构建树结构时出错:', error);
     }
+  }
+
+  /**
+   * 判断记录是否应该作为根节点
+   * @param record 导航记录
+   */
+  private isRootRecord(record: NavigationRecord): boolean {
+    // 1. 地址栏输入的页面是根节点
+    if (record.navigationType === 'address_bar') {
+      return true;
+    }
+    
+    // 2. 初始页面加载是根节点
+    if (record.navigationType === 'initial') {
+      return true;
+    }
+    
+    // 3. 新标签页或新窗口是根节点
+    if (record.openTarget === 'new_tab' || record.openTarget === 'new_window') {
+      return true;
+    }
+    
+    // 4. 没有referrer的页面可能是根节点
+    if (!record.referrer) {
+      return true;
+    }
+    
+    return false;
   }
 
   /**
@@ -499,9 +475,10 @@ export class SecureStorage {
           if (record.timestamp < start || record.timestamp > end) {
             return false;
           }
+        }  // 添加缺失的闭合花括号
         
         return true;
-      }});
+      });
     } catch (error) {
       console.error('查找记录失败:', error);
       return [];
@@ -509,51 +486,205 @@ export class SecureStorage {
   }
 
   /**
-   * 设置父子节点关系
+   * 设置父子关系
    */
-  public async setParentChildRelation(
-    parentNodeId: string, 
-    childTabId: string,
-    parentUrl: string,
-    parentTitle: string
-  ): Promise<void> {
+  public async setParentChildRelation(childNodeId: string, parentNodeId: string): Promise<void> {
     try {
-      // 保存映射关系，用于构建树
-      const key = `relation:${childTabId}`;
-      const relation = {
-        parentNodeId,
-        childTabId,
-        parentUrl,
-        parentTitle,
-        timestamp: Date.now()
-      };
+      if (childNodeId === parentNodeId) {
+        console.error('不能将节点设为自己的父节点:', childNodeId);
+        return;
+      }
       
-      await chrome.storage.local.set({ [key]: relation });
-      console.log(`已保存父子关系: ${parentNodeId} -> ${childTabId}`);
+      // 检查是否会形成循环
+      if (await this.wouldCreateCycle(childNodeId, parentNodeId)) {
+        console.error('不能设置此父子关系，会形成循环:', childNodeId, parentNodeId);
+        return;
+      }
+      
+      // 添加明确的类型注解
+      const relations: Record<string, string> = await this.get('navigation_relations') || {};
+      relations[childNodeId] = parentNodeId;
+      await this.set('navigation_relations', relations);
+      console.log(`存储父子关系成功: 子节点=${childNodeId}, 父节点=${parentNodeId}`);
+      
+      // 添加验证步骤
+      const updatedRelations = await this.get('navigation_relations') as Record<string, string>;
+      if (updatedRelations[childNodeId] === parentNodeId) {
+        console.log('父子关系验证成功');
+      } else {
+        console.warn('父子关系存储验证失败');
+      }
     } catch (error) {
       console.error('保存父子关系失败:', error);
     }
   }
 
   /**
-   * 获取标签页的所有父节点关系
+   * 检查设置父子关系是否会形成循环
    */
-  private async getParentChildRelations(): Promise<Record<string, any>> {
-    try {
-      // 获取所有以 "relation:" 开头的键
-      const allData = await chrome.storage.local.get(null);
-      const relations: Record<string, any> = {};
-      
-      for (const key in allData) {
-        if (key.startsWith('relation:')) {
-          relations[key.replace('relation:', '')] = allData[key];
-        }
+  private async wouldCreateCycle(childId: string, newParentId: string): Promise<boolean> {
+    // 获取所有父子关系
+    const relations = await this.getParentChildRelations();
+    
+    // 从新的父节点开始，向上遍历
+    let currentId = newParentId;
+    const visited = new Set<string>();
+    
+    while (currentId) {
+      // 如果遇到了子节点，说明会形成循环
+      if (currentId === childId) {
+        return true;
       }
       
-      return relations;
+      // 如果已访问过此节点，说明有其他循环，也不应该添加新关系
+      if (visited.has(currentId)) {
+        return true;
+      }
+      
+      visited.add(currentId);
+      
+      // 向上层继续检查
+      currentId = relations[currentId];
+      
+      // 如果没有父节点了，则停止检查
+      if (!currentId) break;
+    }
+    
+    return false;
+  }
+
+  /**
+   * 获取所有父子关系
+   */
+  public async getParentChildRelations(): Promise<Record<string, string>> {
+    try {
+      // 添加类型断言
+      return (await this.get('navigation_relations') || {}) as Record<string, string>;
     } catch (error) {
       console.error('获取父子关系失败:', error);
       return {};
     }
+  }
+
+  /**
+   * 获取存储项
+   */
+  private async get<T>(key: string): Promise<T | null> {
+    return new Promise<T | null>((resolve) => {
+      chrome.storage.local.get(key, (items) => {
+        resolve(key in items ? items[key] : null);
+      });
+    });
+  }
+
+  /**
+   * 设置存储项
+   */
+  private async set(key: string, value: any): Promise<void> {
+    return new Promise<void>((resolve) => {
+      chrome.storage.local.set({ [key]: value }, () => {
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * 根据标签页ID获取记录
+   */
+  public async getRecordsByTabId(tabId: number): Promise<NavigationRecord[]> {
+    try {
+      const records = await this.getAllRecords();
+      return records.filter(record => record.tabId === tabId);
+    } catch (error) {
+      console.error(`获取标签页 ${tabId} 的记录失败:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 构建导航树 - 完整实现
+   */
+  private async buildNavigationTree(): Promise<SerializedNavigationTree> {
+    try {
+      // 获取所有记录 - 添加此行
+      const records = await this.getAllRecords();
+      
+      // 根据日期分组记录
+      const dayRecords = this.groupRecordsByDate(records);
+      
+      // 创建树结构
+      const dayGroups: Record<string, DayGroup> = {};
+      const childNodeIds = new Set<string>(); // 追踪哪些节点是子节点
+      
+      // 获取父子关系
+      const parentChildRelations = await this.getParentChildRelations();
+      console.log('获取到的父子关系数量:', Object.keys(parentChildRelations).length);
+      
+      // 转为日期树
+      for (const date in dayRecords) {
+        const nodes: Record<string, NavigationNode> = {};
+        
+        // 为每条记录创建节点
+        dayRecords[date].forEach(record => {
+          const nodeId = `${record.tabId}-${record.timestamp}`;
+          
+          nodes[nodeId] = {
+            id: nodeId,
+            record,
+            children: [],
+            depth: 0
+          };
+        });
+        
+        // 构建日期树 - 添加父子关系参数
+        this.buildDayTree(dayRecords[date], nodes, parentChildRelations, childNodeIds);
+        
+        // 找出根节点 - 通过排除法：所有节点中去掉那些是子节点的
+        const candidateRootIds = Object.keys(nodes).filter(id => !childNodeIds.has(id));
+        
+        // 可选：进一步应用根节点判定逻辑
+        const rootNodeIds = candidateRootIds.filter(id => {
+          const record = nodes[id].record;
+          // 如果明确不是子节点，再用isRootRecord进行二次过滤
+          return this.isRootRecord(record);
+        });
+        
+        dayGroups[date] = { nodes, rootNodeIds };
+      }
+      
+      return { days: dayGroups };
+    } catch (error) {
+      console.error('构建导航树失败:', error);
+      return { days: {} };
+    }
+  }
+
+  /**
+   * 获取特定日期的记录
+   * @param date 日期字符串，格式为 YYYY-MM-DD
+   */
+  public async getRecordsByDate(date: string): Promise<NavigationRecord[]> {
+    try {
+      const allRecords = await this.getAllRecords();
+      
+      // 过滤特定日期的记录
+      const dateRecords = allRecords.filter(record => {
+        const recordDate = record.date || this.getDateFromTimestamp(record.timestamp);
+        return recordDate === date;
+      });
+      
+      return dateRecords;
+    } catch (error) {
+      console.error(`获取日期记录失败: ${date}`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 从时间戳获取日期字符串
+   */
+  private getDateFromTimestamp(timestamp: number): string {
+    const date = new Date(timestamp);
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
   }
 }

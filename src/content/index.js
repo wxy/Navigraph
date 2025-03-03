@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('执行自动更新...');
     loadNavigationTree(true); // true表示增量更新，减少重绘
   }, 60000);
+  
+  // 初始化搜索功能
+  initSearch();
 });
 
 /**
@@ -56,6 +59,83 @@ function initEventListeners() {
       }
     }, 300));
   }
+}
+
+/**
+ * 初始化搜索功能
+ */
+function initSearch() {
+  const searchInput = document.getElementById('search-input');
+  if (!searchInput) return;
+  
+  searchInput.addEventListener('input', debounce(function() {
+    const query = this.value.toLowerCase().trim();
+    searchNodes(query);
+  }, 300));
+}
+
+/**
+ * 搜索节点
+ */
+function searchNodes(query) {
+  if (!window.treeData) return;
+  
+  // 清除之前的高亮
+  document.querySelectorAll('.navigation-node.highlight').forEach(node => {
+    node.classList.remove('highlight');
+  });
+  
+  if (!query) return;
+  
+  let matchCount = 0;
+  
+  // 遍历所有节点进行搜索
+  for (const date in window.treeData.days) {
+    const nodes = window.treeData.days[date].nodes;
+    for (const nodeId in nodes) {
+      const node = nodes[nodeId];
+      const title = node.record.title?.toLowerCase() || '';
+      const url = node.record.url.toLowerCase();
+      
+      if (title.includes(query) || url.includes(query)) {
+        // 找到匹配，高亮节点并展开父节点
+        matchCount++;
+        const nodeElement = document.querySelector(`.navigation-node[data-node-id="${nodeId}"]`);
+        if (nodeElement) {
+          nodeElement.classList.add('highlight');
+          ensureNodeVisible(nodeElement);
+        }
+      }
+    }
+  }
+  
+  showToast(`找到 ${matchCount} 个匹配结果`);
+}
+
+/**
+ * 确保节点可见（展开所有父节点）
+ */
+function ensureNodeVisible(nodeElement) {
+  // 查找所有父节点
+  let parent = nodeElement.parentElement;
+  while (parent) {
+    if (parent.classList.contains('node-children')) {
+      // 找到父节点容器，展开它
+      parent.classList.remove('collapsed');
+      parent.classList.add('expanded');
+      
+      // 更新父节点的展开图标
+      const parentNodeItem = parent.parentElement;
+      if (parentNodeItem) {
+        const toggleIcon = parentNodeItem.querySelector('.toggle-icon');
+        if (toggleIcon) toggleIcon.textContent = '▼';
+      }
+    }
+    parent = parent.parentElement;
+  }
+  
+  // 滚动到可见区域
+  nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 /**
@@ -183,10 +263,7 @@ function loadNavigationTree(updateOnly = false) {
       
       // 运行诊断
       const diagnosticResult = diagnosticTree(response.data);
-      
-      if (diagnosticResult.maxDepth > 3) {
-        console.warn(`树包含超过3层的深度！最大深度: ${diagnosticResult.maxDepth}`);
-      }
+      console.log(`树结构深度分析: 最大深度为 ${diagnosticResult.maxDepth} 层`);
     } else {
       // ...错误处理...
     }
@@ -242,6 +319,9 @@ function renderNavigationTree(treeData) {
   // 添加展开/折叠事件处理
   addToggleListeners();
   
+  // 添加节点点击详情事件
+  addNodeDetailListeners();
+  
   console.log('导航树渲染完成');
 }
 
@@ -289,10 +369,10 @@ function renderDateGroup(date, dateData) {
 }
 
 /**
- * 递归渲染节点及其子节点
+ * 渲染节点及其子节点
  */
 function renderNodeAndChildren(nodeId, nodesMap, parentContainer, recursionDepth = 0) {
-  // 防止递归过深（可选，仅用于安全检查）
+  // 防止递归过深
   if (recursionDepth > 20) {
     console.warn(`递归过深(${recursionDepth})，跳过节点 ${nodeId} 的渲染`);
     return;
@@ -304,107 +384,126 @@ function renderNodeAndChildren(nodeId, nodesMap, parentContainer, recursionDepth
     return;
   }
   
-  // 记录实际渲染深度，用于调试
-  const actualDepth = recursionDepth;
-  console.log(`渲染节点: ${nodeId}, 计算深度: ${node.depth}, 实际渲染深度: ${actualDepth}`);
-  
-  // 创建节点元素
-  const nodeItem = document.createElement('li');
-  nodeItem.className = 'navigation-node';
-  nodeItem.dataset.nodeId = nodeId;
-  nodeItem.dataset.depth = node.depth; // 使用计算的深度，不是递归深度
-  
-  // 决定节点显示类型
-  const hasChildren = node.children && node.children.length > 0;
-  const nodeTitle = document.createElement('div');
-  
-  nodeTitle.className = hasChildren ? 'node-title expandable' : 'node-title';
-  
-  // 如果有子节点，添加展开/折叠图标
-  if (hasChildren) {
-    const toggleIcon = document.createElement('span');
-    toggleIcon.className = 'toggle-icon';
-    toggleIcon.textContent = '▼'; // 默认展开
-    nodeTitle.appendChild(toggleIcon);
-  }
-  
-  // 添加页面图标 - 修改这里，不使用内联事件
-  const faviconImg = document.createElement('img');
-  faviconImg.className = 'favicon';
-  faviconImg.src = node.record.favicon || '../../images/logo-16.png';
-  faviconImg.addEventListener('error', function() {
-    this.src = '../../images/logo-16.png';
-  });
-  nodeTitle.appendChild(faviconImg);
-  
-  // 添加页面标题
-  const pageTitle = document.createElement('span');
-  pageTitle.className = 'page-title';
-  pageTitle.textContent = sanitizeHTML(node.record.title || node.record.url);
-  nodeTitle.appendChild(pageTitle);
-  
-  // 添加点击事件
-  nodeTitle.addEventListener('click', function(e) {
-    // 不冒泡到展开/折叠事件
-    if (!e.target.classList.contains('toggle-icon')) {
-      if (node.record && node.record.url) {
-        // 根据点击方式决定如何打开链接
-        const isNewTab = e.ctrlKey || e.metaKey || e.which === 2; // Ctrl/Cmd键或中键点击
-        
-        // 记录父节点关系
-        chrome.runtime.sendMessage({
-          action: 'recordParentNode',
-          parentNodeId: nodeId,
-          parentUrl: node.record.url,
-          parentTitle: node.record.title || node.record.url,
-          openInNewTab: isNewTab
-        }, function(response) {
-          console.log('记录父节点关系响应:', response);
-          
-          // 根据打开方式创建新标签或导航当前标签
-          if (isNewTab) {
-            // 在新标签页打开
-            chrome.tabs.create({ url: node.record.url });
-          } else {
-            // 在当前标签页打开
-            chrome.tabs.update({ url: node.record.url });
-          }
-        });
-      }
+  try {
+    // 创建节点元素
+    const nodeItem = document.createElement('li');
+    nodeItem.className = 'navigation-node';
+    nodeItem.dataset.nodeId = nodeId;
+    nodeItem.dataset.depth = node.depth || 0;
+    
+    // 根据深度调整样式
+    nodeItem.style.paddingLeft = `${node.depth * 5}px`;
+    
+    // 创建节点标题容器
+    const nodeTitle = document.createElement('div');
+    nodeTitle.className = node.children && node.children.length ? 'node-title expandable' : 'node-title';
+    
+    // 添加深度指示器 - 可视化节点深度
+    for (let i = 0; i < node.depth; i++) {
+      const depthIndicator = document.createElement('span');
+      depthIndicator.className = 'depth-indicator';
+      depthIndicator.textContent = '│';
+      nodeTitle.appendChild(depthIndicator);
     }
-  });
-  
-  nodeItem.appendChild(nodeTitle);
-  
-  // 如果有子节点，创建子节点容器并递归渲染
-  if (hasChildren) {
-    const childrenContainer = document.createElement('ul');
-    childrenContainer.className = 'node-children';
     
-    // 避免子节点中包含自身，导致无限递归
-    const validChildren = node.children.filter(childId => {
-      if (childId === nodeId) {
-        console.error(`发现循环引用: 节点 ${nodeId} 将自身列为子节点`);
-        return false;
+    // 创建节点内容div - 包含所有信息元素
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'node-content';
+    
+    // 创建网站图标
+    if (node.record && node.record.favicon) {
+      const faviconImg = document.createElement('img');
+      faviconImg.className = 'favicon';
+      faviconImg.src = node.record.favicon;
+      faviconImg.onerror = function() {
+        // 图标加载失败时使用默认图标
+        this.src = '../../images/default-favicon.png';
+        this.onerror = null;
+      };
+      contentDiv.appendChild(faviconImg);
+    }
+    
+    // 添加页面标题
+    const pageTitle = document.createElement('span');
+    pageTitle.className = 'page-title';
+    pageTitle.textContent = sanitizeHTML(node.record.title || node.record.url);
+    contentDiv.appendChild(pageTitle);
+    
+    // 添加打开方式和导航类型指示器
+    const metaInfo = document.createElement('div');
+    metaInfo.className = 'meta-info';
+    
+    if (node.record.navigationType) {
+      const navType = document.createElement('span');
+      navType.className = 'nav-type';
+      navType.textContent = getNavigationTypeLabel(node.record.navigationType);
+      navType.title = '导航类型';
+      metaInfo.appendChild(navType);
+    }
+    
+    if (node.record.openTarget && node.record.openTarget !== 'same_tab') {
+      const openTarget = document.createElement('span');
+      openTarget.className = 'open-target';
+      openTarget.textContent = getOpenTargetLabel(node.record.openTarget);
+      openTarget.title = '打开位置';
+      metaInfo.appendChild(openTarget);
+    }
+    
+    contentDiv.appendChild(metaInfo);
+    
+    // 添加扩展/折叠图标
+    if (node.children && node.children.length) {
+      const toggleIcon = document.createElement('span');
+      toggleIcon.className = 'toggle-icon';
+      toggleIcon.textContent = '▶';
+      nodeTitle.appendChild(toggleIcon);
+    }
+    
+    // 组装节点标题
+    nodeTitle.appendChild(contentDiv);
+    nodeItem.appendChild(nodeTitle);
+    
+    // 添加子节点容器
+    if (node.children && node.children.length) {
+      const childrenContainer = document.createElement('ul');
+      childrenContainer.className = 'node-children';
+      childrenContainer.dataset.parentId = nodeId;
+      
+      // 默认展开浅层节点
+      if (node.depth < 1) {
+        childrenContainer.classList.add('expanded');
+      } else {
+        childrenContainer.classList.add('collapsed');
       }
-      return true;
-    });
-    
-    // 递归渲染所有子节点，传递增加的递归深度
-    validChildren.forEach(childId => {
-      renderNodeAndChildren(childId, nodesMap, childrenContainer, recursionDepth + 1);
-    });
-    
-    if (validChildren.length > 0) {
+      
+      // 递归渲染子节点
+      node.children.forEach(childId => {
+        if (childId === nodeId) {
+          console.error(`发现循环引用: 节点 ${nodeId} 将自身作为子节点`);
+          return;
+        }
+        renderNodeAndChildren(childId, nodesMap, childrenContainer, recursionDepth + 1);
+      });
+      
       nodeItem.appendChild(childrenContainer);
-    } else if (hasChildren) {
-      // 原本有子节点但都被过滤掉了
-      nodeTitle.classList.remove('expandable');
+    }
+    
+    // 将完整节点添加到父容器
+    parentContainer.appendChild(nodeItem);
+    
+  } catch (error) {
+    console.error(`渲染节点 ${nodeId} 时出错:`, error);
+    
+    // 备用渲染 - 如果正常渲染失败，使用简化版本
+    try {
+      const fallbackNode = document.createElement('li');
+      fallbackNode.className = 'navigation-node error';
+      fallbackNode.textContent = `[渲染错误] ${node.record.title || node.record.url || nodeId}`;
+      parentContainer.appendChild(fallbackNode);
+    } catch (fallbackError) {
+      console.error('备用渲染也失败:', fallbackError);
     }
   }
-  
-  // 添加到父容器
-  parentContainer.appendChild(nodeItem);
 }
 
 /**
@@ -463,6 +562,9 @@ function updateNavigationTree(newTreeData) {
   
   // 添加展开/折叠事件处理
   addToggleListeners();
+  
+  // 添加节点点击详情事件
+  addNodeDetailListeners();
 }
 
 /**
@@ -472,21 +574,79 @@ function addToggleListeners() {
   document.querySelectorAll('.expandable').forEach(element => {
     element.addEventListener('click', function(e) {
       // 只有当点击的是标题或折叠图标时才触发
-      if (e.target === this || e.target.classList.contains('toggle-icon')) {
-        const childList = this.nextElementSibling;
-        if (childList && childList.tagName === 'UL') {
-          // 切换显示状态
-          childList.classList.toggle('hidden');
+      if (e.target === this || 
+          e.target.classList.contains('toggle-icon') || 
+          e.target.closest('.node-title') === this) {
+        
+        const nodeItem = this.closest('.navigation-node');
+        const childList = nodeItem.querySelector('.node-children');
+        
+        if (childList) {
+          // 切换折叠状态
+          const wasCollapsed = childList.classList.contains('collapsed');
+          childList.classList.toggle('collapsed');
+          childList.classList.toggle('expanded');
           
           // 切换图标
           const toggleIcon = this.querySelector('.toggle-icon');
           if (toggleIcon) {
-            toggleIcon.textContent = childList.classList.contains('hidden') ? '▶' : '▼';
+            toggleIcon.textContent = wasCollapsed ? '▼' : '▶';
+            toggleIcon.style.transform = wasCollapsed ? 'rotate(0deg)' : 'rotate(0deg)';
+          }
+          
+          // 记录状态
+          const nodeId = nodeItem.dataset.nodeId;
+          if (nodeId) {
+            saveNodeExpandState(nodeId, wasCollapsed);
           }
         }
       }
     });
   });
+}
+
+/**
+ * 保存节点展开状态
+ */
+function saveNodeExpandState(nodeId, isExpanded) {
+  try {
+    const expandStates = JSON.parse(localStorage.getItem('nodeExpandStates') || '{}');
+    expandStates[nodeId] = isExpanded;
+    localStorage.setItem('nodeExpandStates', JSON.stringify(expandStates));
+  } catch (e) {
+    console.error('保存节点状态失败:', e);
+  }
+}
+
+/**
+ * 应用保存的节点展开状态
+ */
+function applyNodeExpandStates() {
+  try {
+    const expandStates = JSON.parse(localStorage.getItem('nodeExpandStates') || '{}');
+    
+    Object.entries(expandStates).forEach(([nodeId, isExpanded]) => {
+      const nodeItem = document.querySelector(`.navigation-node[data-node-id="${nodeId}"]`);
+      if (nodeItem) {
+        const childList = nodeItem.querySelector('.node-children');
+        const toggleIcon = nodeItem.querySelector('.toggle-icon');
+        
+        if (childList) {
+          if (isExpanded) {
+            childList.classList.add('expanded');
+            childList.classList.remove('collapsed');
+            if (toggleIcon) toggleIcon.textContent = '▼';
+          } else {
+            childList.classList.add('collapsed');
+            childList.classList.remove('expanded');
+            if (toggleIcon) toggleIcon.textContent = '▶';
+          }
+        }
+      }
+    });
+  } catch (e) {
+    console.error('应用节点状态失败:', e);
+  }
 }
 
 /**
@@ -818,7 +978,7 @@ function diagnosticTree(treeData) {
   console.log('树结构诊断:');
   console.log(`总节点数: ${totalNodes}`);
   console.log(`根节点数: ${rootNodes}`);
-  console.log(`最大深度: ${maxDepth}`);
+  console.log(`树形结构深度: ${maxDepth}层`); // 更改措辞，避免暗示有深度限制
   console.log(`孤立节点数: ${orphanNodes}`);
   console.log('深度分布:', depthCounts);
   
@@ -829,4 +989,493 @@ function diagnosticTree(treeData) {
     orphanNodes,
     depthCounts
   };
+}
+
+/**
+ * 查找深层节点
+ */
+function findDeepNodes() {
+  const deepNodes = document.querySelectorAll('.navigation-node[data-depth="3"], .navigation-node[data-depth="4"], .navigation-node[data-depth="5"]');
+  console.log(`找到 ${deepNodes.length} 个深度大于2的节点:`);
+  
+  deepNodes.forEach((node, index) => {
+    const nodeId = node.dataset.nodeId;
+    const depth = node.dataset.depth;
+    const title = node.querySelector('.page-title')?.textContent || '无标题';
+    
+    console.log(`${index+1}. 节点ID: ${nodeId}, 深度: ${depth}, 标题: "${title}"`);
+    
+    // 高亮显示这个节点，便于视觉识别
+    node.style.backgroundColor = 'rgba(255, 255, 0, 0.2)';
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+  
+  return deepNodes.length > 0;
+}
+
+/**
+ * 查看节点的父子链
+ * 该函数可以在控制台中调用
+ */
+function traceNodeChain(nodeId) {
+  if (!treeData) {
+    console.error('树数据未加载');
+    return;
+  }
+  
+  // 查找节点
+  let targetNode = null;
+  let targetDate = null;
+  let targetNodes = null;
+  
+  for (const date in treeData.days) {
+    const nodes = treeData.days[date].nodes;
+    if (nodes[nodeId]) {
+      targetNode = nodes[nodeId];
+      targetDate = date;
+      targetNodes = nodes;
+      break;
+    }
+  }
+  
+  if (!targetNode) {
+    console.error(`未找到节点 ${nodeId}`);
+    return;
+  }
+  
+  // 打印节点信息
+  console.log('节点信息:', {
+    id: nodeId,
+    title: targetNode.record.title,
+    url: targetNode.record.url,
+    depth: targetNode.depth,
+    date: targetDate,
+    timestamp: targetNode.record.timestamp,
+    方法: targetNode.record.method,
+    子节点数: targetNode.children?.length || 0
+  });
+  
+  // 查找并高亮父链
+  let parentChain = [];
+  let currentId = nodeId;
+  let currentDepth = targetNode.depth;
+  
+  // 向上查找父节点链
+  while (currentDepth > 0) {
+    let found = false;
+    
+    for (const id in targetNodes) {
+      const node = targetNodes[id];
+      if (node.children && node.children.includes(currentId)) {
+        parentChain.unshift({
+          id: id,
+          title: node.record.title,
+          depth: node.depth
+        });
+        currentId = id;
+        currentDepth = node.depth;
+        found = true;
+        break;
+      }
+    }
+    
+    if (!found) break;
+  }
+  
+  console.log('父节点链:', parentChain);
+  
+  // 高亮显示
+  document.querySelectorAll('.highlight-chain').forEach(el => {
+    el.classList.remove('highlight-chain');
+  });
+  
+  // 高亮当前节点
+  const targetElement = document.querySelector(`.navigation-node[data-node-id="${nodeId}"]`);
+  if (targetElement) {
+    targetElement.classList.add('highlight-chain');
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  // 高亮父链
+  parentChain.forEach(parent => {
+    const parentElement = document.querySelector(`.navigation-node[data-node-id="${parent.id}"]`);
+    if (parentElement) {
+      parentElement.classList.add('highlight-chain');
+    }
+  });
+  
+  return {
+    node: targetNode,
+    parentChain
+  };
+}
+
+/**
+ * 渲染节点标题
+ */
+function renderNodeTitle(node) {
+  const nodeTitle = document.createElement('div');
+  nodeTitle.className = 'node-title';
+  
+  // 添加导航类型图标
+  const typeIcon = document.createElement('span');
+  typeIcon.className = `nav-type-icon ${node.record.navigationType}`;
+  typeIcon.title = getNavigationTypeLabel(node.record.navigationType);
+  nodeTitle.appendChild(typeIcon);
+  
+  // 如果不是在当前标签页打开，添加打开位置图标
+  if (node.record.openTarget !== 'same_tab') {
+    const targetIcon = document.createElement('span');
+    targetIcon.className = `open-target-icon ${node.record.openTarget}`;
+    targetIcon.title = getOpenTargetLabel(node.record.openTarget);
+    nodeTitle.appendChild(targetIcon);
+  }
+  
+  // 添加网站图标
+  // ...剩余代码
+}
+
+// 获取导航类型的可读标签
+function getNavigationTypeLabel(type) {
+  const labels = {
+    'link_click': '链接点击',
+    'address_bar': '地址栏输入',
+    'form_submit': '表单提交',
+    'history_back': '后退',
+    'history_forward': '前进',
+    'reload': '重新加载',
+    'javascript': 'JavaScript导航',
+    'initial': '初始加载'
+  };
+  return labels[type] || type;
+}
+
+// 获取打开位置的可读标签
+function getOpenTargetLabel(target) {
+  const labels = {
+    'same_tab': '当前标签页',
+    'new_tab': '新标签页',
+    'new_window': '新窗口',
+    'popup': '弹出窗口'
+  };
+  return labels[target] || target;
+}
+
+// 添加到页面中，帮助诊断树形结构
+window.analyzeTreeDepth = function() {
+  if (!window.treeData || !window.treeData.days) {
+    console.error('树数据未加载');
+    return;
+  }
+  
+  const depthCounts = {};
+  let maxDepth = 0;
+  
+  for (const date in window.treeData.days) {
+    const nodes = window.treeData.days[date].nodes;
+    
+    for (const nodeId in nodes) {
+      const node = nodes[nodeId];
+      const depth = node.depth || 0;
+      
+      depthCounts[depth] = (depthCounts[depth] || 0) + 1;
+      if (depth > maxDepth) maxDepth = depth;
+    }
+  }
+  
+  console.log('树深度分析:');
+  console.log(`最大深度: ${maxDepth}`);
+  console.log('各层节点数:', depthCounts);
+  
+  // 查找并显示几个较深的节点
+  if (maxDepth > 1) {
+    const deepNodes = [];
+    for (const date in window.treeData.days) {
+      const nodes = window.treeData.days[date].nodes;
+      for (const nodeId in nodes) {
+        const node = nodes[nodeId];
+        if (node.depth > 1) {
+          deepNodes.push({
+            id: nodeId,
+            title: node.record.title,
+            depth: node.depth,
+            children: node.children?.length || 0
+          });
+        }
+      }
+    }
+    
+    console.log('深层节点示例 (最多显示5个):', deepNodes.slice(0, 5));
+  }
+  
+  return { maxDepth, depthCounts };
+};
+
+// 添加到您现有的 analyzeTreeDepth 函数中
+window.validateTreeStructure = function() {
+  if (!window.treeData || !window.treeData.days) {
+    console.error('树数据未加载');
+    return;
+  }
+  
+  const issues = [];
+  const allNodeIds = new Set();
+  const childrenMap = new Map();
+  const parentMap = new Map();
+  
+  for (const date in window.treeData.days) {
+    const nodes = window.treeData.days[date].nodes;
+    
+    // 收集所有节点ID
+    for (const nodeId in nodes) {
+      allNodeIds.add(nodeId);
+      
+      // 记录每个节点的子节点
+      const node = nodes[nodeId];
+      if (node.children && node.children.length) {
+        childrenMap.set(nodeId, node.children);
+        
+        // 检查子节点是否存在
+        node.children.forEach(childId => {
+          if (!nodes[childId]) {
+            issues.push(`节点 ${nodeId} 引用了不存在的子节点 ${childId}`);
+          } else {
+            // 记录父节点关系
+            parentMap.set(childId, nodeId);
+          }
+        });
+      }
+    }
+    
+    // 检查节点深度是否正确
+    for (const nodeId in nodes) {
+      const node = nodes[nodeId];
+      
+      // 计算预期深度 - 通过向上查找父节点链
+      let expectedDepth = 0;
+      let currentId = nodeId;
+      let visited = new Set();
+      
+      while (parentMap.has(currentId)) {
+        expectedDepth++;
+        currentId = parentMap.get(currentId);
+        
+        // 检测循环
+        if (visited.has(currentId)) {
+          issues.push(`发现循环引用: 节点 ${nodeId} 的父链中有循环`);
+          break;
+        }
+        visited.add(currentId);
+      }
+      
+      // 比较实际深度与预期深度
+      if (node.depth !== expectedDepth) {
+        issues.push(`节点 ${nodeId} 深度不正确: 当前=${node.depth}, 预期=${expectedDepth}`);
+      }
+    }
+    
+    // 检查根节点
+    const rootNodeIds = window.treeData.days[date].rootNodeIds || [];
+    rootNodeIds.forEach(rootId => {
+      if (parentMap.has(rootId)) {
+        issues.push(`根节点 ${rootId} 同时也是其他节点的子节点`);
+      }
+    });
+    
+    // 检查是否有孤立节点(没有子节点也不是其他节点的子节点)
+    for (const nodeId in nodes) {
+      const node = nodes[nodeId];
+      if ((!node.children || node.children.length === 0) && !parentMap.has(nodeId) && !rootNodeIds.includes(nodeId)) {
+        issues.push(`发现孤立节点 ${nodeId}: ${node.record.title}`);
+      }
+    }
+  }
+  
+  if (issues.length > 0) {
+    console.error(`发现 ${issues.length} 个树结构问题:`);
+    issues.forEach((issue, i) => console.error(`${i + 1}. ${issue}`));
+    return false;
+  } else {
+    console.log('树结构验证通过，父子层级关系正确');
+    return true;
+  }
+};
+
+// 为树的诊断添加自动调用
+document.addEventListener('DOMContentLoaded', function() {
+  // 在树加载完成后自动运行诊断
+  setTimeout(() => {
+    if (window.treeData) {
+      console.log('自动运行树结构分析:');
+      window.analyzeTreeDepth();
+      window.validateTreeStructure();
+    }
+  }, 3000); // 等待树数据加载
+});
+
+/**
+ * 添加节点点击详情事件
+ */
+function addNodeDetailListeners() {
+  document.querySelectorAll('.navigation-node').forEach(node => {
+    node.querySelector('.page-title')?.addEventListener('dblclick', function(e) {
+      e.stopPropagation();
+      const nodeId = node.dataset.nodeId;
+      if (nodeId) {
+        showNodeDetails(nodeId);
+      }
+    });
+    
+    // 添加右键菜单
+    node.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      const nodeId = node.dataset.nodeId;
+      if (nodeId) {
+        showNodeContextMenu(e, nodeId);
+      }
+    });
+  });
+}
+
+/**
+ * 显示节点详情
+ */
+function showNodeDetails(nodeId) {
+  try {
+    const node = findNodeById(nodeId);
+    if (!node) return;
+    
+    const record = node.record;
+    
+    // 创建或更新详情面板
+    let detailPanel = document.getElementById('node-detail-panel');
+    if (!detailPanel) {
+      detailPanel = document.createElement('div');
+      detailPanel.id = 'node-detail-panel';
+      document.body.appendChild(detailPanel);
+    }
+    
+    // 组装详情内容
+    detailPanel.innerHTML = `
+      <div class="detail-header">
+        <h3>页面详情</h3>
+        <button class="close-button">×</button>
+      </div>
+      <div class="detail-content">
+        <div class="detail-item">
+          <strong>标题:</strong> ${sanitizeHTML(record.title || '无标题')}
+        </div>
+        <div class="detail-item">
+          <strong>URL:</strong> 
+          <a href="${record.url}" target="_blank">${sanitizeHTML(record.url)}</a>
+        </div>
+        <div class="detail-item">
+          <strong>时间:</strong> ${new Date(record.timestamp).toLocaleString()}
+        </div>
+        <div class="detail-item">
+          <strong>导航类型:</strong> ${getNavigationTypeLabel(record.navigationType)}
+        </div>
+        <div class="detail-item">
+          <strong>打开位置:</strong> ${getOpenTargetLabel(record.openTarget)}
+        </div>
+        <div class="detail-item">
+          <strong>来源页面:</strong> ${record.referrer ? sanitizeHTML(record.referrer) : '无'}
+        </div>
+        <div class="detail-item">
+          <strong>加载时间:</strong> ${record.loadTime ? `${record.loadTime}ms` : '未记录'}
+        </div>
+        <div class="detail-item">
+          <strong>节点ID:</strong> ${nodeId}
+        </div>
+        <div class="detail-item">
+          <strong>深度:</strong> ${node.depth}
+        </div>
+        <div class="detail-item">
+          <strong>子节点数:</strong> ${node.children?.length || 0}
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="action-button visit-button">访问页面</button>
+        <button class="action-button copy-url-button">复制URL</button>
+        <button class="action-button show-parent-button">显示父节点</button>
+      </div>
+    `;
+    
+    // 显示面板
+    detailPanel.style.display = 'block';
+    
+    // 添加按钮事件处理
+    detailPanel.querySelector('.close-button').addEventListener('click', () => {
+      detailPanel.style.display = 'none';
+    });
+    
+    detailPanel.querySelector('.visit-button').addEventListener('click', () => {
+      window.open(record.url, '_blank');
+    });
+    
+    detailPanel.querySelector('.copy-url-button').addEventListener('click', () => {
+      navigator.clipboard.writeText(record.url).then(() => {
+        showToast('URL已复制到剪贴板');
+      });
+    });
+    
+    detailPanel.querySelector('.show-parent-button').addEventListener('click', () => {
+      const parentNodeId = findParentNodeId(nodeId);
+      if (parentNodeId) {
+        highlightNode(parentNodeId);
+        showNodeDetails(parentNodeId);
+      } else {
+        showToast('此节点没有父节点');
+      }
+    });
+  } catch (error) {
+    console.error('显示节点详情失败:', error);
+  }
+}
+
+/**
+ * 显示提示消息
+ */
+function showToast(message) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = message;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+/**
+ * 主初始化函数 - 添加新功能初始化
+ */
+async function initNavigationUI() {
+  try {
+    // ... 现有初始化代码 ...
+    
+    // 添加展开/折叠事件监听器
+    addToggleListeners();
+    
+    // 添加节点详情事件监听器
+    addNodeDetailListeners();
+    
+    // 初始化搜索功能
+    initSearch();
+    
+    // 应用保存的节点展开状态
+    applyNodeExpandStates();
+    
+    // ... 其他代码 ...
+    
+    console.log('导航UI初始化完成');
+  } catch (error) {
+    console.error('初始化导航UI失败:', error);
+    showErrorMessage('导航历史加载失败');
+  }
 }
