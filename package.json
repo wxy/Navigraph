@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "tsc && esbuild src/background/*.ts --bundle --format=esm --outdir=dist",
+    "build": "tsc && esbuild src/background/*.ts --bundle --format=esm --outdir=dist && npm run copy-files",
+    "copy-files": "mkdir -p dist/content && cp -r src/content/* dist/content/",
     "watch": "npm run build -- --watch",
     "package": "zip -r ../navigraph.zip * --exclude @.gitignore"
   },
