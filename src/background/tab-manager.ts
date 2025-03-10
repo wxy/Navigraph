@@ -19,6 +19,17 @@ export class TabTracker {
   private navigationSequence: number = 0; // 导航序列号
   private tabNavigationHistory: Map<number, string[]> = new Map(); // 标签页ID -> 节点ID列表
   private windowFocused: boolean = true; // 当前窗口是否处于聚焦状态
+  private pageIdMap: Map<string, {tabId: number, nodeId: string, timestamp: number}> = new Map();
+  private pendingNavigations: Map<string, Array<{
+    type: string,
+    sourcePageId: string,
+    targetUrl: string,
+    timestamp: number,
+    sourceTabId: number,
+    expireTime: number
+  }>> = new Map();
+  private lastClickSourceNodeId?: string;
+  private pendingUpdates: Map<number, string[]> = new Map<number, string[]>();
   
   constructor() {
     this.storage = new NavigationStorage();
@@ -162,22 +173,50 @@ export class TabTracker {
     changeInfo: chrome.tabs.TabChangeInfo, 
     tab: chrome.tabs.Tab
   ): Promise<void> {
+    // 更全面的调试日志
+    console.log(`标签页更新事件: ${tabId}`, changeInfo);
+    // 只有当标题或favicon更新时才处理
+    if (!changeInfo.title && !changeInfo.favIconUrl) {
+      console.log(`标签页 ${tabId} 更新不包含标题或图标变化，忽略`);
+      return;
+    }
+    
     try {
-      // 仅处理状态和标题更新
-      if (changeInfo.status === 'complete' || changeInfo.title) {
-        const nodeId = this.getMostRecentNodeId(tabId);
-        
-        if (nodeId && changeInfo.title) {
-          // 更新标题
-          await this.storage.updateRecord(nodeId, { 
-            title: changeInfo.title 
-          });
-          
-          console.log(`更新标签页 ${tabId} 标题: ${changeInfo.title}`);
-        }
+      // 获取该标签页关联的待更新节点ID列表
+      const nodeIds = this.pendingUpdates.get(tabId) || [];
+      console.log(`待更新节点列表: ${nodeIds.join(', ') || '无'}`);
+      // 也检查最近的节点
+      const recentNodeId = this.getMostRecentNodeId(tabId);
+      if (recentNodeId && !nodeIds.includes(recentNodeId)) {
+        nodeIds.push(recentNodeId);
       }
+      
+      // 如果没有待更新的节点，则退出
+      if (nodeIds.length === 0) return;
+      
+      console.log(`标签页[${tabId}]更新: ${changeInfo.title ? '标题' : ''}${changeInfo.favIconUrl ? ' 图标' : ''}`);
+      
+      // 准备更新数据
+      const updates: Partial<NavigationRecord> = {};
+      
+      if (changeInfo.title) {
+        updates.title = changeInfo.title;
+      }
+      
+      if (changeInfo.favIconUrl) {
+        updates.favicon = changeInfo.favIconUrl;
+      }
+      
+      // 更新所有相关节点
+      for (const nodeId of nodeIds) {
+        await this.storage.updateRecord(nodeId, updates);
+        console.log(`已更新节点[${nodeId}]: ${updates.title ? `标题="${updates.title}"` : ''} ${updates.favicon ? '图标' : ''}`);
+      }
+      
+      // 清除已更新的节点
+      this.pendingUpdates.delete(tabId);
     } catch (error) {
-      console.error('处理标签页更新失败:', error);
+      console.error('更新标签页标题/图标失败:', error);
     }
   }
   
@@ -225,6 +264,30 @@ export class TabTracker {
         }
         
         console.log(`标签页激活: ${activeInfo.tabId}`);
+        
+        // 新增: 检查是否是扩展页面，如果是则触发刷新
+        try {
+          const tab = await chrome.tabs.get(activeInfo.tabId);
+          const extensionUrl = chrome.runtime.getURL('content/index.html');
+          
+          // 检查激活的标签页是否是扩展的可视化页面
+          if (tab.url && tab.url.startsWith(extensionUrl)) {
+            console.log('检测到扩展可视化页面被激活，触发自动刷新');
+            
+            // 稍微延迟，确保页面已经准备好接收消息
+            setTimeout(() => {
+              chrome.tabs.sendMessage(activeInfo.tabId, {
+                action: 'refreshVisualization',
+                timestamp: Date.now()
+              }).catch(err => {
+                console.warn('发送刷新消息失败，可能页面尚未完全加载:', err);
+              });
+            }, 300);
+          }
+        } catch (err) {
+          console.warn('检查标签页URL失败:', err);
+        }
+        
         resolve();
       } catch (error) {
         console.error('处理标签页激活失败:', error);
@@ -324,11 +387,45 @@ export class TabTracker {
       parentFrameId: details.parentFrameId
     };
     
-    // 获取父节点
+    // 获取父节点 - 增强版
     let parentId: string | undefined = undefined;
     
-    if (navigationType !== 'address_bar' && navigationType !== 'initial') {
-      // 尝试找到父节点 - 标签页中的最后一个节点
+    // 1. 首先尝试从最近的点击事件中获取源节点
+    if (this.lastClickSourceNodeId) {
+      parentId = this.lastClickSourceNodeId;
+      // 使用后清除
+      this.lastClickSourceNodeId = undefined;
+    } 
+    // 2. 然后尝试从待处理导航中找到匹配项
+    else if (navigationType !== 'address_bar' && navigationType !== 'initial') {
+      // 检查是否有匹配的待处理导航
+      const normalizedUrl = this.normalizeUrl(details.url);
+      const pendingNavs = this.pendingNavigations.get(normalizedUrl);
+      
+      if (pendingNavs && pendingNavs.length > 0) {
+        // 找到最近的未过期条目
+        const now = Date.now();
+        const validNav = pendingNavs.find(nav => nav.expireTime > now);
+        
+        if (validNav) {
+          // 从映射中获取源节点ID
+          const sourceInfo = this.pageIdMap.get(validNav.sourcePageId);
+          if (sourceInfo && sourceInfo.nodeId) {
+            parentId = sourceInfo.nodeId;
+          }
+          
+          // 从队列中移除已使用的导航请求
+          const index = pendingNavs.indexOf(validNav);
+          pendingNavs.splice(index, 1);
+          if (pendingNavs.length === 0) {
+            this.pendingNavigations.delete(normalizedUrl);
+          }
+        }
+      }
+    }
+    
+    // 3. 如果前两种方法都失败，尝试使用标签页历史中的最后一个节点
+    if (!parentId) {
       parentId = this.getMostRecentNodeId(tabId);
     }
     
@@ -342,6 +439,13 @@ export class TabTracker {
     // 更新标签页历史
     this.addToTabHistory(tabId, savedRecord.id!);
     
+    // 添加到待更新列表，确保后续的标题和图标更新能应用到此节点 - 新增代码
+    if (!this.pendingUpdates.has(tabId)) {
+      this.pendingUpdates.set(tabId, []);
+    }
+    this.pendingUpdates.get(tabId)!.push(savedRecord.id!);
+    console.log(`将节点 ${savedRecord.id} 添加到待更新列表`);
+
     // 如果有父节点，创建导航边
     if (parentId) {
       this.navigationSequence++;
@@ -468,20 +572,63 @@ export class TabTracker {
       const nodeId = this.getMostRecentNodeId(details.tabId);
       
       if (nodeId) {
+        // 获取增强版favicon
+        const favicon = await this.getFavicon(details.url, tab.favIconUrl);
+
         // 更新节点信息
         const updates: Partial<NavigationRecord> = {
-          title: tab.title || '',
-          favicon: tab.favIconUrl
+          favicon: favicon
         };
         
+        // 只有当标题不为空时才更新标题
+        if (tab.title) {
+          const record = await this.storage.getRecord(nodeId);
+          // 如果记录已有标题并且当前标题不为空，保留较长的标题
+          if (record && record.title && record.title.length > tab.title.length) {
+            console.log(`保留现有标题"${record.title}"，不更新为"${tab.title}"`);
+          } else {
+            updates.title = tab.title;
+            console.log(`更新标题为"${tab.title}"`);
+          }
+        }
+
         // 计算加载时间
         const record = await this.storage.getRecord(nodeId);
         if (record) {
           updates.loadTime = Date.now() - record.timestamp;
         }
         
-        await this.storage.updateRecord(nodeId, updates);
-        console.log(`更新节点完成信息: ${nodeId}, 标题: ${tab.title}`);
+        // 只有当有更新内容时才执行更新
+        if (Object.keys(updates).length > 0) {
+          await this.storage.updateRecord(nodeId, updates);
+          console.log(`更新节点完成信息: ${nodeId}, 标题: ${tab.title}`);
+        }
+      }
+
+      if (nodeId) {
+        // 一秒后再次检查标题和图标
+        setTimeout(async () => {
+          try {
+            // 再次获取标签页信息
+            const updatedTab = await chrome.tabs.get(details.tabId);
+            const updates: Partial<NavigationRecord> = {};
+            
+            if (updatedTab.title) {
+              updates.title = updatedTab.title;
+            }
+            
+            if (updatedTab.favIconUrl) {
+              updates.favicon = updatedTab.favIconUrl;
+            }
+            
+            if (Object.keys(updates).length > 0) {
+              await this.storage.updateRecord(nodeId, updates);
+              console.log(`延迟更新节点信息: ${nodeId}`, updates);
+            }
+          } catch (err) {
+            console.warn('延迟更新节点失败:', err);
+          }
+        }, 1000); // 延迟1秒
       }
     } catch (error) {
       console.error('处理导航完成失败:', error);
@@ -654,6 +801,251 @@ export class TabTracker {
    */
   public getStorage(): NavigationStorage {
     return this.storage;
+  }
+
+  // 在TabTracker类中添加新方法，用于处理内容脚本消息
+
+  /**
+   * 处理从内容脚本发送的消息
+   */
+  public async handleContentScriptMessage(message: any, sender: chrome.runtime.MessageSender): Promise<void> {
+    try {
+      const tabId = sender.tab?.id;
+      if (!tabId) return;
+  
+      switch (message.action) {
+        case 'pageLoaded':
+          await this.handlePageLoaded(tabId, message.pageInfo);
+          break;
+        
+        case 'pageTitleUpdated':
+          await this.handleTitleUpdated(tabId, message.pageId, message.title, message.isDirectAccess, message.url);
+          break;
+
+        case 'linkClicked':
+          await this.handleLinkClicked(tabId, message.linkInfo);
+          break;
+          
+        case 'formSubmitted':
+          await this.handleFormSubmitted(tabId, message.formInfo);
+          break;
+          
+        case 'jsNavigation':
+          await this.handleJsNavigation(tabId, message);
+          break;
+      }
+    } catch (error) {
+      console.error('处理内容脚本消息失败:', error);
+    }
+  }
+  /**
+   * 处理标题更新消息
+   */
+  private async handleTitleUpdated(tabId: number, pageId: string, title: string, isDirectAccess?: boolean, url?: string): Promise<void> {
+    try {
+      // 忽略空标题
+      if (!title) {
+        console.log(`忽略空标题更新: ${pageId}`);
+        return;
+      }
+      
+      console.log(`处理标题更新: ${pageId}, "${title}"${isDirectAccess ? ' (直接访问)' : ''}`);
+      
+      // 标记为直接访问的页面（刷新或URL输入）需要特殊处理
+      if (isDirectAccess && url) {
+        // 尝试通过URL查找最近创建的节点
+        const records = await this.storage.getRecentRecords(5); // 获取最近5条记录
+        
+        for (const record of records) {
+          // 比较URL
+          if (this.isSameUrl(record.url, url)) {
+            // 找到匹配记录，更新标题
+            await this.storage.updateRecord(record.id!, { title });
+            console.log(`直接访问页面标题更新: ${record.id} -> "${title}"`);
+            return;
+          }
+        }
+      }
+      
+      // 常规处理逻辑...
+      const pageInfo = this.pageIdMap.get(pageId);
+      
+      if (pageInfo && pageInfo.nodeId) {
+        // 获取当前记录
+        const record = await this.storage.getRecord(pageInfo.nodeId);
+        
+        // 只有当记录存在且标题为空或不同时才更新
+        if (record && (!record.title || record.title !== title)) {
+          await this.storage.updateRecord(pageInfo.nodeId, { title });
+          console.log(`更新节点[${pageInfo.nodeId}]标题: "${title}"`);
+        }
+      } else {
+        // 尝试查找相应的标签页最近节点
+        const nodeId = this.getMostRecentNodeId(tabId);
+        if (nodeId) {
+          const record = await this.storage.getRecord(nodeId);
+          if (record && (!record.title || record.title.length < title.length)) {
+            await this.storage.updateRecord(nodeId, { title });
+            console.log(`通过标签页ID更新节点[${nodeId}]标题: "${title}"`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('处理标题更新失败:', error);
+    }
+  }
+
+  /**
+   * 处理页面加载消息
+   */
+  private async handlePageLoaded(tabId: number, pageInfo: any): Promise<void> {
+    try {
+      console.log(`页面加载: ${pageInfo.url} (${pageInfo.pageId})`);
+      
+      // 存储页面ID与tabId、nodeId的映射关系
+      if (!this.pageIdMap) {
+        this.pageIdMap = new Map();
+      }
+      
+      // 通常此时节点可能已经创建，获取最近的节点ID
+      const nodeId = this.getMostRecentNodeId(tabId);
+      
+      if (nodeId) {
+        this.pageIdMap.set(pageInfo.pageId, {
+          tabId,
+          nodeId,
+          timestamp: pageInfo.timestamp
+        });
+        
+        // 更新节点referrer信息
+        if (pageInfo.referrer) {
+          await this.storage.updateRecord(nodeId, {
+            referrer: pageInfo.referrer
+          });
+        }
+
+        // 添加到待更新列表
+        if (!this.pendingUpdates.has(tabId)) {
+          this.pendingUpdates.set(tabId, []);
+        }
+        this.pendingUpdates.get(tabId)!.push(nodeId);
+      }
+    } catch (error) {
+      console.error('处理页面加载消息失败:', error);
+    }
+  }
+  
+  /**
+   * 处理链接点击事件
+   */
+  private async handleLinkClicked(tabId: number, linkInfo: any): Promise<void> {
+    try {
+      console.log(`链接点击: ${linkInfo.targetUrl} (来自${linkInfo.sourcePageId})`);
+      
+      // 存储点击信息，用于后续匹配导航
+      if (!this.pendingNavigations) {
+        this.pendingNavigations = new Map();
+      }
+      
+      // 用URL作为键存储多个待处理导航
+      const normalizedUrl = this.normalizeUrl(linkInfo.targetUrl);
+      if (!this.pendingNavigations.has(normalizedUrl)) {
+        this.pendingNavigations.set(normalizedUrl, []);
+      }
+      
+      // 添加到待处理队列
+      this.pendingNavigations.get(normalizedUrl)!.push({
+        type: 'link_click',
+        sourcePageId: linkInfo.sourcePageId,
+        targetUrl: linkInfo.targetUrl,
+        timestamp: linkInfo.timestamp,
+        sourceTabId: tabId,
+        expireTime: Date.now() + 10000 // 10秒后过期
+      });
+      
+      // 存储点击时页面的节点ID，用于后续建立导航关系
+      const sourceNodeInfo = this.pageIdMap.get(linkInfo.sourcePageId);
+      if (sourceNodeInfo && sourceNodeInfo.nodeId) {
+        // 将此源节点ID临时保存，以便在下一次导航中使用
+        this.lastClickSourceNodeId = sourceNodeInfo.nodeId;
+        
+        // 定时清除，避免错误关联
+        setTimeout(() => {
+          if (this.lastClickSourceNodeId === sourceNodeInfo.nodeId) {
+            this.lastClickSourceNodeId = undefined;
+          }
+        }, 10000); // 10秒后清除
+      }
+    } catch (error) {
+      console.error('处理链接点击失败:', error);
+    }
+  }
+  
+  /**
+   * 规范化URL以便比较
+   */
+  private normalizeUrl(url: string): string {
+    try {
+      return url.split('#')[0].replace(/\/$/, '');
+    } catch {
+      return url;
+    }
+  }
+  
+  /**
+   * 处理表单提交事件
+   */
+  private async handleFormSubmitted(tabId: number, formInfo: any): Promise<void> {
+    // 实现类似linkClicked的处理逻辑
+    // ...
+  }
+  
+  /**
+   * 处理JS导航事件
+   */
+  private async handleJsNavigation(tabId: number, navigation: any): Promise<void> {
+    // 实现类似linkClicked的处理逻辑
+    // ...
+  }
+
+  // 辅助方法: 比较两个URL（忽略尾部斜杠和片段标识符）
+  private isSameUrl(url1: string, url2: string): boolean {
+    if (!url1 || !url2) return false;
+    
+    try {
+      // 标准化URL
+      url1 = url1.replace(/\/$/, '').split('#')[0];
+      url2 = url2.replace(/\/$/, '').split('#')[0];
+      
+      return url1 === url2;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * 增强版获取favicon的方法
+   */
+  private async getFavicon(url: string, tabFavIconUrl?: string): Promise<string | undefined> {
+    try {
+      // 先使用Chrome API提供的favicon（如果有）
+      if (tabFavIconUrl && tabFavIconUrl.trim().length > 0) {
+        console.log(`获取到API提供的favicon: ${tabFavIconUrl}`);
+        return tabFavIconUrl;
+      }
+      
+      // 2. 然后尝试Google的favicon服务
+      const domain = new URL(url).hostname;
+      const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      console.log('使用Google favicon服务:', googleFaviconUrl);
+      return googleFaviconUrl;
+      
+      // 注：如果需要，还可以尝试其他方法获取favicon
+    } catch (error) {
+      console.warn('获取favicon失败:', error);
+      // 返回undefined，让前端使用默认图标
+      return undefined;
+    }
   }
 }
 

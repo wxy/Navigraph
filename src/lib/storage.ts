@@ -646,6 +646,35 @@ export class NavigationStorage {
     }
   }
   
+  /**
+   * 保存或更新会话
+   */
+  public async saveSession(session: BrowsingSession): Promise<void> {
+    if (!this.db) await this.initialize();
+    
+    try {
+      console.log(`保存会话: ${session.id}`);
+      
+      // 保存会话本身到会话存储
+      const tx = this.db!.transaction(this.STORES.SESSIONS, 'readwrite');
+      const store = tx.objectStore(this.STORES.SESSIONS);
+      
+      await new Promise<void>((resolve, reject) => {
+        const request = store.put(session);
+        request.onsuccess = () => resolve();
+        request.onerror = () => {
+          console.error('保存会话失败:', request.error);
+          reject(request.error);
+        };
+      });
+      
+      console.log(`会话 ${session.id} 已更新`);
+    } catch (error) {
+      console.error('保存会话失败:', error);
+      throw error;
+    }
+  }
+  
   // ===================== 导航树构建 =====================
   
   /**
@@ -876,4 +905,115 @@ export class NavigationStorage {
       throw error;
     }
   }
+
+  /**
+   * 获取所有会话列表
+   */
+  public async getSessions(): Promise<BrowsingSession[]> {
+    try {
+      console.log("getSessions: 开始获取会话列表");
+      
+      // 确保数据库已初始化
+      if (!this.db) {
+        console.log("getSessions: 数据库未初始化，尝试初始化");
+        await this.initialize();
+        
+        // 再次检查
+        if (!this.db) {
+          console.error("getSessions: 数据库初始化失败");
+          return []; // 返回空数组而不是抛出异常
+        }
+      }
+      
+      // 检查会话存储是否存在
+      if (!this.db.objectStoreNames.contains(this.STORES.SESSIONS)) {
+        console.error(`getSessions: 找不到会话存储 '${this.STORES.SESSIONS}'`);
+        return [];
+      }
+      
+      console.log(`getSessions: 使用存储'${this.STORES.SESSIONS}'`);
+      const tx = this.db.transaction(this.STORES.SESSIONS, 'readonly');
+      const store = tx.objectStore(this.STORES.SESSIONS);
+      
+      // 获取所有会话记录
+      console.log("getSessions: 执行getAll()查询");
+      const sessions = await new Promise<BrowsingSession[]>((resolve, reject) => {
+        try {
+          const request = store.getAll();
+          
+          request.onsuccess = () => {
+            const result = request.result || [];
+            console.log(`getSessions: 查询成功，获取到${result.length}个会话`);
+            resolve(result);
+          };
+          
+          request.onerror = () => {
+            console.error("getSessions: 查询失败", request.error);
+            resolve([]); // 失败时返回空数组而不是拒绝Promise
+          };
+        } catch (innerError) {
+          console.error("getSessions: 执行查询时出错", innerError);
+          resolve([]); // 捕获任何异常并返回空数组
+        }
+      });
+      
+      // 如果没有会话，自动创建一个
+      if (sessions.length === 0) {
+        console.log("getSessions: 没有找到会话，创建新会话");
+        try {
+          const newSession = await this.createSession();
+          return [newSession];
+        } catch (createError) {
+          console.error("getSessions: 创建新会话失败", createError);
+          return [];
+        }
+      }
+      
+      // 按时间排序，最新的在前面
+      console.log("getSessions: 对会话进行排序");
+      const sortedSessions = sessions.sort((a, b) => b.startTime - a.startTime);
+      
+      return sortedSessions;
+    } catch (error) {
+      console.error('getSessions: 获取会话列表失败:', error);
+      // 返回空数组而不是抛出异常
+      return [];
+    }
+  }
+
+  /**
+   * 获取最近的导航记录
+   * @param limit 要获取的记录数量
+   * @returns 按时间戳排序的记录数组（最新优先）
+   */
+  public async getRecentRecords(limit: number = 10): Promise<NavigationRecord[]> {
+    if (!this.db) await this.initialize();
+    
+    try {
+      console.log(`获取最近${limit}条记录`);
+      
+      // 从当前会话中获取记录
+      const session = await this.getCurrentSession();
+      if (!session || !session.records) {
+        console.log('当前会话不存在或没有记录');
+        return [];
+      }
+      
+      // 将记录转换为数组
+      const records = Object.values(session.records) as NavigationRecord[];
+      
+      // 按时间戳排序（最新的记录优先）
+      records.sort((a, b) => b.timestamp - a.timestamp);
+      
+      // 返回指定数量的记录
+      const result = records.slice(0, limit);
+      console.log(`返回${result.length}条最近记录`);
+      
+      return result;
+    } catch (error) {
+      console.error('获取最近记录失败:', error);
+      return [];
+    }
+  }
+
 }

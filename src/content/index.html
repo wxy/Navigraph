@@ -28,9 +28,9 @@
       </div>
     </header>
     
-    <!-- 主体内容 -->
+    <!-- 主体内容区域 -->
     <div class="main-container">
-      <!-- 左侧过滤器 -->
+      <!-- 左侧过滤器面板 -->
       <aside class="filters-panel">
         <h2>筛选器</h2>
         
@@ -80,49 +80,64 @@
           <div>导航次数: <span id="stats-edges">0</span></div>
           <div>活跃时间: <span id="stats-time">0分钟</span></div>
         </div>
+
+        <!-- 调试面板 - 添加到filters-panel底部 -->
+        <div class="filter-section debug-section">
+          <h3>🐞 调试工具</h3>
+          <button id="debug-check-data" class="debug-btn">检查数据</button>
+          <button id="debug-check-dom" class="debug-btn">检查DOM</button>
+          <button id="debug-test-render" class="debug-btn">测试渲染</button>
+          <button id="debug-clear-data" class="debug-btn danger">清除数据</button>
+        </div>
       </aside>
       
       <!-- 中间可视化区域 -->
-      <section class="visualization-container">
-        <div id="visualization"></div>
-        
-        <!-- 加载指示器 -->
-        <div id="loading">
-          <div class="spinner"></div>
-          <div>加载导航数据...</div>
-        </div>
-        
-        <!-- 无数据提示 -->
-        <div id="no-data">
-          <img src="no-data.svg" alt="没有数据">
-          <h2>暂无导航数据</h2>
-          <p>开始浏览网页，导航数据将会显示在这里</p>
-        </div>
-      </section>
+      <div class="visualization-container" id="visualization-container">
+        <!-- 这里会渲染SVG -->
+      </div>
       
       <!-- 右侧详情面板 -->
-      <aside class="details-container">
-        <div id="details-pane">
-          <div class="empty-state">
-            <p>点击节点查看详情</p>
-          </div>
-        </div>
-      </aside>
+      <div class="details-panel">
+        <div id="node-details"><!-- 节点详情会显示在这里 --></div>
+      </div>
+    </div>
+
+    <!-- 统计信息区域 -->
+    <div class="stats-container">
+      <div class="stat-item">
+        <span class="stat-label">节点数:</span>
+        <span id="stats-nodes">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">连接数:</span>
+        <span id="stats-edges">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">总时长:</span>
+        <span id="stats-time">0分钟</span>
+      </div>
+    </div>
+
+    <!-- 加载和错误提示 -->
+    <div id="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>正在加载数据...</p>
+    </div>
+
+    <div id="no-data" style="display: none;">
+      <h2>暂无数据</h2>
+      <p id="status-text">尚未记录导航数据</p>
     </div>
     
     <!-- 底部状态栏 -->
-    <footer class="status-bar">
-      <div class="status-info">
-        <span id="status-text">就绪</span>
-      </div>
-      <div class="version-info">
-        导航图谱 v1.0.0
-      </div>
-    </footer>
+    <div class="status-bar">
+      <div id="status-text">就绪</div>
+      <div id="session-info"></div>
+    </div>
   </div>
   
   <!-- 工具提示 -->
-  <div id="tooltip"></div>
+  <div id="tooltip" class="tooltip"></div>
   
   <!-- 脚本 -->
   <script src="index.js"></script>

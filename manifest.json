@@ -23,9 +23,16 @@
       "48": "images/logo-48.png"
     }
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content/navigation-tracker.js"],
+      "run_at": "document_start"
+    }
+  ],
   "host_permissions": [
     "<all_urls>"
-],
+  ],
   "web_accessible_resources": [
     {
       "resources": ["content/*", "icons/*"],

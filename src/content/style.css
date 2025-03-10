@@ -165,12 +165,15 @@ body {
   margin-bottom: 4px;
 }
 
+
 /* 中间可视化区域 */
 .visualization-container {
   flex: 1;
+  min-height: 500px;
+  background-color: #EEE;
   position: relative;
-  background-color: #f9f9f9;
   overflow: hidden;
+  border: 1px solid #333;
 }
 
 #visualization {
@@ -202,6 +205,21 @@ body {
   justify-content: center;
   gap: 16px;
   z-index: 5;
+}
+
+#no-data {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0,0,0,0.7);
+  color: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  z-index: 10;
+  max-width: 80%;
+  pointer-events: auto; /* 允许交互 */
 }
 
 .spinner {
@@ -393,6 +411,198 @@ body {
 .node.depth-8 rect { stroke: #795548; }
 .node.depth-9 rect { stroke: #9c27b0; }
 
+/* 节点和边样式 */
+.node {
+  cursor: pointer;
+}
+
+.node.highlighted circle {
+  stroke: #ff6600;
+  stroke-width: 3px;
+}
+
+.node.session text {
+  font-weight: bold;
+}
+
+.link {
+  transition: stroke-width 0.2s;
+}
+
+.link:hover {
+  stroke-width: 3px;
+}
+
+/* 导航类型的颜色 */
+.node.link_click circle {
+  fill: #7cb9e8;
+}
+
+.node.address_bar circle {
+  fill: #c0e8a5;
+}
+
+.node.form_submit circle {
+  fill: #f5d76e;
+}
+
+.node.reload circle {
+  fill: #bcbcbc;
+}
+
+.node.history_back circle,
+.node.history_forward circle {
+  fill: #d3a4f9;
+}
+
+.node.redirect circle {
+  fill: #ff9966;
+}
+
+.node.javascript circle {
+  fill: #66ccff;
+}
+
+.node.session rect {
+  fill: #444;
+}
+
+/* 节点详情面板 */
+#node-details {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 15px;
+  display: none;
+  z-index: 100;
+}
+
+#node-details.visible {
+  display: block;
+}
+
+#node-details h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+#node-details .details-header
+{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#node-details .details-header .close-btn {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.detail-row {
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-row .label {
+  font-weight: 500;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.detail-row .value, 
+.detail-row a {
+  word-break: break-all;
+}
+
+.url-link {
+  color: #4285f4;
+  text-decoration: none;
+}
+
+.url-link:hover {
+  text-decoration: underline;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: white;
+}
+
+.type-link_click { background-color: #7cb9e8; }
+.type-address_bar { background-color: #c0e8a5; }
+.type-form_submit { background-color: #f5d76e; color: #333; }
+.type-reload { background-color: #bcbcbc; }
+.type-history_back, .type-history_forward { background-color: #d3a4f9; }
+.type-redirect { background-color: #ff9966; }
+.type-javascript { background-color: #66ccff; }
+
+.actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+/* 调试工具样式 */
+.debug-section {
+  border-top: 1px dashed #ff6600;
+  margin-top: 20px;
+  padding-top: 10px;
+}
+
+.debug-btn {
+  display: block;
+  width: 100%;
+  margin: 5px 0;
+  padding: 8px;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.debug-btn:hover {
+  background-color: #444;
+}
+
+.debug-btn.danger {
+  background-color: #c62828;
+}
+
+.debug-btn.danger:hover {
+  background-color: #e53935;
+}
+
+/* 调试工具 - 可在需要时取消注释 */
+/*
+[id]:empty {
+  min-height: 30px;
+  border: 1px dashed red;
+  position: relative;
+}
+
+[id]:empty::after {
+  content: attr(id);
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(255,0,0,0.2);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px;
+}
+*/
+
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .filters-panel, .details-container {
@@ -415,4 +625,55 @@ body {
   .logo h1 {
     display: none;
   }
+}
+
+/* 添加到样式表 */
+.links path {
+  transition: stroke-width 0.2s, opacity 0.2s;
+  opacity: 0.7;
+}
+
+.links path:hover {
+  stroke-width: 3px;
+  opacity: 1;
+}
+
+.node circle,
+.node rect {
+  transition: transform 0.2s;
+}
+
+.node.highlighted circle,
+.node.highlighted rect {
+  stroke: #ff9900;
+  stroke-width: 3px;
+  transform: scale(1.1);
+}
+
+/* 添加节点ID样式 */
+.monospace {
+  font-family: monospace;
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: #333;
+  font-size: 90%;
+}
+
+/* 添加到style.css文件 */
+.node-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.default-icon {
+  opacity: 0.8;
+  filter: grayscale(30%);
+  border-radius: 50%;
+}
+
+.link [href*="google.com/s2/favicons"] {
+  filter: saturate(1.2); /* 增强Google默认图标的饱和度 */
 }
