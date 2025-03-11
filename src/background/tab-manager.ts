@@ -1,4 +1,5 @@
 import { NavigationStorage } from '../lib/storage.js';
+import { IdGenerator } from '../lib/id-generator.js';
 import { 
   NavigationRecord, 
   NavigationEdge, 
@@ -30,10 +31,22 @@ export class TabTracker {
   }>> = new Map();
   private lastClickSourceNodeId?: string;
   private pendingUpdates: Map<number, string[]> = new Map<number, string[]>();
+  private tabNodeIds = new Map<number, string>();
   
   constructor() {
     this.storage = new NavigationStorage();
+    
+    // 确保所有Map都被初始化
+    this.tabActiveTimes = new Map<number, number>();
+    this.tabNavigationHistory = new Map<number, string[]>();
+    this.pageIdMap = new Map<string, {tabId: number, nodeId: string, timestamp: number}>();
+    this.pendingNavigations = new Map();
+    this.pendingUpdates = new Map<number, string[]>();
+    
     this.initializeListeners();
+    
+    // 定期清理待更新列表
+    setInterval(() => this.cleanupPendingUpdates(), 30000); // 每30秒清理一次
   }
   
   /**
@@ -76,7 +89,7 @@ export class TabTracker {
         }
       }
       
-      console.log('导航跟踪器初始化完成');
+      console.log('导航跟踪器初始化完成，包括内容脚本消息监听');
     } catch (error) {
       console.error('初始化导航跟踪器失败:', error);
     }
@@ -173,8 +186,6 @@ export class TabTracker {
     changeInfo: chrome.tabs.TabChangeInfo, 
     tab: chrome.tabs.Tab
   ): Promise<void> {
-    // 更全面的调试日志
-    console.log(`标签页更新事件: ${tabId}`, changeInfo);
     // 只有当标题或favicon更新时才处理
     if (!changeInfo.title && !changeInfo.favIconUrl) {
       console.log(`标签页 ${tabId} 更新不包含标题或图标变化，忽略`);
@@ -182,19 +193,69 @@ export class TabTracker {
     }
     
     try {
+      // 打印更详细的调试信息
+      console.log(`标签页更新详情:`, {
+        tabId,
+        title: changeInfo.title || '无标题更新',
+        faviconUpdated: !!changeInfo.favIconUrl,
+        url: tab.url
+      });
+
       // 获取该标签页关联的待更新节点ID列表
-      const nodeIds = this.pendingUpdates.get(tabId) || [];
-      console.log(`待更新节点列表: ${nodeIds.join(', ') || '无'}`);
-      // 也检查最近的节点
-      const recentNodeId = this.getMostRecentNodeId(tabId);
-      if (recentNodeId && !nodeIds.includes(recentNodeId)) {
-        nodeIds.push(recentNodeId);
+      const pendingNodeIds = this.pendingUpdates.get(tabId) || [];
+      console.log(`待更新节点列表(原始): ${pendingNodeIds.join(', ') || '无'}`);
+      
+      // 获取当前会话以验证节点
+      const session = await this.storage.getCurrentSession();
+      const sessionData = await this.storage.getSessionDetails(session.id);
+      
+      if (!sessionData || !sessionData.records) {
+        console.log('无法获取当前会话数据，跳过更新');
+        return;
       }
       
-      // 如果没有待更新的节点，则退出
-      if (nodeIds.length === 0) return;
+      // 验证待更新节点是否存在于当前会话
+      let validNodeIds = pendingNodeIds.filter(id => {
+        const exists = sessionData.records ? !!sessionData.records[id] : false;
+        if (!exists) {
+          console.log(`节点 ${id} 在当前会话中不存在，将被忽略`);
+        }
+        return exists;
+      });
       
-      console.log(`标签页[${tabId}]更新: ${changeInfo.title ? '标题' : ''}${changeInfo.favIconUrl ? ' 图标' : ''}`);
+      // 获取最近节点，并检查是否应加入更新列表
+      const recentNodeId = this.getMostRecentNodeId(tabId);
+      console.log(`当前标签页最近的节点ID: ${recentNodeId || '无'}`);
+      
+      // 如果最近节点存在且在当前会话中存在，且不在有效列表中，则添加
+      if (recentNodeId && 
+          sessionData.records[recentNodeId] &&
+          !validNodeIds.includes(recentNodeId)) {
+        validNodeIds.push(recentNodeId);
+        console.log(`添加最近节点 ${recentNodeId} 到更新列表`);
+      }
+      
+      // 如果有有效的URL，尝试通过URL匹配查找额外的节点
+      if (tab.url && validNodeIds.length === 0) {
+        // 获取当前会话中此标签页的所有节点
+        const tabNodes = Object.values(sessionData.records)
+          .filter(r => r.tabId === tabId && this.isSameUrl(r.url, tab.url))
+          .sort((a, b) => b.timestamp - a.timestamp); // 按时间倒序
+        
+        if (tabNodes.length > 0) {
+          const matchedNodeId = tabNodes[0].id!;
+          validNodeIds.push(matchedNodeId);
+          console.log(`通过URL匹配找到节点: ${matchedNodeId}`);
+        }
+      }
+      
+      // 没有有效节点ID，退出
+      if (validNodeIds.length === 0) {
+        console.log('没有找到有效的节点ID，跳过更新');
+        return;
+      }
+      
+      console.log(`将更新这些有效节点: ${validNodeIds.join(', ')}`);
       
       // 准备更新数据
       const updates: Partial<NavigationRecord> = {};
@@ -207,13 +268,33 @@ export class TabTracker {
         updates.favicon = changeInfo.favIconUrl;
       }
       
-      // 更新所有相关节点
-      for (const nodeId of nodeIds) {
-        await this.storage.updateRecord(nodeId, updates);
-        console.log(`已更新节点[${nodeId}]: ${updates.title ? `标题="${updates.title}"` : ''} ${updates.favicon ? '图标' : ''}`);
+      // 更新所有有效节点，但先检查现有值
+      for (const nodeId of validNodeIds) {
+        // 获取当前记录
+        const record = await this.storage.getRecord(nodeId);
+        if (!record) {
+          console.log(`节点 ${nodeId} 不存在，跳过更新`);
+          continue;
+        }
+        
+        // 准备该节点的最终更新内容
+        const finalUpdates: Partial<NavigationRecord> = {...updates};
+        
+        // 只在必要时更新标题（保留更长/更有意义的标题）
+        if (finalUpdates.title && record.title && 
+            record.title.length > finalUpdates.title.length) {
+          console.log(`保留现有标题 "${record.title}"（长度${record.title.length}）而不是 "${finalUpdates.title}"（长度${finalUpdates.title.length}）`);
+          delete finalUpdates.title;
+        }
+        
+        // 只有有更新内容时才执行更新
+        if (Object.keys(finalUpdates).length > 0) {
+        await this.storage.updateRecord(nodeId, finalUpdates);
+        console.log(`已更新节点[${nodeId}]: ${finalUpdates.title ? `标题="${finalUpdates.title}"` : ''} ${finalUpdates.favicon ? '图标已更新' : ''}`);
+}
       }
       
-      // 清除已更新的节点
+      // 清理已更新的节点
       this.pendingUpdates.delete(tabId);
     } catch (error) {
       console.error('更新标签页标题/图标失败:', error);
@@ -268,8 +349,8 @@ export class TabTracker {
         // 新增: 检查是否是扩展页面，如果是则触发刷新
         try {
           const tab = await chrome.tabs.get(activeInfo.tabId);
-          const extensionUrl = chrome.runtime.getURL('content/index.html');
-          
+          const extensionUrl = chrome.runtime.getURL('dist/content/index.html');
+
           // 检查激活的标签页是否是扩展的可视化页面
           if (tab.url && tab.url.startsWith(extensionUrl)) {
             console.log('检测到扩展可视化页面被激活，触发自动刷新');
@@ -366,21 +447,53 @@ export class TabTracker {
   }
   
   /**
-   * 处理常规导航 (不是刷新或历史导航)
+   * 处理常规导航
    */
   private async handleRegularNavigation(
     details: ExtendedCommittedDetails,
     navigationType: NavigationType,
     openTarget: OpenTarget
   ): Promise<void> {
-    const now = Date.now();
     const tabId = details.tabId;
+    
+    // 生成基于标签ID和URL的节点ID
+    const nodeId = IdGenerator.generateNodeId(tabId, details.url);
+    
+    console.log(`导航到: ${details.url} (ID: ${nodeId})`);
+    
+    // 检查是否已存在此节点
+    const existingRecord = await this.storage.getRecord(nodeId);
+    
+    if (existingRecord) {
+      console.log(`找到已存在的节点: ${nodeId}`);
+      
+      // 已存在的节点，可能是刷新或者其他导航
+      // 只更新一些元数据，而不是创建新节点
+      const updates: Partial<NavigationRecord> = {
+        lastVisit: Date.now(),
+        visitCount: (existingRecord.visitCount || 0) + 1
+      };
+      
+      await this.storage.updateRecord(nodeId, updates);
+      
+      // 将此次访问添加到历史记录
+      this.addToTabHistory(tabId, nodeId);
+      
+      // 处理导航关系 - 可能创建回环或返回边
+      await this.handleExistingNodeNavigation(tabId, existingRecord, navigationType);
+      
+      return;
+    }
     
     // 创建新的导航记录
     const record: NavigationRecord = {
+      id: nodeId,
       tabId,
       url: details.url,
-      timestamp: now,
+      timestamp: Date.now(),
+      firstVisit: Date.now(),
+      lastVisit: Date.now(),
+      visitCount: 1,
       navigationType,
       openTarget,
       frameId: details.frameId,
@@ -396,39 +509,15 @@ export class TabTracker {
       // 使用后清除
       this.lastClickSourceNodeId = undefined;
     } 
-    // 2. 然后尝试从待处理导航中找到匹配项
-    else if (navigationType !== 'address_bar' && navigationType !== 'initial') {
-      // 检查是否有匹配的待处理导航
-      const normalizedUrl = this.normalizeUrl(details.url);
-      const pendingNavs = this.pendingNavigations.get(normalizedUrl);
-      
-      if (pendingNavs && pendingNavs.length > 0) {
-        // 找到最近的未过期条目
-        const now = Date.now();
-        const validNav = pendingNavs.find(nav => nav.expireTime > now);
-        
-        if (validNav) {
-          // 从映射中获取源节点ID
-          const sourceInfo = this.pageIdMap.get(validNav.sourcePageId);
-          if (sourceInfo && sourceInfo.nodeId) {
-            parentId = sourceInfo.nodeId;
-          }
-          
-          // 从队列中移除已使用的导航请求
-          const index = pendingNavs.indexOf(validNav);
-          pendingNavs.splice(index, 1);
-          if (pendingNavs.length === 0) {
-            this.pendingNavigations.delete(normalizedUrl);
-          }
-        }
+    // 2. 然后尝试从标签历史中获取上一个节点
+    else {
+      const tabHistory = this.tabNavigationHistory.get(tabId) || [];
+      if (tabHistory.length > 0) {
+        parentId = tabHistory[tabHistory.length - 1];
       }
     }
     
-    // 3. 如果前两种方法都失败，尝试使用标签页历史中的最后一个节点
-    if (!parentId) {
-      parentId = this.getMostRecentNodeId(tabId);
-    }
-    
+    // 设置父节点
     if (parentId) {
       record.parentId = parentId;
     }
@@ -439,69 +528,82 @@ export class TabTracker {
     // 更新标签页历史
     this.addToTabHistory(tabId, savedRecord.id!);
     
-    // 添加到待更新列表，确保后续的标题和图标更新能应用到此节点 - 新增代码
+    // 添加到待更新列表
     if (!this.pendingUpdates.has(tabId)) {
       this.pendingUpdates.set(tabId, []);
     }
     this.pendingUpdates.get(tabId)!.push(savedRecord.id!);
-    console.log(`将节点 ${savedRecord.id} 添加到待更新列表`);
-
-    // 如果有父节点，创建导航边
+    
+    // 如果有父节点，创建边
     if (parentId) {
-      this.navigationSequence++;
-      
-      const edge: NavigationEdge = {
-        id: `${parentId}-${savedRecord.id}-${now}`,
-        sourceId: parentId,
-        targetId: savedRecord.id!,
-        timestamp: now,
-        action: navigationType,
-        sequence: this.navigationSequence
-      };
-      
-      await this.storage.saveEdge(edge);
-    } 
-    // 如果是根节点，将其添加到当前会话
-    else {
+      await this.createNavigationEdge(parentId, savedRecord.id!, Date.now(), navigationType);
+    } else {
+      // 没有父节点，这是一个根节点
       const session = await this.storage.getCurrentSession();
       await this.storage.addRootToSession(session.id, savedRecord.id!);
     }
-    
-    console.log(`记录导航: ${details.url.substring(0, 50)}..., ID: ${savedRecord.id}`);
+
+    this.setNodeIdForTab(tabId, nodeId);
   }
-  
+
   /**
-   * 处理页面刷新
+   * 处理导航到已存在节点的情况
    */
-  private async handleReload(
-    details: ExtendedCommittedDetails
+  private async handleExistingNodeNavigation(
+    tabId: number, 
+    targetRecord: NavigationRecord,
+    navigationType: NavigationType
   ): Promise<void> {
+    // 获取标签页的上一个节点
+    const tabHistory = this.tabNavigationHistory.get(tabId) || [];
+    if (tabHistory.length === 0) return;
+    
+    const sourceNodeId = tabHistory[tabHistory.length - 1];
+    if (sourceNodeId === targetRecord.id) return; // 避免自环
+    
+    // 创建导航边
+    await this.createNavigationEdge(
+      sourceNodeId, 
+      targetRecord.id!, 
+      Date.now(), 
+      navigationType
+    );
+  }
+
+  /**
+   * 处理刷新
+   */
+  private async handleReload(details: ExtendedCommittedDetails): Promise<void> {
     const tabId = details.tabId;
-    const now = Date.now();
     
-    // 获取当前标签页的最后一个节点
-    const currentNodeId = this.getMostRecentNodeId(tabId);
-    
-    // 如果找不到现有节点，则作为常规导航处理
-    if (!currentNodeId) {
+    // 获取当前节点ID
+    const tabHistory = this.tabNavigationHistory.get(tabId) || [];
+    if (tabHistory.length === 0) {
+      // 如果没有历史，当作常规导航处理
       await this.handleRegularNavigation(details, 'reload', 'same_tab');
       return;
     }
     
-    // 创建指向自身的导航边，表示刷新
-    this.navigationSequence++;
+    const currentNodeId = tabHistory[tabHistory.length - 1];
+    const record = await this.storage.getRecord(currentNodeId);
     
-    const edge: NavigationEdge = {
-      id: `${currentNodeId}-${currentNodeId}-${now}`,
-      sourceId: currentNodeId,
-      targetId: currentNodeId,
-      timestamp: now,
-      action: 'reload',
-      sequence: this.navigationSequence
+    if (!record) {
+      // 找不到记录，当作新导航处理
+      await this.handleRegularNavigation(details, 'reload', 'same_tab');
+      return;
+    }
+    
+    // 更新记录
+    const updates: Partial<NavigationRecord> = {
+      lastVisit: Date.now(),
+      visitCount: (record.visitCount || 0) + 1,
+      reloadCount: (record.reloadCount || 0) + 1
     };
     
-    await this.storage.saveEdge(edge);
-    console.log(`记录页面刷新: ${details.url.substring(0, 50)}..., ID: ${currentNodeId}`);
+    await this.storage.updateRecord(currentNodeId, updates);
+    
+    // 创建自环边代表刷新
+    await this.createNavigationEdge(currentNodeId, currentNodeId, Date.now(), 'reload');
   }
   
   /**
@@ -803,132 +905,49 @@ export class TabTracker {
     return this.storage;
   }
 
-  // 在TabTracker类中添加新方法，用于处理内容脚本消息
-
-  /**
-   * 处理从内容脚本发送的消息
-   */
-  public async handleContentScriptMessage(message: any, sender: chrome.runtime.MessageSender): Promise<void> {
-    try {
-      const tabId = sender.tab?.id;
-      if (!tabId) return;
-  
-      switch (message.action) {
-        case 'pageLoaded':
-          await this.handlePageLoaded(tabId, message.pageInfo);
-          break;
-        
-        case 'pageTitleUpdated':
-          await this.handleTitleUpdated(tabId, message.pageId, message.title, message.isDirectAccess, message.url);
-          break;
-
-        case 'linkClicked':
-          await this.handleLinkClicked(tabId, message.linkInfo);
-          break;
-          
-        case 'formSubmitted':
-          await this.handleFormSubmitted(tabId, message.formInfo);
-          break;
-          
-        case 'jsNavigation':
-          await this.handleJsNavigation(tabId, message);
-          break;
-      }
-    } catch (error) {
-      console.error('处理内容脚本消息失败:', error);
-    }
-  }
-  /**
-   * 处理标题更新消息
-   */
-  private async handleTitleUpdated(tabId: number, pageId: string, title: string, isDirectAccess?: boolean, url?: string): Promise<void> {
-    try {
-      // 忽略空标题
-      if (!title) {
-        console.log(`忽略空标题更新: ${pageId}`);
-        return;
-      }
-      
-      console.log(`处理标题更新: ${pageId}, "${title}"${isDirectAccess ? ' (直接访问)' : ''}`);
-      
-      // 标记为直接访问的页面（刷新或URL输入）需要特殊处理
-      if (isDirectAccess && url) {
-        // 尝试通过URL查找最近创建的节点
-        const records = await this.storage.getRecentRecords(5); // 获取最近5条记录
-        
-        for (const record of records) {
-          // 比较URL
-          if (this.isSameUrl(record.url, url)) {
-            // 找到匹配记录，更新标题
-            await this.storage.updateRecord(record.id!, { title });
-            console.log(`直接访问页面标题更新: ${record.id} -> "${title}"`);
-            return;
-          }
-        }
-      }
-      
-      // 常规处理逻辑...
-      const pageInfo = this.pageIdMap.get(pageId);
-      
-      if (pageInfo && pageInfo.nodeId) {
-        // 获取当前记录
-        const record = await this.storage.getRecord(pageInfo.nodeId);
-        
-        // 只有当记录存在且标题为空或不同时才更新
-        if (record && (!record.title || record.title !== title)) {
-          await this.storage.updateRecord(pageInfo.nodeId, { title });
-          console.log(`更新节点[${pageInfo.nodeId}]标题: "${title}"`);
-        }
-      } else {
-        // 尝试查找相应的标签页最近节点
-        const nodeId = this.getMostRecentNodeId(tabId);
-        if (nodeId) {
-          const record = await this.storage.getRecord(nodeId);
-          if (record && (!record.title || record.title.length < title.length)) {
-            await this.storage.updateRecord(nodeId, { title });
-            console.log(`通过标签页ID更新节点[${nodeId}]标题: "${title}"`);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('处理标题更新失败:', error);
-    }
-  }
-
   /**
    * 处理页面加载消息
    */
   private async handlePageLoaded(tabId: number, pageInfo: any): Promise<void> {
     try {
-      console.log(`页面加载: ${pageInfo.url} (${pageInfo.pageId})`);
+      console.log(`页面已加载: ${pageInfo.url} (${pageInfo.pageId})`);
       
-      // 存储页面ID与tabId、nodeId的映射关系
+      // 基于标签ID和URL查找对应节点
+      const nodeId = IdGenerator.generateNodeId(tabId, pageInfo.url);
+      console.log(`根据URL生成的节点ID: ${nodeId}`);
+      
+      // 检查节点是否存在
+      const record = await this.storage.getRecord(nodeId);
+      
+      if (!record) {
+        console.log(`未找到对应节点 ${nodeId}，可能是新导航`);
+        return;
+      }
+      
+      // 存储页面ID映射
       if (!this.pageIdMap) {
         this.pageIdMap = new Map();
       }
       
-      // 通常此时节点可能已经创建，获取最近的节点ID
-      const nodeId = this.getMostRecentNodeId(tabId);
+      this.pageIdMap.set(pageInfo.pageId, {
+        tabId,
+        nodeId,
+        timestamp: pageInfo.timestamp
+      });
       
-      if (nodeId) {
-        this.pageIdMap.set(pageInfo.pageId, {
-          tabId,
-          nodeId,
-          timestamp: pageInfo.timestamp
-        });
-        
-        // 更新节点referrer信息
-        if (pageInfo.referrer) {
-          await this.storage.updateRecord(nodeId, {
-            referrer: pageInfo.referrer
-          });
-        }
-
-        // 添加到待更新列表
-        if (!this.pendingUpdates.has(tabId)) {
-          this.pendingUpdates.set(tabId, []);
-        }
+      // 更新referrer信息
+      if (pageInfo.referrer && !record.referrer) {
+        await this.storage.updateRecord(nodeId, { referrer: pageInfo.referrer });
+      }
+      
+      // 添加到待更新列表，确保标题和图标能更新到此节点
+      if (!this.pendingUpdates.has(tabId)) {
+        this.pendingUpdates.set(tabId, []);
+      }
+      
+      if (!this.pendingUpdates.get(tabId)!.includes(nodeId)) {
         this.pendingUpdates.get(tabId)!.push(nodeId);
+        console.log(`将节点 ${nodeId} 添加到待更新列表`);
       }
     } catch (error) {
       console.error('处理页面加载消息失败:', error);
@@ -1009,7 +1028,7 @@ export class TabTracker {
   }
 
   // 辅助方法: 比较两个URL（忽略尾部斜杠和片段标识符）
-  private isSameUrl(url1: string, url2: string): boolean {
+  private isSameUrl(url1: string | undefined, url2: string | undefined): boolean {
     if (!url1 || !url2) return false;
     
     try {
@@ -1045,6 +1064,155 @@ export class TabTracker {
       console.warn('获取favicon失败:', error);
       // 返回undefined，让前端使用默认图标
       return undefined;
+    }
+  }
+
+  /**
+   * 清理待更新列表中的无效节点
+   */
+  private async cleanupPendingUpdates(): Promise<void> {
+    try {
+      // 获取当前会话
+      const session = await this.storage.getCurrentSession();
+      if (!session) return;
+      
+      const sessionData = await this.storage.getSessionDetails(session.id);
+      if (!sessionData || !sessionData.records) return;
+      
+      let totalRemoved = 0;
+      
+      // 遍历所有标签页的待更新列表
+      for (const [tabId, nodeIds] of this.pendingUpdates.entries()) {
+        // 保留在当前会话中存在的节点
+        const validIds = nodeIds.filter(id => sessionData.records && !!sessionData.records[id]);
+        
+        if (validIds.length !== nodeIds.length) {
+          totalRemoved += nodeIds.length - validIds.length;
+          this.pendingUpdates.set(tabId, validIds);
+        }
+      }
+      
+      if (totalRemoved > 0) {
+        console.log(`自动清理完成，从待更新列表中移除了 ${totalRemoved} 个无效节点`);
+      }
+    } catch (error) {
+      console.error('清理待更新列表失败:', error);
+    }
+  }
+
+  /**
+   * 创建导航边
+   */
+  private async createNavigationEdge(
+    sourceId: string,
+    targetId: string,
+    timestamp: number,
+    navigationType: NavigationType
+  ): Promise<NavigationEdge> {
+    // 获取当前会话
+    const session = await this.storage.getCurrentSession();
+    
+    // 创建边记录
+    this.navigationSequence++;
+    
+    const edge: NavigationEdge = {
+      id: this.storage.generateEdgeId(sourceId, targetId, timestamp),
+      sourceId,
+      targetId,
+      timestamp,
+      action: navigationType,
+      sequence: this.navigationSequence,
+      sessionId: session.id
+    };
+    
+    // 保存边
+    await this.storage.saveEdge(edge);
+    console.log(`创建导航边: ${sourceId} -> ${targetId}, 类型: ${navigationType}`);
+    
+    return edge;
+  }
+
+  /**
+   * 为标签页设置节点ID - 在handleRegularNavigation中调用
+   */
+  private setNodeIdForTab(tabId: number, nodeId: string): void {
+    this.tabNodeIds.set(tabId, nodeId);
+    console.log(`为标签页 ${tabId} 设置节点ID: ${nodeId}`);
+  }
+
+  /**
+   * 获取标签页对应的节点ID - 供内容脚本使用
+   */
+  public getNodeIdForTab(tabId: number, url?: string): string | undefined {
+    // 先尝试从映射表中获取
+    const nodeId = this.tabNodeIds.get(tabId);
+    
+    if (nodeId) {
+      console.log(`从映射表中找到标签页 ${tabId} 的节点ID: ${nodeId}`);
+      return nodeId;
+    }
+    
+    // 如果找不到且提供了URL，尝试重新生成节点ID
+    if (url) {
+      console.log(`未找到标签页 ${tabId} 的节点ID，基于URL重新生成`);
+      // 生成与handleRegularNavigation中相同方式的ID
+      return IdGenerator.generateNodeId(tabId, url);
+    }
+    
+    console.log(`未能找到标签页 ${tabId} 的节点ID`);
+    return undefined;
+  }
+
+  // 更新标题处理方法以接受直接的nodeId
+  public async handleTitleUpdated(
+    tabId: number, 
+    nodeId: string, 
+    title: string
+  ): Promise<void> {
+    try {
+      if (!title) return;
+      
+      // 直接使用提供的nodeId更新记录
+      console.log(`更新标题: ${nodeId} -> "${title}"`);
+      
+      // 更新记录
+      const record = await this.storage.getRecord(nodeId);
+      
+      if (record) {
+        // 更新记录标题
+        await this.storage.updateRecord(nodeId, { title });
+        console.log(`已更新节点[${nodeId}]: 标题="${title}"`);
+      } else {
+        console.log(`未找到节点 ${nodeId}，无法更新标题`);
+      }
+    } catch (error) {
+      console.error('处理标题更新失败:', error);
+    }
+  }
+
+  // 添加处理Favicon更新的方法
+  public async handleFaviconUpdated(
+    tabId: number, 
+    nodeId: string, 
+    favicon: string
+  ): Promise<void> {
+    try {
+      if (!favicon) return;
+      
+      console.log(`更新Favicon: ${nodeId} -> "${favicon}"`);
+      
+      // 更新记录
+      const record = await this.storage.getRecord(nodeId);
+      
+      if (record) {
+        // 更新记录favicon
+        await this.storage.updateRecord(nodeId, { favicon });
+        console.log(`已更新节点[${nodeId}]: Favicon="${favicon.substring(0, 30)}..."`);
+      } else {
+        console.log(`未找到节点 ${nodeId}，无法更新Favicon`);
+      }
+    } catch (error) {
+      console.error('处理Favicon更新失败:', error);
     }
   }
 }

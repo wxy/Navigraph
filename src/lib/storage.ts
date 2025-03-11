@@ -4,6 +4,7 @@ import {
   BrowsingSession,
   NavigationQueryCriteria
 } from '../types/webext';
+import { IdGenerator } from './id-generator.js';
 
 /**
  * 导航数据存储管理器
@@ -95,8 +96,8 @@ export class NavigationStorage {
   /**
    * 生成节点ID
    */
-  public generateNodeId(tabId: number, timestamp: number): string {
-    return `${tabId}-${timestamp}`;
+  public generateNodeId(tabId: number, url: string): string {
+    return IdGenerator.generateNodeId(tabId, url);
   }
   
   /**
@@ -130,9 +131,9 @@ export class NavigationStorage {
     if (!this.db) await this.initialize();
     
     try {
-      // 为记录生成ID (如果没有)
+      // 如果记录已有ID，直接使用；否则才生成
       if (!record.id) {
-        record.id = this.generateNodeId(record.tabId, record.timestamp);
+        record.id = IdGenerator.generateNodeId(record.tabId, record.url);
       }
       
       // 确保有会话ID
@@ -406,25 +407,22 @@ export class NavigationStorage {
   /**
    * 创建新会话
    */
-  public async createSession(): Promise<BrowsingSession> {
+  public async createSession(title?: string): Promise<BrowsingSession> {
     if (!this.db) await this.initialize();
     
+    // 获取当前日期，用于会话ID生成
+    const currentDate = this.getDateFromTimestamp(Date.now());
+    
+    const session: BrowsingSession = {
+      id: this.generateSessionId(currentDate), // 传入日期参数
+      title: title || '未命名会话',
+      startTime: Date.now(),
+      records: {}, // 初始化为空对象
+      edges: {},   // 初始化为空对象
+      rootIds: []  // 初始化为空数组
+    };
+
     try {
-      const now = Date.now();
-      const date = this.getDateFromTimestamp(now);
-      
-      // 查找同一天最新的会话序号
-      const todaySessions = await this.querySessionsByDate(date);
-      const sequence = todaySessions.length + 1;
-      
-      const session: BrowsingSession = {
-        id: this.generateSessionId(date, sequence),
-        startTime: now,
-        records: {},
-        edges: {},
-        rootIds: []
-      };
-      
       const tx = this.db!.transaction(this.STORES.SESSIONS, 'readwrite');
       const store = tx.objectStore(this.STORES.SESSIONS);
       
@@ -434,6 +432,7 @@ export class NavigationStorage {
         request.onerror = () => reject(request.error);
       });
       
+      console.log(`已创建新会话: ${session.id}`);
       return session;
     } catch (error) {
       console.error('创建会话失败:', error);
@@ -628,6 +627,9 @@ export class NavigationStorage {
       const session = await this.getSessionDetails(sessionId);
       if (!session) throw new Error(`会话不存在: ${sessionId}`);
       
+      if (!session.rootIds) {
+        session.rootIds = [];
+      }
       if (!session.rootIds.includes(nodeId)) {
         session.rootIds.push(nodeId);
         

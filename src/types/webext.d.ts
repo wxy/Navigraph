@@ -26,23 +26,26 @@ export type OpenTarget =
  * 导航记录
  */
 export interface NavigationRecord {
-  id?: string;                 // 节点ID (格式: "tabId-timestamp")，可选，会自动生成
-  url: string;                 // 页面URL
-  title?: string;              // 页面标题
-  timestamp: number;           // 创建时间戳 
-  tabId: number;               // 标签页ID
-  windowId?: number;           // 窗口ID
-  sessionId?: string;          // 所属会话ID，可选，会自动设置
-  frameId?: number;            // 框架ID (0表示主框架)
-  parentFrameId?: number;      // 父框架ID
-  referrer?: string;           // 来源URL
-  favicon?: string;            // 网站图标URL
-  navigationType: NavigationType; // 导航类型
-  openTarget: OpenTarget;      // 打开位置
-  loadTime?: number;           // 加载时间(毫秒)
-  parentId?: string;           // 父节点ID (格式: "tabId-timestamp")
-  activeTime?: number;         // 活跃时间(毫秒)
-  isClosed?: boolean;          // 页面是否已关闭
+  id?: string;
+  tabId: number;
+  url: string;
+  title?: string;
+  favicon?: string;
+  timestamp: number;
+  firstVisit?: number;  // 首次访问时间
+  lastVisit?: number;   // 最后访问时间
+  visitCount?: number;  // 访问计数
+  reloadCount?: number; // 重新加载计数
+  activeTime?: number;
+  loadTime?: number;
+  parentId?: string;
+  referrer?: string;
+  navigationType?: NavigationType;
+  openTarget?: OpenTarget;
+  frameId?: number;
+  parentFrameId?: number;
+  isClosed?: boolean;
+  sessionId?: string;
 }
 
 /**
@@ -63,11 +66,13 @@ export interface NavigationEdge {
  */
 export interface BrowsingSession {
   id: string;                  // 会话ID
+  title?: string;              // 会话标题，可选
   startTime: number;           // 开始时间戳
   endTime?: number;            // 结束时间戳
-  records: Record<string, NavigationRecord>; // 节点记录 (ID -> 记录)
-  edges: Record<string, NavigationEdge>;     // 导航边 (ID -> 边)
-  rootIds: string[];           // 根节点ID列表
+  records?: Record<string, NavigationRecord>; // 节点记录 (ID -> 记录)，可选
+  edges?: Record<string, NavigationEdge>;     // 导航边 (ID -> 边)，可选
+  rootIds?: string[];          // 根节点ID列表，可选
+  recordCount?: number;        // 记录数量，用于API响应
 }
 
 /**

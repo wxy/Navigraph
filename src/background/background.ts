@@ -81,125 +81,300 @@ chrome.action.onClicked.addListener(async () => {
   }
 });
 
-// 修改消息监听器，确保它处理所有类型的消息
-
-// 主消息处理器
+// 替换现有的消息监听器
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('收到消息:', message);
+  console.log('收到消息:', message.action, message.requestId ? `[ID:${message.requestId}]` : '');
   
-  (async () => {
-    try {
-      // 处理通过内容脚本注入的消息
-      if (sender.tab && 
-          (message.action === 'pageLoaded' || 
-           message.action === 'linkClicked' || 
-           message.action === 'formSubmitted' || 
-           message.action === 'jsNavigation' || 
-           message.action === 'pageTitleUpdated')) {
-        // 这些消息由NavigationTracker处理
-        return;
-      }
-      
-      // 处理UI/可视化界面的消息
-      switch (message.action) {
-        case 'getSessions':
-          console.log('处理获取会话列表请求');
-          try {
-            // 获取会话列表
-            const sessions = await storage.getSessions();
-            console.log(`成功获取${sessions.length}个会话`);
-            
-            // 创建可序列化的轻量级会话摘要对象
-            const sessionSummaries = sessions.map(session => {
-              // 使用try-catch确保每个属性访问都是安全的
-              try {
-                return {
-                  id: session.id,
-                  title: (session as any).title || '未命名会话', // 添加标题
-                  startTime: session.startTime,
-                  endTime: session.endTime,
-                  // 安全地计算记录数
-                  recordCount: session.records ? Object.keys(session.records).length : 0
-                };
-              } catch (err) {
-                console.error('处理会话数据时出错:', err);
-                // 返回最小化的会话对象
-                return {
-                  id: session.id || `session-${Date.now()}`,
-                  title: '数据错误的会话',
-                  startTime: session.startTime || Date.now(),
-                  endTime: session.endTime,
-                  recordCount: 0
-                };
-              }
-            });
-            
-            // 验证可序列化性
-            try {
-              const testJSON = JSON.stringify({success: true, sessions: sessionSummaries});
-              console.log('会话数据可序列化，长度:', testJSON.length);
-            } catch (serializeError) {
-              console.error('会话数据序列化失败:', serializeError);
-            }
-            
-            console.log('返回会话摘要:', sessionSummaries.length, '个会话');
-            sendResponse({ success: true, sessions: sessionSummaries });
-          } catch (error) {
-            console.error("获取会话失败:", error);
-            sendResponse({ success: false, error: String(error) });
-          }
-          break;
+  if (!message.action) {
+    sendResponse({ 
+      success: false, 
+      error: '缺少action字段',
+      requestId: message.requestId  // 返回原请求ID
+    });
+    return true;
+  }
+  
+  // 所有消息统一使用Promise处理
+  switch (message.action) {
+    // 处理获取会话列表
+    case 'getSessions':
+      console.log('处理获取会话列表请求', message.requestId ? `[ID:${message.requestId}]` : '');
+      storage.getSessions()
+        .then(sessions => {
+          console.log('原始sessions数据结构:', 
+            sessions ? `数组长度=${Array.isArray(sessions) ? sessions.length : '非数组'}` : '未定义');
           
-        case 'getSessionDetails':
-          console.log('处理获取会话详情请求', message.sessionId);
-          if (!message.sessionId) {
-            sendResponse({ success: false, error: '缺少会话ID' });
-            return;
-          }
-          const session = await storage.getSession(message.sessionId);
-          if (session) {
-            sendResponse({ success: true, session });
-          } else {
-            sendResponse({ success: false, error: '会话不存在' });
-          }
-          break;
+          // 确保sessions是数组
+          const sessionsArray = Array.isArray(sessions) ? sessions : [];
           
-        case 'getNavigationTree':
-          await handleGetNavigationTree(sendResponse, message.options);
-          break;
+          // 创建简化的会话摘要
+          const sessionSummaries = sessionsArray.map(session => ({
+            id: session.id,
+            title: session.title || '未命名会话',
+            startTime: session.startTime,
+            endTime: session.endTime || 0,
+            recordCount: session.records ? Object.keys(session.records).length : 0
+          }));
           
-        case 'clearAllData':
-        case 'clearAllRecords': // 支持两种命名以兼容现有代码
-          console.log('处理清除所有记录请求');
-          await handleClearAllRecords(sendResponse);
-          break;
+          // 构建响应对象，包含请求ID
+          const response = {
+            success: true,
+            sessions: sessionSummaries,
+            requestId: message.requestId  // 返回原请求ID
+          };
           
-        default:
-          console.warn('未知的消息类型:', message.action);
+          console.log(`发送会话列表响应: ${sessionSummaries.length}个会话`, 
+                      message.requestId ? `[ID:${message.requestId}]` : '');
+          sendResponse(response);
+        })
+        .catch(error => {
+          console.error('获取会话列表失败:', error);
           sendResponse({
             success: false,
-            error: `未知的消息类型: ${message.action}`
+            error: String(error),
+            sessions: [],
+            requestId: message.requestId  // 返回原请求ID
           });
-          break;
+        });
+      break;
+      
+    // 处理获取节点ID
+    case 'getNodeId':
+      Promise.resolve().then(() => {
+        if (sender.tab?.id) {
+          const tabId = sender.tab.id;
+          const url = sender.tab.url || '';
+          const nodeId = tabTracker.getNodeIdForTab(tabId, url);
+          
+          console.log(`内容脚本请求节点ID: 标签页=${tabId}, 返回=${nodeId || '未找到'}`);
+          sendResponse({
+            success: true,
+            nodeId: nodeId,
+            tabId: tabId,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        } else {
+          sendResponse({ 
+            success: false, 
+            error: '无法获取标签页信息',
+            requestId: message.requestId  // 返回原请求ID
+          });
+        }
+      });
+      break;
+      
+    // 处理页面标题更新
+    case 'pageTitleUpdated':
+      if (message.nodeId) {
+        tabTracker.handleTitleUpdated(
+          sender.tab?.id || 0,
+          message.nodeId,
+          message.title
+        )
+        .then(() => {
+          sendResponse({ 
+            success: true,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        })
+        .catch(error => {
+          sendResponse({ 
+            success: false, 
+            error: String(error),
+            requestId: message.requestId  // 返回原请求ID
+          });
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: '缺少节点ID或页面ID',
+          requestId: message.requestId  // 返回原请求ID
+        });
       }
-    } catch (error) {
-      console.error('处理消息失败:', error);
+      break;
+      
+    // 处理favicon更新
+    case 'faviconUpdated':
+      if (message.nodeId) {
+        tabTracker.handleFaviconUpdated(
+          sender.tab?.id || 0,
+          message.nodeId,
+          message.favicon
+        )
+        .then(() => {
+          sendResponse({ 
+            success: true,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        })
+        .catch(error => {
+          sendResponse({ 
+            success: false, 
+            error: String(error),
+            requestId: message.requestId  // 返回原请求ID
+          });
+        });
+      } else {
+        sendResponse({ 
+          success: false, 
+          error: '缺少节点ID',
+          requestId: message.requestId  // 返回原请求ID
+        });
+      }
+      break;
+      
+    // 处理页面加载
+    case 'pageLoaded':
+      Promise.resolve().then(() => {
+        if (sender.tab && message.pageInfo) {
+          navigationTracker.handlePageLoaded(sender.tab.id, message.pageInfo);
+          sendResponse({ 
+            success: true,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        } else {
+          sendResponse({ 
+            success: false, 
+            error: '缺少必要的页面信息',
+            requestId: message.requestId  // 返回原请求ID
+          });
+        }
+      });
+      break;
+      
+    // 处理链接点击
+    case 'linkClicked':
+      Promise.resolve().then(() => {
+        if (sender.tab && message.linkInfo) {
+          navigationTracker.handleLinkClicked(sender.tab.id, message.linkInfo);
+          sendResponse({ 
+            success: true,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        } else {
+          sendResponse({ 
+            success: false, 
+            error: '缺少链接信息',
+            requestId: message.requestId  // 返回原请求ID
+          });
+        }
+      });
+      break;
+      
+    // 处理表单提交
+    case 'formSubmitted':
+      Promise.resolve().then(() => {
+        if (sender.tab && message.formInfo) {
+          navigationTracker.handleFormSubmitted(sender.tab.id, message.formInfo);
+          sendResponse({ 
+            success: true,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        } else {
+          sendResponse({ 
+            success: false, 
+            error: '缺少表单信息',
+            requestId: message.requestId  // 返回原请求ID
+          });
+        }
+      });
+      break;
+      
+    // 处理JS导航
+    case 'jsNavigation':
+      Promise.resolve().then(() => {
+        if (sender.tab) {
+          navigationTracker.handleJsNavigation(sender.tab.id, message);
+          sendResponse({ 
+            success: true,
+            requestId: message.requestId  // 返回原请求ID
+          });
+        } else {
+          sendResponse({ 
+            success: false, 
+            error: '无效的消息来源',
+            requestId: message.requestId  // 返回原请求ID
+          });
+        }
+      });
+      break;
+      
+    // 处理获取会话详情
+    case 'getSessionDetails':
+      console.log('处理获取会话详情请求', message.sessionId, message.requestId ? `[ID:${message.requestId}]` : '');
+      if (!message.sessionId) {
+        sendResponse({ 
+          success: false, 
+          error: '缺少会话ID',
+          requestId: message.requestId  // 返回原请求ID
+        });
+        break;
+      }
+      
+      storage.getSession(message.sessionId)
+        .then(session => {
+          if (session) {
+            console.log(`成功获取会话 ${message.sessionId} 的详情`);
+            sendResponse({ 
+              success: true, 
+              session,
+              requestId: message.requestId  // 返回原请求ID
+            });
+          } else {
+            console.log(`会话 ${message.sessionId} 不存在`);
+            sendResponse({ 
+              success: false, 
+              error: '会话不存在',
+              requestId: message.requestId  // 返回原请求ID
+            });
+          }
+        })
+        .catch(error => {
+          console.error('获取会话详情失败:', error);
+          sendResponse({ 
+            success: false, 
+            error: String(error),
+            requestId: message.requestId  // 返回原请求ID
+          });
+        });
+      break;
+      
+    // 处理获取导航树
+    case 'getNavigationTree':
+      handleGetNavigationTree(sendResponse, message.options, message.requestId);
+      break;
+      
+    // 处理清除所有数据
+    case 'clearAllData':
+    case 'clearAllRecords':
+      handleClearAllRecords(sendResponse, message.requestId);
+      break;
+      
+    // 未知消息类型
+    default:
+      console.warn('未知的消息类型:', message.action);
       sendResponse({
         success: false,
-        error: String(error)
+        error: `未知的消息类型: ${message.action}`,
+        requestId: message.requestId  // 返回原请求ID
       });
-    }
-  })();
+      break;
+  }
   
-  return true; // 保持通道打开以支持异步响应
+  // 返回true保持消息通道开启，允许异步响应
+  return true;
 });
 
 /**
  * 处理获取导航树数据请求
  */
-async function handleGetNavigationTree(sendResponse: (response: any) => void, options: any = {}): Promise<void> {
+async function handleGetNavigationTree(
+  sendResponse: (response: any) => void, 
+  options: any = {}, 
+  requestId?: string
+): Promise<void> {
   try {
-    console.log('获取导航树数据...', options);
+    console.log('获取导航树数据...', options, requestId ? `[ID:${requestId}]` : '');
     
     // 获取导航树
     const treeData = await tabTracker.getStorage().getNavigationTree();
@@ -230,13 +405,15 @@ async function handleGetNavigationTree(sendResponse: (response: any) => void, op
     sendResponse({
       success: true,
       data: treeData,
-      timestamp: Date.now() // 添加当前时间戳，客户端用于增量更新
+      timestamp: Date.now(), // 添加当前时间戳，客户端用于增量更新
+      requestId: requestId  // 返回原请求ID
     });
   } catch (error) {
     console.error('获取导航树失败:', error);
     sendResponse({
       success: false,
-      error: String(error)
+      error: String(error),
+      requestId: requestId  // 返回原请求ID
     });
   }
 }
@@ -263,118 +440,28 @@ function markUpdatedNodes(treeData: { nodes: any[]; edges: any[] }, lastUpdateTi
 /**
  * 处理清空所有记录请求
  */
-async function handleClearAllRecords(sendResponse: (response: any) => void): Promise<void> {
+async function handleClearAllRecords(
+  sendResponse: (response: any) => void, 
+  requestId?: string
+): Promise<void> {
   try {
-    console.log('清空所有导航记录...');
+    console.log('清空所有导航记录...', requestId ? `[ID:${requestId}]` : '');
     
     // 清空所有记录
     const success = await tabTracker.getStorage().clearAllRecords();
     
     // 发送响应
     sendResponse({
-      success: success
+      success: success,
+      requestId: requestId  // 返回原请求ID
     });
   } catch (error) {
     console.error('清空记录失败:', error);
     sendResponse({
       success: false,
-      error: String(error)
+      error: String(error),
+      requestId: requestId  // 返回原请求ID
     });
-  }
-}
-
-/**
- * 处理搜索记录请求
- */
-async function handleSearchRecords(
-  criteria: { url?: string; tabId?: number; timeRange?: [number, number] },
-  sendResponse: (response: any) => void
-): Promise<void> {
-  try {
-    console.log('搜索记录:', criteria);
-    
-    // 搜索记录
-    const records = await tabTracker.getStorage().findRecords(criteria);
-    
-    // 发送响应
-    sendResponse({
-      success: true,
-      data: records
-    });
-  } catch (error) {
-    console.error('搜索记录失败:', error);
-    sendResponse({
-      success: false,
-      error: String(error)
-    });
-  }
-}
-
-/**
- * 处理保存测试记录请求
- */
-async function handleSaveTestRecord(record: any, sendResponse: (response: any) => void): Promise<void> {
-  try {
-    console.log('保存测试记录:', record);
-    
-    // 保存测试记录
-    const recordId = await tabTracker.getStorage().saveRecord(record);
-    
-    // 发送响应
-    sendResponse({
-      success: true,
-      recordId: recordId
-    });
-  } catch (error) {
-    console.error('保存测试记录失败:', error);
-    sendResponse({
-      success: false,
-      error: String(error)
-    });
-  }
-}
-
-/**
- * 处理获取会话列表的请求
- */
-async function handleGetSessions(sendResponse: (response: any) => void) {
-  try {
-    // 使用统一的存储对象获取会话列表
-    const sessions = await storage.getSessions();
-    
-    // 如果没有获取到会话，返回空数组
-    if (!sessions || !Array.isArray(sessions)) {
-      console.log('没有找到会话记录，返回空数组');
-      sendResponse({ success: true, sessions: [] });
-      return;
-    }
-    
-    // 发送成功响应
-    sendResponse({ success: true, sessions });
-  } catch (error) {
-    console.error('获取会话列表失败:', error);
-    sendResponse({ success: false, error: String(error) });
-  }
-}
-
-/**
- * 处理获取会话详情的请求
- */
-async function handleGetSessionDetails(sessionId: string, sendResponse: (response: any) => void) {
-  try {
-    // 使用统一的存储对象获取会话详情
-    const session = await storage.getSession(sessionId);
-    
-    if (session) {
-      // 返回会话详情
-      sendResponse({ success: true, session });
-    } else {
-      console.log(`会话 ${sessionId} 不存在`);
-      sendResponse({ success: false, error: '会话不存在' });
-    }
-  } catch (error) {
-    console.error('获取会话详情失败:', error);
-    sendResponse({ success: false, error: String(error) });
   }
 }
 
@@ -429,12 +516,9 @@ class NavigationTracker {
     // 使用与主程序相同的存储对象
     this.storage = storage; // 使用外部已定义的storage变量
     
-    // 设置消息监听
-    this.setupMessageListeners();
-    
-    // 设置导航事件监听
-    this.setupNavigationListeners();
-    
+    // 设置监听导航完成事件
+    this.setupNavgationListeners();
+
     // 定期清理过期的待处理导航
     setInterval(() => this.cleanupExpiredNavigations(), 30000);
     
@@ -442,45 +526,9 @@ class NavigationTracker {
   }
   
   /**
-   * 设置消息监听器
+   * 设置事件监听器 - 仅监听导航事件，不再处理消息
    */
-  setupMessageListeners() {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      // 检查消息来源
-      if (!sender.tab && !message.pageInfo) return;
-      
-      // 从页面内容脚本收到的消息
-      switch (message.action) {
-        case 'pageLoaded':
-          this.handlePageLoaded(sender.tab?.id, message.pageInfo);
-          break;
-          
-        case 'pageTitleUpdated':
-          this.handleTitleUpdate(message.pageId, message.title);
-          break;
-          
-        case 'linkClicked':
-          this.handleLinkClicked(sender.tab?.id, message.linkInfo);
-          break;
-          
-        case 'formSubmitted':
-          this.handleFormSubmitted(sender.tab?.id, message.formInfo);
-          break;
-          
-        case 'jsNavigation':
-          this.handleJsNavigation(sender.tab?.id, message);
-          break;
-      }
-      
-      // 对于异步响应，始终返回true
-      return true;
-    });
-  }
-  
-  /**
-   * 设置导航事件监听器
-   */
-  setupNavigationListeners() {
+  setupNavgationListeners() {
     // 监听导航完成事件
     chrome.webNavigation.onCommitted.addListener((details) => {
       // 忽略iframe导航
@@ -493,7 +541,7 @@ class NavigationTracker {
   /**
    * 处理页面加载消息
    */
-  handlePageLoaded(tabId: number | undefined, pageInfo: any) {
+  public handlePageLoaded(tabId: number | undefined, pageInfo: any) {
     if (!pageInfo || !tabId) return;
     
     // 存储页面信息，便于后续查找
@@ -548,7 +596,7 @@ class NavigationTracker {
   /**
    * 处理标题更新
    */
-  handleTitleUpdate(pageId: string, title: string) {
+  public handleTitleUpdate(pageId: string, title: string) {
     // 查找页面记录并更新标题
     for (const [key, info] of this.pageInfoMap.entries()) {
       if (info.pageId === pageId) {
@@ -578,7 +626,7 @@ class NavigationTracker {
   /**
    * 处理链接点击事件
    */
-  handleLinkClicked(tabId: number | undefined, linkInfo: any) {
+  public handleLinkClicked(tabId: number | undefined, linkInfo: any) {
     if (!linkInfo || !tabId) return;
     
     const expiresAt = Date.now() + this.expirationTime;
@@ -609,7 +657,7 @@ class NavigationTracker {
   /**
    * 处理表单提交事件
    */
-  handleFormSubmitted(tabId: number | undefined, formInfo: any) {
+  public handleFormSubmitted(tabId: number | undefined, formInfo: any) {
     if (!formInfo || !tabId) return;
     
     const expiresAt = Date.now() + this.expirationTime;
@@ -639,7 +687,7 @@ class NavigationTracker {
   /**
    * 处理JS导航事件
    */
-  handleJsNavigation(tabId: number | undefined, message: any) {
+  public handleJsNavigation(tabId: number | undefined, message: any) {
     if (!message || !tabId) return;
     
     const expiresAt = Date.now() + this.expirationTime;
@@ -834,7 +882,7 @@ class NavigationTracker {
       if (!url) return '未知页面';
       
       // 移除协议
-      let domain = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+let domain = url.replace(/^(https?:\/\/)?(www\.)?/, '');
       
       // 提取域名部分
       domain = domain.split('/')[0];

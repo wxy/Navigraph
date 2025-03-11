@@ -94,22 +94,29 @@
       // 监听后台发来的消息
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'refreshVisualization') {
-          console.log('收到可视化刷新请求', new Date(message.timestamp).toLocaleTimeString());
+          console.log('收到可视化刷新请求', new Date(message.timestamp).toLocaleTimeString(),
+          message.requestId ? `[ID:${message.requestId}]` : '');
           
-          // 重新加载会话列表和当前会话
-          this.loadSessions().then(() => {
-            if (this.sessions.length > 0) {
-              // 重新加载当前选择的会话或最新的会话
-              const sessionId = this.currentSessionId || this.sessions[0].id;
-              this.loadCurrentSession(sessionId);
-            }
-          }).catch(err => {
-            console.error('自动刷新可视化时重新加载会话失败:', err);
+          // 立即回复已处理，包含原请求ID
+          sendResponse({
+            success: true,
+            action: 'refreshVisualization',
+            requestId: message.requestId
           });
+          // 使用setTimeout延迟刷新操作，避免响应干扰
+          setTimeout(() => {
+            this.loadSessions().then(() => {
+              if (this.sessions.length > 0) {
+                // 重新加载当前选择的会话或最新的会话
+                const sessionId = this.currentSessionId || this.sessions[0].id;
+                this.loadCurrentSession(sessionId);
+              }
+            }).catch(err => {
+              console.error('自动刷新可视化时重新加载会话失败:', err);
+            });
+          }, 50); // 短暂延迟，确保响应已发送
           
-          // 回复已处理
-          sendResponse({success: true});
-          return true; // 保持消息通道打开以进行异步响应
+          return false; // 不需要保持通道开放，我们已经同步回复
         }
       });
     }
@@ -173,8 +180,53 @@
       document.getElementById('debug-clear-data')?.addEventListener('click', () => this.debugClearData());
     }
 
-    
-    // ... 其他方法保持不变 ...
+    /**
+     * 发送带有唯一请求ID的消息到后台
+     * @param {string} action - 消息类型
+     * @param {object} data - 消息数据
+     * @returns {Promise} - 返回响应Promise
+     */
+    async sendMessage(action, data = {}) {
+      // 生成唯一请求ID
+      const requestId = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      
+      // 构建带ID的消息
+      const message = {
+        action,
+        requestId,
+        ...data
+      };
+      
+      console.log(`发送${action}请求 [ID:${requestId}]`);
+      
+      return new Promise((resolve, reject) => {
+        const messageHandler = (response) => {
+          const error = chrome.runtime.lastError;
+          if (error) {
+            console.error(`发送${action}请求错误:`, error);
+            reject(new Error(error.message));
+            return;
+          }
+          
+          console.log(`收到${action}响应 [ID:${response?.requestId || '未知'}]`);
+          
+          // 验证响应是否匹配请求
+          if (!response) {
+            reject(new Error(`没有收到${action}响应`));
+            return;
+          }
+          
+          if (response.requestId !== requestId) {
+            console.warn('响应ID不匹配:', response.requestId, '!=', requestId);
+            return;
+          }
+          // ID匹配，解析Promise
+          resolve(response);
+        }
+        // 发送消息并设置回调
+        chrome.runtime.sendMessage(message, messageHandler);
+      });
+    }
     
     /**
      * 渲染时间线视图
@@ -575,12 +627,6 @@
           return this.sessions;
         } else {
           console.warn('会话响应格式不正确:', response);
-          // 尝试兼容旧格式
-          if (Array.isArray(response)) {
-            console.log('使用旧格式会话数据');
-            this.sessions = response;
-            return this.sessions;
-          }
           throw new Error(response?.error || '获取会话列表失败');
         }
       } catch (error) {
@@ -614,11 +660,8 @@
         
         console.log(`尝试加载会话: ${sessionId}`);
         
-        // 通过Chrome扩展API获取会话详情
-        const response = await chrome.runtime.sendMessage({ 
-          action: 'getSessionDetails', 
-          sessionId 
-        });
+        // 使用新的sendMessage方法
+        const response = await this.sendMessage('getSessionDetails', { sessionId });
         
         console.log('getSessionDetails响应:', response);
         
@@ -683,9 +726,11 @@
             type: record.navigationType || 'unknown',
             timestamp: record.timestamp,
             tabId: record.tabId,
-            parentId: record.parentId,
-            referrer: record.referrer,
-            isClosed: record.isClosed || false
+            parentId: record.parentId, // 可能为空
+            referrer: record.referrer || '',
+            isClosed: record.isClosed || false,
+            // 确保所有节点都有children数组
+            children: []
           };
         });
         
@@ -919,27 +964,45 @@
      * 计算节点深度
      */
     calculateNodeDepths() {
-      // 首先找出所有根节点
-      const rootNodes = this.nodes.filter(node => !node.parentId);
-      
-      // 为每个根节点及其子节点计算深度
-      rootNodes.forEach(rootNode => {
-        rootNode.depth = 0;
-        this.calculateChildDepths(rootNode, 1);
-      });
+      try {
+        // 首先找出所有根节点
+        const rootNodes = this.nodes.filter(node => !node.parentId);
+        
+        if (rootNodes.length === 0) {
+          console.warn('没有找到根节点，设置所有节点深度为0');
+          this.nodes.forEach(node => node.depth = 0);
+          return;
+        }
+        
+        // 为每个根节点及其子节点计算深度
+        rootNodes.forEach(rootNode => {
+          rootNode.depth = 0;
+          this.calculateChildDepths(rootNode, 1);
+        });
+      } catch (error) {
+        console.error('计算节点深度失败:', error);
+        // 出错时确保所有节点至少有深度值
+        this.nodes.forEach(node => {
+          if (typeof node.depth === 'undefined') node.depth = 0;
+        });
+      }
     }
     
-    /**
-     * 递归计算子节点深度
-     */
     calculateChildDepths(parentNode, depth) {
+      if (!parentNode || !parentNode.id) return;
+      
       // 找出父节点的所有直接子节点
-      const childNodes = this.nodes.filter(node => node.parentId === parentNode.id);
+      const childNodes = this.nodes.filter(node => 
+        node.parentId === parentNode.id && node.id !== parentNode.id
+      );
       
       // 设置子节点深度并递归处理
       childNodes.forEach(childNode => {
         childNode.depth = depth;
-        this.calculateChildDepths(childNode, depth + 1);
+        // 防止循环引用导致栈溢出
+        if (childNode.id !== parentNode.id) {
+          this.calculateChildDepths(childNode, depth + 1);
+        }
       });
     }
     
@@ -1082,19 +1145,40 @@
       // 计算层级 (根节点是第1层，子节点是第2层，以此类推)
       function assignLevels(node, level) {
         node.level = level;
-        node.children.forEach(child => assignLevels(child, level + 1));
+        if (node.children && Array.isArray(node.children)) {
+          node.children.forEach(child => assignLevels(child, level + 1));
+        }
       }
       
-      rootNodes.forEach(root => assignLevels(root, 1));
+      // 修改安全的forEach调用
+      if (rootNodes.length > 0) {
+        rootNodes.forEach(root => assignLevels(root, 1));
+      } else {
+        console.warn('没有找到根节点，可能导致树形视图不完整');
+        // 创建一个虚拟根节点连接所有孤立节点
+        nodes.forEach(node => {
+          if (!node.parentId) {
+            node.parentId = 'session-root';
+          }
+        });
+      }
     
       // 将虚拟根节点添加到节点列表
       const allNodes = [sessionNode, ...nodes];
       
       // 创建连接会话节点到根节点的链接
-      const sessionLinks = rootNodes.map(root => ({
+      const sessionLinks = rootNodes.length > 0 ? 
+      rootNodes.map(root => ({
         id: `session-${root.id}`,
         source: sessionNode.id,
         target: root.id,
+        type: 'session_link'
+      })) : 
+      // 如果没有根节点，创建连接到所有节点的链接
+      nodes.map(node => ({
+        id: `session-${node.id}`,
+        source: sessionNode.id,
+        target: node.id,
         type: 'session_link'
       }));
       
@@ -1118,23 +1202,11 @@
             return d.parentId;
           }
           
-          // 如果是链接点击类型，尝试根据时间顺序和tabId找到可能的父节点
-          if (d.type === 'link_click') {
-            // 查找同一标签页中时间上最接近的前一个节点
-            const sameTabPrecedingNodes = nodes
-              .filter(n => n.tabId === d.tabId && n.timestamp < d.timestamp)
-              .sort((a, b) => b.timestamp - a.timestamp); // 按时间降序排序
-            
-            // 如果找到了同标签页中的前一个节点，使用它作为父节点
-            if (sameTabPrecedingNodes.length > 0) {
-              return sameTabPrecedingNodes[0].id;
-            }
-          }
-          
           // 默认情况：连接到会话根节点
           return 'session-root';
         })
-        (allNodes);
+        // 确保传入的数据包含session-root节点，避免ID引用错误
+        (allNodes.some(n => n.id === 'session-root') ? allNodes : [sessionNode, ...nodes]);
       
       // 应用布局
       const treeData = treeLayout(hierarchy);
@@ -1771,9 +1843,7 @@
         document.getElementById('status-text').textContent = '清除数据中...';
         
         // 发送清除数据请求到后台
-        const response = await chrome.runtime.sendMessage({
-          action: 'clearAllData'
-        });
+        const response = await this.sendMessage('clearAllData');
         
         console.log('清除数据响应:', response);
         
