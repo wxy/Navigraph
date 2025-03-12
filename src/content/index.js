@@ -624,6 +624,10 @@
         if (response && response.success === true && Array.isArray(response.sessions)) {
           this.sessions = response.sessions;
           console.log(`成功加载${this.sessions.length}个会话`);
+
+          // 更新会话选择器UI
+          this.updateSessionSelector();
+          
           return this.sessions;
         } else {
           console.warn('会话响应格式不正确:', response);
@@ -1979,6 +1983,50 @@
       }
       
       return `${seconds}秒`;
+    }
+    /**
+     * 更新会话选择器下拉列表
+     */
+    updateSessionSelector() {
+      const selector = document.getElementById('session-selector');
+      if (!selector) {
+        console.warn('找不到会话选择器元素');
+        return;
+      }
+      
+      // 清空现有选项
+      selector.innerHTML = '';
+      
+      // 如果没有会话，显示提示
+      if (!this.sessions || this.sessions.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = '暂无会话';
+        option.disabled = true;
+        option.selected = true;
+        selector.appendChild(option);
+        return;
+      }
+      
+      // 添加会话选项
+      this.sessions.forEach(session => {
+        const option = document.createElement('option');
+        option.value = session.id;
+        
+        // 优化格式化会话时间
+        const date = new Date(session.startTime);
+        
+        option.textContent = session.title || `${date}`;
+        
+        selector.appendChild(option);
+      });
+      
+      // 默认选择第一个会话
+      if (this.sessions.length > 0) {
+        selector.value = this.sessions[0].id;
+      }
+      
+      console.log(`会话选择器已更新，共${this.sessions.length}个选项`);
     }
   }
   // 等待DOM加载完成后初始化可视化

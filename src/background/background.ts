@@ -111,7 +111,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           // 创建简化的会话摘要
           const sessionSummaries = sessionsArray.map(session => ({
             id: session.id,
-            title: session.title || '未命名会话',
+            title: session.title || session.id,
             startTime: session.startTime,
             endTime: session.endTime || 0,
             recordCount: session.records ? Object.keys(session.records).length : 0

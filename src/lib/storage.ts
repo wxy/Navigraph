@@ -448,7 +448,7 @@ export class NavigationStorage {
     
     const session: BrowsingSession = {
       id: this.generateSessionId(currentDate), // 传入日期参数
-      title: title || '未命名会话',
+      title: title || currentDate,
       startTime: Date.now(),
       records: {}, // 初始化为空对象
       edges: {},   // 初始化为空对象
