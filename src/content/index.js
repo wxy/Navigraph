@@ -76,6 +76,34 @@
           this.showNoData('没有可用的会话');
         }
         console.log('初始化完成');
+
+        // 添加容器大小变化监听
+        if (window.ResizeObserver) {
+          const container = document.getElementById('visualization-container');
+          if (container) {
+            const resizeObserver = new ResizeObserver(() => {
+              if (this.svg && this.timelineSvg) {
+                // 更新容器尺寸
+                const width = container.clientWidth || 800;
+                const height = container.clientHeight || 600;
+                
+                // 更新SVG尺寸
+                this.svg
+                  .attr('width', width)
+                  .attr('height', height - 40);
+                
+                // 更新时间线宽度
+                this.timelineSvg
+                  .attr('width', width)
+                  .select('rect')
+                  .attr('width', width);
+                  
+                console.log('容器大小变化，更新视图尺寸');
+              }
+            });
+            resizeObserver.observe(container);
+          }
+        }
       } catch (error) {
         console.error('初始化可视化失败:', error);
         
@@ -1047,32 +1075,60 @@
         // 获取容器尺寸
         const width = container.clientWidth || 800;
         const height = container.clientHeight || 600;
+        const timelineHeight = 40; // 时间线高度
+
+        // 创建一个包含两个SVG的容器
+        const vizContainer = d3.select(container)
+          .append('div')
+          .attr('class', 'viz-container')
+          .style('position', 'relative')
+          .style('width', '100%')
+          .style('height', '100%');
         
-        // 创建SVG容器
-        const svg = d3.select(container)
-          .append('svg')
+        // 创建主SVG容器 (高度减去时间线的高度)
+        const svg = vizContainer.append('svg')
+          .attr('class', 'main-svg')
           .attr('width', width)
-          .attr('height', height)
-          .attr('viewBox', [0, 0, width, height]);
+          .attr('height', height - timelineHeight)
+          .attr('viewBox', [0, 0, width, height - timelineHeight]);
         
-        // 在renderVisualization方法中，SVG创建后添加
+        // 在主SVG容器中添加事件处理
         svg.on('click', (event) => {
           // 检查是否点击了节点以外的区域
           if (event.target === svg.node()) {
             this.hideNodeDetails();
           }
         });
-        // 添加分组元素，所有内容都放在这个组内
+        
+        // 添加主要内容分组
         const mainGroup = svg.append('g');
         
         // 保存到实例变量
         this.svg = svg;
         
+        // 创建时间线SVG容器 (固定在底部)
+        const timelineSvg = vizContainer.append('svg')
+          .attr('class', 'timeline-svg')
+          .attr('width', '100%')
+          .attr('height', timelineHeight)
+          .style('position', 'absolute')
+          .style('bottom', '0')
+          .style('left', '0')
+          .style('width', '100%')  // 确保始终占满宽度
+          .style('background-color', '#333')
+          .style('border-top', '1px solid #555')
+          .style('z-index', '10');
+        
+        // 保存时间线SVG供后续使用
+        this.timelineSvg = timelineSvg;
+        
         // 根据当前视图调用相应的渲染方法
         if (this.currentView === 'tree') {
-          this.renderTreeLayout(mainGroup, visibleNodes, visibleLinks, width, height);
+          this.renderTreeLayout(mainGroup, visibleNodes, visibleLinks, width, height - timelineHeight);
+          // 树形视图不需要时间线，隐藏它
+          this.timelineSvg.style('display', 'none');
         } else {
-          this.renderTimelineLayout(mainGroup, visibleNodes, visibleLinks, width, height);
+          this.renderTimelineLayout(mainGroup, timelineSvg, visibleNodes, visibleLinks, width, height - timelineHeight);
         }
         
         // 添加缩放和平移功能
@@ -1080,6 +1136,37 @@
           .scaleExtent([0.1, 3])
           .on('zoom', (event) => {
             mainGroup.attr('transform', event.transform);
+            
+            // 如果是时间线视图，同步时间线的水平缩放
+            if (this.currentView === 'timeline') {
+              const transform = event.transform;
+              // 只应用水平缩放和平移，保持垂直位置不变
+              timelineSvg.select('g.time-axis-group')
+                .attr('transform', `translate(${transform.x}, 0) scale(${transform.k}, 1)`);
+
+              // 计算缩放后的可见宽度
+              const scaledWidth = Math.max(width * transform.k, width);
+              
+              // 确保时间线背景的宽度始终不小于可视区域
+              const actualWidth = Math.max(scaledWidth, width);
+              
+              // 修改时间线SVG容器的宽度
+              if (transform.k > 1.0) {
+                // 当放大时，扩展SVG宽度
+                timelineSvg.style('width', actualWidth + 'px');
+              } else {
+                // 当缩小或平移时，保持100%宽度
+                timelineSvg.style('width', '100%');
+              }
+
+              // 更新时间线背景矩形以始终覆盖可见区域
+              timelineSvg.select('rect')
+              .attr('width', actualWidth)
+              .attr('x', transform.x < 0 ? transform.x : 0);
+            
+              // 添加视觉反馈
+              timelineSvg.classed('zoomed', transform.k > 1.0);
+            }
           });
         
         svg.call(zoom);
@@ -1340,134 +1427,250 @@
       });
     }
     
+
     /**
      * 渲染时间线布局
      */
-    renderTimelineLayout(container, nodes, links, width, height) {
-      // 确定时间范围
-      const minTime = Math.min(...nodes.map(node => node.timestamp));
-      const maxTime = Math.max(...nodes.map(node => node.timestamp));
-      const timeRange = maxTime - minTime;
+    renderTimelineLayout(container, timelineSvg, nodes, links, width, height) {
+      // 清除现有内容以避免重复
+      timelineSvg.selectAll("*").remove();
       
-      // 创建时间刻度
-      const timeScale = d3.scaleTime()
-        .domain([new Date(minTime), new Date(maxTime)])
-        .range([100, width - 100]);
+      // 先添加背景矩形，确保覆盖整个时间线区域
+      timelineSvg.append('rect')
+        .attr('class', 'timeline-background')
+        .attr('width', '100%')
+        .attr('height', '100%')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('fill', '#333');
       
-      // 绘制时间轴
-      const xAxis = d3.axisBottom(timeScale)
-        .ticks(10)
-        .tickFormat(d3.timeFormat('%H:%M:%S'));
-      
-      container.append('g')
-        .attr('transform', `translate(0, ${height - 30})`)
-        .attr('class', 'time-axis')
-        .call(xAxis);
-      
-      // 计算位置
-      nodes.forEach(node => {
-        // X坐标基于时间
-        node.renderX = timeScale(new Date(node.timestamp));
+      // 绘制时间轴组
+      const timeAxisGroup = timelineSvg.append('g')
+        .attr('class', 'time-axis-group')
+        .attr('transform', 'translate(0, 0)');
+    
+      if (nodes.length > 0) {
+        // 计算时间范围
+        let minTime = Math.min(...nodes.map(node => node.timestamp));
+        let maxTime = Math.max(...nodes.map(node => node.timestamp));
+        let timeRange = maxTime - minTime;
         
-        // Y坐标基于类型，分层展示
-        let yBase = 0;
-        switch (node.type) {
-          case 'link_click': yBase = height * 0.2; break;
-          case 'address_bar': yBase = height * 0.4; break;
-          case 'form_submit': yBase = height * 0.6; break;
-          default: yBase = height * 0.5;
+        // 确保有最小时间范围，避免除零错误
+        if (timeRange < 60000) { // 小于1分钟
+          const mid = (minTime + maxTime) / 2;
+          minTime = mid - 30000; // 扩展30秒
+          maxTime = mid + 30000; // 扩展30秒
+          timeRange = 60000;
         }
         
-        // 添加一些随机偏移避免重叠
-        node.renderY = yBase + (Math.random() - 0.5) * height * 0.2;
-      });
-      
-      // 创建箭头定义
-      container.append('defs').append('marker')
-        .attr('id', 'arrowhead')
-        .attr('viewBox', '-0 -5 10 10')
-        .attr('refX', 20)
-        .attr('refY', 0)
-        .attr('orient', 'auto')
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
-        .append('path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', '#999');
-      
-      // 绘制边
-      const linkElements = container.append('g')
-        .selectAll('.edge')
-        .data(links)
-        .enter()
-        .append('path')
-        .attr('class', d => `edge ${d.type}`)
-        .attr('marker-end', 'url(#arrowhead)')
-        .attr('d', d => {
-          const sourceNode = nodes.find(n => n.id === d.source);
-          const targetNode = nodes.find(n => n.id === d.target);
+        // 扩展时间范围以充满宽度
+        const extraPercentage = 0.2; // 两侧各增加20%
+        minTime -= timeRange * extraPercentage;
+        maxTime += timeRange * extraPercentage;
+        
+        // 创建时间刻度 - 覆盖整个宽度
+        const timeScale = d3.scaleTime()
+          .domain([new Date(minTime), new Date(maxTime)])
+          .range([0, width]);
+        
+        // 计算节点位置
+        nodes.forEach(node => {
+          // X坐标基于时间
+          node.renderX = timeScale(new Date(node.timestamp));
           
-          if (!sourceNode || !targetNode) return '';
-          
-          const source = {x: sourceNode.renderX, y: sourceNode.renderY};
-          const target = {x: targetNode.renderX, y: targetNode.renderY};
-          
-          if (d.type === 'history_back' || d.type === 'history_forward') {
-            // 弯曲的线条
-            return `M${source.x},${source.y} 
-                    C${source.x + (target.x - source.x) * 0.5},${source.y} 
-                      ${source.x + (target.x - source.x) * 0.5},${target.y} 
-                      ${target.x},${target.y}`;
-          } else {
-            // 直线
-            return `M${source.x},${source.y} L${target.x},${target.y}`;
+          // Y坐标基于类型，分层展示
+          let yBase = 0;
+          switch (node.type) {
+            case 'link_click': yBase = height * 0.2; break;
+            case 'address_bar': yBase = height * 0.4; break;
+            case 'form_submit': yBase = height * 0.6; break;
+            default: yBase = height * 0.5;
           }
-        })
-        .attr('stroke', d => this.getEdgeColor(d.type))
-        .attr('stroke-width', 1.5)
-        .attr('fill', 'none');
-      
-      // 绘制节点
-      const nodeElements = container.append('g')
-        .selectAll('.node')
-        .data(nodes)
-        .enter()
-        .append('g')
-        .attr('class', d => `node ${d.type}`)
-        .attr('transform', d => `translate(${d.renderX},${d.renderY})`);
-      
-      nodeElements.append('circle')
-        .attr('r', 20)
-        .attr('fill', d => this.getNodeColor(d.type));
-      
-      nodeElements.append('title')
-        .text(d => d.title || d.url);
-      
-      nodeElements.filter(d => d.favicon)
-        .append('image')
-        .attr('xlink:href', d => d.favicon)
-        .attr('x', -8)
-        .attr('y', -8)
-        .attr('width', 16)
-        .attr('height', 16);
-      
-      nodeElements.append('text')
-        .attr('dy', 35)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#fff')
-        .style('font-size', '12px')
-        .text(d => d.title ? d.title.substring(0, 10) + '...' : '');
-      
-      // 添加交互
-      nodeElements.on('click', (event, d) => {
-        this.showNodeDetails(d);
+          
+          // 添加一些随机偏移避免重叠
+          node.renderY = yBase + (Math.random() - 0.5) * height * 0.2;
+        });
         
-        container.selectAll('.node')
-          .classed('highlighted', false);
+        // 创建箭头定义
+        container.append('defs').append('marker')
+          .attr('id', 'arrowhead')
+          .attr('viewBox', '-0 -5 10 10')
+          .attr('refX', 20)
+          .attr('refY', 0)
+          .attr('orient', 'auto')
+          .attr('markerWidth', 6)
+          .attr('markerHeight', 6)
+          .append('path')
+          .attr('d', 'M0,-5L10,0L0,5')
+          .attr('fill', '#999');
         
-        d3.select(event.currentTarget)
-          .classed('highlighted', true);
-      });
+        // 绘制边
+        const linkElements = container.append('g')
+          .selectAll('.edge')
+          .data(links)
+          .enter()
+          .append('path')
+          .attr('class', d => `edge ${d.type}`)
+          .attr('marker-end', 'url(#arrowhead)')
+          .attr('d', d => {
+            const sourceNode = nodes.find(n => n.id === d.source);
+            const targetNode = nodes.find(n => n.id === d.target);
+            
+            if (!sourceNode || !targetNode) return '';
+            
+            const source = {x: sourceNode.renderX, y: sourceNode.renderY};
+            const target = {x: targetNode.renderX, y: targetNode.renderY};
+            
+            if (d.type === 'history_back' || d.type === 'history_forward') {
+              // 弯曲的线条
+              return `M${source.x},${source.y} 
+                      C${source.x + (target.x - source.x) * 0.5},${source.y} 
+                        ${source.x + (target.x - source.x) * 0.5},${target.y} 
+                        ${target.x},${target.y}`;
+            } else {
+              // 直线
+              return `M${source.x},${source.y} L${target.x},${target.y}`;
+            }
+          })
+          .attr('stroke', d => this.getEdgeColor(d.type))
+          .attr('stroke-width', 1.5)
+          .attr('fill', 'none');
+        
+        // 绘制节点
+        const nodeElements = container.append('g')
+          .selectAll('.node')
+          .data(nodes)
+          .enter()
+          .append('g')
+          .attr('class', d => `node ${d.type}`)
+          .attr('transform', d => `translate(${d.renderX},${d.renderY})`);
+        
+        nodeElements.append('circle')
+          .attr('r', 20)
+          .attr('fill', d => this.getNodeColor(d.type));
+        
+        nodeElements.append('title')
+          .text(d => d.title || d.url);
+        
+        nodeElements.filter(d => d.favicon)
+          .append('image')
+          .attr('xlink:href', d => d.favicon)
+          .attr('x', -8)
+          .attr('y', -8)
+          .attr('width', 16)
+          .attr('height', 16)
+          .on('error', function() {
+            // 图像加载失败时替换为默认图标
+            d3.select(this)
+              .attr('xlink:href', chrome.runtime.getURL('images/logo-48.png'))
+              .classed('default-icon', true);
+          });
+        
+        nodeElements.append('text')
+          .attr('dy', 35)
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#fff')
+          .style('font-size', '12px')
+          .text(d => d.title ? d.title.substring(0, 10) + '...' : '');
+        
+        // 添加交互
+        nodeElements.on('click', (event, d) => {
+          this.showNodeDetails(d);
+          
+          container.selectAll('.node')
+            .classed('highlighted', false);
+          
+          d3.select(event.currentTarget)
+            .classed('highlighted', true);
+        });
+        
+        // 绘制时间轴 - 使用整个宽度
+        const xAxis = d3.axisBottom(timeScale)
+          .ticks(15)
+          .tickFormat(d3.timeFormat('%H:%M:%S'))
+          .tickSize(6) 
+          .tickPadding(2);
+        
+        // 渲染时间轴 - 确保从左到右完全对齐
+        timeAxisGroup.append('g')
+          .attr('class', 'time-axis')
+          .attr('transform', `translate(0, 20)`)
+          .call(xAxis)
+          .call(g => {
+            // 设置轴线样式
+            g.select('.domain')
+              .attr('stroke', '#aaa')
+              .attr('stroke-width', 1)
+              .attr('opacity', 0.7);
+            
+            // 设置刻度线样式
+            g.selectAll('.tick line')
+              .attr('stroke', '#aaa')
+              .attr('y2', 6);
+            
+            // 设置文字样式
+            g.selectAll('.tick text')
+              .attr('fill', '#eee')
+              .attr('font-size', '10px');
+          });
+        
+        // 添加网格线以提高可读性
+        timeAxisGroup.append('g')
+          .attr('class', 'grid')
+          .attr('transform', `translate(0, 0)`)
+          .call(d3.axisBottom(timeScale)
+            .tickSize(40)
+            .tickFormat('')
+            .ticks(30))
+          .call(g => {
+            g.select('.domain').remove();
+            g.selectAll('.tick line')
+              .attr('stroke', '#555')
+              .attr('stroke-width', 0.5)
+              .attr('opacity', 0.3);
+          });
+          
+      } else {
+        // 没有节点时显示默认时间线
+        const now = new Date();
+        const sixHoursMs = 6 * 60 * 60 * 1000;
+        const minTime = now.getTime() - sixHoursMs;
+        const maxTime = now.getTime() + sixHoursMs;
+        
+        const timeScale = d3.scaleTime()
+          .domain([new Date(minTime), new Date(maxTime)])
+          .range([0, width]);
+        
+        const xAxis = d3.axisBottom(timeScale)
+          .ticks(15)
+          .tickFormat(d3.timeFormat('%H:%M:%S'))
+          .tickSize(6)
+          .tickPadding(2);
+        
+        timeAxisGroup.append('g')
+          .attr('class', 'time-axis')
+          .attr('transform', `translate(0, 20)`)
+          .call(xAxis)
+          .call(g => {
+            g.select('.domain')
+              .attr('stroke', '#aaa')
+              .attr('stroke-width', 1)
+              .attr('opacity', 0.7);
+            
+            g.selectAll('.tick text')
+              .attr('fill', '#999')
+              .attr('font-size', '10px');
+          });
+          
+        // 添加提示文本
+        timeAxisGroup.append('text')
+          .attr('x', width / 2)
+          .attr('y', 20)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', '#999')
+          .text('无时间数据可显示');
+      }
     }
     
     /**

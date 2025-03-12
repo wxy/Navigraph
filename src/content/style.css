@@ -677,3 +677,59 @@ body {
 .link [href*="google.com/s2/favicons"] {
   filter: saturate(1.2); /* 增强Google默认图标的饱和度 */
 }
+
+/* 可以添加到您的CSS文件中 */
+.timeline-svg {
+  filter: drop-shadow(0px -2px 3px rgba(0,0,0,0.3));
+  transition: width 0.1s ease-out;
+  width: 100% !important; /* 确保始终占满宽度 */
+  left: 0 !important;
+  right: 0 !important;
+  overflow: visible !important; /* 确保时间轴在缩放时可见 */
+}
+
+/* 确保时间轴背景矩形充满 */
+.timeline-svg .timeline-background {
+  width: 100%;
+}
+
+/* 增强时间轴可见性 */
+.time-axis .domain {
+  stroke-width: 1px !important;
+}
+
+/* 让时间刻度文字更清晰 */
+.time-axis .tick text {
+  font-weight: 500 !important;
+  font-size: 10px !important;
+  fill: #eee !important;
+}
+
+/* 在缩放时突出显示时间线 */
+.timeline-svg.zoomed {
+  z-index: 100;
+}
+
+.time-axis .tick text {
+  font-weight: 400;
+  font-size: 10px;
+}
+.timeline-svg rect {
+  fill: #333; /* 深色背景 */
+}
+/* 时间线中高亮当前时间的样式 */
+.timeline-svg .current-time-indicator {
+  stroke: #ff7700;
+  stroke-width: 2px;
+  stroke-dasharray: 3,3;
+}
+/* 改进时间线网格 */
+.time-axis-group .grid .tick line {
+  opacity: 0.2;
+}
+
+/* 确保时间线轴的轴线能够延伸整个宽度 */
+.time-axis-group .time-axis .domain {
+  stroke-width: 1px;
+  opacity: 0.7;
+}
