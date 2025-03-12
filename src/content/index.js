@@ -777,32 +777,15 @@
     }
     
     /**
-     * 重建父子关系 - 优化版
+     * 重建父子关系 - 按导航顺序重建
      */
     reconstructParentChildRelationships() {
       console.log('开始重建父子关系...');
       
       // 创建节点ID映射，便于快速查找
       const nodesById = {};
-      const nodesByUrl = {};
-      const nodesByReferrer = {};
-      
       this.nodes.forEach(node => {
         nodesById[node.id] = node;
-        
-        // 按URL分组 (对于referrer匹配)
-        if (!nodesByUrl[node.url]) {
-          nodesByUrl[node.url] = [];
-        }
-        nodesByUrl[node.url].push(node);
-        
-        // 按referrer分组
-        if (node.referrer && node.referrer !== '') {
-          if (!nodesByReferrer[node.referrer]) {
-            nodesByReferrer[node.referrer] = [];
-          }
-          nodesByReferrer[node.referrer].push(node);
-        }
       });
       
       // 按标签页和时间排序
@@ -819,108 +802,99 @@
         nodesByTabId[tabId].sort((a, b) => a.timestamp - b.timestamp);
       });
       
-      // 当前算法中已赋父节点计数
       let assignedCount = 0;
       
-      // 尝试五种不同的启发式方法找到父节点
-      this.nodes.forEach(node => {
-        // 策略1: 首先检查已存在的边信息 - 这是最准确的来源，来自内容脚本的事件追踪
-        if (!node.parentId && this.edges) {
-          // 查找以此节点为目标的边
-          const incomingEdges = this.edges.filter(e => 
-            (e.target === node.id || e.targetId === node.id) && 
-            e.type !== 'generated' // 跳过推断生成的边
-          );
-          
-          if (incomingEdges.length > 0) {
-            // 按时间排序
-            incomingEdges.sort((a, b) => b.timestamp - a.timestamp);
-            node.parentId = incomingEdges[0].source || incomingEdges[0].sourceId;
-            assignedCount++;
-            return;
-          }
+      // 1. 首先按照时间顺序处理所有节点 - 模拟实际导航序列
+      const sortedNodes = [...this.nodes].sort((a, b) => a.timestamp - b.timestamp);
+      
+      // 跟踪每个标签页当前活跃的节点
+      const activeNodesByTabId = {};
+      
+      // 遍历所有节点，按时间顺序模拟导航过程
+      sortedNodes.forEach(node => {
+        // 如果已有有效的父节点引用，保留它
+        if (node.parentId && nodesById[node.parentId] && node.parentId !== node.id) {
+          assignedCount++;
+          return;
         }
         
-        // 策略2: 检查已有parentId是否有效
-        if (node.parentId) {
-          const parentExists = nodesById[node.parentId];
-          if (parentExists) {
-            // 父ID有效，无需更改
-            assignedCount++;
-            return;
-          } else {
-            // 清除无效的父节点ID
-            node.parentId = null;
-          }
+        // 自循环检测 - 将自引用修正为根节点
+        if (node.parentId === node.id) {
+          console.log(`节点 ${node.id} 是自循环，修正为根节点`);
+          node.parentId = null;
+          return;
         }
         
-        // 策略3: 使用referrer字段查找父节点
-        if (node.referrer && node.referrer !== '') {
-          const possibleParents = nodesByUrl[node.referrer] || [];
-          
-          // 筛选出时间早于当前节点的条目
-          const validParents = possibleParents.filter(p => 
-            p.id !== node.id && p.timestamp < node.timestamp
-          );
-          
-          if (validParents.length > 0) {
-            // 按时间排序，选择时间上最接近的作为父节点
-            validParents.sort((a, b) => b.timestamp - a.timestamp);
-            node.parentId = validParents[0].id;
-            assignedCount++;
-            return;
-          }
+        // 获取导航类型
+        const navigationType = node.type || node.navigationType;
+        
+        // 根据导航类型确定父节点
+        switch(navigationType) {
+          case 'link_click':
+            // 链接点击通常来自同一标签页的前一个节点
+            const sameTabNodes = nodesByTabId[node.tabId] || [];
+            const nodeIndex = sameTabNodes.findIndex(n => n.id === node.id);
+            
+            // 如果在同一标签页中有前一个节点，将其设为父节点
+            if (nodeIndex > 0) {
+              node.parentId = sameTabNodes[nodeIndex - 1].id;
+              assignedCount++;
+            }
+            break;
+            
+          case 'address_bar':
+            // 地址栏输入通常是新的导航序列，可能没有父节点
+            // 但如果是在现有标签页中输入，可能与前一页有关
+            if (activeNodesByTabId[node.tabId]) {
+              node.parentId = activeNodesByTabId[node.tabId].id;
+              assignedCount++;
+            } else {
+              node.parentId = null; // 新标签页的第一次导航
+            }
+            break;
+            
+          case 'form_submit':
+            // 表单提交通常来自同一标签页的前一个节点
+            if (activeNodesByTabId[node.tabId]) {
+              node.parentId = activeNodesByTabId[node.tabId].id;
+              assignedCount++;
+            }
+            break;
+            
+          case 'history_back':
+          case 'history_forward':
+            // 历史导航指向同一标签页中的某个节点
+            // 这种情况较复杂，暂时保持当前处理方式
+            break;
+            
+          case 'reload':
+            // 刷新操作应该保持当前节点，不改变父子关系
+            // 已在上面处理了自循环情况
+            break;
+            
+          default:
+            // 对于其他类型，查找直接的导航关系
+            // 用边信息补充 - 这是原始记录的实际导航关系
+            if (this.edges) {
+              const directEdges = this.edges.filter(e => 
+                (e.target === node.id || e.targetId === node.id) && 
+                e.type !== 'generated' // 跳过推断生成的边
+              );
+              
+              if (directEdges.length > 0) {
+                // 优先使用最近的边
+                directEdges.sort((a, b) => b.timestamp - a.timestamp);
+                node.parentId = directEdges[0].source || directEdges[0].sourceId;
+                assignedCount++;
+              }
+            }
+            break;
         }
         
-        // 策略4: 对于链接点击，查找同一标签页中时间上最接近的前一个节点
-        if (node.type === 'link_click' || node.navigationType === 'link_click') {
-          const sameTabNodes = nodesByTabId[node.tabId] || [];
-          const nodeIndex = sameTabNodes.findIndex(n => n.id === node.id);
-          
-          // 存在前一个节点
-          if (nodeIndex > 0) {
-            node.parentId = sameTabNodes[nodeIndex - 1].id;
-            assignedCount++;
-            return;
-          }
-        }
-        
-        // 策略5: 对于非首次加载的新标签页，尝试查找可能的opener
-        if (node.type === 'address_bar' || node.navigationType === 'address_bar') {
-          // 查找时间接近的其他标签页的操作作为可能的父节点
-          const allPriorNodes = this.nodes.filter(n => 
-            n.id !== node.id && 
-            n.timestamp < node.timestamp &&
-            Math.abs(n.timestamp - node.timestamp) < 3000 // 3秒内的操作
-          );
-          
-          if (allPriorNodes.length > 0) {
-            // 按时间排序
-            allPriorNodes.sort((a, b) => b.timestamp - a.timestamp);
-            node.parentId = allPriorNodes[0].id;
-            assignedCount++;
-            return;
-          }
-        }
-        
-        // 策略5: 使用边数据推断关系
-        if (this.edges) {
-          // 查找以此节点为目标的边
-          const incomingEdges = this.edges.filter(e => e.target === node.id || e.targetId === node.id);
-          
-          if (incomingEdges.length > 0) {
-            // 按时间排序
-            incomingEdges.sort((a, b) => b.timestamp - a.timestamp);
-            node.parentId = incomingEdges[0].source || incomingEdges[0].sourceId;
-            assignedCount++;
-            return;
-          }
-        }
-        
-        // 如果所有策略都失败，节点保持无父节点状态
+        // 更新当前标签页的活跃节点
+        activeNodesByTabId[node.tabId] = node;
       });
       
-      // 输出结果统计
       console.log(`父子关系重建完成: ${assignedCount}/${this.nodes.length} 节点有父节点`);
     }
     
