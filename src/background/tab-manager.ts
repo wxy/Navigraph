@@ -454,8 +454,14 @@ export class TabTracker {
     navigationType: NavigationType,
     openTarget: OpenTarget
   ): Promise<void> {
-    const tabId = details.tabId;
+  // 添加过滤检查
+    if (this.shouldSkipNavigation(details)) {
+      console.log(`跳过记录系统页面导航: ${details.url}`);
+      return;
+    }
     
+    const tabId = details.tabId;
+
     // 生成基于标签ID和URL的节点ID
     const nodeId = IdGenerator.generateNodeId(tabId, details.url);
     
@@ -574,6 +580,12 @@ export class TabTracker {
    * 处理刷新
    */
   private async handleReload(details: ExtendedCommittedDetails): Promise<void> {
+    // 添加过滤检查
+    if (this.shouldSkipNavigation(details)) {
+      console.log(`跳过记录系统页面刷新: ${details.url}`);
+      return;
+    }
+
     const tabId = details.tabId;
     
     // 获取当前节点ID
@@ -872,11 +884,33 @@ export class TabTracker {
    * 检查是否应该跳过此导航
    */
   private shouldSkipNavigation(details: ExtendedTransitionDetails): boolean {
-    // 跳过扩展自身的页面
-    if (details.url.startsWith('chrome-extension://') || 
-        details.url.startsWith('chrome://') || 
-        details.url.startsWith('about:')) {
+    // 空URL检查
+    if (!details.url || details.url === 'about:blank') {
       return true;
+    }
+    
+    // 跳过浏览器内部页面
+    const excludePatterns = [
+      'chrome://',
+      'chrome-extension://',
+      'chrome-untrusted://', // 包含new-tab-page
+      'chrome-devtools://',
+      'chrome-error://',
+      'chrome-search://',
+      'devtools://',
+      'edge://',             // 针对Edge浏览器
+      'about:',              // Firefox的内部页面
+      'vivaldi://',          // Vivaldi浏览器
+      'opera://',            // Opera浏览器
+      'data:',               // 数据URL
+      'file://'              // 本地文件
+    ];
+    
+    for (const pattern of excludePatterns) {
+      if (details.url.startsWith(pattern)) {
+        console.log(`跳过系统页面: ${details.url.substring(0, 50)}...`);
+        return true;
+      }
     }
     
     return false;
@@ -911,6 +945,11 @@ export class TabTracker {
    */
   private async handlePageLoaded(tabId: number, pageInfo: any): Promise<void> {
     try {
+      // 添加系统页面过滤
+      if (this.shouldSkipNavigation({ url: pageInfo.url } as any)) {
+        console.log(`跳过处理系统页面加载: ${pageInfo.url}`);
+        return;
+      }
       console.log(`页面已加载: ${pageInfo.url} (${pageInfo.pageId})`);
       
       // 基于标签ID和URL查找对应节点

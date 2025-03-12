@@ -1191,8 +1191,8 @@
       
       // 创建层次化树形布局 - 注意修改这里的配置
       const treeLayout = d3.tree()
-        .size([height * 0.8, width * 0.8]) // 保持足够的空间
-        .separation((a, b) => (a.parent === b.parent ? 3 : 4)); // 增加节点间距
+        .size([height * 0.8, width * 0.6]) // 保持足够的空间
+        .separation((a, b) => (a.parent === b.parent ? 2 : 3)); // 增加节点间距
       
       // 创建层次结构
       const hierarchy = d3.stratify()
