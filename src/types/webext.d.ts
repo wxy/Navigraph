@@ -26,26 +26,27 @@ export type OpenTarget =
  * 导航记录
  */
 export interface NavigationRecord {
-  id?: string;
-  tabId: number;
-  url: string;
+  id: string;                  // 必需: 记录ID
+  tabId: number;               // 必需: 标签页ID
+  url: string;                 // 必需: URL
+  timestamp: number;           // 必需: 时间戳
+  sessionId: string;           // 必需: 所属会话ID
+  parentId: string | null;     // 必需: 父节点ID，根节点为null
+  navigationType: NavigationType; // 必需: 导航类型
+  openTarget: OpenTarget;      // 必需: 打开目标
+
   title?: string;
   favicon?: string;
-  timestamp: number;
   firstVisit?: number;  // 首次访问时间
   lastVisit?: number;   // 最后访问时间
   visitCount?: number;  // 访问计数
   reloadCount?: number; // 重新加载计数
   activeTime?: number;
   loadTime?: number;
-  parentId?: string;
   referrer?: string;
-  navigationType?: NavigationType;
-  openTarget?: OpenTarget;
   frameId?: number;
   parentFrameId?: number;
   isClosed?: boolean;
-  sessionId?: string;
 }
 
 /**

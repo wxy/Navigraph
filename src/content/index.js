@@ -718,6 +718,14 @@
         // 转换为节点数组
         this.nodes = recordIds.map(id => {
           const record = records[id];
+
+          // 检测并修正自循环
+          let parentId = record.parentId;
+          if (parentId === record.id) {
+            console.log(`检测到节点 ${record.id} 自循环，修正为根节点`);
+            parentId = null;  // 修正为根节点
+          }
+
           return {
             id: record.id,
             url: record.url,
@@ -726,7 +734,7 @@
             type: record.navigationType || 'unknown',
             timestamp: record.timestamp,
             tabId: record.tabId,
-            parentId: record.parentId, // 可能为空
+            parentId: parentId, 
             referrer: record.referrer || '',
             isClosed: record.isClosed || false,
             // 确保所有节点都有children数组
@@ -1134,18 +1142,32 @@
       
       // 构建树结构
       const rootNodes = [];
+      const selfLoopNodes = []; // 用于跟踪自循环节点
       nodes.forEach(node => {
         if (node.parentId === node.id) {
-          console.log(`检测到节点 ${node.id} 自循环，将其视为根节点`);
-          node.parentId = null; // 清除自循环
+          console.log(`检测到节点 ${node.id} 自循环，标记为刷新节点`);
+          node.isSelfLoop = true; // 标记为自循环，用于特殊显示
+          selfLoopNodes.push(node);
+        } 
+        
+        // 判断是否为根节点或父节点不存在
+        if (node.parentId === null || !nodeById[node.parentId]) {
+          // 明确作为根节点处理
+          node.isRoot = true;
           rootNodes.push(node);
-        } else if (node.parentId && nodeById[node.parentId]) {
+        } 
+        // 正常父子关系处理
+        else if (nodeById[node.parentId]) {
+          // 添加到父节点的子节点列表
+          if (!nodeById[node.parentId].children) {
+            nodeById[node.parentId].children = [];
+          }
           nodeById[node.parentId].children.push(node);
-        } else {
-          rootNodes.push(node);
         }
       });
       
+      console.log(`找到${rootNodes.length}个根节点，${selfLoopNodes.length}个自循环节点`);
+
       // 计算层级 (根节点是第1层，子节点是第2层，以此类推)
       function assignLevels(node, level) {
         node.level = level;
@@ -1323,7 +1345,7 @@
           if (!d.data.title) return '';
           return d.data.title.length > 15 ? d.data.title.substring(0, 12) + '...' : d.data.title;
         });
-      
+
       // 添加交互
       node.on('click', (event, d) => {
         if (d.data.id === 'session-root') return;

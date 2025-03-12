@@ -491,23 +491,10 @@ export class TabTracker {
       return;
     }
     
-    // 创建新的导航记录
-    const record: NavigationRecord = {
-      id: nodeId,
-      tabId,
-      url: details.url,
-      timestamp: Date.now(),
-      firstVisit: Date.now(),
-      lastVisit: Date.now(),
-      visitCount: 1,
-      navigationType,
-      openTarget,
-      frameId: details.frameId,
-      parentFrameId: details.parentFrameId
-    };
-    
+    const now = Date.now();
+
     // 获取父节点 - 增强版
-    let parentId: string | undefined = undefined;
+    let parentId = null;
     
     // 1. 首先尝试从最近的点击事件中获取源节点
     if (this.lastClickSourceNodeId) {
@@ -522,11 +509,24 @@ export class TabTracker {
         parentId = tabHistory[tabHistory.length - 1];
       }
     }
-    
-    // 设置父节点
-    if (parentId) {
-      record.parentId = parentId;
-    }
+
+    // 创建新的导航记录
+    const record: NavigationRecord = {
+      id: nodeId,
+      tabId: tabId,
+      url: details.url,
+      timestamp: now,
+      sessionId: (await this.storage.getCurrentSession()).id,
+      parentId: parentId,
+      navigationType: navigationType,
+      openTarget: openTarget,
+      firstVisit: now,
+      lastVisit: now,
+      visitCount: 1,
+      reloadCount: 0,
+      frameId: details.frameId,
+      parentFrameId: details.parentFrameId
+    };
     
     // 保存记录
     const savedRecord = await this.storage.saveRecord(record);
@@ -784,9 +784,11 @@ export class TabTracker {
       if (currentRecord && currentRecord.url !== details.url) {
         // URL变化，作为新的导航处理
         const record: NavigationRecord = {
-          tabId,
+          id: IdGenerator.generateNodeId(tabId, details.url),
+          tabId: tabId,
           url: details.url,
           timestamp: now,
+          sessionId: currentRecord.sessionId,
           navigationType: 'javascript',
           openTarget: 'same_tab',
           parentId: currentNodeId
