@@ -23,25 +23,20 @@ export class TabTracker {
   private pageIdMap: Map<string, {tabId: number, nodeId: string, timestamp: number}> = new Map();
   private pendingNavigations: Map<string, Array<{
     type: string,
-    sourcePageId: string,
+    sourceNodeId: string,
     targetUrl: string,
     timestamp: number,
     sourceTabId: number,
     expireTime: number
   }>> = new Map();
-  private lastClickSourceNodeId?: string;
+  private lastClickSourceNodeIdMap = new Map<number, {nodeId: string, timestamp: number}>();
   private pendingUpdates: Map<number, string[]> = new Map<number, string[]>();
   private tabNodeIds = new Map<number, string>();
-  
+  private recentlyProcessedNavigations = new Map<string, number>();
+
+
   constructor() {
     this.storage = new NavigationStorage();
-    
-    // 确保所有Map都被初始化
-    this.tabActiveTimes = new Map<number, number>();
-    this.tabNavigationHistory = new Map<number, string[]>();
-    this.pageIdMap = new Map<string, {tabId: number, nodeId: string, timestamp: number}>();
-    this.pendingNavigations = new Map();
-    this.pendingUpdates = new Map<number, string[]>();
     
     this.initializeListeners();
     
@@ -428,6 +423,26 @@ export class TabTracker {
         return;
       }
       
+      // 添加导航去重逻辑 - 防止短时间内对相同URL的重复处理
+      const navigationKey = `${details.tabId}-${details.url}`;
+      const now = Date.now();
+      const lastProcessed = this.recentlyProcessedNavigations.get(navigationKey);
+      
+      if (lastProcessed && (now - lastProcessed) < 1000) { // 1秒内的相同导航将被忽略
+        console.log(`忽略重复导航: ${details.url} (同一导航在1秒内被触发多次)`);
+        return;
+      }
+      
+      // 记录此次导航处理
+      this.recentlyProcessedNavigations.set(navigationKey, now);
+      
+      // 清理超过5秒的记录
+      setTimeout(() => {
+        if (this.recentlyProcessedNavigations.get(navigationKey) === now) {
+          this.recentlyProcessedNavigations.delete(navigationKey);
+        }
+      }, 5000);
+      
       const navigationType = this.determineNavigationType(details);
       const openTarget = this.determineOpenTarget(details);
       
@@ -491,22 +506,39 @@ export class TabTracker {
       return;
     }
     
+    // 获取父节点 - 简化版
+    let parentId = null;
     const now = Date.now();
 
-    // 获取父节点 - 增强版
-    let parentId = null;
-    
-    // 1. 首先尝试从最近的点击事件中获取源节点
-    if (this.lastClickSourceNodeId) {
-      parentId = this.lastClickSourceNodeId;
-      // 使用后清除
-      this.lastClickSourceNodeId = undefined;
+    // 1. 首先尝试从当前标签页记录的点击源获取
+    const clickSource = this.lastClickSourceNodeIdMap.get(tabId);
+    if (clickSource && now - clickSource.timestamp < 30000) { // 30秒内的点击有效
+      parentId = clickSource.nodeId;
+      console.log(`使用标签页${tabId}的点击源节点: ${parentId}`);
+      this.lastClickSourceNodeIdMap.delete(tabId);
     } 
-    // 2. 然后尝试从标签历史中获取上一个节点
+    // 2. 如果没有找到，从待处理导航列表查找匹配URL的记录
     else {
-      const tabHistory = this.tabNavigationHistory.get(tabId) || [];
-      if (tabHistory.length > 0) {
-        parentId = tabHistory[tabHistory.length - 1];
+      const normalizedUrl = this.normalizeUrl(details.url);
+      
+      console.log(`查找待处理导航, 标准化URL: ${normalizedUrl}`);
+      
+      // 尝试找到匹配的URL
+      const pendingList = this.pendingNavigations.get(normalizedUrl);
+      
+      if (pendingList && pendingList.length > 0) {
+        // 按时间戳排序，找出最近的一个
+        const sortedPending = [...pendingList].sort((a, b) => b.timestamp - a.timestamp);
+        const pendingNav = sortedPending[0];
+        
+        // 直接使用sourceNodeId
+        parentId = pendingNav.sourceNodeId;
+        console.log(`从待处理导航中获取父节点ID: ${parentId}`);
+        
+        // 使用后移除此条目
+        this.pendingNavigations.delete(normalizedUrl);
+      } else {
+        console.log(`在待处理导航中未找到匹配项: ${normalizedUrl}`);
       }
     }
 
@@ -551,7 +583,33 @@ export class TabTracker {
 
     this.setNodeIdForTab(tabId, nodeId);
   }
-
+  
+  /**
+   * 标准化URL，移除片段标识符、查询参数和尾部斜杠
+   * 使得相似的URL可以被识别为同一目标
+   */
+  private normalizeUrl(url: string): string {
+    try {
+      // 如果URL无效或为空，直接返回
+      if (!url) return '';
+      
+      // 解析URL
+      const parsedUrl = new URL(url);
+      
+      // 构建标准化的URL：保留协议、主机名和路径，去除查询参数和片段标识符
+      let normalizedUrl = `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}`;
+      
+      // 去除尾部斜杠
+      normalizedUrl = normalizedUrl.replace(/\/+$/, '');
+      
+      console.log(`标准化URL: ${url} -> ${normalizedUrl}`);
+      return normalizedUrl;
+    } catch (error) {
+      // 如果URL解析失败，返回原始URL
+      console.warn(`URL标准化失败: ${url}`, error);
+      return url;
+    }
+  }
   /**
    * 处理导航到已存在节点的情况
    */
@@ -662,6 +720,20 @@ export class TabTracker {
     };
     
     await this.storage.saveEdge(edge);
+    
+    // 这确保回退后的页面能够被正确识别为新链接的源节点
+    if (!this.pageIdMap) {
+      this.pageIdMap = new Map();
+    }
+    // 生成一个临时页面ID，确保回退操作后该页面可以作为链接点击的源
+    const tempPageId = `history-${targetRecord.id}-${now}`;
+    this.pageIdMap.set(tempPageId, {
+      tabId: tabId,
+      nodeId: targetRecord.id!,
+      timestamp: now
+    });
+    
+    console.log(`历史导航后设置页面ID映射: ${tempPageId} -> 节点 ${targetRecord.id}`);
     
     // 更新标签页历史 - 添加目标节点
     this.addToTabHistory(tabId, targetRecord.id!);
@@ -997,59 +1069,77 @@ export class TabTracker {
   }
   
   /**
-   * 处理链接点击事件
+   * 处理链接点击事件 - 增强版
    */
   private async handleLinkClicked(tabId: number, linkInfo: any): Promise<void> {
     try {
-      console.log(`链接点击: ${linkInfo.targetUrl} (来自${linkInfo.sourcePageId})`);
+      console.log(`链接点击: ${linkInfo.targetUrl} (来自页面ID ${linkInfo.sourcePageId})`);
       
-      // 存储点击信息，用于后续匹配导航
-      if (!this.pendingNavigations) {
-        this.pendingNavigations = new Map();
-      }
+      let sourceNodeId = null;
       
-      // 用URL作为键存储多个待处理导航
-      const normalizedUrl = this.normalizeUrl(linkInfo.targetUrl);
-      if (!this.pendingNavigations.has(normalizedUrl)) {
-        this.pendingNavigations.set(normalizedUrl, []);
-      }
-      
-      // 添加到待处理队列
-      this.pendingNavigations.get(normalizedUrl)!.push({
-        type: 'link_click',
-        sourcePageId: linkInfo.sourcePageId,
-        targetUrl: linkInfo.targetUrl,
-        timestamp: linkInfo.timestamp,
-        sourceTabId: tabId,
-        expireTime: Date.now() + 10000 // 10秒后过期
-      });
-      
-      // 存储点击时页面的节点ID，用于后续建立导航关系
+      // 查找源节点
       const sourceNodeInfo = this.pageIdMap.get(linkInfo.sourcePageId);
       if (sourceNodeInfo && sourceNodeInfo.nodeId) {
-        // 将此源节点ID临时保存，以便在下一次导航中使用
-        this.lastClickSourceNodeId = sourceNodeInfo.nodeId;
+        sourceNodeId = sourceNodeInfo.nodeId;
+        console.log(`从pageIdMap找到源节点: ${sourceNodeId}`);
+      } else {
+        const tabHistory = this.tabNavigationHistory.get(tabId) || [];
+        if (tabHistory.length > 0) {
+          sourceNodeId = tabHistory[tabHistory.length - 1];
+          console.log(`从标签页历史获取源节点: ${sourceNodeId}`);
+        }
+      }
+      
+      // 找到有效的源节点后
+      if (sourceNodeId) {
+        // 1. 记录到同一标签页的映射
+        this.lastClickSourceNodeIdMap.set(tabId, {
+          nodeId: sourceNodeId,
+          timestamp: Date.now()
+        });
         
-        // 定时清除，避免错误关联
+        // 2. 同时保存到目标URL映射
+        const targetUrl = this.normalizeUrl(linkInfo.targetUrl);
+        if (!this.pendingNavigations.has(targetUrl)) {
+          this.pendingNavigations.set(targetUrl, []);
+        }
+        
+        // 保存导航关系
+        this.pendingNavigations.get(targetUrl)!.push({
+          type: 'link_click',
+          sourceNodeId: sourceNodeId,
+          targetUrl: targetUrl,
+          timestamp: Date.now(),
+          sourceTabId: tabId,
+          expireTime: Date.now() + 30000
+        });
+        
+        console.log(`保存导航关系: ${targetUrl} <- ${sourceNodeId}`);
+        
+        // 设置清理定时器
         setTimeout(() => {
-          if (this.lastClickSourceNodeId === sourceNodeInfo.nodeId) {
-            this.lastClickSourceNodeId = undefined;
-          }
-        }, 10000); // 10秒后清除
+          this.cleanupPendingNavigations(targetUrl);
+        }, 30000);
+      } else {
+        console.warn(`无法找到源页面ID ${linkInfo.sourcePageId} 对应的节点信息`);
       }
     } catch (error) {
       console.error('处理链接点击失败:', error);
     }
   }
   
-  /**
-   * 规范化URL以便比较
-   */
-  private normalizeUrl(url: string): string {
-    try {
-      return url.split('#')[0].replace(/\/$/, '');
-    } catch {
-      return url;
+  // 添加辅助清理方法
+  private cleanupPendingNavigations(url: string): void {
+    const pendingList = this.pendingNavigations.get(url);
+    if (pendingList) {
+      const now = Date.now();
+      const validEntries = pendingList.filter(entry => entry.expireTime > now);
+      if (validEntries.length > 0) {
+        this.pendingNavigations.set(url, validEntries);
+      } else {
+        this.pendingNavigations.delete(url);
+        console.log(`清理过期的待处理导航: ${url}`);
+      }
     }
   }
   
@@ -1258,6 +1348,3 @@ export class TabTracker {
     }
   }
 }
-
-// 创建并导出实例
-export const tabTracker = new TabTracker();

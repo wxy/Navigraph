@@ -102,3 +102,15 @@ export interface ExtendedNavigationDetails {
 
 export type ExtendedCommittedDetails = ExtendedNavigationDetails;
 export type ExtendedTransitionDetails = ExtendedNavigationDetails;
+
+/**
+ * Chrome原生API类型扩展
+ */
+declare namespace chrome {
+  namespace webNavigation {
+    interface WebNavigationFramedCallbackDetails {
+      transitionQualifiers?: string[];
+      transitionType?: string;
+    }
+  }
+}
