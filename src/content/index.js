@@ -925,7 +925,7 @@
       this.edges.forEach(edge => {
         const source = edge.source || edge.sourceId;
         const target = edge.target || edge.targetId;
-        const key = `${source}-${target}`;
+        const key = `${source}#${target}`;
         existingEdgeMap[key] = true;
       });
       
@@ -935,7 +935,7 @@
         if (node.parentId) {
           const source = node.parentId;
           const target = node.id;
-          const key = `${source}-${target}`;
+          const key = `${source}#${target}`;
           
           // 如果这个关系的边不存在，添加一个新的
           if (!existingEdgeMap[key]) {
@@ -1135,7 +1135,11 @@
       // 构建树结构
       const rootNodes = [];
       nodes.forEach(node => {
-        if (node.parentId && nodeById[node.parentId]) {
+        if (node.parentId === node.id) {
+          console.log(`检测到节点 ${node.id} 自循环，将其视为根节点`);
+          node.parentId = null; // 清除自循环
+          rootNodes.push(node);
+        } else if (node.parentId && nodeById[node.parentId]) {
           nodeById[node.parentId].children.push(node);
         } else {
           rootNodes.push(node);

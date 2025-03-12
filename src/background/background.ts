@@ -1,6 +1,7 @@
 import { TabTracker } from './tab-manager.js';
 import { NavigationStorage } from '../lib/storage';
 import { BrowsingSession } from '../types/webext'; // 假设类型在此文件中
+import { IdGenerator } from '../lib/id-generator.js';
 
 // 可以添加到文件顶部或单独的types文件中
 
@@ -557,7 +558,7 @@ class NavigationTracker {
     this.getCurrentSession().then(session => {
       if (session) {
         // 创建页面节点
-        const nodeId = `${tabId}-${pageInfo.timestamp}`;
+        const nodeId = IdGenerator.generateNodeId(tabId, pageInfo.url);
         
         // 检查节点是否已存在
         if (session.records && session.records[nodeId]) {
@@ -770,11 +771,11 @@ class NavigationTracker {
         if (session) {
           const timestamp = Date.now();
           const sourceNodeId = this.findNodeIdByUrl(session, foundNavigation.sourceUrl);
-          const targetNodeId = `${tabId}-${timestamp}`;
+          const targetNodeId = IdGenerator.generateNodeId(tabId, url);
           
           if (sourceNodeId) {
             // 创建边记录
-            const edgeId = `${sourceNodeId}-${targetNodeId}`;
+            const edgeId = this.storage.generateEdgeId(sourceNodeId, targetNodeId, timestamp);
             
             if (!session.edges) session.edges = {};
             session.edges[edgeId] = {

@@ -57,13 +57,13 @@ export class IdGenerator {
    */
   static hashString(str: string): string {
     let hash = 0;
+    if (str.length === 0) return hash.toString(36);
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // 转换为32bit整数
     }
-    // 转换为8字符的十六进制
-    const hashHex = (hash >>> 0).toString(16).padStart(8, '0');
-    return hashHex;
+    // 转换为更短的Base36字符串
+    return Math.abs(hash).toString(36);
   }
 }

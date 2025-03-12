@@ -641,7 +641,7 @@ export class TabTracker {
     this.navigationSequence++;
     
     const edge: NavigationEdge = {
-      id: `${currentNodeId}-${targetRecord.id}-${now}`,
+      id: this.storage.generateEdgeId(currentNodeId, targetRecord.id!, now),
       sourceId: currentNodeId,
       targetId: targetRecord.id!,
       timestamp: now,
@@ -724,6 +724,7 @@ export class TabTracker {
             }
             
             if (Object.keys(updates).length > 0) {
+              console.log(`延迟更新节点信息...`);
               await this.storage.updateRecord(nodeId, updates);
               console.log(`延迟更新节点信息: ${nodeId}`, updates);
             }
@@ -788,7 +789,7 @@ export class TabTracker {
         this.navigationSequence++;
         
         const edge: NavigationEdge = {
-          id: `${currentNodeId}-${savedRecord.id}-${now}`,
+          id: this.storage.generateEdgeId(currentNodeId, savedRecord.id!, now),
           sourceId: currentNodeId,
           targetId: savedRecord.id!,
           timestamp: now,

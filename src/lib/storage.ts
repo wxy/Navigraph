@@ -101,10 +101,11 @@ export class NavigationStorage {
   }
   
   /**
-   * 生成边ID
+   * 生成边ID - 使用#连接符区分
    */
   public generateEdgeId(sourceId: string, targetId: string, timestamp: number): string {
-    return `${sourceId}-${targetId}-${timestamp}`;
+// 使用#连接符生成边ID
+    return `${sourceId}#${targetId}#${timestamp}`;
   }
   
   /**
@@ -194,8 +195,8 @@ export class NavigationStorage {
         request.onsuccess = () => resolve(request.result || null);
         request.onerror = () => reject(request.error);
       });
-      
       if (!record) return null;
+      console.log('更新导航记录:', id, updates);
       
       const updatedRecord = { ...record, ...updates };
       
@@ -204,7 +205,39 @@ export class NavigationStorage {
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
-      
+      // 更新包含此记录的会话
+      if (record.sessionId) {
+        try {
+          // 获取会话
+          const sessionTx = this.db!.transaction(this.STORES.SESSIONS, 'readwrite');
+          const sessionStore = sessionTx.objectStore(this.STORES.SESSIONS);
+          
+          const session = await new Promise<BrowsingSession | null>((resolve, reject) => {
+            const request = sessionStore.get(record.sessionId!);
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = () => reject(request.error);
+          });
+          
+          if (session && session.records) {
+            // 更新会话中的记录
+            console.log(`更新会话 ${session.id} 中的记录 ${id}`);
+            session.records[id] = updatedRecord;
+            
+            // 保存更新的会话
+            await new Promise<void>((resolve, reject) => {
+              const request = sessionStore.put(session);
+              request.onsuccess = () => {
+                console.log(`会话 ${session.id} 中的记录已更新`);
+                resolve();
+              };
+              request.onerror = () => reject(request.error);
+            });
+          }
+        } catch (sessionError) {
+          console.warn(`更新会话中的记录失败: ${sessionError}，但记录本身已更新`);
+        }
+      }
+      console.log('导航记录更新成功:', updatedRecord);
       return updatedRecord;
     } catch (error) {
       console.error('更新导航记录失败:', error);
