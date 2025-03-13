@@ -351,9 +351,77 @@ body {
   stroke-width: 1px;
 }
 
+/* 已关闭的节点 - 圆形样式（针对时间线视图） */
+.node.closed circle {
+  fill: #f5f5f5;
+  stroke-dasharray: 3, 3;
+  opacity: 0.7;
+}
+
 .node.closed rect {
   fill: #f5f5f5;
   stroke-dasharray: 3, 3;
+  opacity: 0.7;
+}
+
+/* 为已关闭节点添加额外标记 */
+.node.closed::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  top: -6px;
+  right: -6px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23999"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  pointer-events: none; /* 确保不干扰鼠标事件 */
+}
+
+/* 降低关闭节点的文本不透明度 */
+.node.closed text {
+  opacity: 0.7;
+}
+
+/* 降低关闭节点的连接线不透明度 */
+path.link.closed, .edge.closed {
+  opacity: 0.5;
+  stroke-dasharray: 3, 3;
+}
+
+/* 跟踪页面的样式 */
+.node.tracking {
+  opacity: 0.6; /* 半透明 */
+}
+
+.node.tracking circle {
+  opacity: 0.6;
+  stroke-dasharray: 2,2;
+}
+
+.edge.tracking {
+  stroke-dasharray: 2, 2; /* 虚线连接 */
+  opacity: 0.5; /* 半透明 */
+}
+
+.filtered-indicator {
+  opacity: 0.8;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.node:hover .filtered-indicator {
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+/* 状态栏中的过滤指示器 */
+#status-filtered {
+  color: #ff5722;
+  font-weight: 500;
 }
 
 .node.root rect {
@@ -685,7 +753,9 @@ body {
   width: 100% !important; /* 确保始终占满宽度 */
   left: 0 !important;
   right: 0 !important;
+  bottom: 0 !important; /* 确保始终在底部 */
   overflow: visible !important; /* 确保时间轴在缩放时可见 */
+  z-index: 10 !important; /* 确保在正确的层级 */
 }
 
 /* 确保时间轴背景矩形充满 */
@@ -732,4 +802,47 @@ body {
 .time-axis-group .time-axis .domain {
   stroke-width: 1px;
   opacity: 0.7;
+}
+
+/* Windows风格的状态栏 */
+.windows-status-bar {
+  display: flex;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ddd;
+  height: 24px;
+  align-items: stretch;
+  font-size: 12px;
+  color: #333;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+/* 状态栏中的格子 */
+.status-cell {
+  padding: 0 8px;
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  margin-right: 2px;
+  min-width: 80px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 右侧自动伸缩的格子 */
+.status-cell-stretch {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 不同信息类型的视觉区分 */
+.status-cell-highlight {
+  font-weight: 500;
 }

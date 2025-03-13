@@ -27,7 +27,8 @@
         typeLink: true,
         typeAddress: true,
         typeForm: true,
-        typeJs: true
+        typeJs: true,
+        showTracking: false // 默认不显示跟踪页面
       };
       
       this.initialize();
@@ -90,7 +91,7 @@
                 // 更新SVG尺寸
                 this.svg
                   .attr('width', width)
-                  .attr('height', height - 40);
+                  .attr('height', height);
                 
                 // 更新时间线宽度
                 this.timelineSvg
@@ -178,6 +179,11 @@
         this.applyFilters();
       });
       
+      document.getElementById('filter-tracking').addEventListener('change', (e) => {
+        this.filters.showTracking = e.target.checked;
+        this.applyFilters();
+      });
+
       document.getElementById('type-link').addEventListener('change', (e) => {
         this.filters.typeLink = e.target.checked;
         this.applyFilters();
@@ -382,6 +388,7 @@
       document.getElementById('tree-view').classList.toggle('active', view === 'tree');
       document.getElementById('timeline-view').classList.toggle('active', view === 'timeline');
       
+      this.updateStatistics();
       // 重新渲染
       this.renderVisualization();
     }
@@ -390,11 +397,12 @@
      * 应用过滤器
      */
     applyFilters() {
+      this.updateStatistics();
       this.renderVisualization();
     }
     
     /**
-     * 过滤节点
+     * 过滤节点 - 增加跟踪页面过滤
      */
     filterNodes() {
       return this.nodes.filter(node => {
@@ -407,8 +415,138 @@
         // 根据状态筛选
         if (node.isClosed && !this.filters.closed) return false;
         
+        // 新增: 识别和过滤跟踪页面
+        if (this.isTrackingPage(node)) {
+          if (!this.filters.showTracking) return false; // 如果不显示跟踪页面，则过滤掉
+        }
+        
         return true;
       });
+    }
+    
+    /**
+     * 判断是否为跟踪页面 - 专注于JS打开的页面
+     */
+    isTrackingPage(node) {
+      // 如果不是JavaScript打开的页面，使用之前的普通判断
+      if (node.type !== 'javascript') {
+        // 只检查明确的跟踪URL路径模式
+        if (node.url) {
+          const lowerUrl = node.url.toLowerCase();
+          
+          const trackingKeywords = [
+            '/track/', '/pixel/', '/analytics/', '/beacon/', '/telemetry/', 
+            '/stats/', '/log/', '/metrics/', '/collect/', '/monitor/', 
+            'piwik.', 'matomo.', 'ga.js', 'gtm.js', 'fbevents', 
+            'insight.', '/counter/', 'www.google-analytics.com'
+          ];
+          
+          if (trackingKeywords.some(keyword => lowerUrl.includes(keyword))) {
+            return true;
+          }
+        }
+        return false;
+      }
+      
+      // 特殊处理JavaScript打开的页面 - 使用多重特征组合判断
+      // 计算置信度分数，分数越高越可能是跟踪页面
+      let trackingScore = 0;
+      
+      // 特征1: 检查URL特征 (权重高)
+      if (node.url) {
+        const lowerUrl = node.url.toLowerCase();
+        
+        // 1.1 明确的跟踪URL模式 (强特征)
+        const strongTrackingPatterns = [
+          'google-analytics.com', '/collect?', '/analytics?', '/pixel?', 
+          '/track?', '/beacon?', '/ping?', '/log?', 'mixpanel.com',
+          '/piwik?', 'clarity.ms', 'doubleclick.net'
+        ];
+        
+        if (strongTrackingPatterns.some(pattern => lowerUrl.includes(pattern))) {
+          trackingScore += 50; // 强特征，高分
+        }
+        
+        // 1.2 可疑的URL参数模式 (中等特征)
+        if (lowerUrl.includes('?')) {
+          const queryPart = lowerUrl.split('?')[1];
+          const params = new URLSearchParams(queryPart);
+          
+          // 检查跟踪参数
+          const trackingParams = ['utm_', 'gclid', 'fbclid', 'trackid', 'affiliate', 
+                                'sid', '_ga', 'cid', 'uid', 'visitor'];
+          
+          for (const param of trackingParams) {
+            if (Array.from(params.keys()).some(key => key.includes(param))) {
+              trackingScore += 10;
+            }
+          }
+          
+          // 参数超长
+          if (queryPart.length > 150) {
+            trackingScore += 15;
+          }
+          
+          // 参数数量异常多
+          if (params.size > 8) {
+            trackingScore += 10;
+          }
+        }
+        
+        // 1.3 URL路径本身很短但查询字符串很长 (典型的跟踪模式)
+        const urlPath = new URL(lowerUrl).pathname;
+        if (urlPath.length < 10 && lowerUrl.includes('?') && lowerUrl.length > 150) {
+          trackingScore += 15;
+        }
+        
+        // 1.4 白名单匹配 (排除正常JS导航)
+        const importantPages = ['/login', '/account', '/profile', '/cart', 
+                               '/checkout', '/product', '/item', '/article',
+                               '/post', '/news', '/blog', '/story'];
+        
+        if (importantPages.some(page => lowerUrl.includes(page))) {
+          trackingScore -= 30; // 强力降低分数
+        }
+      }
+      
+      // 特征2: 检查活跃时间 (JS打开的跟踪页面通常活跃时间极短)
+      if (node.activeTime !== undefined) {
+        if (node.activeTime < 200) {
+          trackingScore += 20; // 活跃时间极短，很可能是跟踪请求
+        } else if (node.activeTime < 500) {
+          trackingScore += 10; // 活跃时间短，可能是跟踪请求
+        } else if (node.activeTime > 10000) {
+          trackingScore -= 20; // 活跃时间长，可能是正常页面
+        }
+      }
+      
+      // 特征3: 检查标题特征 (跟踪页面通常无标题或标题无意义)
+      if (!node.title) {
+        trackingScore += 15; // 无标题，可能是跟踪页面
+      } else {
+        // 标题包含正常页面关键词，降低分数
+        const normalTitleWords = ['page', 'home', 'blog', 'article', 'product', 
+                                 'search', 'result', 'profile', 'shop'];
+        if (normalTitleWords.some(word => node.title.toLowerCase().includes(word))) {
+          trackingScore -= 10;
+        }
+      }
+      
+      // 特征4: 检查节点关系 (跟踪页面通常是叶子节点)
+      const hasChildren = this.nodes.some(n => n.parentId === node.id);
+      if (!hasChildren) {
+        trackingScore += 10; // 没有子节点，增加跟踪可能性
+      } else {
+        trackingScore -= 15; // 有子节点，降低跟踪可能性
+      }
+      
+      // 特征5: 检查favicon (跟踪页面通常没有favicon或使用通用favicon)
+      if (!node.favicon) {
+        trackingScore += 5;
+      }
+      
+      // 判定阈值: 50分及以上很可能是跟踪页面
+      return trackingScore >= 50;
     }
     
     /**
@@ -1021,23 +1159,95 @@
     }
     
     /**
+     * 重置统计信息到默认值
+     */
+    resetStatistics() {
+      // Windows风格状态栏的默认值
+      const defaultValues = {
+        'status-nodes': '节点: 0',
+        'status-edges': '连接: 0',
+        'status-pages': '页面: 0',
+        'status-navigations': '导航: 0',
+        'status-time': '时间: 0分钟'
+      };
+      
+      // 安全地更新所有状态栏格子
+      Object.entries(defaultValues).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+      });
+      
+      // 更新消息格子
+      const messageElement = document.getElementById('status-message');
+      if (messageElement) {
+        messageElement.textContent = `${this.currentView === 'tree' ? '树形视图' : '时间线视图'} | ${new Date().toLocaleTimeString()}`;
+      }
+    }
+    /**
      * 更新统计信息
      */
     updateStatistics() {
-      if (!this.currentSession) return;
+      if (!this.currentSession) {
+        // 如果没有会话，重置统计信息
+        this.resetStatistics();
+        return;
+      }
+      try {
+        // 所有节点和应用过滤器后的节点
+        const allNodes = this.nodes || [];
+        const visibleNodes = this.filterNodes();
+        const visibleEdges = this.filterEdges(visibleNodes);
+        
+        // 计算被过滤的节点数
+        const filteredNodesCount = allNodes.length - visibleNodes.length;
+    
+        // 计算总活跃时间
+        const totalActiveTime = visibleNodes.reduce((sum, node) => sum + (node.activeTime || 0), 0);
+        const minutes = Math.floor(totalActiveTime / 60000);
+        
+        const uniqueUrls = new Set(visibleNodes.filter(node => node.url).map(node => node.url));
+        const pagesCount = uniqueUrls.size;
+        
+        // 计算导航次数 - 通过边的数量来估算
+        const navigationCount = visibleEdges.length;
+        
+        // 更新Windows风格的状态栏格子
+        const elements = {
+          'status-nodes': `节点: ${visibleNodes.length}/${allNodes.length}`,
+          'status-edges': `连接: ${visibleEdges.length}`,
+          'status-pages': `页面: ${pagesCount}`,
+          'status-navigations': `导航: ${navigationCount}`,
+          'status-time': `时间: ${minutes}分钟`,
+          'status-filtered': `已过滤: ${filteredNodesCount}`
+        };
+        
+        // 遍历所有需要更新的格子 - 添加防御性检查和日志
+        Object.entries(elements).forEach(([id, value]) => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.textContent = value;
+          } else {
+            console.warn(`状态栏元素未找到: ${id}`);
+          }
+        });
+        // 更新消息格子
+        const messageElement = document.getElementById('status-message');
+        if (messageElement) {
+          const filterTypes = [];
+          if (!this.filters.typeLink) filterTypes.push('链接');
+          if (!this.filters.typeAddress) filterTypes.push('地址栏');
+          if (!this.filters.typeForm) filterTypes.push('表单');
+          if (!this.filters.typeJs) filterTypes.push('JS');
+          if (!this.filters.showTracking) filterTypes.push('跟踪');
+          
+          const filterMsg = filterTypes.length > 0 ? `已隐藏: ${filterTypes.join(',')}` : '显示所有类型';
+          messageElement.textContent = `${this.currentView === 'tree' ? '树形视图' : '时间线视图'} | ${filterMsg}`;
+        }
+        console.log('状态栏已更新:', elements);
       
-      // 可见节点和边的计数
-      const visibleNodes = this.filterNodes();
-      const visibleEdges = this.filterEdges(visibleNodes);
-      
-      // 更新DOM
-      document.getElementById('stats-nodes').textContent = visibleNodes.length;
-      document.getElementById('stats-edges').textContent = visibleEdges.length;
-      
-      // 计算总活跃时间
-      const totalActiveTime = visibleNodes.reduce((sum, node) => sum + (node.activeTime || 0), 0);
-      const minutes = Math.floor(totalActiveTime / 60000);
-      document.getElementById('stats-time').textContent = `${minutes}分钟`;
+      } catch (error) {
+        console.error('更新统计信息失败:', error);
+      }
     }
     
     /**
@@ -1061,6 +1271,9 @@
           return;
         }
         
+        // 标记有被过滤子节点的父节点 (在应用过滤器之前调用)
+        this.markNodesWithFilteredChildren();
+
         // 应用过滤器
         const visibleNodes = this.filterNodes();
         const visibleLinks = this.filterEdges(visibleNodes);
@@ -1089,8 +1302,8 @@
         const svg = vizContainer.append('svg')
           .attr('class', 'main-svg')
           .attr('width', width)
-          .attr('height', height - timelineHeight)
-          .attr('viewBox', [0, 0, width, height - timelineHeight]);
+          .attr('height', height)
+          .attr('viewBox', [0, 0, width, height]);
         
         // 在主SVG容器中添加事件处理
         svg.on('click', (event) => {
@@ -1121,13 +1334,17 @@
         
         // 保存时间线SVG供后续使用
         this.timelineSvg = timelineSvg;
-        
         // 根据当前视图调用相应的渲染方法
         if (this.currentView === 'tree') {
-          this.renderTreeLayout(mainGroup, visibleNodes, visibleLinks, width, height - timelineHeight);
           // 树形视图不需要时间线，隐藏它
           this.timelineSvg.style('display', 'none');
+
+          this.renderTreeLayout(mainGroup, visibleNodes, visibleLinks, width, height);
         } else {
+          this.timelineSvg.style('display', null);
+          // 主视图高度减去时间线高度
+          svg.attr('height', height - timelineHeight)
+             .attr('viewBox', [0, 0, width, height - timelineHeight]);
           this.renderTimelineLayout(mainGroup, timelineSvg, visibleNodes, visibleLinks, width, height - timelineHeight);
         }
         
@@ -1170,19 +1387,13 @@
           });
         
         svg.call(zoom);
-        
-        // 初始缩放以适应内容
-        const initialScale = 0.8;
-        const initialTransform = d3.zoomIdentity
-          .translate(width * 0.1, height * 0.5)
-          .scale(initialScale);
-        
-        svg.call(zoom.transform, initialTransform);
+        this.zoom = zoom;
         
       } catch (error) {
         console.error('渲染可视化失败:', error);
         this.showNoData(`渲染可视化失败: ${error.message}`);
       }
+      this.updateStatistics();
     }
     
     /**
@@ -1279,8 +1490,8 @@
       // 创建层次化树形布局 - 注意修改这里的配置
       const treeLayout = d3.tree()
         .size([height * 0.8, width * 0.6]) // 保持足够的空间
-        .separation((a, b) => (a.parent === b.parent ? 2 : 3)); // 增加节点间距
-      
+        .separation((a, b) => (a.parent === b.parent ? 2 : 3)); // 增加节点间距   
+
       // 创建层次结构
       const hierarchy = d3.stratify()
         .id(d => d.id)
@@ -1302,6 +1513,63 @@
       // 应用布局
       const treeData = treeLayout(hierarchy);
       
+      // 立即计算树的边界
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+      
+      treeData.descendants().forEach(d => {
+        minX = Math.min(minX, d.y);
+        maxX = Math.max(maxX, d.y);
+        minY = Math.min(minY, d.x);
+        maxY = Math.max(maxY, d.x);
+      });
+      
+      // 固定水平偏移量，确保根节点在左侧而不是居中
+      const leftMargin = width * 0.15; // 左侧预留15%的空间
+      const xOffset = leftMargin;
+      
+      // 垂直方向居中
+      const contentHeight = maxY - minY;
+      const yOffset = (height - contentHeight) / 2 - minY;
+      
+      // 计算合适的缩放因子
+      const contentWidth = maxX - minX;
+      const scaleFactor = Math.min(
+        (width - leftMargin - 40) / Math.max(contentWidth, 1),
+        (height - 40) / Math.max(contentHeight, 1),
+        0.9
+      );
+      
+      // 创建适当的变换矩阵
+      const transformMatrix = d3.zoomIdentity
+        .translate(xOffset, yOffset)
+        .scale(1); // 先不缩放，保持原始大小的树
+      
+      // 渲染树结构 - 应用初始偏移
+      
+      // 创建连接线分组 - 已应用初始变换
+      const linkGroup = container.append('g')
+        .attr('class', 'links')
+        .attr('transform', `translate(${xOffset}, ${yOffset})`);
+      
+      // 节点分组 - 已应用初始变换
+      const nodeGroup = container.append('g')
+        .attr('class', 'nodes')
+        .attr('transform', `translate(${xOffset}, ${yOffset})`);
+      
+      // 正常绘制连接线和节点
+      // ...连接线和节点的渲染代码...
+      
+      // 所有渲染完毕后，如果需要缩放，一次性应用缩放变换
+      if (this.svg && this.zoom && scaleFactor < 1.0) {
+        // 计算考虑了缩放的最终变换
+        const finalTransform = d3.zoomIdentity
+          .translate(xOffset * scaleFactor, yOffset * scaleFactor)
+          .scale(scaleFactor);
+          
+        this.svg.call(this.zoom.transform, finalTransform);
+      }
+      
       // 创建箭头标记
       container.append('defs').append('marker')
         .attr('id', 'arrow')
@@ -1314,11 +1582,7 @@
         .append('path')
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#999');
-      
-      // 创建连接线分组
-      const linkGroup = container.append('g')
-        .attr('class', 'links');
-      
+           
       // 绘制连接线 - 注意使用曲线路径
       linkGroup.selectAll('path')
         .data(treeData.links())
@@ -1338,15 +1602,31 @@
         .attr('fill', 'none')
         .attr('marker-end', 'url(#arrow)');
       
-      // 创建节点分组
-      const nodeGroup = container.append('g')
-        .attr('class', 'nodes');
-      
       // 绘制节点
       const node = nodeGroup.selectAll('.node')
         .data(treeData.descendants())
         .join('g')
-        .attr('class', d => `node ${d.data.type || ''}`)
+        .attr('class', d => {
+          // 合并多个类名：基本节点类、类型类、关闭状态类
+          let classes = `node ${d.data.type || ''}`;
+          
+          // 添加关闭状态
+          if (d.data.isClosed) {
+            classes += ' closed';
+          }
+          
+          // 添加根节点标记
+          if (d.data.isRoot) {
+            classes += ' root';
+          }
+          
+          // 添加跟踪页面标记
+          if (this.isTrackingPage && this.isTrackingPage(d.data)) {
+            classes += ' tracking';
+          }
+          
+          return classes;
+        })
         .attr('transform', d => `translate(${d.y},${d.x})`); // 注意x和y的使用
       
       // 会话节点特殊处理
@@ -1411,6 +1691,19 @@
           return d.data.title.length > 15 ? d.data.title.substring(0, 12) + '...' : d.data.title;
         });
 
+      // 为有被过滤子节点的节点添加标记
+      node.filter(d => d.data.hasFilteredChildren)
+        .append('circle')
+        .attr('r', 6)
+        .attr('cx', 18)
+        .attr('cy', -18)
+        .attr('fill', '#ff5722')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1)
+        .attr('class', 'filtered-indicator')
+        .append('title')
+        .text(d => `包含${d.data.filteredChildrenCount}个被过滤的子节点`);
+
       // 添加交互
       node.on('click', (event, d) => {
         if (d.data.id === 'session-root') return;
@@ -1427,7 +1720,6 @@
       });
     }
     
-
     /**
      * 渲染时间线布局
      */
@@ -1481,14 +1773,14 @@
           // Y坐标基于类型，分层展示
           let yBase = 0;
           switch (node.type) {
-            case 'link_click': yBase = height * 0.2; break;
-            case 'address_bar': yBase = height * 0.4; break;
-            case 'form_submit': yBase = height * 0.6; break;
-            default: yBase = height * 0.5;
+            case 'link_click': yBase = height * 0.25; break;
+            case 'address_bar': yBase = height * 0.45; break;
+            case 'form_submit': yBase = height * 0.65; break;
+            default: yBase = height * 0.4;
           }
           
           // 添加一些随机偏移避免重叠
-          node.renderY = yBase + (Math.random() - 0.5) * height * 0.2;
+          node.renderY = yBase + (Math.random() - 0.5) * height * 0.15;
         });
         
         // 创建箭头定义
@@ -1542,7 +1834,22 @@
           .data(nodes)
           .enter()
           .append('g')
-          .attr('class', d => `node ${d.type}`)
+          .attr('class', d => {
+            // 组合多个类名
+            let classes = `node ${d.type}`;
+            
+            // 添加关闭状态
+            if (d.isClosed) {
+              classes += ' closed';
+            }
+            
+            // 添加跟踪标记
+            if (this.isTrackingPage(d)) {
+              classes += ' tracking';
+            }
+            
+            return classes;
+          })
           .attr('transform', d => `translate(${d.renderX},${d.renderY})`);
         
         nodeElements.append('circle')
@@ -1629,7 +1936,69 @@
               .attr('stroke-width', 0.5)
               .attr('opacity', 0.3);
           });
-          
+        // 在renderTimelineLayout方法末尾的setTimeout部分添加动态居中计算
+        setTimeout(() => {
+          try {
+            // 如果有节点，计算边界以实现真正的居中
+            if (nodes.length > 0) {
+              // 获取所有节点的位置信息
+              const xValues = nodes.map(node => node.renderX);
+              const yValues = nodes.map(node => node.renderY);
+              
+              // 计算实际内容边界
+              const minX = Math.min(...xValues);
+              const maxX = Math.max(...xValues);
+              const minY = Math.min(...yValues);
+              const maxY = Math.max(...yValues);
+              
+              // 计算内容尺寸，增加边距使视觉更平衡
+              const contentWidth = maxX - minX + 80; // 增加水平边距
+              const contentHeight = maxY - minY + 80; // 增加垂直边距
+              
+              console.log('时间线节点边界:', {minX, maxX, minY, maxY, contentWidth, contentHeight});
+              
+              // 时间线高度使用固定值40
+              const timelineHeight = 40;
+              
+              // 计算更精确的缩放因子 - 考虑可用空间
+              const availableHeight = height - timelineHeight; // 减去时间线高度后的可用空间
+              
+              const scaleFactor = Math.min(
+                (width * 0.9) / Math.max(contentWidth, 1), // 水平方向留出10%边距
+                (availableHeight * 0.9) / Math.max(contentHeight, 1), // 垂直方向留出10%边距
+                0.9 // 最大缩放限制
+              );
+              
+              // 计算更精确的中心点 - 关键改进
+              // 水平中心点：容器中心 + 适当偏移
+              const centerX = (width - contentWidth * scaleFactor) / 2 + (20 - minX) * scaleFactor;
+              
+              // 垂直中心点：考虑时间线，计算可用空间的中心
+              const centerY = (availableHeight - contentHeight * scaleFactor) / 2 + (20 - minY) * scaleFactor;
+              
+              // 创建并应用变换
+              const transform = d3.zoomIdentity
+                .translate(centerX, centerY)
+                .scale(scaleFactor);
+              
+              if (this.svg && this.zoom) {
+                console.log('应用时间线居中变换:', {centerX, centerY, scaleFactor, availableHeight});
+                this.svg.call(this.zoom.transform, transform);
+              }
+            } else {
+              // 没有节点，使用默认变换
+              const transform = d3.zoomIdentity
+                .translate(width / 2, height / 3)
+                .scale(0.9);
+              
+              if (this.svg && this.zoom) {
+                this.svg.call(this.zoom.transform, transform);
+              }
+            }
+          } catch (err) {
+            console.error('应用时间线居中失败:', err);
+          }
+        }, 150);  // 延时确保DOM完全渲染   
       } else {
         // 没有节点时显示默认时间线
         const now = new Date();
@@ -1714,6 +2083,10 @@
      * 显示节点详情
      */
     showNodeDetails(node) {
+      if (!node) {
+        document.getElementById('node-details').innerHTML = '<p>请选择一个节点查看详情</p>';
+        return;
+      }
       const detailsPanel = document.getElementById('node-details');
       if (!detailsPanel) return;
       
@@ -1723,6 +2096,34 @@
         return date.toLocaleString();
       };
       
+      // 截断URL以便更好地显示，不使用复杂的展开/折叠
+      const truncateUrl = (url, maxLength = 60) => {
+        if (!url || url.length <= maxLength) return url;
+        
+        try {
+          // 解析URL，分别处理基本部分和查询参数
+          const urlObj = new URL(url);
+          const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname}`;
+          
+          // 如果没有查询参数或整个URL较短，直接截断
+          if (!urlObj.search || url.length <= maxLength) {
+            return url.length > maxLength ? url.substring(0, maxLength) + '...' : url;
+          }
+          
+          // 对于有查询参数的URL，保留基本URL，截断查询参数
+          const queryLength = maxLength - baseUrl.length - 5; // 为"?..."预留5个字符
+          if (queryLength <= 0) {
+            // 基本URL已经很长，直接截断
+            return baseUrl.substring(0, maxLength - 3) + '...';
+          } else {
+            // 保留基本URL，截断查询参数
+            return baseUrl + '?' + urlObj.search.substring(1, queryLength) + '...';
+          }
+        } catch (e) {
+          // 如果URL格式不正确，简单截断
+          return url.substring(0, maxLength - 3) + '...';
+        }
+      };
       const html = `
         <div class="details-header">
           <h3>${node.title || '未命名页面'}</h3>
@@ -1735,7 +2136,7 @@
         </div>
         <div class="detail-row">
           <span class="label">URL:</span>
-          <a href="${node.url}" target="_blank" rel="noopener" class="url-link">${node.url}</a>
+          <a href="${node.url}" target="_blank" rel="noopener" class="url-link">${truncateUrl(node.url)}</a>
         </div>
         <div class="detail-row">
           <span class="label">访问时间:</span>
@@ -2066,7 +2467,7 @@
           document.getElementById('session-selector').innerHTML = '<option value="">暂无会话</option>';
           
           // 更新统计信息
-          this.updateStatistics();
+          this.resetStatistics();
           
           // 显示成功消息
           this.showNoData('数据已清除');
@@ -2230,6 +2631,34 @@
       }
       
       console.log(`会话选择器已更新，共${this.sessions.length}个选项`);
+    }
+
+    /**
+     * 标记有被过滤子节点的父节点
+     * 在renderVisualization之前调用
+     */
+    markNodesWithFilteredChildren() {
+      // 重置所有节点的标记
+      this.nodes.forEach(node => {
+        node.hasFilteredChildren = false;
+        node.filteredChildrenCount = 0;
+      });
+      
+      // 创建可见节点ID集合
+      const visibleNodes = this.filterNodes();
+      const visibleNodeIds = new Set(visibleNodes.map(node => node.id));
+      
+      // 找出所有节点，检查它们是否被过滤掉了
+      this.nodes.forEach(node => {
+        if (!visibleNodeIds.has(node.id)) {
+          // 节点被过滤了，标记它的父节点
+          const parentNode = this.nodes.find(n => n.id === node.parentId);
+          if (parentNode) {
+            parentNode.hasFilteredChildren = true;
+            parentNode.filteredChildrenCount = (parentNode.filteredChildrenCount || 0) + 1;
+          }
+        }
+      });
     }
   }
   // 等待DOM加载完成后初始化可视化

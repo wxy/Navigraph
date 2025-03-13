@@ -72,13 +72,12 @@
             <input type="checkbox" id="filter-closed" checked>
             <label for="filter-closed">显示已关闭页面</label>
           </div>
-        </div>
-        
-        <div class="statistics">
-          <h3>统计数据</h3>
-          <div>访问页面: <span id="stats-nodes">0</span></div>
-          <div>导航次数: <span id="stats-edges">0</span></div>
-          <div>活跃时间: <span id="stats-time">0分钟</span></div>
+          <div class="filter-option">
+            <input type="checkbox" id="filter-tracking">
+            <label for="filter-tracking">
+              显示跟踪页面
+            </label>
+          </div>
         </div>
 
         <!-- 调试面板 - 添加到filters-panel底部 -->
@@ -102,22 +101,6 @@
       </div>
     </div>
 
-    <!-- 统计信息区域 -->
-    <div class="stats-container">
-      <div class="stat-item">
-        <span class="stat-label">节点数:</span>
-        <span id="stats-nodes">0</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">连接数:</span>
-        <span id="stats-edges">0</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">总时长:</span>
-        <span id="stats-time">0分钟</span>
-      </div>
-    </div>
-
     <!-- 加载和错误提示 -->
     <div id="loading" style="display: none;">
       <div class="spinner"></div>
@@ -130,9 +113,14 @@
     </div>
     
     <!-- 底部状态栏 -->
-    <div class="status-bar">
-      <div id="status-text">就绪</div>
-      <div id="session-info"></div>
+    <div class="windows-status-bar">
+      <div class="status-cell" id="status-nodes">节点: 0</div>
+      <div class="status-cell" id="status-edges">连接: 0</div>
+      <div class="status-cell" id="status-pages">页面: 0</div>
+      <div class="status-cell" id="status-navigations">导航: 0</div>
+      <div class="status-cell" id="status-time">时间: 0分钟</div>
+      <div class="status-cell" id="status-filtered">已过滤: 0</div>
+      <div class="status-cell status-cell-stretch" id="status-message">就绪</div>
     </div>
   </div>
   
