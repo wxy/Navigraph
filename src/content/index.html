@@ -3,317 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Navigraph - 导航历史与分析</title>
-  <style>
-    :root {
-      --bg-color: #f8f9fa;
-      --text-color: #333;
-      --border-color: #ddd;
-      --hover-color: #f0f0f0;
-      --accent-color: #4285f4;
-      --shadow-color: rgba(0, 0, 0, 0.1);
-      --header-bg: #fff;
-    }
-    
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-color: #202124;
-        --text-color: #e8eaed;
-        --border-color: #5f6368;
-        --hover-color: #303134;
-        --accent-color: #8ab4f8;
-        --shadow-color: rgba(0, 0, 0, 0.3);
-        --header-bg: #292a2d;
-      }
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      line-height: 1.6;
-      padding-bottom: 30px;
-    }
-    
-    header {
-      position: sticky;
-      top: 0;
-      background-color: var(--header-bg);
-      padding: 16px;
-      border-bottom: 1px solid var(--border-color);
-      box-shadow: 0 2px 4px var(--shadow-color);
-      z-index: 100;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    h1 {
-      font-size: 24px;
-      font-weight: 500;
-      margin-bottom: 8px;
-      color: var(--accent-color);
-      display: flex;
-      align-items: center;
-    }
-    
-    h1 img {
-      height: 24px;
-      margin-right: 10px;
-    }
-    
-    .toolbar {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-      align-items: center;
-    }
-    
-    button {
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 16px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.2s;
-    }
-    
-    button:hover {
-      opacity: 0.9;
-    }
-    
-    #clear-data {
-      background-color: #ea4335;
-    }
-    
-    input[type="text"] {
-      flex-grow: 1;
-      padding: 8px 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      font-size: 14px;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-    }
-    
-    main {
-      padding: 16px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    #tree-container {
-      position: relative;
-    }
-    
-    #loading, #error-container, #no-data {
-      padding: 20px;
-      text-align: center;
-    }
-    
-    #error-container {
-      color: #ea4335;
-      display: none;
-    }
-    
-    #no-data {
-      color: var(--text-color);
-      opacity: 0.7;
-      display: none;
-    }
-    
-    #loading {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background-color: rgba(255, 255, 255, 0.8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      min-height: 200px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .loading-spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid var(--accent-color);
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 10px;
-    }
-    
-    /* 树形样式 */
-    ul.tree-root {
-      list-style: none;
-    }
-    
-    li {
-      position: relative;
-    }
-    
-    .date-group, .navigation-node {
-      margin-bottom: 4px;
-    }
-    
-    .date-title, .node-title {
-      display: flex;
-      align-items: center;
-      padding: 6px 8px;
-      border-radius: 4px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    
-    .date-title:hover, .node-title:hover {
-      background-color: var(--hover-color);
-    }
-    
-    .date-title {
-      font-weight: bold;
-      color: var(--accent-color);
-    }
-    
-    .node-title {
-      font-size: 14px;
-    }
-    
-    .toggle-icon {
-      display: inline-block;
-      width: 16px;
-      text-align: center;
-      margin-right: 4px;
-      cursor: pointer;
-    }
-    
-    .favicon {
-      width: 16px;
-      height: 16px;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    
-    .node-list, .node-children {
-      list-style: none;
-      margin-left: 36px;
-      border-left: 1px dashed var(--border-color);
-    }
-    
-    .hidden {
-      display: none;
-    }
-    
-    /* 搜索结果样式 */
-    .search-results {
-      list-style: none;
-    }
-    
-    .search-result-item {
-      padding: 10px;
-      border-bottom: 1px solid var(--border-color);
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    
-    .search-result-item:hover {
-      background-color: var(--hover-color);
-    }
-    
-    .result-title {
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-    }
-    
-    .result-url {
-      font-size: 12px;
-      color: var(--accent-color);
-      word-break: break-all;
-      margin-left: 24px;
-    }
-    
-    .result-time {
-      font-size: 12px;
-      color: #888;
-      margin-top: 4px;
-      margin-left: 24px;
-    }
-    
-    /* 动画效果 */
-    .fade-in {
-      animation: fadeIn 0.5s;
-    }
-    
-    .updating {
-      animation: highlight 1.5s;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    @keyframes highlight {
-      0% { background-color: rgba(66, 133, 244, 0.2); }
-      100% { background-color: transparent; }
-    }
-    
-    /* 弹性布局适应不同屏幕尺寸 */
-    @media (max-width: 768px) {
-      .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-  </style>
+  <title>导航图谱</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="d3.v7.min.js"></script>
 </head>
 <body>
-  <header>
-    <div>
-      <h1><img src="../../images/logo-48.png" alt="Navigraph logo"> Navigraph 导航历史</h1>
+  <div class="app-container">
+    <!-- 顶部工具栏 -->
+    <header class="toolbar">
+      <div class="logo">
+        <img src="../../images/logo-48.png" alt="导航图谱">
+        <h1>导航图谱</h1>
+      </div>
+      
+      <div class="session-controls">
+        <select id="session-selector" aria-label="选择会话">
+          <option value="">正在加载会话...</option>
+        </select>
+        
+        <div class="view-mode">
+          <button id="tree-view" class="active">树形视图</button>
+          <button id="timeline-view">时间线视图</button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- 主体内容区域 -->
+    <div class="main-container">
+      <!-- 左侧过滤器面板 -->
+      <aside class="filters-panel">
+        <h2>筛选器</h2>
+        
+        <div class="filter-section">
+          <h3>导航类型</h3>
+          <div class="filter-option">
+            <input type="checkbox" id="type-link" checked>
+            <label for="type-link">链接点击</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="type-address" checked>
+            <label for="type-address">地址栏输入</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="type-form" checked>
+            <label for="type-form">表单提交</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="type-js" checked>
+            <label for="type-js">JavaScript/重定向</label>
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <h3>导航行为</h3>
+          <div class="filter-option">
+            <input type="checkbox" id="filter-reload" checked>
+            <label for="filter-reload">显示页面刷新</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="filter-history" checked>
+            <label for="filter-history">显示历史导航</label>
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <h3>页面状态</h3>
+          <div class="filter-option">
+            <input type="checkbox" id="filter-closed">
+            <label for="filter-closed">显示已关闭页面</label>
+          </div>
+          <div class="filter-option">
+            <input type="checkbox" id="filter-tracking">
+            <label for="filter-tracking">
+              显示跟踪页面
+            </label>
+          </div>
+        </div>
+
+        <!-- 调试面板 - 添加到filters-panel底部 -->
+        <div class="filter-section debug-section">
+          <h3>🐞 调试工具</h3>
+          <button id="debug-check-data" class="debug-btn">检查数据</button>
+          <button id="debug-check-dom" class="debug-btn">检查DOM</button>
+          <button id="debug-test-render" class="debug-btn">测试渲染</button>
+          <button id="debug-clear-data" class="debug-btn danger">清除数据</button>
+        </div>
+      </aside>
+      
+      <!-- 中间可视化区域 -->
+      <div class="visualization-container" id="visualization-container">
+        <!-- 这里会渲染SVG -->
+      </div>
+      
+      <!-- 右侧详情面板 -->
+      <div class="details-panel">
+        <div id="node-details"><!-- 节点详情会显示在这里 --></div>
+      </div>
     </div>
-    <div class="toolbar">
-      <input type="text" id="search" placeholder="搜索URL或页面标题...">
-      <button id="refresh-button">刷新</button>
-      <button id="clear-data">清除所有记录</button>
+
+    <!-- 加载和错误提示 -->
+    <div id="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>正在加载数据...</p>
     </div>
-  </header>
-  
-  <main>
-    <div id="tree-container">
-      <!-- 导航树将在此渲染 -->
-      <div id="no-data">暂无导航历史数据</div>
+
+    <div id="no-data" style="display: none;">
+      <h2>暂无数据</h2>
+      <p id="status-text">尚未记录导航数据</p>
     </div>
     
-    <div id="loading">
-      <div class="loading-spinner"></div>
-      <div>加载中...</div>
+    <!-- 底部状态栏 -->
+    <div class="windows-status-bar">
+      <div class="status-cell" id="status-nodes">节点: 0</div>
+      <div class="status-cell" id="status-edges">连接: 0</div>
+      <div class="status-cell" id="status-pages">页面: 0</div>
+      <div class="status-cell" id="status-navigations">导航: 0</div>
+      <div class="status-cell" id="status-time">时间: 0分钟</div>
+      <div class="status-cell" id="status-filtered">已过滤: 0</div>
+      <div class="status-cell status-cell-stretch" id="status-message">就绪</div>
     </div>
-    
-    <div id="error-container"></div>
-  </main>
+  </div>
   
+  <!-- 工具提示 -->
+  <div id="tooltip" class="tooltip"></div>
+  
+  <!-- 脚本 -->
+
   <script src="index.js"></script>
+  <script src="index-old.js"></script>
 </body>
 </html>
