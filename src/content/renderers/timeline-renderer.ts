@@ -4,14 +4,14 @@
  */
 
 // 导入依赖
-import * as d3 from 'd3';
-import { NavNode, NavLink, Visualizer } from '../types/navigation';
+declare const d3: any;
+import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import { 
   getNodeColor, 
   getEdgeColor, 
   isTrackingPage,
   calculateLinkPath 
-} from '../utils/visualization-utils';
+} from '../utils/visualization-utils.js';
 
 // 导出主渲染函数
 export function renderTimelineLayout(

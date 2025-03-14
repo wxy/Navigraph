@@ -15,7 +15,17 @@ declare global {
     };
   }
 
-  // 在global块内定义时间线渲染器接口
+  interface TreeRenderer {
+    renderTreeLayout: (
+      container: any, 
+      treeSvg: any, 
+      nodes: any[], 
+      links: any[], 
+      width: number, 
+      height: number,
+      visualizer: any
+    ) => void;
+  }
   interface TimelineRenderer {
     renderTimelineLayout: (
       container: any, 

@@ -1,8 +1,8 @@
 {
   "scripts": {
     "build": "npm run build-background && npm run build-content && npm run copy-static-files",
-    "build-background": "esbuild src/background/*.ts --bundle --format=esm --outdir=dist",
-    "build-content": "esbuild src/content/*.ts src/content/**/*.ts --bundle=false --format=esm --outdir=dist/content",
+    "build-background": "esbuild src/background/*.ts src/lib/*.ts --bundle=false --format=esm --outdir=dist",
+    "build-content": "esbuild src/content/*.ts src/content/**/*.ts --bundle=false  --format=esm --outdir=dist/content",
     "copy-static-files": "mkdir -p dist/content && cp -r src/content/*.html src/content/*.css src/content/*.js dist/content/",
     "watch": "npm run build -- --watch",
     "package": "zip -r ../navigraph.zip * --exclude @.gitignore"

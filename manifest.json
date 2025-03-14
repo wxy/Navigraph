@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Navigraph",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "AI-Powered Browsing Analytics",
   "icons": {
     "16": "images/logo-16.png",
@@ -26,7 +26,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/content/navigation-tracker.js"],
+      "js": ["dist/content/navigation-tracker.js", "dist/content/index.js"],
       "type": "module"
     }
   ],
@@ -35,7 +35,7 @@
 ],
   "web_accessible_resources": [
     {
-      "resources": ["content/*", "icons/*"],
+      "resources": ["dist/content/*", "images/*"],
       "matches": ["<all_urls>"]
     }
   ]
