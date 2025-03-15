@@ -14,6 +14,22 @@
   // 设置全局命名空间
   window.Navigraph = window.Navigraph || {};
   console.log('Navigraph 模块化增强版本');
+  
+  // 存储状态管理功能的引用
+  const stateManager: {
+    initializeViewToolbar: ((visualizer: any) => void) | null,
+    saveViewState: ((state: any) => void) | null, 
+    getViewState: (() => any) | null,
+    updateStatusBar: ((status: any) => void) | null,
+    switchViewType: ((visualizer: any, viewType: any) => void) | null
+  } = {
+    initializeViewToolbar: null,
+    saveViewState: null, 
+    getViewState: null,
+    updateStatusBar: null,
+    switchViewType: null  // 添加switchViewType的引用
+  };
+  
   // 监听DOM加载完成事件
   document.addEventListener('DOMContentLoaded', function() {
     console.log('Navigraph 模块化增强版本初始化中...');
@@ -25,34 +41,68 @@
   /**
    * 初始化增强功能
    */
-  function initializeEnhancement(): void {
-    // 检查可视化器是否已经存在
-    if (window.visualizer) {
-      console.log('检测到可视化器实例，准备应用增强功能');
-      applyEnhancements();
-      return;
-    }
-    
-    console.warn('未检测到可视化器实例，尝试创建');
-    
-    // 尝试检查NavigationVisualizer类是否可用
-    if (typeof window.NavigationVisualizer === 'function') {
+  async function initializeEnhancement(): Promise<void> {
+    try {
+      // 先导入模块加载器
+      const { loadModule } = await importModuleLoader();
+      console.log('模块加载器已加载');
+      
+      // 使用loadModule动态加载状态管理模块
       try {
-        console.log('创建新的可视化器实例');
-        window.visualizer = new window.NavigationVisualizer();
+        const stateManagerModule = await loadModule('utils/state-manager.js');
+        console.log('状态管理模块已加载:', Object.keys(stateManagerModule));
         
-        // 如果成功创建，应用增强功能
-        if (window.visualizer) {
-          console.log('可视化器创建成功，应用增强功能');
-          applyEnhancements();
-        }
+        // 保存对状态管理功能的引用
+        stateManager.initializeViewToolbar = stateManagerModule.initializeViewToolbar;
+        stateManager.saveViewState = stateManagerModule.saveViewState;
+        stateManager.getViewState = stateManagerModule.getViewState;
+        stateManager.updateStatusBar = stateManagerModule.updateStatusBar;
+        stateManager.switchViewType = stateManagerModule.switchViewType;  // 添加switchViewType
+        
+        // 将switchViewType函数暴露到全局命名空间，供外部调用
+        window.Navigraph.switchViewType = (visualizer: any, viewType: any) => {
+          if (stateManager.switchViewType) {
+            stateManager.switchViewType(visualizer, viewType);
+          } else {
+            console.error('switchViewType函数未成功加载');
+          }
+        };
       } catch (err) {
-        console.error('创建可视化器实例失败:', err);
-        showErrorMessage('初始化可视化器失败');
+        console.error('状态管理模块加载失败:', err);
+        // 继续执行，部分功能可能不可用
       }
-    } else {
-      console.error('NavigationVisualizer类不可用，可能是index-old.js未正确加载');
-      showErrorMessage('找不到必要的类定义，请确保扩展正确安装');
+      
+      // 继续检查可视化器是否已经存在
+      if (window.visualizer) {
+        console.log('检测到可视化器实例，准备应用增强功能');
+        await applyEnhancements();
+        return;
+      }
+      
+      console.warn('未检测到可视化器实例，尝试创建');
+      
+      // 尝试检查NavigationVisualizer类是否可用
+      if (typeof window.NavigationVisualizer === 'function') {
+        try {
+          console.log('创建新的可视化器实例');
+          window.visualizer = new window.NavigationVisualizer();
+          
+          // 如果成功创建，应用增强功能
+          if (window.visualizer) {
+            console.log('可视化器创建成功，应用增强功能');
+            await applyEnhancements();
+          }
+        } catch (err) {
+          console.error('创建可视化器实例失败:', err);
+          showErrorMessage('初始化可视化器失败');
+        }
+      } else {
+        console.error('NavigationVisualizer类不可用，可能是index-old.js未正确加载');
+        showErrorMessage('找不到必要的类定义，请确保扩展正确安装');
+      }
+    } catch (err) {
+      console.error('初始化增强功能失败:', err);
+      showErrorMessage('初始化增强功能失败: ' + (err instanceof Error ? err.message : String(err)));
     }
   }
   
@@ -69,9 +119,19 @@
     window.visualizer.version = "1.0.0-modular";
     
     try {
-      // 导入模块加载器
-      const { loadModule } = await importModuleLoader();
-      console.log('模块加载器已加载');
+      // 导入模块加载器 (如果尚未导入)
+      let loadModule;
+      try {
+        if (!window.__moduleLoader) {
+          const moduleLoader = await importModuleLoader();
+          loadModule = moduleLoader.loadModule;
+        } else {
+          loadModule = window.__moduleLoader.loadModule;
+        }
+      } catch (loaderErr) {
+        console.error('模块加载器初始化失败:', loaderErr);
+        return;
+      }
       
       // 加载时间线渲染模块
       try {
@@ -123,6 +183,17 @@
             let treeSvg = null;
 
             try {
+              // 添加防御性检查
+              if (!Array.isArray(nodes)) {
+                console.warn('nodes不是数组，使用空数组替代');
+                nodes = [];
+              }
+              
+              if (!Array.isArray(links)) {
+                console.warn('links不是数组，使用空数组替代');
+                links = [];
+              }
+              
               // 标准化链接数据
               const normalizedLinks = links.map(link => {
                 const result: any = { ...link };
@@ -159,6 +230,11 @@
               } else {
                 console.log('container不是D3选择器，转换它');
                 try {
+                  // 确保d3可用
+                  if (typeof d3 === 'undefined') {
+                    throw new Error('d3库未加载，无法创建选择器');
+                  }
+                  
                   const containerSelection = d3.select(container);
                   
                   // 首先尝试查找已存在的svg元素
@@ -172,9 +248,17 @@
                       .attr('width', width)
                       .attr('height', height);
                   }
-                } catch (d3Error : any) {
+                } catch (d3Error) {
                   console.error('d3转换失败:', d3Error);
-                  throw new Error('无法创建SVG容器: ' + d3Error.message);
+                  
+                  // 如果有原始方法，回退使用
+                  if (this._originalRenderTreeLayout) {
+                    console.warn('由于d3错误回退到原始树形图渲染方法');
+                    return this._originalRenderTreeLayout.call(this, container, nodes, links, width, height);
+                  }
+                  
+                  const errorMessage = d3Error instanceof Error ? d3Error.message : String(d3Error);
+                  throw new Error('无法创建SVG容器: ' + errorMessage);
                 }
               }
               
@@ -184,6 +268,11 @@
               }
               
               console.log('Tree SVG准备就绪:', !!treeSvg.node());
+              
+              // 标记有过滤子节点的父节点 (从原始代码中移植)
+              if (typeof this.markNodesWithFilteredChildren === 'function') {
+                this.markNodesWithFilteredChildren();
+              }
               
               // 调用我们的渲染器，注意参数顺序的转换
               return treeRenderer.renderTreeLayout(
@@ -202,6 +291,25 @@
               if (this._originalRenderTreeLayout) {
                 console.warn('回退到原始树形图渲染方法');
                 return this._originalRenderTreeLayout.call(this, container, nodes, links, width, height);
+              }
+              
+              // 显示错误消息
+              try {
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'color:red;padding:10px;border:1px solid red;margin:10px;';
+                errorDiv.textContent = `树形图渲染失败: ${err instanceof Error ? err.message : String(err)}`;
+                
+                if (container instanceof Element) {
+                  container.appendChild(errorDiv);
+                } else if (container && typeof container.node === 'function') {
+                  const containerNode = container.node();
+                  if (containerNode) {
+                    containerNode.appendChild(errorDiv);
+                  }
+                }
+              } catch (displayErr) {
+                // 错误显示也失败了，只能记录到控制台
+                console.error('无法显示错误消息:', displayErr);
               }
               
               throw err;
@@ -232,6 +340,14 @@
     window.Navigraph.enhanceVisualizer = applyEnhancements;
     
     console.log('增强功能应用完成');
+    
+    // 初始化工具栏和视图切换
+    if (stateManager.initializeViewToolbar) {
+      console.log('初始化视图工具栏');
+      stateManager.initializeViewToolbar(window.visualizer);
+    } else {
+      console.warn('状态管理模块未加载，跳过工具栏初始化');
+    }
   }
   
    /**

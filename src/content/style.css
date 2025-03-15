@@ -310,6 +310,23 @@ body {
   border-top: 1px solid #e0e0e0;
   font-size: 13px;
   color: #757575;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 5px 10px;
+  background: rgba(30, 30, 30, 0.8);
+  color: #ddd;
+  font-size: 12px;
+  border-top: 1px solid #555;
+}
+
+.status-bar.zoomed-out {
+  color: #aaa;
+}
+
+.status-bar.zoomed-in {
+  color: #fff;
 }
 
 /* 工具提示 */
@@ -781,8 +798,9 @@ path.link.closed, .edge.closed {
 }
 
 .time-axis .tick text {
-  font-weight: 400;
-  font-size: 10px;
+  font-weight: 400 !important;
+  font-size: 10px !important;
+  fill: #eee !important;
 }
 .timeline-svg rect {
   fill: #333; /* 深色背景 */
@@ -845,4 +863,81 @@ path.link.closed, .edge.closed {
 /* 不同信息类型的视觉区分 */
 .status-cell-highlight {
   font-weight: 500;
+}
+
+/* 可以在页面级别添加，或者通过JavaScript注入 */
+.view-toolbar {
+  display: flex;
+  padding: 5px;
+  background: #333;
+  border-bottom: 1px solid #555;
+}
+
+.view-toolbar button {
+  margin-right: 5px;
+  padding: 3px 10px;
+  background: #444;
+  border: 1px solid #666;
+  color: #eee;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.view-toolbar button:hover {
+  background: #555;
+}
+
+.view-toolbar button.active {
+  background: #666;
+  border-color: #999;
+  font-weight: bold;
+}
+
+/* 视图工具栏样式 - 添加到现有样式表 */
+.view-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  padding: 5px;
+  background: rgba(30, 30, 30, 0.8);
+  border-bottom: 1px solid #555;
+  z-index: 10;
+}
+
+.view-toolbar button {
+  margin-right: 5px;
+  padding: 3px 10px;
+  background: #444;
+  border: 1px solid #666;
+  color: #eee;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.view-toolbar button:hover {
+  background: #555;
+}
+
+.view-toolbar button.active {
+  background: #666;
+  border-color: #999;
+  font-weight: bold;
+}
+
+/* 过滤指示器样式 */
+.filtering-indicator {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 87, 34, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 11;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }

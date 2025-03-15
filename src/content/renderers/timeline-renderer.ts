@@ -1,19 +1,34 @@
 /**
  * 时间线视图渲染模块
- * 负责绘制基于时间的导航可视化
+ * 负责绘制基于时间的导航历史
  */
 
-// 导入依赖
-declare const d3: any;
+const d3 = window.d3;
+
 import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import { 
   getNodeColor, 
   getEdgeColor, 
   isTrackingPage,
-  calculateLinkPath 
+  renderEmptyTreeMessage 
 } from '../utils/visualization-utils.js';
+// 合并导入，避免重复
+import { 
+  saveViewState, 
+  getViewState, 
+  setupZoomHandling, 
+  updateStatusBar 
+} from '../utils/state-manager.js';
 
-// 导出主渲染函数
+// 扩展NavNode类型以包含渲染坐标
+interface RenderableNode extends NavNode {
+  renderX?: number;
+  renderY?: number;
+}
+
+/**
+ * 渲染时间线布局
+ */
 export function renderTimelineLayout(
   container: any, 
   timelineSvg: any, 
@@ -25,27 +40,45 @@ export function renderTimelineLayout(
 ): void {
   console.log('使用模块化时间线渲染器');
   
-  // 清除现有内容以避免重复
-  timelineSvg.selectAll("*").remove();
-  
-  // 先添加背景矩形，确保覆盖整个时间线区域
-  timelineSvg.append('rect')
-    .attr('class', 'timeline-background')
-    .attr('width', '100%')
-    .attr('height', '100%')
-    .attr('x', 0)
-    .attr('y', 0)
-    .attr('fill', '#333');
-  
-  // 绘制时间轴组
-  const timeAxisGroup = timelineSvg.append('g')
-    .attr('class', 'time-axis-group')
-    .attr('transform', 'translate(0, 0)');
-
-  if (nodes.length > 0) {
+  try {
+    // 先尝试恢复保存的缩放状态
+    const tabId = visualizer.tabId || '';
+    const savedState = getViewState(tabId);
+    
+    if (savedState && savedState.transform && !visualizer._isRestoringTransform) {
+      console.log('检测到保存的变换状态:', savedState.transform);
+      visualizer._isRestoringTransform = true;
+      
+      // 将状态保存到可视化器，在渲染后应用
+      visualizer._savedTransform = savedState.transform;
+    }
+    
+    // 清除现有内容
+    timelineSvg.selectAll("*").remove();
+    
+    if (!nodes || nodes.length === 0) {
+      renderEmptyTimeline(timelineSvg, width);
+      return;
+    }
+    
+    // 先添加背景矩形，确保覆盖整个时间线区域
+    timelineSvg.append('rect')
+      .attr('class', 'timeline-background')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('fill', '#333');
+    
+    // 绘制时间轴组
+    const timeAxisGroup = timelineSvg.append('g')
+      .attr('class', 'time-axis-group')
+      .attr('transform', 'translate(0, 0)');
+    
     // 计算时间范围
-    let minTime = Math.min(...nodes.map(node => node.timestamp));
-    let maxTime = Math.max(...nodes.map(node => node.timestamp));
+    const timestamps = nodes.map(node => node.timestamp || Date.now());
+    let minTime = Math.min(...timestamps);
+    let maxTime = Math.max(...timestamps);
     let timeRange = maxTime - minTime;
     
     // 确保有最小时间范围，避免除零错误
@@ -66,10 +99,12 @@ export function renderTimelineLayout(
       .domain([new Date(minTime), new Date(maxTime)])
       .range([0, width]);
     
-    // 计算节点位置
-    nodes.forEach(node => {
+    // 创建可渲染节点数据，避免直接修改原始节点
+    const renderableNodes: RenderableNode[] = nodes.map(node => {
+      const renderNode = { ...node };
+      
       // X坐标基于时间
-      node.renderX = timeScale(new Date(node.timestamp));
+      renderNode.renderX = timeScale(new Date(node.timestamp || Date.now()));
       
       // Y坐标基于类型，分层展示
       let yBase = 0;
@@ -81,12 +116,17 @@ export function renderTimelineLayout(
       }
       
       // 添加一些随机偏移避免重叠
-      node.renderY = yBase + (Math.random() - 0.5) * height * 0.25;
+      renderNode.renderY = yBase + (Math.random() - 0.5) * height * 0.25;
+      
+      return renderNode;
     });
+    
+    // 避免节点重叠的布局优化
+    optimizeNodeLayout(renderableNodes);
     
     // 创建箭头定义
     container.append('defs').append('marker')
-      .attr('id', 'arrowhead')
+      .attr('id', 'timeline-arrow')
       .attr('viewBox', '-0 -5 10 10')
       .attr('refX', 20)
       .attr('refY', 0)
@@ -103,35 +143,67 @@ export function renderTimelineLayout(
       .data(links)
       .enter()
       .append('path')
-      .attr('class', (d: NavLink) => `edge ${d.type}`)
-      .attr('marker-end', 'url(#arrowhead)')
-      .attr('d', (d: NavLink) => {
-        const sourceNode = visualizer.nodeMap ? visualizer.nodeMap.get(d.source) : 
-                           nodes.find(n => n.id === d.source);
-        const targetNode = visualizer.nodeMap ? visualizer.nodeMap.get(d.target) : 
-                           nodes.find(n => n.id === d.target);
-                  
+      .attr('class', function(d: NavLink) {
+        return `edge ${d.type || ''}`;
+      })
+      .attr('marker-end', 'url(#timeline-arrow)')
+      .attr('d', function(d: NavLink) {
+        // 安全地获取源节点和目标节点ID - 修正为直接使用字符串
+        const sourceId = d.source;
+        const targetId = d.target;
+        
+        if (!sourceId || !targetId) return '';
+        
+        // 找到对应的可渲染节点
+        const sourceNode = renderableNodes.find(n => n.id === sourceId);
+        const targetNode = renderableNodes.find(n => n.id === targetId);
+                    
         if (!sourceNode || !targetNode) return '';
         
-        const source = {x: sourceNode.renderX || 0, y: sourceNode.renderY || 0};
-        const target = {x: targetNode.renderX || 0, y: targetNode.renderY || 0};
+        // 获取渲染坐标
+        const source = {
+          x: typeof sourceNode.renderX === 'number' ? sourceNode.renderX : 0, 
+          y: typeof sourceNode.renderY === 'number' ? sourceNode.renderY : 0
+        };
         
-        // 使用导入的工具函数
-        return calculateLinkPath(source, target, d.type);
+        const target = {
+          x: typeof targetNode.renderX === 'number' ? targetNode.renderX : 0, 
+          y: typeof targetNode.renderY === 'number' ? targetNode.renderY : 0
+        };
+        
+        // 根据链接类型生成适当的路径
+        if (sourceId === targetId) {
+          // 自循环 - 绘制一个小循环
+          const dx = source.x;
+          const dy = source.y;
+          const dr = 30;
+          return `M ${dx},${dy} a ${dr},${dr} 0 1,1 0,0.01`;
+        } else if (d.type === 'history_back' || d.type === 'history_forward') {
+          // 历史导航 - 使用弯曲的曲线
+          return `M${source.x},${source.y} 
+                  C${source.x + (target.x - source.x) * 0.5},${source.y} 
+                    ${source.x + (target.x - source.x) * 0.5},${target.y} 
+                    ${target.x},${target.y}`;
+        } else {
+          // 标准连接线 - 使用直线
+          return `M${source.x},${source.y} L${target.x},${target.y}`;
+        }
       })
-      .attr('stroke', (d: NavLink) => getEdgeColor(d.type))
+      .attr('stroke', function(d: NavLink) {
+        return getEdgeColor(d.type || '');
+      })
       .attr('stroke-width', 1.5)
       .attr('fill', 'none');
     
     // 绘制节点
     const nodeElements = container.append('g')
       .selectAll('.node')
-      .data(nodes)
+      .data(renderableNodes)
       .enter()
       .append('g')
-      .attr('class', (d: NavNode) => {
+      .attr('class', function(d: RenderableNode) {
         // 组合多个类名
-        let classes = `node ${d.type}`;
+        let classes = `node ${d.type || ''}`;
         
         // 添加关闭状态
         if (d.isClosed) {
@@ -139,44 +211,62 @@ export function renderTimelineLayout(
         }
         
         // 添加跟踪标记
-        if (isTrackingPage(d, visualizer)) {
+        if (typeof isTrackingPage === 'function' && isTrackingPage(d, visualizer)) {
           classes += ' tracking';
         }
         
         return classes;
       })
-      .attr('transform', (d: NavNode) => `translate(${d.renderX || 0},${d.renderY || 0})`);
+      .attr('transform', function(d: RenderableNode) {
+        const x = typeof d.renderX === 'number' ? d.renderX : 0;
+        const y = typeof d.renderY === 'number' ? d.renderY : 0;
+        return `translate(${x},${y})`;
+      });
     
     nodeElements.append('circle')
       .attr('r', 20)
-      .attr('fill', (d: NavNode) => getNodeColor(d.type));
+      .attr('fill', function(d: RenderableNode) {
+        return getNodeColor(d.type || '');
+      });
     
     nodeElements.append('title')
-      .text((d: NavNode) => d.title || d.url || '');
+      .text(function(d: RenderableNode) {
+        return d.title || d.url || '';
+      });
     
-    nodeElements.filter((d: NavNode) => !!d.favicon)
+    // 添加节点图标
+    nodeElements.filter(function(d: RenderableNode) {
+        return !!d.favicon;
+      })
       .append('image')
-      .attr('xlink:href', (d: NavNode) => d.favicon || '')
+      .attr('xlink:href', function(d: RenderableNode) {
+        return d.favicon || '';
+      })
       .attr('x', -8)
       .attr('y', -8)
       .attr('width', 16)
       .attr('height', 16)
-      .on('error', function(this: SVGImageElement) { // 添加this类型声明
+      .on('error', function(this: SVGGElement) {
         // 图像加载失败时替换为默认图标
         d3.select(this)
           .attr('xlink:href', chrome.runtime.getURL('images/logo-48.png'))
           .classed('default-icon', true);
       });
     
+    // 添加节点文本标签
     nodeElements.append('text')
       .attr('dy', 35)
       .attr('text-anchor', 'middle')
       .attr('fill', '#fff')
       .style('font-size', '12px')
-      .text((d: NavNode) => d.title ? d.title.substring(0, 10) + '...' : '');
+      .text(function(d: RenderableNode) {
+        if (!d.title) return '';
+        // 截断长标题
+        return d.title.length > 10 ? d.title.substring(0, 10) + '...' : d.title;
+      });
     
-    // 添加交互
-    nodeElements.on('click', (event: MouseEvent, d: NavNode) => {
+    // 添加事件处理程序
+    nodeElements.on('click', function(this: SVGGElement, event: MouseEvent, d: RenderableNode) {
       if (visualizer && typeof visualizer.showNodeDetails === 'function') {
         visualizer.showNodeDetails(d);
       }
@@ -184,15 +274,15 @@ export function renderTimelineLayout(
       container.selectAll('.node')
         .classed('highlighted', false);
       
-      d3.select(event.currentTarget as Element)
+      d3.select(this)
         .classed('highlighted', true);
     });
     
-    // 绘制时间轴 - 使用整个宽度
+    // 绘制时间轴
     const xAxis = d3.axisBottom(timeScale)
       .ticks(15)
-      .tickFormat(d3.timeFormat('%H:%M:%S') as any)
-      .tickSize(6) 
+      .tickFormat(d3.timeFormat('%H:%M:%S'))
+      .tickSize(6)
       .tickPadding(2);
     
     // 渲染时间轴 - 确保从左到右完全对齐
@@ -200,7 +290,7 @@ export function renderTimelineLayout(
       .attr('class', 'time-axis')
       .attr('transform', `translate(0, 20)`)
       .call(xAxis)
-      .call((g: any) => {
+      .call(function(g: any) {
         // 设置轴线样式
         g.select('.domain')
           .attr('stroke', '#aaa')
@@ -224,9 +314,9 @@ export function renderTimelineLayout(
       .attr('transform', `translate(0, 0)`)
       .call(d3.axisBottom(timeScale)
         .tickSize(40)
-        .tickFormat('' as any)
+        .tickFormat('')
         .ticks(30))
-      .call((g: any) => {
+      .call(function(g: any) {
         g.select('.domain').remove();
         g.selectAll('.tick line')
           .attr('stroke', '#555')
@@ -234,19 +324,55 @@ export function renderTimelineLayout(
           .attr('opacity', 0.3);
       });
     
+    // 添加时间线标签
+    timeAxisGroup.append('text')
+      .attr('x', width / 2)
+      .attr('y', 12)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#aaa')
+      .style('font-size', '11px')
+      .text('时间线 - ' + new Date(minTime).toLocaleDateString());
+    
     // 延迟应用动态居中计算
     setTimeout(() => {
       try {
+        // 如果有保存的变换状态，应用它
+        if (visualizer._isRestoringTransform && visualizer._savedTransform) {
+          const { x, y, k } = visualizer._savedTransform;
+          const transform = d3.zoomIdentity.translate(x, y).scale(k);
+          
+          if (visualizer.svg && visualizer.zoom) {
+            console.log('恢复保存的变换状态:', visualizer._savedTransform);
+            visualizer.svg.call(visualizer.zoom.transform, transform);
+            
+            // 清除标记和临时状态
+            delete visualizer._isRestoringTransform;
+            delete visualizer._savedTransform;
+            
+            return; // 跳过自动居中
+          }
+        }
+        
         // 如果正在恢复变换状态，跳过自动居中
-        if (visualizer._isRestoringTransform) {
+        // 使用可选链和类型保护检查属性是否存在
+        const isRestoringTransform = 
+          visualizer && 
+          typeof visualizer === 'object' && 
+          '_isRestoringTransform' in visualizer && 
+          visualizer._isRestoringTransform;
+          
+        if (isRestoringTransform) {
           console.log('跳过时间线自动居中，正在恢复用户设置的变换');
           return;
         }
+        
         // 如果有节点，计算边界以实现真正的居中
-        if (nodes.length > 0) {
+        if (renderableNodes.length > 0) {
           // 获取所有节点的位置信息
-          const xValues = nodes.map(node => node.renderX || 0);
-          const yValues = nodes.map(node => node.renderY || 0);
+          const xValues = renderableNodes.map(node => 
+            typeof node.renderX === 'number' ? node.renderX : 0);
+          const yValues = renderableNodes.map(node => 
+            typeof node.renderY === 'number' ? node.renderY : 0);
           
           // 计算实际内容边界
           const minX = Math.min(...xValues);
@@ -300,47 +426,122 @@ export function renderTimelineLayout(
         }
       } catch (err) {
         console.error('应用时间线居中失败:', err);
+        delete visualizer._isRestoringTransform;
+        delete visualizer._savedTransform;
       }
     }, 150);  // 延时确保DOM完全渲染   
-  } else {
-    // 没有节点时显示默认时间线
-    const now = new Date();
-    const sixHoursMs = 6 * 60 * 60 * 1000;
-    const minTime = now.getTime() - sixHoursMs;
-    const maxTime = now.getTime() + sixHoursMs;
     
-    const timeScale = d3.scaleTime()
-      .domain([new Date(minTime), new Date(maxTime)])
-      .range([0, width]);
+    // 为缩放同步准备变量 - 使用类型断言避免类型错误
+    (visualizer as any).timeScale = timeScale;
     
-    const xAxis = d3.axisBottom(timeScale)
-      .ticks(15)
-      .tickFormat(d3.timeFormat('%H:%M:%S') as any)
-      .tickSize(6)
-      .tickPadding(2);
-    
-    timeAxisGroup.append('g')
-      .attr('class', 'time-axis')
-      .attr('transform', `translate(0, 20)`)
-      .call(xAxis)
-      .call((g: any) => {
-        g.select('.domain')
-          .attr('stroke', '#aaa')
-          .attr('stroke-width', 1)
-          .attr('opacity', 0.7);
+    // 设置缩放行为，并添加状态保存
+    if (visualizer.zoom) {
+      visualizer.zoom.on('zoom.saveState', (event: any) => {
+        if (visualizer._isRestoringTransform) return; // 恢复过程中不保存
         
-        g.selectAll('.tick text')
-          .attr('fill', '#999')
-          .attr('font-size', '10px');
+        // 防抖：使用节流避免频繁保存
+        clearTimeout(visualizer._saveStateTimeout);
+        visualizer._saveStateTimeout = setTimeout(() => {
+          const tabId = visualizer.tabId || '';
+          const transform = event.transform;
+          
+          // 保存当前变换状态
+          saveViewState(tabId, {
+            viewType: 'timeline',
+            transform: {
+              x: transform.x,
+              y: transform.y,
+              k: transform.k
+            }
+          });
+          
+          // 使用导入的通用状态栏更新函数
+          updateStatusBar(visualizer);
+        }, 300); // 300ms防抖
       });
-      
-    // 添加提示文本
-    timeAxisGroup.append('text')
+    }
+
+    // 设置缩放和状态管理
+    if (!visualizer.zoom) {
+      setupZoomHandling(visualizer, timelineSvg, container, width, height);
+    }
+
+    // 更新状态栏 - 使用导入的通用函数
+    updateStatusBar(visualizer);
+    
+  } catch (err) {
+    console.error('时间线渲染过程中出错:', err);
+    
+    // 渲染错误信息
+    timelineSvg.append('text')
       .attr('x', width / 2)
-      .attr('y', 20)
+      .attr('y', height / 2)
       .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .attr('fill', '#999')
-      .text('无时间数据可显示');
+      .attr('fill', 'red')
+      .text(`时间线渲染错误: ${err && (err as Error).message ? (err as Error).message : '未知错误'}`);
+    
+    // 渲染简单的空白时间线
+    renderEmptyTimeline(timelineSvg, width);
+  }
+}
+
+/**
+ * 渲染空白时间线
+ */
+function renderEmptyTimeline(timelineSvg: any, width: number): void {
+  // 添加背景
+  timelineSvg.append('rect')
+    .attr('width', '100%')
+    .attr('height', '100%')
+    .attr('fill', '#333');
+  
+  // 添加空状态文字
+  timelineSvg.append('text')
+    .attr('x', width / 2)
+    .attr('y', 20)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#999')
+    .text('无时间数据可显示');
+}
+
+/**
+ * 优化节点布局，避免重叠
+ */
+function optimizeNodeLayout(nodes: RenderableNode[]): void {
+  // 按X坐标排序
+  const sortedNodes = [...nodes].sort((a, b) => {
+    const aX = typeof a.renderX === 'number' ? a.renderX : 0;
+    const bX = typeof b.renderX === 'number' ? b.renderX : 0;
+    return aX - bX;
+  });
+  
+  // 碰撞检测和解决
+  const minDistance = 40; // 最小节点间距
+  
+  for (let i = 0; i < sortedNodes.length - 1; i++) {
+    const current = sortedNodes[i];
+    const next = sortedNodes[i + 1];
+    
+    if (!current || !next) continue;
+    
+    const currentX = typeof current.renderX === 'number' ? current.renderX : 0;
+    const nextX = typeof next.renderX === 'number' ? next.renderX : 0;
+    const currentY = typeof current.renderY === 'number' ? current.renderY : 0;
+    const nextY = typeof next.renderY === 'number' ? next.renderY : 0;
+    
+    const xDistance = nextX - currentX;
+    
+    // 如果X距离过小，可能会重叠
+    if (xDistance < minDistance) {
+      // 检查Y距离是否也很小
+      const yDistance = Math.abs(nextY - currentY);
+      
+      if (yDistance < minDistance) {
+        // 如果两个节点太近，增加Y轴的距离
+        const displacement = (minDistance - yDistance) / 2;
+        current.renderY = currentY - displacement;
+        next.renderY = nextY + displacement;
+      }
+    }
   }
 }
