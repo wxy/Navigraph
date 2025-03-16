@@ -31,7 +31,7 @@ interface RenderableNode extends NavNode {
  */
 export function renderTimelineLayout(
   container: any, 
-  timelineSvg: any, 
+  svg: any, 
   nodes: NavNode[], 
   links: NavLink[], 
   width: number, 
@@ -54,24 +54,28 @@ export function renderTimelineLayout(
     }
     
     // 清除现有内容
-    timelineSvg.selectAll("*").remove();
+    svg.selectAll("*").remove();
     
     if (!nodes || nodes.length === 0) {
-      renderEmptyTimeline(timelineSvg, width);
+      renderEmptyTimeline(svg, width);
       return;
     }
-    
+
     // 先添加背景矩形，确保覆盖整个时间线区域
-    timelineSvg.append('rect')
+    svg.append('rect')
       .attr('class', 'timeline-background')
       .attr('width', '100%')
       .attr('height', '100%')
       .attr('x', 0)
       .attr('y', 0)
-      .attr('fill', '#333');
+      .attr('fill', '#FFF');
     
-    // 绘制时间轴组
-    const timeAxisGroup = timelineSvg.append('g')
+    // 创建两个主要组：一个用于可缩放内容，一个用于固定的时间轴
+    const mainGroup = svg.append('g')
+      .attr('class', 'timeline-main-group');
+    
+    // 绘制时间轴组 - 保持在SVG上而不是mainGroup内
+    const timeAxisGroup = svg.append('g')
       .attr('class', 'time-axis-group')
       .attr('transform', 'translate(0, 0)');
     
@@ -125,7 +129,7 @@ export function renderTimelineLayout(
     optimizeNodeLayout(renderableNodes);
     
     // 创建箭头定义
-    container.append('defs').append('marker')
+    svg.append('defs').append('marker')
       .attr('id', 'timeline-arrow')
       .attr('viewBox', '-0 -5 10 10')
       .attr('refX', 20)
@@ -135,10 +139,11 @@ export function renderTimelineLayout(
       .attr('markerHeight', 6)
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#999');
+      .attr('fill', '#333');
     
-    // 绘制边
-    const linkElements = container.append('g')
+    // 绘制边 - 放在主组内以便缩放
+    const linkElements = mainGroup.append('g')
+      .attr('class', 'timeline-links-group')
       .selectAll('.edge')
       .data(links)
       .enter()
@@ -148,7 +153,7 @@ export function renderTimelineLayout(
       })
       .attr('marker-end', 'url(#timeline-arrow)')
       .attr('d', function(d: NavLink) {
-        // 安全地获取源节点和目标节点ID - 修正为直接使用字符串
+        // 安全地获取源节点和目标节点ID
         const sourceId = d.source;
         const targetId = d.target;
         
@@ -195,8 +200,9 @@ export function renderTimelineLayout(
       .attr('stroke-width', 1.5)
       .attr('fill', 'none');
     
-    // 绘制节点
-    const nodeElements = container.append('g')
+    // 绘制节点 - 放在主组内以便缩放
+    const nodeElements = mainGroup.append('g')
+      .attr('class', 'timeline-nodes-group')
       .selectAll('.node')
       .data(renderableNodes)
       .enter()
@@ -257,7 +263,7 @@ export function renderTimelineLayout(
     nodeElements.append('text')
       .attr('dy', 35)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#fff')
+      .attr('fill', '#333')  // 使用深色文字以便在白色背景下可见
       .style('font-size', '12px')
       .text(function(d: RenderableNode) {
         if (!d.title) return '';
@@ -271,14 +277,22 @@ export function renderTimelineLayout(
         visualizer.showNodeDetails(d);
       }
       
-      container.selectAll('.node')
+      svg.selectAll('.node')
         .classed('highlighted', false);
       
       d3.select(this)
         .classed('highlighted', true);
     });
-    
+
     // 绘制时间轴
+    timeAxisGroup.append('rect')
+      .attr('class', 'time-axis-background')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', width)
+      .attr('height', 55) // 覆盖时间轴及其标签的高度
+      .attr('fill', '#212730'); // 深蓝灰色背景
+    
     const xAxis = d3.axisBottom(timeScale)
       .ticks(15)
       .tickFormat(d3.timeFormat('%H:%M:%S'))
@@ -308,12 +322,11 @@ export function renderTimelineLayout(
           .attr('font-size', '10px');
       });
     
-    // 添加网格线以提高可读性
-    timeAxisGroup.append('g')
+    // 添加网格线以提高可读性 - 放在主组内以便缩放
+    mainGroup.append('g')
       .attr('class', 'grid')
-      .attr('transform', `translate(0, 0)`)
       .call(d3.axisBottom(timeScale)
-        .tickSize(40)
+        .tickSize(height)
         .tickFormat('')
         .ticks(30))
       .call(function(g: any) {
@@ -329,44 +342,82 @@ export function renderTimelineLayout(
       .attr('x', width / 2)
       .attr('y', 12)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#aaa')
+      .attr('fill', '#FFF')
       .style('font-size', '11px')
       .text('时间线 - ' + new Date(minTime).toLocaleDateString());
     
-    // 延迟应用动态居中计算
+    // 修改缩放行为代码部分
+
+// 设置缩放行为，关键是让时间轴与内容同步缩放和移动
+try {
+  console.log('为时间线视图设置缩放行为');
+  
+  // 先清除旧的缩放事件
+  svg.on('.zoom', null);
+  
+  // 获取DOM引用
+  const mainGroup = svg.select('.main-group');
+  const timeAxisGroup = svg.select('.time-axis-group');
+  
+  // 创建缩放处理函数
+  const zoomHandler = function(event) {
+    // 确保同时更新主内容组和时间轴
+    // 这是关键 - 两者都需要应用变换
+    mainGroup.attr('transform', event.transform);
+    
+    // 时间轴仅水平变换
+    timeAxisGroup.attr('transform', `translate(${event.transform.x}, 0) scale(${event.transform.k}, 1)`);
+    
+    // 可能也需要调整标签可见性
+    if (event.transform.k < 0.5) {
+      mainGroup.selectAll('text').style('display', 'none');
+    } else {
+      mainGroup.selectAll('text').style('display', null);
+    }
+  };
+
+  // 创建缩放行为
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 8])
+    .on('zoom', zoomHandler);
+
+  // 清除旧的缩放事件
+  svg.on('.zoom', null);
+
+  // 保存并应用缩放行为
+  visualizer.zoom = zoom;
+  svg.call(zoom);
+
+  console.log('已设置时间线缩放行为');
+} catch (error) {
+  console.error('设置时间线缩放失败:', error);
+}
+    
+    // 恢复保存的变换状态或应用默认缩放
     setTimeout(() => {
       try {
         // 如果有保存的变换状态，应用它
         if (visualizer._isRestoringTransform && visualizer._savedTransform) {
           const { x, y, k } = visualizer._savedTransform;
-          const transform = d3.zoomIdentity.translate(x, y).scale(k);
+          const transform = d3.zoomIdentity
+            .translate(x, y)
+            .scale(k);
           
-          if (visualizer.svg && visualizer.zoom) {
+          if (visualizer.zoom) {
             console.log('恢复保存的变换状态:', visualizer._savedTransform);
-            visualizer.svg.call(visualizer.zoom.transform, transform);
+            svg.call(visualizer.zoom.transform, transform);
             
-            // 清除标记和临时状态
-            delete visualizer._isRestoringTransform;
-            delete visualizer._savedTransform;
+            // 立即更新时间轴位置
+            timeAxisGroup.attr('transform', `translate(${x}, 0) scale(${k}, 1)`);
+            
+            // 清除标记
+            visualizer._isRestoringTransform = false;
             
             return; // 跳过自动居中
           }
         }
         
-        // 如果正在恢复变换状态，跳过自动居中
-        // 使用可选链和类型保护检查属性是否存在
-        const isRestoringTransform = 
-          visualizer && 
-          typeof visualizer === 'object' && 
-          '_isRestoringTransform' in visualizer && 
-          visualizer._isRestoringTransform;
-          
-        if (isRestoringTransform) {
-          console.log('跳过时间线自动居中，正在恢复用户设置的变换');
-          return;
-        }
-        
-        // 如果有节点，计算边界以实现真正的居中
+        // 如果没有保存状态，应用默认缩放以显示所有节点
         if (renderableNodes.length > 0) {
           // 获取所有节点的位置信息
           const xValues = renderableNodes.map(node => 
@@ -380,100 +431,48 @@ export function renderTimelineLayout(
           const minY = Math.min(...yValues);
           const maxY = Math.max(...yValues);
           
-          // 计算内容尺寸，增加边距使视觉更平衡
-          const contentWidth = maxX - minX + 80; // 增加水平边距
-          const contentHeight = maxY - minY + 80; // 增加垂直边距
+          // 增加边距
+          const contentWidth = maxX - minX + 80;
+          const contentHeight = maxY - minY + 80;
           
-          console.log('时间线节点边界:', {minX, maxX, minY, maxY, contentWidth, contentHeight});
-          
-          // 时间线高度使用固定值40
-          const timelineHeight = 40;
-          
-          // 计算更精确的缩放因子 - 考虑可用空间
-          const availableHeight = height - timelineHeight; // 减去时间线高度后的可用空间
-          
+          // 计算缩放因子
           const scaleFactor = Math.min(
-            (width * 0.9) / Math.max(contentWidth, 1), // 水平方向留出10%边距
-            (availableHeight * 0.9) / Math.max(contentHeight, 1), // 垂直方向留出10%边距
-            0.9 // 最大缩放限制
+            (width * 0.9) / Math.max(contentWidth, 1),
+            (height * 0.9) / Math.max(contentHeight, 1),
+            0.9
           );
           
-          // 计算更精确的中心点 - 关键改进
-          // 水平中心点：容器中心 + 适当偏移
-          const centerX = (width - contentWidth * scaleFactor) / 2 + (20 - minX) * scaleFactor;
-          
-          // 垂直中心点：考虑时间线，计算可用空间的中心
-          const centerY = (availableHeight - contentHeight * scaleFactor) / 2 + (20 - minY) * scaleFactor;
+          // 计算中心点
+          const centerX = (width - contentWidth * scaleFactor) / 2 - minX * scaleFactor + 40;
+          const centerY = (height - contentHeight * scaleFactor) / 2 - minY * scaleFactor + 40;
           
           // 创建并应用变换
           const transform = d3.zoomIdentity
             .translate(centerX, centerY)
             .scale(scaleFactor);
           
-          if (visualizer.svg && visualizer.zoom) {
-            console.log('应用时间线居中变换:', {centerX, centerY, scaleFactor, availableHeight});
-            visualizer.svg.call(visualizer.zoom.transform, transform);
-          }
-        } else {
-          // 没有节点，使用默认变换
-          const transform = d3.zoomIdentity
-            .translate(width / 2, height / 3)
-            .scale(0.9);
-          
-          if (visualizer.svg && visualizer.zoom) {
-            visualizer.svg.call(visualizer.zoom.transform, transform);
+          if (visualizer.zoom) {
+            console.log('应用默认变换:', {centerX, centerY, scaleFactor});
+            svg.call(visualizer.zoom.transform, transform);
+            
+            // 更新时间轴位置
+            timeAxisGroup.attr('transform', `translate(${centerX}, 0) scale(${scaleFactor}, 1)`);
           }
         }
       } catch (err) {
-        console.error('应用时间线居中失败:', err);
-        delete visualizer._isRestoringTransform;
-        delete visualizer._savedTransform;
+        console.error('应用变换失败:', err);
       }
-    }, 150);  // 延时确保DOM完全渲染   
+    }, 100);
     
-    // 为缩放同步准备变量 - 使用类型断言避免类型错误
-    (visualizer as any).timeScale = timeScale;
-    
-    // 设置缩放行为，并添加状态保存
-    if (visualizer.zoom) {
-      visualizer.zoom.on('zoom.saveState', (event: any) => {
-        if (visualizer._isRestoringTransform) return; // 恢复过程中不保存
-        
-        // 防抖：使用节流避免频繁保存
-        clearTimeout(visualizer._saveStateTimeout);
-        visualizer._saveStateTimeout = setTimeout(() => {
-          const tabId = visualizer.tabId || '';
-          const transform = event.transform;
-          
-          // 保存当前变换状态
-          saveViewState(tabId, {
-            viewType: 'timeline',
-            transform: {
-              x: transform.x,
-              y: transform.y,
-              k: transform.k
-            }
-          });
-          
-          // 使用导入的通用状态栏更新函数
-          updateStatusBar(visualizer);
-        }, 300); // 300ms防抖
-      });
-    }
-
-    // 设置缩放和状态管理
-    if (!visualizer.zoom) {
-      setupZoomHandling(visualizer, timelineSvg, container, width, height);
-    }
-
-    // 更新状态栏 - 使用导入的通用函数
-    updateStatusBar(visualizer);
+    // 为缩放状态同步准备变量
+    visualizer.timeScale = timeScale;
+    visualizer.timeAxisGroup = timeAxisGroup;
     
   } catch (err) {
     console.error('时间线渲染过程中出错:', err);
     
     // 渲染错误信息
-    timelineSvg.append('text')
+    svg.append('text')
       .attr('x', width / 2)
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
@@ -481,27 +480,46 @@ export function renderTimelineLayout(
       .text(`时间线渲染错误: ${err && (err as Error).message ? (err as Error).message : '未知错误'}`);
     
     // 渲染简单的空白时间线
-    renderEmptyTimeline(timelineSvg, width);
+    renderEmptyTimeline(svg, width, height);
   }
 }
 
 /**
  * 渲染空白时间线
  */
-function renderEmptyTimeline(timelineSvg: any, width: number): void {
+function renderEmptyTimeline(svg: any, width: number, height: number = 200): void {
+  svg.selectAll("*").remove();
+  
   // 添加背景
-  timelineSvg.append('rect')
+  svg.append('rect')
     .attr('width', '100%')
     .attr('height', '100%')
-    .attr('fill', '#333');
+    .attr('fill', '#FFF');
   
-  // 添加空状态文字
-  timelineSvg.append('text')
+  // 添加时间轴区域
+  svg.append('rect')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', width)
+    .attr('height', 55)
+    .attr('fill', '#212730');
+  
+  // 添加空状态文字 - 放在页面中间
+  svg.append('text')
+    .attr('x', width / 2)
+    .attr('y', height / 2)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#333')
+    .text('无时间数据可显示');
+  
+  // 添加时间轴标题
+  svg.append('text')
     .attr('x', width / 2)
     .attr('y', 20)
     .attr('text-anchor', 'middle')
-    .attr('fill', '#999')
-    .text('无时间数据可显示');
+    .attr('fill', '#FFF')
+    .style('font-size', '11px')
+    .text('时间线');
 }
 
 /**

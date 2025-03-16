@@ -19,7 +19,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -33,6 +33,7 @@ body {
   border-bottom: 1px solid #e0e0e0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   z-index: 10;
+  flex: 0 0 auto; /* 不伸缩，保持自身高度 */
 }
 
 .logo {
@@ -92,9 +93,10 @@ body {
 
 /* 主体内容区域 */
 .main-container {
+  flex: 1; /* 填充剩余空间 */
   display: flex;
-  flex: 1;
   overflow: hidden;
+  position: relative; /* 为绝对定位的子元素提供参考 */
 }
 
 /* 左侧筛选面板 */
@@ -169,13 +171,15 @@ body {
 /* 中间可视化区域 */
 .visualization-container {
   flex: 1;
-  min-height: 500px;
-  background-color: #EEE;
   position: relative;
   overflow: hidden;
+  min-height: 500px;
   border: 1px solid #333;
 }
-
+/* 确保其他元素不会意外挤压可视化容器 */
+.controls-bar, .status-bar {
+  flex-shrink: 0;
+}
 #visualization {
   width: 100%;
   height: 100%;
@@ -835,6 +839,7 @@ path.link.closed, .edge.closed {
   overflow: hidden;
   position: relative;
   z-index: 10;
+  flex: 0 0 auto; /* 不伸缩，保持自身高度 */
 }
 
 /* 状态栏中的格子 */

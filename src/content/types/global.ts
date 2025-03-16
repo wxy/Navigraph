@@ -1,3 +1,5 @@
+import type { NavigationVisualizer } from '../core/navigation-visualizer';
+
 export {}; // 确保这是一个模块
 
 declare global {
@@ -9,8 +11,13 @@ declare global {
       enhanceVisualizer?: () => Promise<void>;
       [key: string]: any;
     };
-    visualizer?: any;
-    NavigationVisualizer?: new () => any;
+    
+    // 使用具体类型代替 any
+    visualizer: NavigationVisualizer;
+    
+    // 构造函数类型
+    NavigationVisualizer: new () => NavigationVisualizer;
+    
     __moduleLoader?: {
       loadModule: (path: string) => Promise<any>;
       preloadModules?: (paths: string[]) => Promise<any[]>;
@@ -48,9 +55,10 @@ declare global {
       links: any[], 
       width: number, 
       height: number,
-      visualizer: any
+      visualizer: NavigationVisualizer
     ) => void;
   }
+  
   interface TimelineRenderer {
     renderTimelineLayout: (
       container: any, 
@@ -59,7 +67,7 @@ declare global {
       links: any[], 
       width: number, 
       height: number,
-      visualizer: any
+      visualizer: NavigationVisualizer
     ) => void;
   }
 }

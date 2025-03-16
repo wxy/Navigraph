@@ -60,7 +60,7 @@ import {
 
 // 导入状态管理功能
 import { 
-  setupZoomHandling, 
+  saveViewState, 
   updateStatusBar
 } from '../utils/state-manager.js';
 
@@ -71,22 +71,80 @@ type D3LinkHorizontal = (data: { source: any; target: any }) => string;
  * 渲染树形图布局
  */
 export function renderTreeLayout(
-  container: any, 
-  treeSvg: any, 
-  nodes: NavNode[], 
-  links: NavLink[], 
+  container: HTMLElement, 
+  svg: any, 
+  nodes: any[], 
+  links: any[], 
   width: number, 
   height: number, 
-  visualizer: Visualizer
+  visualizer: any
 ): void {
   console.log('使用模块化树形图渲染器');
   
   try {
-    // 清除现有内容
-    treeSvg.selectAll("*").remove();
+    // 1. 确保基本DOM结构存在
+    if (!svg.select('.main-group').node()) {
+      console.log('创建主视图组');
+      svg.append('g').attr('class', 'main-group');
+    }
     
+    // 获取主视图组引用
+    const mainGroup = svg.select('.main-group');
+    
+    // 确保子组存在
+    if (!mainGroup.select('.links-group').node()) {
+      mainGroup.append('g').attr('class', 'links-group');
+    }
+    
+    if (!mainGroup.select('.nodes-group').node()) {
+      mainGroup.append('g').attr('class', 'nodes-group');
+    }
+    
+    // 2. 首先配置和应用缩放行为
+    // 始终创建新的缩放行为，确保每次渲染后缩放都能正常工作
+    try {
+      console.log('为树形图视图设置缩放行为');
+      
+      // 先清除旧的缩放事件
+      svg.on('.zoom', null);
+      
+      // 获取DOM引用
+      const mainGroup = svg.select('.main-group');
+      const nodesGroup = mainGroup.select('.nodes-group');
+      
+      // 创建缩放处理函数，使用当前获取的DOM引用
+      const zoomHandler = function(event) {
+        mainGroup.attr('transform', event.transform);
+        
+        // 缩放级别较低时隐藏文本
+        if (event.transform.k < 0.5) {
+          nodesGroup.selectAll('text').style('display', 'none');
+        } else {
+          nodesGroup.selectAll('text').style('display', null);
+        }
+      };
+      
+      // 创建新的缩放行为
+      const zoom = d3.zoom()
+        .scaleExtent([0.1, 8])
+        .on('zoom', zoomHandler);
+      
+      // 保存并应用缩放行为
+      visualizer.zoom = zoom;
+      svg.call(zoom);
+      
+      console.log('已设置树形图缩放行为');
+    } catch (error) {
+      console.error('设置树形图缩放失败:', error);
+    }
+    
+    // 3. 然后清除现有节点和链接，但保留基本结构
+    mainGroup.select('.links-group').selectAll('*').remove();
+    mainGroup.select('.nodes-group').selectAll('*').remove();
+    
+    // 4. 检查是否有数据可渲染
     if (!nodes || nodes.length === 0) {
-      renderEmptyTreeMessage(treeSvg, width, height);
+      renderEmptyTreeMessage(svg, width, height);
       return;
     }
     
@@ -241,26 +299,41 @@ export function renderTreeLayout(
       minY = Math.min(minY, d.x);
       maxY = Math.max(maxY, d.x);
     });
-    
-    // 固定水平偏移量，确保根节点在左侧而不是居中
-    const leftMargin = width * 0.2; // 左侧预留20%的空间
-    const xOffset = leftMargin;
-    
-    // 垂直方向居中
-    const contentHeight = maxY - minY;
-    const yOffset = (height - contentHeight) / 2 - minY + 50; // 增加50像素的顶部间距
-    
-    // 计算合适的缩放因子
-    const contentWidth = maxX - minX;
-    // 限制最大缩放，确保保持节点间距
-    const scaleFactor = Math.min(
-      (width - leftMargin - 100) / Math.max(contentWidth, 1), // 增加边距
-      (height - 120) / Math.max(contentHeight, 1), 
-      0.9 // 更低的最大缩放限制，保证更多空间
-    );
-    
+
+    // ========== 修改这里的布局计算 ==========
+
+    // 计算树的边界框和尺寸
+    const treeWidth = maxX - minX;
+    const treeHeight = maxY - minY;
+
+    // 1. 水平方向保持左侧对齐
+    const leftMargin = 80; // 确保会话节点靠近左侧
+    const xOffset = leftMargin - minX;
+
+    // 2. 垂直方向居中 - 回归简单直接的计算
+    const yOffset = (height - treeHeight) / 2 - minY;
+
+    // 打印布局信息
+    console.log('树布局信息(修正的垂直居中):', {
+        viewport: { width, height },
+        tree: { 
+        width: treeWidth, 
+        height: treeHeight, 
+        bounds: { minX, maxX, minY, maxY },
+        verticalRange: `从 ${minY} 到 ${maxY}`
+        },
+        calculation: {
+        formula: "(height - treeHeight) / 2",
+        values: `(${height} - ${treeHeight}) / 2`,
+        result: yOffset
+        },
+        offset: { x: xOffset, y: yOffset }
+    });
+
+    // ========== 不修改其他部分 ==========
+
     // 创建箭头标记
-    treeSvg.append('defs').append('marker')
+    svg.append('defs').append('marker')
       .attr('id', 'arrow')
       .attr('viewBox', '0 -5 10 10')
       .attr('refX', 20)
@@ -272,26 +345,20 @@ export function renderTreeLayout(
       .attr('d', 'M0,-5L10,0L0,5')
       .attr('fill', '#999');
     
-    // 创建连接线分组 - 应用初始变换
-    const linkGroup = treeSvg.append('g')
-      .attr('class', 'links')
-      .attr('transform', `translate(${xOffset}, ${yOffset})`);
-    
-    // 节点分组 - 应用初始变换
-    const nodeGroup = treeSvg.append('g')
-      .attr('class', 'nodes')
-      .attr('transform', `translate(${xOffset}, ${yOffset})`);
+    // 获取节点和链接分组
+    const linksGroup = svg.select('.main-group .links-group');
+    const nodesGroup = svg.select('.main-group .nodes-group');
     
     // 绘制连接线 - 使用曲线路径
-    linkGroup.selectAll('path')
+    linksGroup.selectAll('path')
       .data(treeData.links())
       .join('path')
       .attr('class', (d: any) => `link ${d.target.data.type || ''}`)
       .attr('d', (d: any) => {
         // 创建平滑曲线，从源节点到目标节点
         const linkHorizontal = d3.linkHorizontal()
-          .x((node: any) => node.y)
-          .y((node: any) => node.x);
+          .x((node: any) => node.y + xOffset) // 应用水平偏移
+          .y((node: any) => node.x + yOffset); // 应用垂直偏移
           
         return linkHorizontal({
           source: d.source,
@@ -305,7 +372,7 @@ export function renderTreeLayout(
       .attr('marker-end', 'url(#arrow)');
     
     // 绘制节点
-    const node = nodeGroup.selectAll('.node')
+    const node = nodesGroup.selectAll('.node')
       .data(descendants)
       .join('g')
       .attr('class', (d: any) => {
@@ -329,7 +396,7 @@ export function renderTreeLayout(
         
         return classes;
       })
-      .attr('transform', (d: any) => `translate(${d.y},${d.x})`);
+      .attr('transform', (d: any) => `translate(${d.y + xOffset},${d.x + yOffset})`); // 应用偏移量
     
     // 会话节点特殊处理
     node.filter((d: any) => d.data.id === 'session-root')
@@ -420,42 +487,47 @@ export function renderTreeLayout(
       }
       
       // 高亮节点
-      treeSvg.selectAll('.node')
+      svg.selectAll('.node')
         .classed('highlighted', false);
       
       d3.select(event.currentTarget as Element)
         .classed('highlighted', true);
     });
     
-    // 应用初始变换以居中视图
+    // 替换初始变换的部分
+
+    // 应用初始变换以适应视图
+    const scaleFactor = Math.min(
+      (width - 160) / Math.max(treeWidth, 1), // 水平方向缩放因子，预留两侧边距
+      (height - 150) / Math.max(treeHeight, 1), // 垂直方向缩放因子
+      1.0 // 限制最大缩放
+    );
+
+    // 使用计算好的偏移量创建变换
     const initialTransform = d3.zoomIdentity
-      .translate(width / 2, 60)
-      .scale(0.8);
-    
-    if (visualizer.svg && visualizer.zoom) {
-      visualizer.svg.call(visualizer.zoom.transform, initialTransform);
-    }
-    
-    // 设置缩放和状态管理
-    if (!visualizer.zoom) {
-      setupZoomHandling(visualizer, treeSvg, container, width, height);
+      .translate(xOffset, yOffset)
+      .scale(Math.max(0.7, scaleFactor));
+
+    // 确保使用正确的缩放实例
+    if (visualizer.zoom) {
+      svg.call(visualizer.zoom.transform, initialTransform);
     }
 
-    // 更新状态栏
+    // 6. 更新状态栏
     updateStatusBar(visualizer);
-
+    
+    // 7. 添加调试信息
+    console.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeData.links().length);
+    
   } catch (err) {
     console.error('树形图渲染过程中出错:', err);
     
     // 添加错误信息显示
-    treeSvg.append('text')
+    svg.append('text')
       .attr('x', width / 2)
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
       .attr('fill', 'red')
       .text(`渲染错误: ${err instanceof Error ? err.message : '未知错误'}`);
-      
-    // 继续抛出错误以便上层处理
-    throw err;
   }
 }
