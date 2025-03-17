@@ -1056,22 +1056,6 @@ handleMessage(message: any): boolean {
     content.appendChild(statusContainer);
     
     // 其他属性
-    if (node.tabId) {
-      const tabContainer = document.createElement('div');
-      tabContainer.className = 'detail-item';
-      tabContainer.style.marginBottom = '10px';
-      
-      const tabLabel = document.createElement('span');
-      tabLabel.textContent = '标签ID: ';
-      tabLabel.style.color = '#aaa';
-      
-      const tabValue = document.createElement('span');
-      tabValue.textContent = node.tabId;
-      
-      tabContainer.appendChild(tabLabel);
-      tabContainer.appendChild(tabValue);
-      content.appendChild(tabContainer);
-    }
     
     // 更多技术详情 - 可折叠部分
     const technicalDetails = document.createElement('details');
@@ -1088,7 +1072,25 @@ handleMessage(message: any): boolean {
     detailContent.style.marginTop = '10px';
     detailContent.style.fontSize = '12px';
     detailContent.style.color = '#ccc';
-    
+
+    // 标签ID
+    if (node.tabId) {
+        const tabContainer = document.createElement('div');
+        tabContainer.className = 'detail-item';
+        tabContainer.style.marginBottom = '10px';
+        
+        const tabLabel = document.createElement('span');
+        tabLabel.textContent = '标签ID: ';
+        tabLabel.style.color = '#aaa';
+        
+        const tabValue = document.createElement('span');
+        tabValue.textContent = node.tabId;
+        
+        tabContainer.appendChild(tabLabel);
+        tabContainer.appendChild(tabValue);
+        detailContent.appendChild(tabContainer);
+      }
+  
     // 节点ID
     const idContainer = document.createElement('div');
     idContainer.style.marginBottom = '8px';
