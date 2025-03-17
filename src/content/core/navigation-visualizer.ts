@@ -7,6 +7,7 @@ import { nodeManager } from './node-manager.js';
 import { setupMessageListener } from './message-handler.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
 import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
+import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
 
@@ -63,6 +64,8 @@ export class NavigationVisualizer {
     'piwik.', 'matomo.', 'ga.js', 'gtm.js', 'fbevents', 
     'insight.', '/counter/', 'www.google-analytics.com'
   ];
+  // 添加调试工具属性
+  private debugTools: DebugTools | null = null;
 
   /**
    * 构造函数
@@ -137,6 +140,8 @@ export class NavigationVisualizer {
       // 加载当前会话
       await sessionManager.loadCurrentSession();
 
+      // 在所有初始化完成后，初始化调试工具
+      this.initDebugTools();
     } catch (error) {
       console.error('初始化可视化失败:', error);
       this.showNoData('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
@@ -155,7 +160,20 @@ export class NavigationVisualizer {
       }
     });
   }
-  
+  /**
+   * 初始化调试工具
+   */
+  private initDebugTools(): void {
+    try {
+      // 确保调试工具只初始化一次
+      if (!this.debugTools) {
+        console.log('初始化调试工具...');
+        this.debugTools = new DebugTools(this);
+      }
+    } catch (error) {
+      console.error('初始化调试工具失败:', error);
+    }
+  }
   /**
    * 初始化SVG元素
    */

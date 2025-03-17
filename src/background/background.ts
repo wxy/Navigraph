@@ -49,6 +49,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   } else if (details.reason === 'update') {
     console.log(`Navigraph 扩展已更新到版本 ${chrome.runtime.getManifest().version}`);
   }
+  setupDebugContextMenu();
 });
 
 // 处理扩展图标点击事件
@@ -912,3 +913,86 @@ let domain = url.replace(/^(https?:\/\/)?(www\.)?/, '');
 
 // 初始化追踪器
 const navigationTracker = new NavigationTracker();
+
+// 添加到文件合适位置 - 通常是在初始化时
+function setupDebugContextMenu() {
+  // 移除可能存在的旧菜单
+  chrome.contextMenus.removeAll(() => {
+    // 创建父级菜单
+    chrome.contextMenus.create({
+      id: 'navigraph-debug',
+      title: '🐞 Navigraph调试工具',
+      contexts: ['action'] // 仅在扩展图标的右键菜单中显示
+    });
+
+    // 添加子菜单项
+    chrome.contextMenus.create({
+      id: 'debug-check-data',
+      parentId: 'navigraph-debug',
+      title: '检查数据',
+      contexts: ['action']
+    });
+
+    chrome.contextMenus.create({
+      id: 'debug-check-dom',
+      parentId: 'navigraph-debug',
+      title: '检查DOM',
+      contexts: ['action']
+    });
+
+    chrome.contextMenus.create({
+      id: 'debug-test-render',
+      parentId: 'navigraph-debug',
+      title: '测试渲染',
+      contexts: ['action']
+    });
+
+    chrome.contextMenus.create({
+      id: 'debug-clear-data',
+      parentId: 'navigraph-debug',
+      title: '清除数据',
+      contexts: ['action']
+    });
+
+    console.log('创建调试上下文菜单完成');
+  });
+}
+
+// 处理菜单点击事件
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (!tab?.id) return;
+  
+  // 根据不同菜单项执行相应操作
+  switch (info.menuItemId) {
+    case 'debug-check-data':
+    case 'debug-check-dom':
+    case 'debug-test-render':
+    case 'debug-clear-data':
+      // 检查是否已经打开了扩展页面
+      chrome.tabs.query({ url: chrome.runtime.getURL('dist/content/index.html') + '*' }, (existingTabs) => {
+        if (existingTabs && existingTabs.length > 0) {
+          // 如果扩展页面已打开，尝试发送消息
+          chrome.tabs.sendMessage(existingTabs[0].id, {
+            action: 'debug',
+            command: info.menuItemId
+          }).then(response => {
+            console.log('调试命令已发送到现有标签页:', response);
+            // 激活该标签页
+            chrome.tabs.update(existingTabs[0].id, { active: true });
+          }).catch(err => {
+            console.warn('发送到已打开页面失败，打开新标签页:', err);
+            // 新开一个标签页
+            chrome.tabs.create({
+              url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${info.menuItemId}`
+            });
+          });
+        } else {
+          // 如果扩展页面未打开，创建新标签
+          chrome.tabs.create({
+            url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${info.menuItemId}`
+          });
+        }
+      });
+      break;
+  }
+});
