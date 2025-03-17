@@ -2754,7 +2754,7 @@
       
       try {
         this.showLoading();
-        document.getElementById('status-text').textContent = '清除数据中...';
+        document.getElementById('status-message').textContent = '清除数据中...';
         
         // 发送清除数据请求到后台
         const response = await this.sendMessage('clearAllData');

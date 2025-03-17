@@ -1,33 +1,37 @@
 /**
- * 可视化工具函数库
- * 提供与导航可视化相关的通用工具函数
+ * 可视化工具函数
+ * 为渲染器提供共享功能
  */
 
-import { NavNode, Visualizer } from '../types/navigation';
+import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 
 /**
  * 获取节点颜色
- * @param type 节点类型
- * @returns 颜色代码
  */
 export function getNodeColor(type: string): string {
-  switch(type) {
-    case 'link_click': return '#7cb9e8';
-    case 'address_bar': return '#c0e8a5';
-    case 'form_submit': return '#f5d76e';
-    case 'reload': return '#bcbcbc';
+  switch (type) {
+    case 'link_click':
+      return '#7cb9e8';
+    case 'address_bar':
+      return '#c0e8a5';
+    case 'form_submit':
+      return '#f5d76e';
+    case 'reload':
+      return '#bcbcbc';
     case 'history_back':
-    case 'history_forward': return '#d3a4f9';
-    case 'redirect': return '#ff9966';
-    case 'javascript': return '#66ccff';
-    default: return '#aaaaaa';
+    case 'history_forward':
+      return '#d3a4f9';
+    case 'redirect':
+      return '#ff9966';
+    case 'javascript':
+      return '#66ccff';
+    default:
+      return '#aaaaaa';
   }
 }
 
 /**
- * 获取边的颜色
- * @param type 边的类型
- * @returns 颜色代码
+ * 获取边颜色
  */
 export function getEdgeColor(type: string): string {
   const colors: Record<string, string> = {
@@ -39,7 +43,7 @@ export function getEdgeColor(type: string): string {
     'history_forward': '#d3a4f9',
     'redirect': '#ff9966',
     'javascript': '#66ccff',
-    'generated': '#aaaaaa', 
+    'generated': '#aaaaaa',
     'session_link': '#555555'
   };
   
@@ -47,18 +51,15 @@ export function getEdgeColor(type: string): string {
 }
 
 /**
- * 检查页面是否为跟踪类型
- * @param node 节点对象
- * @param visualizer 可视化器实例
- * @returns 是否为跟踪类型页面
+ * 判断是否为跟踪页面
  */
 export function isTrackingPage(node: NavNode, visualizer: Visualizer): boolean {
-  // 如果visualizer有实现此方法，则使用它
+  // 首先尝试使用可视化器的方法
   if (visualizer && typeof visualizer.isTrackingPage === 'function') {
     return visualizer.isTrackingPage(node);
   }
   
-  // 否则使用简单的后备实现
+  // 否则使用内置的模式匹配
   const trackingPatterns = [
     /google.*\/analytics/i,
     /tracker/i,
@@ -73,9 +74,7 @@ export function isTrackingPage(node: NavNode, visualizer: Visualizer): boolean {
 }
 
 /**
- * 格式化时间戳为可读字符串
- * @param timestamp 时间戳
- * @returns 格式化后的日期时间字符串
+ * 格式化时间戳
  */
 export function formatTimestamp(timestamp: number): string {
   const date = new Date(timestamp);
@@ -83,25 +82,82 @@ export function formatTimestamp(timestamp: number): string {
 }
 
 /**
- * 计算两个节点之间的连线路径
- * @param source 源节点坐标
- * @param target 目标节点坐标
- * @param linkType 连线类型
- * @returns SVG路径字符串
+ * 计算连接路径
  */
 export function calculateLinkPath(
-  source: {x: number, y: number}, 
-  target: {x: number, y: number}, 
+  source: { x: number, y: number },
+  target: { x: number, y: number },
   linkType: string
 ): string {
   if (linkType === 'history_back' || linkType === 'history_forward') {
-    // 弯曲的线条
     return `M${source.x},${source.y} 
             C${source.x + (target.x - source.x) * 0.5},${source.y} 
               ${source.x + (target.x - source.x) * 0.5},${target.y} 
               ${target.x},${target.y}`;
   } else {
-    // 直线
     return `M${source.x},${source.y} L${target.x},${target.y}`;
   }
+}
+
+/**
+ * 获取节点的CSS类名
+ * 从tree-renderer.ts移动而来
+ */
+export function getNodeClass(node: NavNode, visualizer: Visualizer): string {
+  if (!node) return 'node default';
+  
+  let classes = `node ${node.type || 'default'}`;
+  
+  if (node.isClosed) {
+    classes += ' closed';
+  }
+  
+  if (isTrackingPage(node, visualizer)) {
+    classes += ' tracking';
+  }
+  
+  return classes;
+}
+
+/**
+ * 获取连接类型
+ * 从tree-renderer.ts移动而来
+ */
+export function getLinkType(d3Link: any, links: NavLink[]): string {
+  try {
+    // 添加安全检查
+    if (!d3Link || !d3Link.source || !d3Link.target || 
+        !d3Link.source.data || !d3Link.target.data) {
+      return 'default';
+    }
+    
+    // 查找原始连接类型
+    const sourceId = d3Link.source.data.id;
+    const targetId = d3Link.target.data.id;
+    
+    if (!sourceId || !targetId) {
+      return 'default';
+    }
+    
+    const originalLink = links.find(link => 
+      link.source === sourceId && link.target === targetId);
+    
+    return originalLink ? originalLink.type : 'default';
+  } catch (err) {
+    console.warn('获取链接类型时出错:', err);
+    return 'default';
+  }
+}
+
+/**
+ * 渲染空树消息
+ * 从tree-renderer.ts移动而来
+ */
+export function renderEmptyTreeMessage(svg: any, width: number, height: number): void {
+  svg.append('text')
+    .attr('x', width / 2)
+    .attr('y', height / 2)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#999')
+    .text('无导航数据可显示');
 }

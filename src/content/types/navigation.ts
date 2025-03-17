@@ -32,5 +32,9 @@ export interface Visualizer {
   showNodeDetails?: (node: NavNode) => void;
   isTrackingPage?: (node: NavNode) => boolean;
   _isRestoringTransform?: boolean;
+  container?: HTMLElement | any;
+  tabId?: string;
+  currentView?: string;
+  _savedTransform?: {x: number, y: number, k: number};
   [key: string]: any; // 允许其他属性
 }

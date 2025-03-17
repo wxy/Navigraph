@@ -945,9 +945,7 @@ export class NavigationStorage {
    * 获取所有会话列表
    */
   public async getSessions(): Promise<BrowsingSession[]> {
-    try {
-      console.log("getSessions: 开始获取会话列表");
-      
+    try {      
       // 确保数据库已初始化
       if (!this.db) {
         console.log("getSessions: 数据库未初始化，尝试初始化");
@@ -966,19 +964,16 @@ export class NavigationStorage {
         return [];
       }
       
-      console.log(`getSessions: 使用存储'${this.STORES.SESSIONS}'`);
       const tx = this.db.transaction(this.STORES.SESSIONS, 'readonly');
       const store = tx.objectStore(this.STORES.SESSIONS);
       
       // 获取所有会话记录
-      console.log("getSessions: 执行getAll()查询");
       const sessions = await new Promise<BrowsingSession[]>((resolve, reject) => {
         try {
           const request = store.getAll();
           
           request.onsuccess = () => {
             const result = request.result || [];
-            console.log(`getSessions: 查询成功，获取到${result.length}个会话`);
             resolve(result);
           };
           
@@ -1005,7 +1000,6 @@ export class NavigationStorage {
       }
       
       // 按时间排序，最新的在前面
-      console.log("getSessions: 对会话进行排序");
       const sortedSessions = sessions.sort((a, b) => b.startTime - a.startTime);
       
       return sortedSessions;
