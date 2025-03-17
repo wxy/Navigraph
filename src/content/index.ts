@@ -3,18 +3,18 @@
  * 主入口文件
  */
 
-import './types/global.js';
-
-import { NavigationVisualizer } from './core/navigation-visualizer.js';
-
 // 将旧的全局命名空间保留下来，用于兼容性
-window.Navigraph = window.Navigraph || {};
+//window.Navigraph = window.Navigraph || {};
 
 // 初始化函数
-function initialize() {
+async function initialize() {
   console.log('初始化 Navigraph 可视化...');
   
   try {
+    // 使用动态导入，避免"Cannot use import statement outside a module"错误
+    const module = await import('./core/navigation-visualizer.js');
+    const NavigationVisualizer = module.NavigationVisualizer;
+
     // 创建可视化器实例
     window.visualizer = new NavigationVisualizer();
     

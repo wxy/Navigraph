@@ -14,9 +14,10 @@
       "./node_modules/@types",
       "./src/types"
     ],
+    "declaration": true,  // 生成声明文件
     "sourceMap": true,  // 添加源映射以便调试
     "resolveJsonModule": true  // 允许导入JSON文件(如配置)
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js"],  // 扩展包含文件类型
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.js"],  // 扩展包含文件类型
   "exclude": ["node_modules", "dist"]  // 明确排除目录
 }
