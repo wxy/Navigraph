@@ -4,13 +4,49 @@
 (function() {
   // 存储从后台获取的标准节点ID
   let standardNodeId = null;
+  let isExtensionActive = true;
+  
+  /**
+   * 安全地发送消息到扩展
+   * @param {Object} message - 要发送的消息对象
+   * @param {Function} [callback] - 可选的回调函数
+   * @returns {boolean} 是否成功发送消息
+   */
+  function safeSendMessage(message, callback) {
+    if (!isExtensionActive) return false;
+    
+    try {
+      if (callback) {
+        chrome.runtime.sendMessage(message, function(response) {
+          if (chrome.runtime.lastError) {
+            console.log('发送消息时出现错误(正常现象):', chrome.runtime.lastError.message);
+            return;
+          }
+          callback(response);
+        });
+      } else {
+        chrome.runtime.sendMessage(message);
+      }
+      return true;
+    } catch (error) {
+      // 扩展上下文无效的情况
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        console.log('扩展上下文已失效，此为正常导航行为，无需处理');
+        isExtensionActive = false;
+      } else {
+        // 其他非预期错误
+        console.error('发送消息时出错:', error);
+      }
+      return false;
+    }
+  }
   
   /**
    * 初始化内容脚本
    */
   function initialize() {
     // 从后台获取当前标签页的标准节点ID
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: 'getNodeId'
     }, function(response) {
       if (response && response.success && response.nodeId) {
@@ -39,7 +75,7 @@
    * 发送页面已加载消息
    */
   function sendPageLoadedMessage() {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: 'pageLoaded',
       pageInfo: {
         nodeId: standardNodeId,
@@ -60,7 +96,7 @@
     // 监听标题变化
     const titleObserver = new MutationObserver(function() {
       if (document.title) {
-        chrome.runtime.sendMessage({
+        safeSendMessage({
           action: 'pageTitleUpdated',
           nodeId: standardNodeId,
           title: document.title
@@ -122,7 +158,7 @@
     
     // 发送favicon信息
     if (favicon && standardNodeId) {
-      chrome.runtime.sendMessage({
+      safeSendMessage({
         action: 'faviconUpdated',
         nodeId: standardNodeId,
         favicon: favicon
@@ -133,11 +169,12 @@
   
   /**
    * 设置链接点击监听器
+   * 使用更可靠的方法处理点击和导航
    */
   function setupLinkClickListener() {
     document.addEventListener('click', function(e) {
-      // 如果没有标准节点ID，不处理点击事件
-      if (!standardNodeId) return;
+      // 如果没有标准节点ID或扩展不活跃，不处理点击事件
+      if (!standardNodeId || !isExtensionActive) return;
       
       // 查找被点击的链接元素
       let linkElement = e.target;
@@ -151,19 +188,21 @@
                          e.ctrlKey || 
                          e.metaKey || 
                          e.button === 1;
-                         
-        chrome.runtime.sendMessage({
-          action: 'linkClicked',
-          linkInfo: {
-            sourceNodeId: standardNodeId, // 使用标准节点ID
-            sourceUrl: window.location.href,
-            targetUrl: linkElement.href,
-            isNewTab: isNewTab,
-            timestamp: Date.now()
-          }
-        });
-        
-        console.log(`链接点击: ${window.location.href} -> ${linkElement.href} (${isNewTab ? '新标签' : '同标签'})`);
+        try {
+          safeSendMessage({
+            action: 'linkClicked',
+            linkInfo: {
+              sourceNodeId: standardNodeId,
+              sourceUrl: window.location.href,
+              targetUrl: linkElement.href,
+              isNewTab: false,
+              timestamp: Date.now()
+            }
+          });
+          console.log(`链接点击: ${window.location.href} -> ${linkElement.href} `);
+        } catch (e) {
+          // 导航期间错误已在safeSendMessage中处理
+        }
       }
     });
   }
@@ -173,11 +212,35 @@
    */
   function setupFormSubmitListener() {
     document.addEventListener('submit', function(e) {
-      if (!standardNodeId) return;
+      if (!standardNodeId || !isExtensionActive) return;
       
       const form = e.target;
       if (form && form.action) {
-        chrome.runtime.sendMessage({
+        // 表单提交通常会导致页面导航，使用类似链接点击的处理方式
+        try {
+          const data = JSON.stringify({
+            action: 'formSubmitted',
+            formInfo: {
+              sourceNodeId: standardNodeId,
+              sourceUrl: window.location.href,
+              formAction: form.action,
+              method: form.method || 'get',
+              timestamp: Date.now()
+            }
+          });
+          
+          // 尝试使用Beacon API
+          const endpoint = chrome.runtime.getURL('/beacon');
+          if (navigator.sendBeacon(endpoint, data)) {
+            console.log(`通过Beacon API发送表单提交: ${window.location.href} -> ${form.action}`);
+            return;
+          }
+        } catch (e) {
+          // 如果Beacon失败，回退到常规方法
+        }
+        
+        // 回退到常规消息发送
+        safeSendMessage({
           action: 'formSubmitted',
           formInfo: {
             sourceNodeId: standardNodeId,
@@ -202,10 +265,10 @@
     history.pushState = function() {
       const result = originalPushState.apply(this, arguments);
       
-      if (standardNodeId) {
+      if (standardNodeId && isExtensionActive) {
         const targetUrl = arguments[2]; // 新URL
         
-        chrome.runtime.sendMessage({
+        safeSendMessage({
           action: 'jsNavigation',
           sourceNodeId: standardNodeId,
           sourceUrl: document.referrer || window.location.href,
@@ -225,10 +288,10 @@
     history.replaceState = function() {
       const result = originalReplaceState.apply(this, arguments);
       
-      if (standardNodeId) {
+      if (standardNodeId && isExtensionActive) {
         const targetUrl = arguments[2]; // 新URL
         
-        chrome.runtime.sendMessage({
+        safeSendMessage({
           action: 'jsNavigation',
           sourceNodeId: standardNodeId,
           sourceUrl: document.referrer || window.location.href,
