@@ -113,7 +113,7 @@ export function renderTreeLayout(
       const nodesGroup = mainGroup.select('.nodes-group');
       
       // 创建缩放处理函数，使用当前获取的DOM引用
-      const zoomHandler = function(event) {
+      const zoomHandler = function(event: d3.ZoomEvent) {
         mainGroup.attr('transform', event.transform);
         
         // 缩放级别较低时隐藏文本

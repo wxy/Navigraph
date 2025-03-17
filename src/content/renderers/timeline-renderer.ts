@@ -116,23 +116,28 @@ function updateTimeAxis(
       g.selectAll('.tick text')
         .attr('fill', '#eee')
         .attr('font-size', '10px')
-        .style('opacity', function(d: Date, i: number) {
+        .style('opacity', function(d, i) {
           return i % 2 === 0 || transform.k < 4 ? 1 : 0.5;
         })
-        .each(function(this: SVGTextElement, d: Date) {
+        .each(function(d: any) {
           // 0点加粗显示
-          if (d.getHours() === 0 && d.getMinutes() === 0) {
-            d3.select(this)
+          // 使用更安全的类型检查
+          if (d instanceof Date && d.getHours() === 0 && d.getMinutes() === 0) {
+            const element = this as Element; // 使用基本Element类型
+            d3.select(element)
               .attr('fill', '#fff')
               .attr('font-weight', 'bold')
               .style('opacity', 1);
             
             // 对应的刻度线也加粗
-            const tickLine = d3.select(this.parentNode).select('line');
-            tickLine
-              .attr('stroke', '#fff')
-              .attr('stroke-width', 1.5)
-              .attr('y2', 10);
+            const parent = element.parentNode;
+            if (parent) {
+              const tickLine = d3.select(parent).select('line');
+              tickLine
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1.5)
+                .attr('y2', 10);
+            }
           }
         });
     });
