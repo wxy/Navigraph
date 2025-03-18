@@ -522,11 +522,6 @@ export function renderTreeLayout(
     setTimeout(() => {
       try {
         const currentTransform = d3.zoomTransform(svg.node());
-        console.log('验证应用的变换:', {
-          x: currentTransform.x,
-          y: currentTransform.y,
-          k: currentTransform.k
-        });
         } catch (e) {
         console.error('获取变换信息失败:', e);
         }

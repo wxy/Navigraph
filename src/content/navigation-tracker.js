@@ -5,6 +5,7 @@
   // 存储从后台获取的标准节点ID
   let standardNodeId = null;
   let isExtensionActive = true;
+  let lastRequestTime = 0;
   
   /**
    * 安全地发送消息到扩展
@@ -45,28 +46,44 @@
    * 初始化内容脚本
    */
   function initialize() {
-    // 从后台获取当前标签页的标准节点ID
+    console.log('初始化导航追踪器...');
+    
+    // 请求当前页面的节点ID
+    requestNodeId(window.location.href);
+    
+    // 设置事件监听器 - 即使没有节点ID也设置，节点ID获取后会自动生效
+    setupEventListeners();
+  }
+  
+  /**
+   * 请求当前页面的节点ID
+   * @param {string} url 当前页面URL
+   */
+  function requestNodeId(url) {
+    if (!url) return;
+    
+    // 限制请求频率
+    const now = Date.now();
+    if (now - lastRequestTime < 500) return;
+    lastRequestTime = now;
+    
+    console.log('向后台请求节点ID:', url);
+    
+    // 发送请求到后台脚本
     safeSendMessage({
-      action: 'getNodeId'
-    }, function(response) {
+      action: 'getNodeId',
+      url: url
+    }, response => {
       if (response && response.success && response.nodeId) {
-        // 保存标准节点ID
         standardNodeId = response.nodeId;
-        console.log(`获取到标准节点ID: ${standardNodeId}`);
-        
-        // 设置事件监听器
-        setupEventListeners();
-        
-        // 发送页面已加载消息(包含正确的节点ID)
-        sendPageLoadedMessage();
+        console.log('导航追踪器: 获取到当前页面ID:', standardNodeId);
       } else {
-        console.error('无法获取标准节点ID', response?.error);
+        // 处理未找到节点ID的情况
+        console.warn('导航追踪器: 未找到当前页面ID:', url);
+        standardNodeId = null; // 确保节点ID为null
         
-        // 即使没有获取到ID，也要设置基本的事件监听
-        setupEventListeners();
-        
-        // 5秒后再次尝试获取ID
-        setTimeout(initialize, 5000);
+        // 虽然没有节点ID，仍然发送页面加载事件，以便后台可以获取更多信息
+        sendPageLoadedMessage();
       }
     });
   }
@@ -78,15 +95,47 @@
     safeSendMessage({
       action: 'pageLoaded',
       pageInfo: {
-        nodeId: standardNodeId,
+        nodeId: standardNodeId,  // 可能为null，后台会处理
         url: window.location.href,
         title: document.title,
         timestamp: Date.now(),
-        referrer: document.referrer
+        referrer: document.referrer,
+        favicon: getFaviconUrl()  // 添加favicon信息
       }
     }, function(response) {
+      // 如果后台返回了节点ID，更新本地存储的ID
+      if (response && response.success && response.nodeId) {
+        if (standardNodeId !== response.nodeId) {
+          console.log(`更新节点ID: ${standardNodeId} -> ${response.nodeId}`);
+          standardNodeId = response.nodeId;
+        }
+      }
       console.log('页面加载消息已发送', response);
     });
+  }
+  
+  /**
+   * 获取当前页面的favicon URL
+   * @returns {string} favicon URL
+   */
+  function getFaviconUrl() {
+    // 查找link标签中的favicon
+    const linkTags = document.querySelectorAll('link[rel*="icon"]');
+    if (linkTags.length > 0) {
+      for (const link of linkTags) {
+        if (link.href) {
+          return link.href;
+        }
+      }
+    }
+    
+    // 如果没找到，使用默认位置
+    try {
+      const domain = new URL(window.location.href).hostname;
+      return `https://${domain}/favicon.ico`;
+    } catch (e) {
+      return '';
+    }
   }
   
   /**
@@ -169,7 +218,7 @@
   
   /**
    * 设置链接点击监听器
-   * 使用更可靠的方法处理点击和导航
+   * @typedef {import('../types/message-types').LinkClickedMessage} LinkClickedMessage
    */
   function setupLinkClickListener() {
     document.addEventListener('click', function(e) {
@@ -189,22 +238,55 @@
                          e.metaKey || 
                          e.button === 1;
         try {
-          safeSendMessage({
+          /** @type {LinkClickedMessage} */
+          const message = {
             action: 'linkClicked',
             linkInfo: {
               sourceNodeId: standardNodeId,
               sourceUrl: window.location.href,
               targetUrl: linkElement.href,
-              isNewTab: false,
+              isNewTab: isNewTab,
               timestamp: Date.now()
             }
-          });
+          };
+          safeSendMessage(message);
           console.log(`链接点击: ${window.location.href} -> ${linkElement.href} `);
         } catch (e) {
           // 导航期间错误已在safeSendMessage中处理
         }
       }
     });
+  }
+  
+  /**
+   * 安全地处理链接点击
+   * 如果没有节点ID，会跳过发送消息
+   */
+  function handleLinkClick(linkElement, isNewTab) {
+    if (!standardNodeId) {
+      console.log('链接点击：没有节点ID，跳过跟踪');
+      return false;
+    }
+    
+    if (!isExtensionActive) return false;
+    
+    try {
+      safeSendMessage({
+        action: 'linkClicked',
+        linkInfo: {
+          sourceNodeId: standardNodeId,
+          sourceUrl: window.location.href,
+          targetUrl: linkElement.href,
+          isNewTab: isNewTab,
+          timestamp: Date.now()
+        }
+      });
+      console.log(`链接点击: ${window.location.href} -> ${linkElement.href} (新标签页: ${isNewTab})`);
+      return true;
+    } catch (e) {
+      console.error('发送链接点击消息失败:', e);
+      return false;
+    }
   }
   
   /**
@@ -216,30 +298,7 @@
       
       const form = e.target;
       if (form && form.action) {
-        // 表单提交通常会导致页面导航，使用类似链接点击的处理方式
-        try {
-          const data = JSON.stringify({
-            action: 'formSubmitted',
-            formInfo: {
-              sourceNodeId: standardNodeId,
-              sourceUrl: window.location.href,
-              formAction: form.action,
-              method: form.method || 'get',
-              timestamp: Date.now()
-            }
-          });
-          
-          // 尝试使用Beacon API
-          const endpoint = chrome.runtime.getURL('/beacon');
-          if (navigator.sendBeacon(endpoint, data)) {
-            console.log(`通过Beacon API发送表单提交: ${window.location.href} -> ${form.action}`);
-            return;
-          }
-        } catch (e) {
-          // 如果Beacon失败，回退到常规方法
-        }
-        
-        // 回退到常规消息发送
+        // 使用安全发送方法
         safeSendMessage({
           action: 'formSubmitted',
           formInfo: {
@@ -306,6 +365,26 @@
       return result;
     };
   }
+  
+  // 添加DOM可见性监听
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      // 如果页面变为可见且没有节点ID，重试获取
+      if (!standardNodeId) {
+        console.log('页面变为可见状态，尝试获取节点ID');
+        requestNodeId(window.location.href);
+      }
+    }
+  });
+  
+  // 监听标签页聚焦事件
+  window.addEventListener('focus', function() {
+    // 如果获得焦点且没有节点ID，重试获取
+    if (!standardNodeId) {
+      console.log('页面获得焦点，尝试获取节点ID');
+      requestNodeId(window.location.href);
+    }
+  });
   
   // 启动初始化
   initialize();

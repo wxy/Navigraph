@@ -4,12 +4,18 @@
  */
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
-import { setupMessageListener } from './message-handler.js';
+import { registerMessageHandler, unregisterMessageHandler } from './message-handler.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
 import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
+import type { 
+  RefreshVisualizationMessage, 
+  DebugMessage, 
+  PageActivityMessage,
+  ResponseMessage 
+} from '../types/message-types.js';
 
 export class NavigationVisualizer {
   // 可视化容器
@@ -223,59 +229,266 @@ export class NavigationVisualizer {
    * 初始化消息监听
    */
   initMessageListener() {
-    console.log('初始化消息监听器...');
-    setupMessageListener((message: any) => this.handleMessage(message));
-  }
-  
-/**
- * 处理消息
- */
-handleMessage(message: any): boolean {
-  // 检查消息是否有效
-  if (!message || typeof message !== 'object') {
-    console.warn('收到无效消息:', message);
-    return false;
-  }
-
-  // 处理刷新请求
-  if (message.action === 'refreshVisualization') {
-    console.log('收到可视化刷新请求', message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'unknown');
+    console.log('注册消息处理函数...');
     
-    // 异常安全地发送响应
-    try {
-      chrome.runtime.sendMessage({
-        success: true,
-        action: 'refreshVisualization',
-        requestId: message.requestId || 'unknown',
-        timestamp: Date.now()
-      }).catch(err => {
-        console.warn('发送响应失败，但继续处理:', err);
+    // 注册刷新可视化消息处理函数
+    registerMessageHandler<RefreshVisualizationMessage>('refreshVisualization', 
+      (message, sender, sendResponse) => {
+        console.log('收到可视化刷新请求', message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'unknown');
+        
+        // 如果需要回复
+        if (message.requestId) {
+          sendResponse({
+            success: true,
+            action: 'refreshVisualization',
+            requestId: message.requestId,
+            timestamp: Date.now()
+          });
+        }
+        
+        // 延迟执行刷新操作
+        setTimeout(async () => {
+          try {
+            console.log('🔄 开始执行刷新操作...');
+            await sessionManager.loadSessions();
+            await sessionManager.loadCurrentSession();
+            this.refreshVisualization();
+            console.log('✅ 刷新操作完成');
+          } catch (err) {
+            console.error('❌ 自动刷新可视化失败:', err);
+          }
+        }, 50);
+        
+        // 返回true表示我们会异步处理
+        return false;
       });
-    } catch (err) {
-      console.warn('发送响应时出错，但继续处理:', err);
+    
+    // 注册调试消息处理函数
+    registerMessageHandler<DebugMessage>('debug', 
+      (message, sender, sendResponse) => {
+        console.log('收到调试命令:', message.command);
+        
+        // 如果已初始化调试工具
+        if (this.debugTools) {
+          try {
+            switch (message.command) {
+              case 'debug-check-data':
+                this.debugTools.checkData();
+                break;
+              case 'debug-check-dom':
+                this.debugTools.checkDOM();
+                break;
+              case 'debug-test-render':
+                this.debugTools.testRender();
+                break;
+              case 'debug-clear-data':
+                this.debugTools.clearData();
+                break;
+              default:
+                console.warn('未知调试命令:', message.command);
+                sendResponse({ 
+                  success: false, 
+                  action: 'debug',  // 添加这一行
+                  error: '未知命令' 
+                });
+                return true;
+            }
+            
+            sendResponse({ 
+              success: true,
+              action: 'debug'  // 添加这一行
+            });
+          } catch (error) {
+            console.error('执行调试命令失败:', error);
+            sendResponse({ 
+              success: false, 
+              action: 'debug',  // 添加这一行
+              error: error instanceof Error ? error.message : String(error) 
+            });
+          }
+        } else {
+          console.warn('调试工具未初始化，无法执行命令');
+          sendResponse({ 
+            success: false, 
+            action: 'debug',  // 添加这一行
+            error: '调试工具未初始化' 
+          });
+        }
+        
+        // 返回true表示我们已经处理了响应
+        return true;
+      });
+    
+    // 注册页面活动消息处理函数
+    registerMessageHandler<PageActivityMessage>('pageActivity', 
+      (message) => {
+        console.log('收到页面活动事件，触发刷新');
+        
+        // 触发刷新操作
+        this.triggerRefresh();
+        
+        // 不需要回复
+        return false;
+      });
+    
+    // 添加缺失的消息处理函数注册
+    
+    // 链接点击消息处理
+    registerMessageHandler('linkClicked', (message, sender, sendResponse) => {
+      console.log('收到链接点击消息:', message);
+      
+      // 确认收到
+      if (message.requestId) {
+        sendResponse({
+          success: true,
+          action: 'linkClicked',
+          requestId: message.requestId,
+          timestamp: Date.now()
+        });
+      }
+      
+      // 延迟刷新可视化图表
+      setTimeout(async () => {
+        try {
+          await sessionManager.loadSessions();
+          await sessionManager.loadCurrentSession();
+          this.refreshVisualization();
+          console.log('基于链接点击刷新可视化完成');
+        } catch (err) {
+          console.error('链接点击后刷新可视化失败:', err);
+        }
+      }, 100);
+      
+      return true; // 异步处理
+    });
+    
+    // 节点ID获取消息处理
+    registerMessageHandler('getNodeId', (message: any, sender: any, sendResponse: any) => {
+      console.log('收到获取节点ID请求:', message.url);
+      
+      // 从当前数据中查找URL对应的节点ID
+      let nodeId = null;
+      if (this.nodes && message.url) {
+        const node = this.nodes.find(n => n.url === message.url);
+        nodeId = node?.id || null;
+      }
+      
+      // 返回找到的节点ID或null
+      sendResponse({
+        success: true,
+        nodeId: nodeId,
+        action: 'getNodeId',
+        requestId: message.requestId,
+        timestamp: Date.now()
+      });
+      
+      return false; // 同步处理
+    });
+    
+    // favicon更新消息处理
+    registerMessageHandler('faviconUpdated', (message: any, sender: any, sendResponse: any) => {
+      console.log('收到favicon更新消息:', message.url, message.favicon);
+      
+      // 确认收到
+      if (message.requestId) {
+        sendResponse({
+          success: true,
+          action: 'faviconUpdated',
+          requestId: message.requestId,
+          timestamp: Date.now()
+        });
+      }
+      
+      return false; // 同步处理
+    });
+    
+    // 页面加载完成消息处理
+    registerMessageHandler('pageLoaded', (message: any, sender: any, sendResponse: any) => {
+      console.log('收到页面加载完成消息:', message.url);
+      
+      // 确认收到
+      if (message.requestId) {
+        sendResponse({
+          success: true,
+          action: 'pageLoaded',
+          requestId: message.requestId,
+          timestamp: Date.now()
+        });
+      }
+      
+      // 如果配置了自动刷新，延迟刷新视图
+      setTimeout(async () => {
+        try {
+          await sessionManager.loadSessions();
+          await sessionManager.loadCurrentSession();
+          this.refreshVisualization();
+          console.log('页面加载后刷新可视化完成');
+        } catch (err) {
+          console.error('页面加载后刷新可视化失败:', err);
+        }
+      }, 200);
+      
+      return true; // 异步处理
+    });
+  }
+  /**
+   * 清理资源
+   * 在可视化器销毁或者组件卸载时调用
+   */
+  cleanup(): void {
+    console.log('清理可视化器资源...');
+    
+    // 取消注册消息处理函数
+    unregisterMessageHandler('refreshVisualization');
+    unregisterMessageHandler('debug');
+    unregisterMessageHandler('pageActivity');
+    unregisterMessageHandler('linkClicked');
+    unregisterMessageHandler('getNodeId');
+    unregisterMessageHandler('faviconUpdated');
+    unregisterMessageHandler('pageLoaded');
+  
+    // 移除事件监听器
+    window.removeEventListener('resize', () => this.updateContainerSize());
+    
+    // 清理其他资源...
+    console.log('可视化器资源清理完成');
+  }
+  /**
+   * 触发刷新操作
+   * 包含节流控制逻辑
+   */
+  private lastRefreshTime = 0;
+  private readonly REFRESH_MIN_INTERVAL = 5000; // 最少5秒刷新一次
+  
+  triggerRefresh(): void {
+    const now = Date.now();
+    if (now - this.lastRefreshTime < this.REFRESH_MIN_INTERVAL) {
+      console.log('最近已经刷新过，跳过此次刷新');
+      return;
     }
     
-    // 延迟刷新操作
+    this.lastRefreshTime = now;
+    console.log('触发可视化刷新...');
+    
+    // 执行刷新操作
     setTimeout(async () => {
       try {
         await sessionManager.loadSessions();
         await sessionManager.loadCurrentSession();
+        this.refreshVisualization();
+        console.log('页面活动触发的刷新完成');
       } catch (err) {
-        console.error('自动刷新可视化失败:', err);
+        console.error('触发刷新失败:', err);
       }
-    }, 50);
-    
-    return true;
+    }, 100);
   }
-  return false;
-}
   
   /**
    * 刷新可视化
    * 处理外部请求刷新可视化的消息
    */
   refreshVisualization(data?: any): void {
-    console.log('收到刷新可视化请求', data);
+    console.log('执行刷新可视化...', data ? '使用提供的数据' : '使用现有数据');
     
     try {
       // 如果提供了新数据，则更新数据
@@ -299,9 +512,13 @@ handleMessage(message: any): boolean {
       // 重新渲染
       this.renderVisualization({ restoreTransform: true });
       
-      console.log('可视化已刷新');
+      // 更新状态栏
+      this.updateStatusBar();
+      
+      console.log('可视化刷新完成');
     } catch (error) {
       console.error('刷新可视化失败:', error);
+      this.showNoData('刷新失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
   
