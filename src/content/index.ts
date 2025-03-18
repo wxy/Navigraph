@@ -3,28 +3,109 @@
  * 主入口文件
  */
 
-import './types/global.js';
+import type { PageActivityMessage } from './types/message-types';
 
-import { NavigationVisualizer } from './core/navigation-visualizer.js';
-
-// 将旧的全局命名空间保留下来，用于兼容性
-window.Navigraph = window.Navigraph || {};
+// 用于控制页面活动事件频率的变量
+let lastActivityTime = 0;
+const MIN_ACTIVITY_INTERVAL = 5000; // 最少5秒触发一次
 
 // 初始化函数
-function initialize() {
+async function initialize() {
   console.log('初始化 Navigraph 可视化...');
   
   try {
+    // 先导入并设置消息处理系统
+    console.log('设置消息处理系统...');
+    const messageHandlerModule = await import('./core/message-handler.js');
+    messageHandlerModule.setupMessageListener();
+    console.log('消息处理系统设置完成');
+    
+    // 然后导入并创建可视化器
+    const visualizerModule = await import('./core/navigation-visualizer.js');
+    const NavigationVisualizer = visualizerModule.NavigationVisualizer;
+    
     // 创建可视化器实例
     window.visualizer = new NavigationVisualizer();
     
     // 为了兼容性考虑
     window.NavigationVisualizer = NavigationVisualizer;
     
+    // 初始化视觉化器
+    await window.visualizer.initialize();
+    
     console.log('Navigraph 可视化器初始化成功');
+    
+    // 设置页面活动监听器
+    setupPageActivityListeners();
+    
   } catch (error) {
     console.error('初始化可视化器失败:', error);
     showErrorMessage('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
+  }
+}
+
+/**
+ * 设置页面活动监听器
+ * 监听页面可见性变化和焦点获取事件
+ */
+function setupPageActivityListeners() {
+  console.log('设置页面活动监听器...');
+  
+  // 监听页面可见性变化
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      console.log('页面变为可见状态');
+      triggerPageActivity('visibility');
+    }
+  });
+  
+  // 监听页面获得焦点
+  window.addEventListener('focus', () => {
+    console.log('页面获得焦点');
+    triggerPageActivity('focus');
+  });
+  
+  console.log('页面活动监听器设置完成');
+}
+
+/**
+ * 触发页面活动消息
+ * @param source 触发源（'visibility' 或 'focus'）
+ */
+async function triggerPageActivity(source: string) {
+  const now = Date.now();
+  if (now - lastActivityTime > MIN_ACTIVITY_INTERVAL) {
+    lastActivityTime = now;
+    console.log(`检测到页面活动(${source})，触发刷新`);
+    
+    try {
+      // 动态导入消息处理模块
+      const messageModule = await import('./core/message-handler.js');
+      
+      // 发送页面活动消息
+      const message: PageActivityMessage = {
+        action: 'pageActivity',
+        source: source,
+        timestamp: now
+      };
+      
+      await messageModule.sendMessage(message.action, {
+        source: message.source,
+        timestamp: message.timestamp
+      }).catch(err => {
+        console.warn('发送页面活动消息失败:', err);
+      });
+    } catch (err) {
+      console.error('触发页面活动失败:', err);
+      
+      // 尝试直接调用triggerRefresh作为备用方案
+      if (window.visualizer && typeof window.visualizer.triggerRefresh === 'function') {
+        console.log('使用备用方法刷新可视化');
+        window.visualizer.triggerRefresh();
+      }
+    }
+  } else {
+    console.debug(`页面活动(${source})距离上次时间过短(${now - lastActivityTime}ms)，忽略`);
   }
 }
 

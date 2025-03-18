@@ -352,12 +352,25 @@ export class TabTracker {
             
             // 稍微延迟，确保页面已经准备好接收消息
             setTimeout(() => {
-              chrome.tabs.sendMessage(activeInfo.tabId, {
-                action: 'refreshVisualization',
-                timestamp: Date.now()
-              }).catch(err => {
-                console.warn('发送刷新消息失败，可能页面尚未完全加载:', err);
-              });
+              try {
+                chrome.tabs.sendMessage(
+                  activeInfo.tabId, 
+                  {
+                    action: 'refreshVisualization',
+                    timestamp: Date.now()
+                  },
+                  (response) => {
+                    // 正确处理回调响应
+                    if (chrome.runtime.lastError) {
+                      console.warn('发送刷新消息失败，可能页面尚未完全加载:', chrome.runtime.lastError.message);
+                    } else {
+                      console.log('刷新消息发送成功，响应:', response);
+                    }
+                  }
+                );
+              } catch (err) {
+                console.warn('发送刷新消息出错:', err);
+              }
             }, 300);
           }
         } catch (err) {

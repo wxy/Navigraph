@@ -113,7 +113,7 @@ export function renderTreeLayout(
       const nodesGroup = mainGroup.select('.nodes-group');
       
       // 创建缩放处理函数，使用当前获取的DOM引用
-      const zoomHandler = function(event) {
+      const zoomHandler = function(event: d3.ZoomEvent) {
         mainGroup.attr('transform', event.transform);
         
         // 缩放级别较低时隐藏文本
@@ -522,11 +522,6 @@ export function renderTreeLayout(
     setTimeout(() => {
       try {
         const currentTransform = d3.zoomTransform(svg.node());
-        console.log('验证应用的变换:', {
-          x: currentTransform.x,
-          y: currentTransform.y,
-          k: currentTransform.k
-        });
         } catch (e) {
         console.error('获取变换信息失败:', e);
         }

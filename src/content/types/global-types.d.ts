@@ -1,22 +1,23 @@
-import type { NavigationVisualizer } from '../core/navigation-visualizer';
+// global-types.d.ts - 不需要被导入，只需放在项目中
+// 添加TypeScript的特殊注释，确保编译器始终包含该文件
+/// <reference types="d3" />
 
-export {}; // 确保这是一个模块
+type NavigationVisualizerType = import('../core/navigation-visualizer').NavigationVisualizer;
 
 declare global {
   interface Window {
     // 添加 d3 全局变量声明
     d3: any;
     
-    Navigraph: {
+    /*Navigraph: {
       enhanceVisualizer?: () => Promise<void>;
       [key: string]: any;
-    };
+    };*/
     
-    // 使用具体类型代替 any
-    visualizer: NavigationVisualizer;
+    visualizer: NavigationVisualizerType;
     
     // 构造函数类型
-    NavigationVisualizer: new () => NavigationVisualizer;
+    NavigationVisualizer: new () => NavigationVisualizerType;
     
     __moduleLoader?: {
       loadModule: (path: string) => Promise<any>;
@@ -55,7 +56,7 @@ declare global {
       links: any[], 
       width: number, 
       height: number,
-      visualizer: NavigationVisualizer
+      visualizer: NavigationVisualizerType
     ) => void;
   }
   
@@ -67,7 +68,10 @@ declare global {
       links: any[], 
       width: number, 
       height: number,
-      visualizer: NavigationVisualizer
+      visualizer: NavigationVisualizerType
     ) => void;
   }
 }
+
+// 添加空导出使文件成为模块
+export {};

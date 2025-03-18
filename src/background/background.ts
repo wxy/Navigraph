@@ -49,6 +49,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   } else if (details.reason === 'update') {
     console.log(`Navigraph 扩展已更新到版本 ${chrome.runtime.getManifest().version}`);
   }
+  setupDebugContextMenu();
 });
 
 // 处理扩展图标点击事件
@@ -139,26 +140,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       break;
       
-    // 处理获取节点ID
+    // 修改 'getNodeId' 消息处理部分
     case 'getNodeId':
       Promise.resolve().then(() => {
-        if (sender.tab?.id) {
-          const tabId = sender.tab.id;
-          const url = sender.tab.url || '';
-          const nodeId = tabTracker.getNodeIdForTab(tabId, url);
-          
-          console.log(`内容脚本请求节点ID: 标签页=${tabId}, 返回=${nodeId || '未找到'}`);
+        const tabId = sender.tab?.id;
+        // 使用消息中的URL或标签页的URL
+        const url = message.url || sender.tab?.url || '';
+        
+        if (!tabId) {
+          console.error('获取节点ID失败：无法确定标签页ID');
+          sendResponse({ 
+            success: false, 
+            error: '无法获取标签页信息',
+            action: 'getNodeId',
+            requestId: message.requestId
+          });
+          return;
+        }
+        
+        // 使用TabTracker获取节点ID
+        const nodeId = tabTracker.getNodeIdForTab(tabId, url);
+        
+        if (nodeId) {
+          console.log(`内容脚本请求节点ID: 标签页=${tabId}, URL=${url}, 返回=${nodeId}`);
           sendResponse({
             success: true,
             nodeId: nodeId,
             tabId: tabId,
-            requestId: message.requestId  // 返回原请求ID
+            action: 'getNodeId',
+            requestId: message.requestId
           });
         } else {
-          sendResponse({ 
-            success: false, 
-            error: '无法获取标签页信息',
-            requestId: message.requestId  // 返回原请求ID
+          // 节点不存在，返回错误而非创建新节点
+          console.log(`未找到标签页${tabId}的节点ID: ${url}，不创建新节点`);
+          sendResponse({
+            success: false,
+            error: '未找到此页面的节点ID',
+            action: 'getNodeId',
+            requestId: message.requestId
           });
         }
       });
@@ -224,22 +243,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       break;
       
-    // 处理页面加载
+    // 修改 'pageLoaded' 消息处理，确保返回正确的节点ID信息
     case 'pageLoaded':
       Promise.resolve().then(() => {
-        if (sender.tab && message.pageInfo) {
-          navigationTracker.handlePageLoaded(sender.tab.id, message.pageInfo);
-          sendResponse({ 
-            success: true,
-            requestId: message.requestId  // 返回原请求ID
-          });
-        } else {
+        const tabId = sender.tab?.id;
+        const pageInfo = message.pageInfo || {};
+        const url = pageInfo.url || sender.tab?.url || '';
+        
+        if (!tabId || !url) {
           sendResponse({ 
             success: false, 
             error: '缺少必要的页面信息',
-            requestId: message.requestId  // 返回原请求ID
+            action: 'pageLoaded',
+            requestId: message.requestId
           });
+          return;
         }
+        
+        console.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
+        
+        // 先查找是否有现有的节点ID
+        let nodeId = tabTracker.getNodeIdForTab(tabId, url);
+        
+        // 如果没有找到节点ID，仅记录日志并返回错误，不创建新节点
+        if (!nodeId) {
+          console.log(`未找到标签页${tabId}的节点ID: ${url}，不创建新节点`);
+          sendResponse({
+            success: false,
+            error: '未找到此页面的节点ID',
+            action: 'pageLoaded',
+            requestId: message.requestId
+          });
+          return;
+        }
+        
+        // 处理页面信息
+        navigationTracker.handlePageLoaded(tabId, {
+          ...pageInfo,
+          url: url,
+          nodeId: nodeId
+        });
+        
+        // 返回节点ID给内容脚本
+        sendResponse({ 
+          success: true,
+          nodeId: nodeId,
+          action: 'pageLoaded',
+          requestId: message.requestId
+        });
       });
       break;
       
@@ -912,3 +963,101 @@ let domain = url.replace(/^(https?:\/\/)?(www\.)?/, '');
 
 // 初始化追踪器
 const navigationTracker = new NavigationTracker();
+
+// 添加到文件合适位置 - 通常是在初始化时
+function setupDebugContextMenu() {
+  // 移除可能存在的旧菜单
+  chrome.contextMenus.removeAll(() => {
+    // 创建父级菜单
+    chrome.contextMenus.create({
+      id: 'navigraph-debug',
+      title: '🐞 Navigraph调试工具',
+      contexts: ['action'] // 仅在扩展图标的右键菜单中显示
+    });
+
+    // 添加子菜单项
+    chrome.contextMenus.create({
+      id: 'debug-check-data',
+      parentId: 'navigraph-debug',
+      title: '检查数据',
+      contexts: ['action']
+    });
+
+    chrome.contextMenus.create({
+      id: 'debug-check-dom',
+      parentId: 'navigraph-debug',
+      title: '检查DOM',
+      contexts: ['action']
+    });
+
+    chrome.contextMenus.create({
+      id: 'debug-test-render',
+      parentId: 'navigraph-debug',
+      title: '测试渲染',
+      contexts: ['action']
+    });
+
+    chrome.contextMenus.create({
+      id: 'debug-clear-data',
+      parentId: 'navigraph-debug',
+      title: '清除数据',
+      contexts: ['action']
+    });
+
+    console.log('创建调试上下文菜单完成');
+  });
+}
+
+// 处理菜单点击事件
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (!tab?.id) return;
+  
+  // 根据不同菜单项执行相应操作
+  switch (info.menuItemId) {
+    case 'debug-check-data':
+    case 'debug-check-dom':
+    case 'debug-test-render':
+    case 'debug-clear-data':
+      // 检查是否已经打开了扩展页面
+      chrome.tabs.query({ url: chrome.runtime.getURL('dist/content/index.html') + '*' }, (existingTabs) => {
+        if (existingTabs && existingTabs.length > 0) {
+          // 如果扩展页面已打开，尝试发送消息
+          try {
+            chrome.tabs.sendMessage(
+              existingTabs[0].id!, // 使用非空断言，因为我们已经检查了数组长度
+              {
+                action: 'debug',
+                command: info.menuItemId
+              },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  console.warn('发送到已打开页面失败，打开新标签页:', chrome.runtime.lastError);
+                  // 新开一个标签页
+                  chrome.tabs.create({
+                    url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${info.menuItemId}`
+                  });
+                  return;
+                }
+
+                console.log('调试命令已发送到现有标签页:', response);
+                // 激活该标签页
+                chrome.tabs.update(existingTabs[0].id!, { active: true });
+              }
+            );
+          } catch (err) {
+            console.error('发送消息时出错:', err);
+            // 出错时创建新标签
+            chrome.tabs.create({
+              url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${info.menuItemId}`
+            });
+          }
+        } else {
+          // 如果扩展页面未打开，创建新标签
+          chrome.tabs.create({
+            url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${info.menuItemId}`
+          });
+        }
+      });
+      break;
+  }
+});
