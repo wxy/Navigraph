@@ -3,7 +3,8 @@
  * 主入口文件
  */
 
-import type { PageActivityMessage } from './types/message-types';
+// 更新导入的类型
+import type { PageActivityRequestMessage } from './types/message-types.js';
 
 // 用于控制页面活动事件频率的变量
 let lastActivityTime = 0;
@@ -82,16 +83,9 @@ async function triggerPageActivity(source: string) {
       // 动态导入消息处理模块
       const messageModule = await import('./core/message-handler.js');
       
-      // 发送页面活动消息
-      const message: PageActivityMessage = {
-        action: 'pageActivity',
-        source: source,
-        timestamp: now
-      };
-      
-      await messageModule.sendMessage(message.action, {
-        source: message.source,
-        timestamp: message.timestamp
+      // 使用新的类型定义并发送消息
+      await messageModule.sendMessage('pageActivity', {
+        source: source
       }).catch(err => {
         console.warn('发送页面活动消息失败:', err);
       });

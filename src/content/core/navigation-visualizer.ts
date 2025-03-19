@@ -4,21 +4,20 @@
  */
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
-import { registerMessageHandler, unregisterMessageHandler } from './message-handler.js';
+import { 
+  registerMessageHandler, 
+  unregisterMessageHandler,
+  getTypedMessage,
+  createResponse
+} from './message-handler.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
 import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
 import type { 
-  RefreshVisualizationMessage, 
-  DebugMessage, 
-  PageActivityMessage,
-  GetNodeIdMessage,
-  PageLoadedMessage,
-  FaviconUpdatedMessage,
-  LinkClickedMessage,
-  ResponseMessage 
+  RequestResponseMap,
+  BaseResponseMessage
 } from '../types/message-types.js';
 
 export class NavigationVisualizer {
@@ -236,18 +235,17 @@ export class NavigationVisualizer {
     console.log('注册消息处理函数...');
     
     // 注册刷新可视化消息处理函数
-    registerMessageHandler<RefreshVisualizationMessage>('refreshVisualization', 
+    registerMessageHandler<'refreshVisualization'>('refreshVisualization', 
       (message, sender, sendResponse) => {
-        console.log('收到可视化刷新请求', message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'unknown');
+        // 使用类型化消息
+        const typedMessage = getTypedMessage('refreshVisualization', message);
+        console.log('收到可视化刷新请求', typedMessage.timestamp ? 
+          new Date(typedMessage.timestamp).toLocaleTimeString() : 'unknown');
         
-        // 如果需要回复
+        // 如果需要回复，使用类型化响应
         if (message.requestId) {
-          sendResponse({
-            success: true,
-            action: 'refreshVisualization',
-            requestId: message.requestId,
-            timestamp: Date.now()
-          });
+          const response = createResponse('refreshVisualization', message.requestId);
+          sendResponse(response);
         }
         
         // 延迟执行刷新操作
@@ -268,14 +266,16 @@ export class NavigationVisualizer {
       });
     
     // 注册调试消息处理函数
-    registerMessageHandler<DebugMessage>('debug', 
+    registerMessageHandler<'debug'>('debug', 
       (message, sender, sendResponse) => {
-        console.log('收到调试命令:', message.command);
+        // 使用类型化消息
+        const typedMessage = getTypedMessage('debug', message);
+        console.log('收到调试命令:', typedMessage.command);
         
         // 如果已初始化调试工具
         if (this.debugTools) {
           try {
-            switch (message.command) {
+            switch (typedMessage.command) {
               case 'debug-check-data':
                 this.debugTools.checkData();
                 break;
@@ -286,34 +286,24 @@ export class NavigationVisualizer {
                 this.debugTools.clearData();
                 break;
               default:
-                console.warn('未知调试命令:', message.command);
-                sendResponse({ 
-                  success: false, 
-                  action: 'debug',  // 添加这一行
-                  error: '未知命令' 
-                });
+                console.warn('未知调试命令:', typedMessage.command);
+                const errorResponse = createResponse('debug', message.requestId, false, '未知命令');
+                sendResponse(errorResponse);
                 return true;
             }
             
-            sendResponse({ 
-              success: true,
-              action: 'debug'  // 添加这一行
-            });
+            const successResponse = createResponse('debug', message.requestId);
+            sendResponse(successResponse);
           } catch (error) {
             console.error('执行调试命令失败:', error);
-            sendResponse({ 
-              success: false, 
-              action: 'debug',  // 添加这一行
-              error: error instanceof Error ? error.message : String(error) 
-            });
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const errorResponse = createResponse('debug', message.requestId, false, errorMsg);
+            sendResponse(errorResponse);
           }
         } else {
           console.warn('调试工具未初始化，无法执行命令');
-          sendResponse({ 
-            success: false, 
-            action: 'debug',  // 添加这一行
-            error: '调试工具未初始化' 
-          });
+          const errorResponse = createResponse('debug', message.requestId, false, '调试工具未初始化');
+          sendResponse(errorResponse);
         }
         
         // 返回true表示我们已经处理了响应
@@ -321,9 +311,11 @@ export class NavigationVisualizer {
       });
     
     // 注册页面活动消息处理函数
-    registerMessageHandler<PageActivityMessage>('pageActivity', 
+    registerMessageHandler<'pageActivity'>('pageActivity', 
       (message) => {
-        console.log('收到页面活动事件，触发刷新');
+        // 使用类型化消息
+        const typedMessage = getTypedMessage('pageActivity', message);
+        console.log('收到页面活动事件，触发刷新', typedMessage.source);
         
         // 触发刷新操作
         this.triggerRefresh();
@@ -332,20 +324,16 @@ export class NavigationVisualizer {
         return false;
       });
     
-    // 添加缺失的消息处理函数注册
-    
     // 链接点击消息处理
-    registerMessageHandler<LinkClickedMessage>('linkClicked', (message, sender, sendResponse) => {
-      console.log('收到链接点击消息:', message);
+    registerMessageHandler<'linkClicked'>('linkClicked', (message, sender, sendResponse) => {
+      // 使用类型化消息
+      const typedMessage = getTypedMessage('linkClicked', message);
+      console.log('收到链接点击消息:', typedMessage.linkInfo);
       
-      // 确认收到
+      // 确认收到，使用类型化响应
       if (message.requestId) {
-        sendResponse({
-          success: true,
-          action: 'linkClicked',
-          requestId: message.requestId,
-          timestamp: Date.now()
-        });
+        const response = createResponse('linkClicked', message.requestId);
+        sendResponse(response);
       }
       
       // 延迟刷新可视化图表
@@ -365,57 +353,51 @@ export class NavigationVisualizer {
     });
     
     // 节点ID获取消息处理
-    registerMessageHandler<GetNodeIdMessage>('getNodeId', (message: any, sender: any, sendResponse: any) => {
-      console.log('收到获取节点ID请求:', message.url);
+    registerMessageHandler<'getNodeId'>('getNodeId', (message, sender, sendResponse) => {
+      // 使用类型化消息
+      const typedMessage = getTypedMessage('getNodeId', message);
+      console.log('收到获取节点ID请求:', typedMessage.url);
       
       // 从当前数据中查找URL对应的节点ID
-      let nodeId = null;
-      if (this.nodes && message.url) {
-        const node = this.nodes.find(n => n.url === message.url);
-        nodeId = node?.id || null;
+      let nodeId: string | undefined = undefined;
+      if (this.nodes && typedMessage.url) {
+        const node = this.nodes.find(n => n.url === typedMessage.url);
+        nodeId = node?.id;
       }
       
-      // 返回找到的节点ID或null
-      sendResponse({
-        success: true,
-        nodeId: nodeId,
-        action: 'getNodeId',
-        requestId: message.requestId,
-        timestamp: Date.now()
-      });
+      // 返回找到的节点ID，使用类型化响应
+      const response = createResponse('getNodeId', message.requestId);
+      (response as any).nodeId = nodeId; // 添加特定字段
+      sendResponse(response);
       
       return false; // 同步处理
     });
     
     // favicon更新消息处理
-    registerMessageHandler<FaviconUpdatedMessage>('faviconUpdated', (message: any, sender: any, sendResponse: any) => {
-      console.log('收到favicon更新消息:', message.url, message.favicon);
+    registerMessageHandler<'faviconUpdated'>('faviconUpdated', (message, sender, sendResponse) => {
+      // 使用类型化消息
+      const typedMessage = getTypedMessage('faviconUpdated', message);
+      console.log('收到favicon更新消息:', typedMessage.url, typedMessage.favicon);
       
-      // 确认收到
+      // 确认收到，使用类型化响应
       if (message.requestId) {
-        sendResponse({
-          success: true,
-          action: 'faviconUpdated',
-          requestId: message.requestId,
-          timestamp: Date.now()
-        });
+        const response = createResponse('faviconUpdated', message.requestId);
+        sendResponse(response);
       }
       
       return false; // 同步处理
     });
     
     // 页面加载完成消息处理
-    registerMessageHandler<PageLoadedMessage>('pageLoaded', (message: any, sender: any, sendResponse: any) => {
-      console.log('收到页面加载完成消息:', message.url);
+    registerMessageHandler<'pageLoaded'>('pageLoaded', (message, sender, sendResponse) => {
+      // 使用类型化消息
+      const typedMessage = getTypedMessage('pageLoaded', message);
+      console.log('收到页面加载完成消息:', typedMessage.pageInfo?.url);
       
-      // 确认收到
+      // 确认收到，使用类型化响应
       if (message.requestId) {
-        sendResponse({
-          success: true,
-          action: 'pageLoaded',
-          requestId: message.requestId,
-          timestamp: Date.now()
-        });
+        const response = createResponse('pageLoaded', message.requestId);
+        sendResponse(response);
       }
       
       // 如果配置了自动刷新，延迟刷新视图

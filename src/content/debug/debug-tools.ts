@@ -4,7 +4,7 @@
  */
 
 import type { Visualizer } from '../types/navigation.js';
-
+import { createResponse, getTypedMessage } from '../core/message-handler.js';
 /**
  * 调试工具类
  * 提供各种调试功能
@@ -32,13 +32,14 @@ export class DebugTools {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === 'debug') {
-          console.log('收到调试命令:', message.command);
+          const typedMessage = getTypedMessage('debug', message);
+          console.log('收到调试命令:', typedMessage.command);
           
           // 处理调试命令
-          this.handleDebugCommand(message.command);
+          this.handleDebugCommand(typedMessage.command);
           
           // 发送响应
-          sendResponse({ success: true });
+          sendResponse(createResponse('debug', message.requestId));
           return true; // 保持消息通道开启
         }
         return false;
