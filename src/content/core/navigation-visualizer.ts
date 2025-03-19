@@ -15,10 +15,6 @@ import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-import type { 
-  RequestResponseMap,
-  BaseResponseMessage
-} from '../types/message-types.js';
 
 export class NavigationVisualizer {
   // 可视化容器
@@ -90,8 +86,8 @@ export class NavigationVisualizer {
     }
     this.noData = document.getElementById('no-data');
     
-    // 初始化
-    this.initialize();
+    // 不要在构造函数里面初始化，而应该外部初始化
+    //this.initialize();
   }
   
   /**
@@ -263,51 +259,6 @@ export class NavigationVisualizer {
         
         // 返回false表示我们已经同步处理了响应
         return false;
-      });
-    
-    // 注册调试消息处理函数
-    registerMessageHandler<'debug'>('debug', 
-      (message, sender, sendResponse) => {
-        // 使用类型化消息
-        const typedMessage = getTypedMessage('debug', message);
-        console.log('收到调试命令:', typedMessage.command);
-        
-        // 如果已初始化调试工具
-        if (this.debugTools) {
-          try {
-            switch (typedMessage.command) {
-              case 'debug-check-data':
-                this.debugTools.checkData();
-                break;
-              case 'debug-check-dom':
-                this.debugTools.checkDOM();
-                break;
-              case 'debug-clear-data':
-                this.debugTools.clearData();
-                break;
-              default:
-                console.warn('未知调试命令:', typedMessage.command);
-                const errorResponse = createResponse('debug', message.requestId, false, '未知命令');
-                sendResponse(errorResponse);
-                return true;
-            }
-            
-            const successResponse = createResponse('debug', message.requestId);
-            sendResponse(successResponse);
-          } catch (error) {
-            console.error('执行调试命令失败:', error);
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            const errorResponse = createResponse('debug', message.requestId, false, errorMsg);
-            sendResponse(errorResponse);
-          }
-        } else {
-          console.warn('调试工具未初始化，无法执行命令');
-          const errorResponse = createResponse('debug', message.requestId, false, '调试工具未初始化');
-          sendResponse(errorResponse);
-        }
-        
-        // 返回true表示我们已经处理了响应
-        return true;
       });
     
     // 注册页面活动消息处理函数
