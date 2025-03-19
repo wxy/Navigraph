@@ -41,6 +41,14 @@ export class SessionManager {
       // 强化错误处理和类型检查
       if (response && response.success === true && Array.isArray(response.sessions)) {
         this.sessions = response.sessions;
+        // 通知监听器
+        this.sessionsListLoadedListeners.forEach(callback => {
+          try {
+            callback(this.sessions);
+          } catch (err) {
+            console.error('会话列表加载监听器执行错误:', err);
+          }
+        });
         console.log(`成功加载${this.sessions.length}个会话`);
         return this.sessions;
       } else {
