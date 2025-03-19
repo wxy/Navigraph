@@ -14,6 +14,10 @@ import type {
   RefreshVisualizationMessage, 
   DebugMessage, 
   PageActivityMessage,
+  GetNodeIdMessage,
+  PageLoadedMessage,
+  FaviconUpdatedMessage,
+  LinkClickedMessage,
   ResponseMessage 
 } from '../types/message-types.js';
 
@@ -259,7 +263,7 @@ export class NavigationVisualizer {
           }
         }, 50);
         
-        // 返回true表示我们会异步处理
+        // 返回false表示我们已经同步处理了响应
         return false;
       });
     
@@ -277,9 +281,6 @@ export class NavigationVisualizer {
                 break;
               case 'debug-check-dom':
                 this.debugTools.checkDOM();
-                break;
-              case 'debug-test-render':
-                this.debugTools.testRender();
                 break;
               case 'debug-clear-data':
                 this.debugTools.clearData();
@@ -334,7 +335,7 @@ export class NavigationVisualizer {
     // 添加缺失的消息处理函数注册
     
     // 链接点击消息处理
-    registerMessageHandler('linkClicked', (message, sender, sendResponse) => {
+    registerMessageHandler<LinkClickedMessage>('linkClicked', (message, sender, sendResponse) => {
       console.log('收到链接点击消息:', message);
       
       // 确认收到
@@ -359,11 +360,12 @@ export class NavigationVisualizer {
         }
       }, 100);
       
-      return true; // 异步处理
+      // 返回false表示已同步处理响应
+      return false;
     });
     
     // 节点ID获取消息处理
-    registerMessageHandler('getNodeId', (message: any, sender: any, sendResponse: any) => {
+    registerMessageHandler<GetNodeIdMessage>('getNodeId', (message: any, sender: any, sendResponse: any) => {
       console.log('收到获取节点ID请求:', message.url);
       
       // 从当前数据中查找URL对应的节点ID
@@ -386,7 +388,7 @@ export class NavigationVisualizer {
     });
     
     // favicon更新消息处理
-    registerMessageHandler('faviconUpdated', (message: any, sender: any, sendResponse: any) => {
+    registerMessageHandler<FaviconUpdatedMessage>('faviconUpdated', (message: any, sender: any, sendResponse: any) => {
       console.log('收到favicon更新消息:', message.url, message.favicon);
       
       // 确认收到
@@ -403,7 +405,7 @@ export class NavigationVisualizer {
     });
     
     // 页面加载完成消息处理
-    registerMessageHandler('pageLoaded', (message: any, sender: any, sendResponse: any) => {
+    registerMessageHandler<PageLoadedMessage>('pageLoaded', (message: any, sender: any, sendResponse: any) => {
       console.log('收到页面加载完成消息:', message.url);
       
       // 确认收到
@@ -428,7 +430,8 @@ export class NavigationVisualizer {
         }
       }, 200);
       
-      return true; // 异步处理
+      // 返回false表示已同步处理响应
+      return false;
     });
   }
   /**

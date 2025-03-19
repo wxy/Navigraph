@@ -991,13 +991,6 @@ function setupDebugContextMenu() {
     });
 
     chrome.contextMenus.create({
-      id: 'debug-test-render',
-      parentId: 'navigraph-debug',
-      title: '测试渲染',
-      contexts: ['action']
-    });
-
-    chrome.contextMenus.create({
       id: 'debug-clear-data',
       parentId: 'navigraph-debug',
       title: '清除数据',
@@ -1016,7 +1009,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   switch (info.menuItemId) {
     case 'debug-check-data':
     case 'debug-check-dom':
-    case 'debug-test-render':
     case 'debug-clear-data':
       // 检查是否已经打开了扩展页面
       chrome.tabs.query({ url: chrome.runtime.getURL('dist/content/index.html') + '*' }, (existingTabs) => {
