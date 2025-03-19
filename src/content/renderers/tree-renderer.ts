@@ -245,7 +245,42 @@ export function renderTreeLayout(
     
     // 合并所有链接
     const allLinks = [...sessionLinks, ...links];
-    
+
+    // 在调用d3.stratify之前应用循环检测及修复
+    // 对所有链接进行预处理，确保格式一致
+    const normalizedLinks = allLinks.map(link => ({
+      id: link.id,
+      source: typeof link.source === 'object' ? link.source.id : link.source,
+      target: typeof link.target === 'object' ? link.target.id : link.target,
+      type: link.type
+    }));
+
+    // 检测并移除导致循环的链接
+    const safeLinks = detectAndBreakCycles(allNodes, normalizedLinks);
+
+    // 如果移除了链接，显示警告
+    if (safeLinks.length < normalizedLinks.length) {
+      const removedCount = normalizedLinks.length - safeLinks.length;
+      console.warn(`已移除 ${removedCount} 条导致循环的连接以确保树形图可以正常渲染`);
+      
+      // 添加视觉警告提示
+      svg.append('text')
+        .attr('x', width - 200)
+        .attr('y', 20)
+        .attr('text-anchor', 'end')
+        .attr('fill', '#ff5722')
+        .style('font-size', '12px')
+        .text(`⚠️ 已修复 ${removedCount} 个循环连接`);
+    }
+
+    // 使用安全链接替换原来的链接列表
+    const safeAllLinks = safeLinks.map(link => ({
+      id: link.id,
+      source: link.source,
+      target: link.target,
+      type: link.type
+    }));
+
     // 声明接收d3.stratify结果的变量类型
     let hierarchy: any;
     let treeData: any;
@@ -270,7 +305,13 @@ export function renderTreeLayout(
           
           // 如果有父ID并且父节点存在，使用此父ID
           if (d.parentId && nodeById[d.parentId]) {
-            return d.parentId;
+            // 检查此父子关系是否在安全链接列表中
+            const parentLinkExists = safeLinks.some(link => 
+              link.source === d.parentId && link.target === d.id);
+              
+            if (parentLinkExists) {
+              return d.parentId;
+            }
           }
           
           // 默认情况：连接到会话根节点
@@ -286,7 +327,52 @@ export function renderTreeLayout(
       
     } catch (err) {
       console.error('树布局计算失败:', err);
-      throw new Error(`树布局计算失败: ${err}`);
+      
+      // 更简洁的错误处理
+      let errorMessage = '树布局计算失败';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      
+      // 检查是否包含循环依赖错误
+      if (errMsg.includes('cycle')) {
+        errorMessage = '数据中存在无法自动修复的循环依赖';
+        
+        // 尝试渲染可视化的错误信息，帮助用户理解
+        svg.append('text')
+          .attr('x', width / 2)
+          .attr('y', height / 2 - 40)
+          .attr('text-anchor', 'middle')
+          .attr('fill', 'red')
+          .style('font-size', '16px')
+          .text('无法渲染树形视图：检测到循环依赖');
+          
+        svg.append('text')
+          .attr('x', width / 2)
+          .attr('y', height / 2)
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#333')
+          .style('font-size', '14px')
+          .text('请尝试使用时间线视图或筛选节点以解决问题');
+          
+        // 如果visualizer可用，建议切换视图
+        if (visualizer && typeof visualizer.switchToTimelineView === 'function') {
+          svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', height / 2 + 30)
+            .attr('text-anchor', 'middle')
+            .attr('fill', '#0066cc')
+            .style('font-size', '14px')
+            .style('text-decoration', 'underline')
+            .style('cursor', 'pointer')
+            .text('点击此处切换到时间线视图')
+            .on('click', () => {
+              visualizer.switchToTimelineView();
+            });
+        }
+      } else {
+        errorMessage = String(err);
+      }
+      
+      throw new Error(errorMessage);
     }
     
     // 立即计算树的边界
@@ -537,5 +623,115 @@ export function renderTreeLayout(
       .attr('fill', 'red')
       .text(`渲染错误: ${err instanceof Error ? err.message : '未知错误'}`);
   }
+}
 
+/**
+   * 检测并移除导致循环的连接
+   * @param nodes 节点列表
+   * @param links 连接列表
+   * @returns 安全连接列表（已移除循环连接）
+   */
+function detectAndBreakCycles(nodes: any[], links: any[]): any[] {
+  console.log('检测并打破循环...');
+  
+  // 创建节点ID映射表
+  const nodeById: Record<string, boolean> = {};
+  nodes.forEach(node => {
+    nodeById[node.id] = true;
+  });
+  
+  // 构建图的邻接表表示
+  const graph: Record<string, string[]> = {};
+  nodes.forEach(node => {
+    graph[node.id] = [];
+  });
+  
+  // 填充图
+  links.forEach(link => {
+    // 确保source和target都是字符串ID
+    const source = typeof link.source === 'object' ? link.source.id : link.source;
+    const target = typeof link.target === 'object' ? link.target.id : link.target;
+    
+    if (graph[source]) {
+      graph[source].push(target);
+    }
+  });
+  
+  // 用来跟踪已发现的循环
+  const cyclicLinks: Set<string> = new Set();
+  
+  // 用DFS检测循环
+  function detectCycle(nodeId: string, visited: Set<string>, path: Set<string>, pathList: string[]): boolean {
+    // 当前节点已在路径中 -> 发现循环!
+    if (path.has(nodeId)) {
+      console.warn('检测到循环:', [...pathList, nodeId].join(' -> '));
+      
+      // 标记循环中的所有边
+      const cycleStart = pathList.indexOf(nodeId);
+      if (cycleStart >= 0) {
+        const cycle = pathList.slice(cycleStart);
+        cycle.push(nodeId);
+        
+        // 生成循环中的边
+        for (let i = 0; i < cycle.length - 1; i++) {
+          const linkId = `${cycle[i]}->${cycle[i+1]}`;
+          cyclicLinks.add(linkId);
+        }
+      }
+      
+      return true;
+    }
+    
+    // 已访问但不在当前路径中 -> 无循环
+    if (visited.has(nodeId)) {
+      return false;
+    }
+    
+    // 标记为已访问并添加到当前路径
+    visited.add(nodeId);
+    path.add(nodeId);
+    pathList.push(nodeId);
+    
+    // 检查所有邻居节点
+    const neighbors = graph[nodeId] || [];
+    for (const neighbor of neighbors) {
+      if (detectCycle(neighbor, visited, path, pathList)) {
+        return true;
+      }
+    }
+    
+    // 回溯时从路径中移除节点
+    path.delete(nodeId);
+    pathList.pop();
+    
+    return false;
+  }
+  
+  // 对每个未访问节点开始DFS
+  const visited = new Set<string>();
+  for (const nodeId in graph) {
+    if (!visited.has(nodeId)) {
+      detectCycle(nodeId, visited, new Set<string>(), []);
+    }
+  }
+  
+  // 过滤掉导致循环的连接
+  const safeLinks = links.filter(link => {
+    // 确保source和target都是字符串ID
+    const source = typeof link.source === 'object' ? link.source.id : link.source;
+    const target = typeof link.target === 'object' ? link.target.id : link.target;
+    
+    const linkId = `${source}->${target}`;
+    const isSafe = !cyclicLinks.has(linkId);
+    
+    if (!isSafe) {
+      console.log(`跳过导致循环的连接: ${source} -> ${target}`);
+    }
+    
+    return isSafe;
+  });
+  
+  console.log(`检测出 ${cyclicLinks.size} 条导致循环的连接，剩余 ${safeLinks.length} 条安全连接`);
+  
+  return safeLinks;
 }
