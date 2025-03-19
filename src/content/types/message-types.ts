@@ -79,6 +79,7 @@ export interface FaviconUpdatedRequestMessage extends BaseMessage {
 export interface PageActivityRequestMessage extends BaseMessage {
   action: 'pageActivity';
   source: string;  // 这允许我们存储活动来源
+  timestamp?: number;
 }
 
 /**
