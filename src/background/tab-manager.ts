@@ -42,6 +42,9 @@ export class TabTracker {
     
     // 定期清理待更新列表
     setInterval(() => this.cleanupPendingUpdates(), 30000); // 每30秒清理一次
+    
+    // 定期清理过期的待处理导航记录
+    setInterval(() => this.cleanupPendingNavigationsAll(), 60000); // 每60秒清理一次
   }
   
   /**
@@ -475,25 +478,26 @@ export class TabTracker {
   }
   
   /**
-   * 处理常规导航
+   * 处理常规导航 - 修复JavaScript导航处理逻辑
    */
   private async handleRegularNavigation(
     details: ExtendedCommittedDetails,
     navigationType: NavigationType,
     openTarget: OpenTarget
   ): Promise<void> {
-  // 添加过滤检查
+    // 添加过滤检查
     if (this.shouldSkipNavigation(details)) {
       console.log(`跳过记录系统页面导航: ${details.url}`);
       return;
     }
     
     const tabId = details.tabId;
-
+    const now = Date.now();
+  
     // 生成基于标签ID和URL的节点ID
     const nodeId = IdGenerator.generateNodeId(tabId, details.url);
     
-    console.log(`导航到: ${details.url} (ID: ${nodeId})`);
+    console.log(`导航到: ${details.url} (ID: ${nodeId}, 类型: ${navigationType})`);
     
     // 检查是否已存在此节点
     const existingRecord = await this.storage.getRecord(nodeId);
@@ -501,10 +505,9 @@ export class TabTracker {
     if (existingRecord) {
       console.log(`找到已存在的节点: ${nodeId}`);
       
-      // 已存在的节点，可能是刷新或者其他导航
-      // 只更新一些元数据，而不是创建新节点
+      // 更新元数据
       const updates: Partial<NavigationRecord> = {
-        lastVisit: Date.now(),
+        lastVisit: now,
         visitCount: (existingRecord.visitCount || 0) + 1
       };
       
@@ -519,10 +522,14 @@ export class TabTracker {
       return;
     }
     
-    // 获取父节点 - 简化版
-    let parentId = null;
-    const now = Date.now();
-
+    // 获取父节点
+    let parentId = '';
+  
+    // 重要改进：JavaScript 导航永远不应该成为根节点
+    // 如果是JavaScript导航，强制寻找父节点
+    const isJsNavigation = navigationType === 'javascript';
+    const shouldBeRoot = !isJsNavigation && this.shouldBeRootNavigation(navigationType);
+  
     // 1. 首先尝试从当前标签页记录的点击源获取
     const clickSource = this.lastClickSourceNodeIdMap.get(tabId);
     if (clickSource && now - clickSource.timestamp < 30000) { // 30秒内的点击有效
@@ -530,8 +537,8 @@ export class TabTracker {
       console.log(`使用标签页${tabId}的点击源节点: ${parentId}`);
       this.lastClickSourceNodeIdMap.delete(tabId);
     } 
-    // 2. 如果没有找到，从待处理导航列表查找匹配URL的记录
-    else {
+    // 2. 从待处理导航列表查找匹配URL的记录
+    else if (!shouldBeRoot) {
       const normalizedUrl = this.normalizeUrl(details.url);
       
       console.log(`查找待处理导航, 标准化URL: ${normalizedUrl}`);
@@ -554,7 +561,39 @@ export class TabTracker {
         console.log(`在待处理导航中未找到匹配项: ${normalizedUrl}`);
       }
     }
-
+  
+    // 3. 如果是在同一标签页中导航，且不是应该成为根节点的类型，或是JavaScript导航，使用最近的节点作为父节点
+    if (!parentId && (isJsNavigation || (!shouldBeRoot && openTarget === 'same_tab'))) {
+      const tabHistory = this.tabNavigationHistory.get(tabId) || [];
+      if (tabHistory.length > 0) {
+        const lastNodeId = tabHistory[tabHistory.length - 1];
+        // 防止自循环
+        if (lastNodeId !== nodeId) {
+          parentId = lastNodeId;
+          console.log(`使用标签页历史中的最后节点作为父节点: ${parentId}`);
+        }
+      }
+    }
+  
+    // 特别处理：如果是JavaScript导航，但仍然没找到父节点（极罕见情况）
+    if (isJsNavigation && !parentId) {
+      console.warn(`JavaScript导航未找到父节点，这是异常情况，尝试其他方法查找父节点`);
+      
+      // 获取当前会话中此标签页的所有节点，按时间倒序排列
+      const session = await this.storage.getCurrentSession();
+      const records = await this.storage.queryRecords({ 
+        tabId: tabId,
+        sessionId: session.id
+      });
+      
+      if (records.length > 0) {
+        // 按时间戳倒序排序
+        records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        parentId = records[0].id;
+        console.log(`通过查询会话记录找到JavaScript导航可能的父节点: ${parentId}`);
+      }
+    }
+  
     // 创建新的导航记录
     const record: NavigationRecord = {
       id: nodeId,
@@ -562,7 +601,7 @@ export class TabTracker {
       url: details.url,
       timestamp: now,
       sessionId: (await this.storage.getCurrentSession()).id,
-      parentId: parentId,
+      parentId: parentId || '',
       navigationType: navigationType,
       openTarget: openTarget,
       firstVisit: now,
@@ -572,6 +611,11 @@ export class TabTracker {
       frameId: details.frameId,
       parentFrameId: details.parentFrameId
     };
+    
+    // 记录导航类型的特殊处理
+    if (isJsNavigation) {
+      console.log(`JavaScript导航设置父节点为: ${parentId || '未找到，异常情况'}`);
+    }
     
     // 保存记录
     const savedRecord = await this.storage.saveRecord(record);
@@ -585,15 +629,67 @@ export class TabTracker {
     }
     this.pendingUpdates.get(tabId)!.push(savedRecord.id!);
     
-    // 如果有父节点，创建边
+    // 如果有父节点，创建边（但要确保不会创建循环）
     if (parentId) {
-      await this.createNavigationEdge(parentId, savedRecord.id!, Date.now(), navigationType);
+      // 防止创建循环
+      if (!await this.wouldCreateCycle(parentId, savedRecord.id!)) {
+        await this.createNavigationEdge(parentId, savedRecord.id!, now, navigationType);
+      } else {
+        console.warn(`检测到创建边 ${parentId} -> ${savedRecord.id!} 会形成循环，已阻止`);
+        
+        // 对于JavaScript导航，使用更高级的父节点查找方法
+        if (isJsNavigation) {
+          console.log(`为JavaScript导航寻找替代父节点...`);
+          parentId = await this.findBestParentForJsNavigation(tabId, savedRecord.id!) || '';
+          
+          if (parentId) {
+            // 更新记录，使用新找到的父节点
+            await this.storage.updateRecord(savedRecord.id!, { parentId });
+            await this.createNavigationEdge(parentId, savedRecord.id!, now, navigationType);
+            console.log(`为JavaScript导航设置替代父节点: ${parentId}`);
+          } else {
+            // 极少数情况：只有当真的找不到适合的父节点时，才设为根节点
+            console.warn(`无法为JavaScript导航找到替代父节点，不得不将其设为根节点`);
+            await this.storage.updateRecord(savedRecord.id!, { parentId: '' });
+            
+            // 将其作为根节点
+            const session = await this.storage.getCurrentSession();
+            await this.storage.addRootToSession(session.id, savedRecord.id!);
+          }
+        } else {
+          // 非JavaScript导航，按原逻辑处理
+          await this.storage.updateRecord(savedRecord.id!, { parentId: '' });
+          
+          // 将其作为根节点
+          const session = await this.storage.getCurrentSession();
+          await this.storage.addRootToSession(session.id, savedRecord.id!);
+        }
+      }
     } else {
-      // 没有父节点，这是一个根节点
-      const session = await this.storage.getCurrentSession();
-      await this.storage.addRootToSession(session.id, savedRecord.id!);
+      if (isJsNavigation) {
+        // 对于JavaScript导航，这是异常情况，尝试最后努力找到父节点
+        console.warn(`JavaScript导航未找到父节点，尝试应急方法查找父节点`);
+        
+        parentId = await this.findBestParentForJsNavigation(tabId, savedRecord.id!) || '';
+        
+        if (parentId) {
+          // 更新记录使用新找到的父节点
+          await this.storage.updateRecord(savedRecord.id!, { parentId });
+          await this.createNavigationEdge(parentId, savedRecord.id!, now, navigationType);
+          console.log(`为JavaScript导航设置应急父节点: ${parentId}`);
+        } else {
+          // 极少数情况：只有当真的找不到适合的父节点时，才设为根节点
+          console.warn(`所有寻找父节点的尝试都失败，不得不将JavaScript导航设为根节点`);
+          const session = await this.storage.getCurrentSession();
+          await this.storage.addRootToSession(session.id, savedRecord.id!);
+        }
+      } else {
+        // 没有父节点，作为根节点
+        const session = await this.storage.getCurrentSession();
+        await this.storage.addRootToSession(session.id, savedRecord.id!);
+      }
     }
-
+  
     this.setNodeIdForTab(tabId, nodeId);
   }
   
@@ -636,7 +732,18 @@ export class TabTracker {
     if (tabHistory.length === 0) return;
     
     const sourceNodeId = tabHistory[tabHistory.length - 1];
-    if (sourceNodeId === targetRecord.id) return; // 避免自环
+    
+    // 避免自环
+    if (sourceNodeId === targetRecord.id) {
+      console.log(`跳过自循环边: ${sourceNodeId} -> ${targetRecord.id}`);
+      return;
+    }
+    
+    // 检查是否会创建循环
+    if (await this.wouldCreateCycle(sourceNodeId, targetRecord.id!)) {
+      console.warn(`检测到创建边 ${sourceNodeId} -> ${targetRecord.id!} 会形成循环，已阻止`);
+      return;
+    }
     
     // 创建导航边
     await this.createNavigationEdge(
@@ -656,8 +763,9 @@ export class TabTracker {
       console.log(`跳过记录系统页面刷新: ${details.url}`);
       return;
     }
-
+  
     const tabId = details.tabId;
+    const now = Date.now();
     
     // 获取当前节点ID
     const tabHistory = this.tabNavigationHistory.get(tabId) || [];
@@ -678,18 +786,18 @@ export class TabTracker {
     
     // 更新记录
     const updates: Partial<NavigationRecord> = {
-      lastVisit: Date.now(),
+      lastVisit: now,
       visitCount: (record.visitCount || 0) + 1,
       reloadCount: (record.reloadCount || 0) + 1
     };
     
     await this.storage.updateRecord(currentNodeId, updates);
     
-    // 创建自环边代表刷新
-    await this.createNavigationEdge(currentNodeId, currentNodeId, Date.now(), 'reload');
+    // 不再创建指向自身的边，避免循环
+    console.log(`记录页面刷新: ${details.url} (节点ID: ${currentNodeId})`);
   }
   
-  /**
+    /**
    * 处理历史导航 (后退/前进)
    */
   private async handleHistoryNavigation(
@@ -708,7 +816,7 @@ export class TabTracker {
       return;
     }
     
-    // 获取当前节点和上一个节点
+    // 获取当前节点
     const currentNodeId = history[history.length - 1];
     
     // 尝试找到匹配URL的历史节点
@@ -720,33 +828,24 @@ export class TabTracker {
       return;
     }
     
-    // 创建导航边
-    this.navigationSequence++;
-    
-    const edge: NavigationEdge = {
-      id: this.storage.generateEdgeId(currentNodeId, targetRecord.id!, now),
-      sourceId: currentNodeId,
-      targetId: targetRecord.id!,
-      timestamp: now,
-      action: navigationType,
-      sequence: this.navigationSequence
-    };
-    
-    await this.storage.saveEdge(edge);
-    
-    // 这确保回退后的页面能够被正确识别为新链接的源节点
-    if (!this.pageIdMap) {
-      this.pageIdMap = new Map();
+    // 避免创建自环
+    if (currentNodeId === targetRecord.id) {
+      console.log(`跳过历史导航自循环: ${currentNodeId} -> ${targetRecord.id}`);
+      return;
     }
-    // 生成一个临时页面ID，确保回退操作后该页面可以作为链接点击的源
-    const tempPageId = `history-${targetRecord.id}-${now}`;
-    this.pageIdMap.set(tempPageId, {
-      tabId: tabId,
-      nodeId: targetRecord.id!,
-      timestamp: now
-    });
     
-    console.log(`历史导航后设置页面ID映射: ${tempPageId} -> 节点 ${targetRecord.id}`);
+    // 检查是否会创建循环
+    if (await this.wouldCreateCycle(currentNodeId, targetRecord.id!)) {
+      console.warn(`检测到历史导航会创建循环: ${currentNodeId} -> ${targetRecord.id!}，不创建边`);
+    } else {
+      // 创建导航边
+      await this.createNavigationEdge(
+        currentNodeId, 
+        targetRecord.id!, 
+        now, 
+        navigationType
+      );
+    }
     
     // 更新标签页历史 - 添加目标节点
     this.addToTabHistory(tabId, targetRecord.id!);
@@ -836,7 +935,7 @@ export class TabTracker {
   }
   
   /**
-   * 处理历史状态更新 (SPA导航)
+   * 处理历史状态更新 (SPA导航) - 修复版本
    */
   private async handleHistoryStateUpdated(
     details: ExtendedTransitionDetails
@@ -854,9 +953,9 @@ export class TabTracker {
       const currentNodeId = this.getMostRecentNodeId(tabId);
       
       if (!currentNodeId) {
-        // 如果没有当前节点，作为常规导航处理
+        console.log('SPA导航: 找不到当前节点ID，将作为常规导航处理');
         await this.handleRegularNavigation(
-          details,  // 已经是正确类型，不需要转换
+          details,
           'javascript',
           'same_tab'
         );
@@ -867,38 +966,73 @@ export class TabTracker {
       const currentRecord = await this.storage.getRecord(currentNodeId);
       
       if (currentRecord && currentRecord.url !== details.url) {
+        console.log(`SPA导航: 检测到URL变化，从 ${currentRecord.url} 到 ${details.url}`);
+        
         // URL变化，作为新的导航处理
+        const newNodeId = IdGenerator.generateNodeId(tabId, details.url);
+        
+        // 检查是否已存在此节点
+        const existingRecord = await this.storage.getRecord(newNodeId);
+        
+        if (existingRecord) {
+          console.log(`SPA导航: 节点已存在，处理与现有节点的关系 ${newNodeId}`);
+          // 节点已存在，处理与已存在节点的导航关系
+          await this.handleExistingNodeNavigation(tabId, existingRecord, 'javascript');
+          return;
+        }
+        
+        // 尝试设置父节点为当前节点
+        let parentId = currentNodeId;
+        
+        // 检查是否会创建循环
+        if (await this.wouldCreateCycle(parentId, newNodeId)) {
+          console.warn(`SPA导航: 使用当前节点作为父节点会导致循环，尝试替代方案`);
+          
+          // 查找最佳父节点
+          parentId = await this.findBestParentForJsNavigation(tabId, newNodeId);
+        }
+        
+        // 创建新节点记录
         const record: NavigationRecord = {
-          id: IdGenerator.generateNodeId(tabId, details.url),
+          id: newNodeId,
           tabId: tabId,
           url: details.url,
           timestamp: now,
           sessionId: currentRecord.sessionId,
           navigationType: 'javascript',
           openTarget: 'same_tab',
-          parentId: currentNodeId
+          parentId: parentId, // 使用找到的最佳父节点
+          firstVisit: now,
+          lastVisit: now,
+          visitCount: 1,
+          reloadCount: 0
         };
         
+        console.log(`SPA导航: 创建新节点 ${newNodeId}，父节点设为 ${parentId || '无(特殊情况)'}`);
+        
+        // 保存记录
         const savedRecord = await this.storage.saveRecord(record);
         
         // 更新标签页历史
         this.addToTabHistory(tabId, savedRecord.id!);
         
-        // 创建导航边
-        this.navigationSequence++;
-        
-        const edge: NavigationEdge = {
-          id: this.storage.generateEdgeId(currentNodeId, savedRecord.id!, now),
-          sourceId: currentNodeId,
-          targetId: savedRecord.id!,
-          timestamp: now,
-          action: 'javascript',
-          sequence: this.navigationSequence
-        };
-        
-        await this.storage.saveEdge(edge);
-        
-        console.log(`记录SPA导航: ${details.url.substring(0, 50)}..., ID: ${savedRecord.id}`);
+        // 如果有父节点，创建边（循环检测在findBestParentForJsNavigation中已完成）
+        if (parentId) {
+          await this.createNavigationEdge(
+            parentId, 
+            savedRecord.id!, 
+            now,
+            'javascript'
+          );
+          console.log(`SPA导航: 创建导航边 ${parentId} -> ${savedRecord.id!}`);
+        } else {
+          // 只有在极端情况下才将其设为根节点
+          console.warn(`SPA导航: 无法找到合适的父节点，不得不将 ${savedRecord.id!} 设为根节点`);
+          const session = await this.storage.getCurrentSession();
+          await this.storage.addRootToSession(session.id, savedRecord.id!);
+        }
+      } else {
+        console.log(`SPA导航: URL未变化或找不到当前记录，忽略`);
       }
     } catch (error) {
       console.error('处理历史状态更新失败:', error);
@@ -1026,120 +1160,6 @@ export class TabTracker {
   public getStorage(): NavigationStorage {
     return this.storage;
   }
-
-  /**
-   * 处理页面加载消息
-   */
-  private async handlePageLoaded(tabId: number, pageInfo: any): Promise<void> {
-    try {
-      // 添加系统页面过滤
-      if (this.shouldSkipNavigation({ url: pageInfo.url } as any)) {
-        console.log(`跳过处理系统页面加载: ${pageInfo.url}`);
-        return;
-      }
-      console.log(`页面已加载: ${pageInfo.url} (${pageInfo.pageId})`);
-      
-      // 基于标签ID和URL查找对应节点
-      const nodeId = IdGenerator.generateNodeId(tabId, pageInfo.url);
-      console.log(`根据URL生成的节点ID: ${nodeId}`);
-      
-      // 检查节点是否存在
-      const record = await this.storage.getRecord(nodeId);
-      
-      if (!record) {
-        console.log(`未找到对应节点 ${nodeId}，可能是新导航`);
-        return;
-      }
-      
-      // 存储页面ID映射
-      if (!this.pageIdMap) {
-        this.pageIdMap = new Map();
-      }
-      
-      this.pageIdMap.set(pageInfo.pageId, {
-        tabId,
-        nodeId,
-        timestamp: pageInfo.timestamp
-      });
-      
-      // 更新referrer信息
-      if (pageInfo.referrer && !record.referrer) {
-        await this.storage.updateRecord(nodeId, { referrer: pageInfo.referrer });
-      }
-      
-      // 添加到待更新列表，确保标题和图标能更新到此节点
-      if (!this.pendingUpdates.has(tabId)) {
-        this.pendingUpdates.set(tabId, []);
-      }
-      
-      if (!this.pendingUpdates.get(tabId)!.includes(nodeId)) {
-        this.pendingUpdates.get(tabId)!.push(nodeId);
-        console.log(`将节点 ${nodeId} 添加到待更新列表`);
-      }
-    } catch (error) {
-      console.error('处理页面加载消息失败:', error);
-    }
-  }
-  
-  /**
-   * 处理链接点击事件 - 增强版
-   */
-  private async handleLinkClicked(tabId: number, linkInfo: any): Promise<void> {
-    try {
-      console.log(`链接点击: ${linkInfo.targetUrl} (来自页面ID ${linkInfo.sourcePageId})`);
-      
-      let sourceNodeId = null;
-      
-      // 查找源节点
-      const sourceNodeInfo = this.pageIdMap.get(linkInfo.sourcePageId);
-      if (sourceNodeInfo && sourceNodeInfo.nodeId) {
-        sourceNodeId = sourceNodeInfo.nodeId;
-        console.log(`从pageIdMap找到源节点: ${sourceNodeId}`);
-      } else {
-        const tabHistory = this.tabNavigationHistory.get(tabId) || [];
-        if (tabHistory.length > 0) {
-          sourceNodeId = tabHistory[tabHistory.length - 1];
-          console.log(`从标签页历史获取源节点: ${sourceNodeId}`);
-        }
-      }
-      
-      // 找到有效的源节点后
-      if (sourceNodeId) {
-        // 1. 记录到同一标签页的映射
-        this.lastClickSourceNodeIdMap.set(tabId, {
-          nodeId: sourceNodeId,
-          timestamp: Date.now()
-        });
-        
-        // 2. 同时保存到目标URL映射
-        const targetUrl = this.normalizeUrl(linkInfo.targetUrl);
-        if (!this.pendingNavigations.has(targetUrl)) {
-          this.pendingNavigations.set(targetUrl, []);
-        }
-        
-        // 保存导航关系
-        this.pendingNavigations.get(targetUrl)!.push({
-          type: 'link_click',
-          sourceNodeId: sourceNodeId,
-          targetUrl: targetUrl,
-          timestamp: Date.now(),
-          sourceTabId: tabId,
-          expireTime: Date.now() + 30000
-        });
-        
-        console.log(`保存导航关系: ${targetUrl} <- ${sourceNodeId}`);
-        
-        // 设置清理定时器
-        setTimeout(() => {
-          this.cleanupPendingNavigations(targetUrl);
-        }, 30000);
-      } else {
-        console.warn(`无法找到源页面ID ${linkInfo.sourcePageId} 对应的节点信息`);
-      }
-    } catch (error) {
-      console.error('处理链接点击失败:', error);
-    }
-  }
   
   // 添加辅助清理方法
   private cleanupPendingNavigations(url: string): void {
@@ -1154,22 +1174,6 @@ export class TabTracker {
         console.log(`清理过期的待处理导航: ${url}`);
       }
     }
-  }
-  
-  /**
-   * 处理表单提交事件
-   */
-  private async handleFormSubmitted(tabId: number, formInfo: any): Promise<void> {
-    // 实现类似linkClicked的处理逻辑
-    // ...
-  }
-  
-  /**
-   * 处理JS导航事件
-   */
-  private async handleJsNavigation(tabId: number, navigation: any): Promise<void> {
-    // 实现类似linkClicked的处理逻辑
-    // ...
   }
 
   // 辅助方法: 比较两个URL（忽略尾部斜杠和片段标识符）
@@ -1360,4 +1364,243 @@ export class TabTracker {
       console.error('处理Favicon更新失败:', error);
     }
   }
+
+  /**
+   * 检查添加某条边是否会导致循环
+   * @param sourceId 源节点ID
+   * @param targetId 目标节点ID
+   * @returns 如果会创建循环则返回true
+   */
+  private async wouldCreateCycle(sourceId: string, targetId: string): Promise<boolean> {
+    // 首先检查是否是自循环
+    if (sourceId === targetId) {
+      console.log(`检测到自循环: ${sourceId} -> ${targetId}`);
+      return true;
+    }
+    
+    // 检查更复杂的循环情况
+    // 从目标节点开始沿父节点向上查找，如果能到达源节点，则会形成循环
+    let currentId = targetId;
+    const visited = new Set<string>();
+    
+    while (currentId) {
+      // 防止无限循环
+      if (visited.has(currentId)) {
+        console.warn(`检测到现有数据中存在循环: ${currentId}`);
+        return true;
+      }
+      
+      visited.add(currentId);
+      
+      // 检查当前节点，如果已经是源节点，则会形成循环
+      if (currentId === sourceId) {
+        console.log(`检测到循环路径: ${targetId} -> ... -> ${sourceId}`);
+        return true;
+      }
+      
+      // 获取当前节点的记录
+      const record = await this.storage.getRecord(currentId);
+      if (!record || !record.parentId) {
+        // 到达了根节点，没有形成循环
+        break;
+      }
+      
+      // 移动到父节点
+      currentId = record.parentId;
+      // 如果父节点ID是空字符串，表示已经到达根节点
+      if (currentId === '') {
+        break;
+      }
+    }
+    
+    return false;
+  }
+  /**
+   * 判断导航是否应该成为根节点
+   * @param navigationType 导航类型
+   * @returns 如果应该成为根节点则返回true
+   */
+  private shouldBeRootNavigation(navigationType: NavigationType): boolean {
+    // 只有这些导航类型可能是根节点
+    return [
+      'address_bar',      // 地址栏输入
+      'initial',          // 初始页面加载
+      'auto_bookmark'     // 从书签打开
+    ].includes(navigationType);
+  }
+    /**
+   * 识别是否是无上游的导航
+   * @param tabId 标签页ID
+   * @param url URL
+   * @param navigationType 导航类型
+   * @returns 如果是无上游的导航则返回true
+   */
+  private isNavigationWithoutUpstream(
+    tabId: number,
+    url: string,
+    navigationType: NavigationType
+  ): boolean {
+    // 检查导航类型
+    const isRootType = this.shouldBeRootNavigation(navigationType);
+    if (!isRootType) {
+      return false;
+    }
+    
+    // 检查是否有等待处理的导航或点击源
+    const normalizedUrl = this.normalizeUrl(url);
+    const hasPendingNavigation = this.pendingNavigations.has(normalizedUrl);
+    const hasClickSource = this.lastClickSourceNodeIdMap.has(tabId);
+    
+    // 如果既没有待处理导航也没有点击源，那么是"无上游"的导航
+    return !(hasPendingNavigation || hasClickSource);
+  }
+    /**
+   * 定期清理过期的待处理导航记录
+   */
+  private cleanupPendingNavigationsAll(): void {
+    const now = Date.now();
+    let totalCleared = 0;
+    
+    for (const [url, entries] of this.pendingNavigations.entries()) {
+      const validEntries = entries.filter(entry => entry.expireTime > now);
+      
+      if (validEntries.length === 0) {
+        this.pendingNavigations.delete(url);
+        totalCleared++;
+      } else if (validEntries.length < entries.length) {
+        this.pendingNavigations.set(url, validEntries);
+        totalCleared += (entries.length - validEntries.length);
+      }
+    }
+    
+    if (totalCleared > 0) {
+      console.log(`清理了 ${totalCleared} 条过期的待处理导航记录`);
+    }
+  }
+  /**
+ * 更彻底地查找 JavaScript 导航的父节点
+ * @param tabId 标签页ID
+ * @param targetNodeId 目标节点ID
+ * @returns 合适的父节点ID或空字符串
+ */
+private async findBestParentForJsNavigation(
+  tabId: number,
+  targetNodeId: string
+): Promise<string> {
+  console.log(`为JavaScript导航查找最佳父节点，目标节点: ${targetNodeId}`);
+  
+  // 尝试各种方法获取父节点
+  
+  // 1. 首先尝试从标签页历史中获取最近的节点
+  const tabHistory = this.tabNavigationHistory.get(tabId) || [];
+  if (tabHistory.length > 0) {
+    // 从最近到最远，尝试找到一个不会导致循环的节点
+    for (let i = tabHistory.length - 1; i >= 0; i--) {
+      const potentialParent = tabHistory[i];
+      
+      // 确保不与自身形成循环
+      if (potentialParent === targetNodeId) {
+        continue;
+      }
+      
+      // 检查是否会导致循环
+      if (!await this.wouldCreateCycle(potentialParent, targetNodeId)) {
+        console.log(`从标签页历史中找到合适的父节点: ${potentialParent}`);
+        return potentialParent;
+      }
+    }
+  }
+  
+  // 2. 如果标签页历史中没有合适的节点，尝试获取当前会话中此标签页的所有节点
+  try {
+    const session = await this.storage.getCurrentSession();
+    const records = await this.storage.queryRecords({ 
+      tabId: tabId,
+      sessionId: session.id
+    });
+    
+    // 按时间戳倒序排序
+    records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    // 尝试每个节点作为父节点
+    for (const record of records) {
+      if (record.id && record.id !== targetNodeId && !await this.wouldCreateCycle(record.id, targetNodeId)) {
+        console.log(`从会话记录中找到合适的父节点: ${record.id}`);
+        return record.id;
+      }
+    }
+  } catch (error) {
+    console.error('查询会话记录失败:', error);
+  }
+  
+  // 3. 如果以上方法都失败，尝试获取会话中的所有节点
+  try {
+    const session = await this.storage.getCurrentSession();
+    const sessionDetails = await this.storage.getSessionDetails(session.id);
+    
+    // 安全地检查 sessionDetails 并尝试找到根节点
+    if (sessionDetails && sessionDetails.records) {
+      // 尝试找出所有没有父节点的节点作为潜在的根节点
+      const allNodeIds = Object.keys(sessionDetails.records);
+      const potentialRootNodes: string[] = [];
+      
+      for (const nodeId of allNodeIds) {
+        const record = sessionDetails.records[nodeId];
+        // 如果节点没有父节点或父节点为空字符串，可能是根节点
+        if (!record.parentId || record.parentId === '') {
+          potentialRootNodes.push(nodeId);
+        }
+      }
+      
+      console.log(`通过查询找到 ${potentialRootNodes.length} 个可能的根节点`);
+      
+      // 尝试使用这些潜在根节点作为父节点
+      for (const rootNodeId of potentialRootNodes) {
+        if (rootNodeId !== targetNodeId && !await this.wouldCreateCycle(rootNodeId, targetNodeId)) {
+          console.log(`使用会话中的根节点作为父节点: ${rootNodeId}`);
+          return rootNodeId;
+        }
+      }
+      
+      // 如果没有找到合适的根节点，可以尝试使用任何节点
+      for (const nodeId of allNodeIds) {
+        if (nodeId !== targetNodeId && !await this.wouldCreateCycle(nodeId, targetNodeId)) {
+          console.log(`使用会话中的任意节点作为父节点: ${nodeId}`);
+          return nodeId;
+        }
+      }
+    } else {
+      console.log('无法从会话详情中检索节点信息');
+    }
+  } catch (error) {
+    console.error('查询会话节点失败:', error);
+  }
+  
+  // 4. 如果仍然没有找到合适的父节点，尝试获取其他会话的节点
+  try {
+    const sessions = await this.storage.getSessions();
+    
+    // 尝试其他会话中的节点
+    for (const session of sessions) {
+      const sessionDetails = await this.storage.getSessionDetails(session.id);
+      if (sessionDetails && sessionDetails.records) {
+        const nodeIds = Object.keys(sessionDetails.records);
+        
+        // 随机选择一个不会导致循环的节点
+        for (const nodeId of nodeIds) {
+          if (nodeId !== targetNodeId && !await this.wouldCreateCycle(nodeId, targetNodeId)) {
+            console.log(`使用其他会话的节点作为应急父节点: ${nodeId}`);
+            return nodeId;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('查询其他会话节点失败:', error);
+  }
+  
+  // 如果上述所有方法都失败，才返回空字符串
+  console.warn(`穷尽所有方法，无法为JavaScript导航找到合适的父节点，将使用空字符串表示根节点`);
+  return '';
+}
 }

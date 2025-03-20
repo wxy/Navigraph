@@ -31,7 +31,7 @@ export interface NavigationRecord {
   url: string;                 // 必需: URL
   timestamp: number;           // 必需: 时间戳
   sessionId: string;           // 必需: 所属会话ID
-  parentId: string | null;     // 必需: 父节点ID，根节点为null
+  parentId: string;            // 必需: 父节点ID，根节点为 ''
   navigationType: NavigationType; // 必需: 导航类型
   openTarget: OpenTarget;      // 必需: 打开目标
 
