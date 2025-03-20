@@ -131,7 +131,8 @@ export function renderTreeLayout(
       
       // 保存并应用缩放行为
       visualizer.zoom = zoom;
-      svg.call(zoom);
+      svg.call(zoom)
+        .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动;
       
       console.log('已设置树形图缩放行为');
     } catch (error) {

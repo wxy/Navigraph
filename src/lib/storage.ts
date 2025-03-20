@@ -29,8 +29,12 @@ export class NavigationStorage {
    */
   public async initialize(): Promise<void> {
     try {
-      this.db = await this.openDatabase();
-      console.log('导航存储初始化成功');
+      if (! this.db) {  
+        this.db = await this.openDatabase();
+        console.log('导航存储初始化成功');
+      } else {
+        console.warn('导航存储已初始化');
+      }
     } catch (error) {
       console.error('初始化导航存储失败:', error);
       throw error;
