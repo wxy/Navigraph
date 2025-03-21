@@ -268,9 +268,7 @@ export function renderTreeLayout(
       svg.append('text')
         .attr('x', width - 200)
         .attr('y', 20)
-        .attr('text-anchor', 'end')
-        .attr('fill', '#ff5722')
-        .style('font-size', '12px')
+        .attr('class', 'cycle-message')
         .text(`⚠️ 已修复 ${removedCount} 个循环连接`);
     }
 
@@ -341,17 +339,12 @@ export function renderTreeLayout(
         svg.append('text')
           .attr('x', width / 2)
           .attr('y', height / 2 - 40)
-          .attr('text-anchor', 'middle')
-          .attr('fill', 'red')
-          .style('font-size', '16px')
           .text('无法渲染树形视图：检测到循环依赖');
           
         svg.append('text')
           .attr('x', width / 2)
           .attr('y', height / 2)
-          .attr('text-anchor', 'middle')
-          .attr('fill', '#333')
-          .style('font-size', '14px')
+          .attr('class', 'empty-tree-message')
           .text('请尝试使用时间线视图或筛选节点以解决问题');
           
         // 如果visualizer可用，建议切换视图
@@ -359,11 +352,7 @@ export function renderTreeLayout(
           svg.append('text')
             .attr('x', width / 2)
             .attr('y', height / 2 + 30)
-            .attr('text-anchor', 'middle')
-            .attr('fill', '#0066cc')
-            .style('font-size', '14px')
-            .style('text-decoration', 'underline')
-            .style('cursor', 'pointer')
+            .attr('class', 'error-action')
             .text('点击此处切换到时间线视图')
             .on('click', () => {
               visualizer.switchToTimelineView();
@@ -421,8 +410,7 @@ export function renderTreeLayout(
       .attr('markerHeight', 6)
       .attr('orient', 'auto')
       .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#999');
+      .attr('d', 'M0,-5L10,0L0,5');
     
     // 获取节点和链接分组
     const linksGroup = svg.select('.main-group .links-group');
@@ -444,10 +432,6 @@ export function renderTreeLayout(
           target: d.target
         });
       })
-      .attr('stroke', (d: any) => d.target.data.type === 'session' ? 
-        '#555' : getEdgeColor(d.target.data.type || ''))
-      .attr('stroke-width', 1.5)
-      .attr('fill', 'none')
       .attr('marker-end', 'url(#arrow)');
     
     // 绘制节点
@@ -483,19 +467,12 @@ export function renderTreeLayout(
       .attr('width', 120)
       .attr('height', 40)
       .attr('x', -60)
-      .attr('y', -20)
-      .attr('rx', 8)
-      .attr('ry', 8)
-      .attr('fill', '#444')
-      .attr('stroke', '#222');
+      .attr('y', -20);
     
     // 普通节点
     node.filter((d: any) => d.data.id !== 'session-root')
       .append('circle')
-      .attr('r', 20)
-      .attr('fill', (d: any) => getNodeColor(d.data.type || ''))
-      .attr('stroke', '#333')
-      .attr('stroke-width', 1.5);
+      .attr('r', 20);
     
     // 添加图标
     node.filter((d: any) => d.data.id !== 'session-root' && d.data.favicon)
@@ -521,8 +498,6 @@ export function renderTreeLayout(
     node.filter((d: any) => d.data.id === 'session-root')
       .append('text')
       .attr('dy', '.35em')
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
       .text((d: any) => {
         if (visualizer.currentSession) {
           const date = new Date(visualizer.currentSession.startTime);
@@ -535,9 +510,6 @@ export function renderTreeLayout(
     node.filter((d: any) => d.data.id !== 'session-root')
       .append('text')
       .attr('dy', 35)
-      .attr('text-anchor', 'middle')
-      .attr('fill', '#333')
-      .style('font-size', '12px')
       .text((d: any) => {
         if (!d.data.title) return '';
         return d.data.title.length > 15 ? d.data.title.substring(0, 12) + '...' : d.data.title;
@@ -549,9 +521,6 @@ export function renderTreeLayout(
       .attr('r', 6)
       .attr('cx', 18)
       .attr('cy', -18)
-      .attr('fill', '#ff5722')
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 1)
       .attr('class', 'filtered-indicator')
       .append('title')
       .text((d: any) => `包含${d.data.filteredChildrenCount || 0}个被过滤的子节点`);
@@ -587,15 +556,8 @@ export function renderTreeLayout(
 
     // 在渲染节点时应用特殊样式
     node.each(function(this: SVGImageElement, d: any) {
-      // 检查是否为重定向节点
-      if (d.isRedirect) {
-        d3.select(this).select('circle')
-          .style('stroke', '#ff9800')
-          .style('stroke-dasharray', '3,2');
-        
-        d3.select(this).select('text')
-          .style('font-style', 'italic')
-          .attr('fill', '#ff9800');
+      if (d.data && d.data.type === 'redirect') {
+        d3.select(this).classed('redirect', true);
       }
     });
 

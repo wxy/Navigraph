@@ -946,3 +946,160 @@ path.link.closed, .edge.closed {
   z-index: 11;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
+
+/* ======= 树形图节点样式 ======= */
+
+/* 节点基本样式 */
+.node circle {
+  fill: #888;
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+/* 根节点 */
+.node.root circle {
+  stroke-width: 2px;
+  stroke: #2c3e50;
+}
+
+/* 已关闭节点 */
+.node.closed circle {
+  opacity: 0.6;
+}
+
+/* 会话节点 */
+.node.session rect {
+  fill: #444;
+  stroke: #222;
+  rx: 8px;
+  ry: 8px;
+}
+
+.node.session text {
+  fill: white;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+/* 节点类型颜色 */
+.node.link_click circle { fill: #4285f4; }
+.node.address_bar circle { fill: #34a853; }
+.node.form_submit circle { fill: #fbbc05; }
+.node.javascript circle { fill: #ea4335; }
+.node.reload circle { fill: #7986cb; }
+.node.history_back circle, 
+.node.history_forward circle { fill: #9c27b0; }
+
+/* 重定向节点样式 */
+.node.redirect circle {
+  stroke: #ff9800;
+  stroke-dasharray: 3,2;
+  fill: #ff9966;
+}
+
+.node.redirect text {
+  font-style: italic;
+  fill: #ff9800;
+}
+
+/* 高亮节点 */
+.node.highlighted circle {
+  stroke: #03a9f4;
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 5px rgba(3, 169, 244, 0.5));
+}
+
+/* 跟踪页面节点 */
+.node.tracking circle {
+  stroke: #ff5722;
+  stroke-width: 2px;
+}
+
+/* 节点文本标签 */
+.node text {
+  font-size: 12px;
+  text-anchor: middle;
+  fill: #333;
+  pointer-events: none;
+}
+
+/* 过滤指示器 */
+.filtered-indicator {
+  fill: #ff5722;
+  stroke: #fff;
+  stroke-width: 1px;
+}
+
+/* 节点图标 */
+.node image {
+  pointer-events: none;
+}
+
+.node image.default-icon {
+  opacity: 0.7;
+}
+
+/* ======= 连接线样式 ======= */
+
+/* 基本连接线 */
+.link {
+  fill: none;
+  stroke: #999;
+  stroke-width: 1.5px;
+}
+
+/* 连接线类型 */
+.link.link_click { stroke: #4285f4; }
+.link.address_bar { stroke: #34a853; }
+.link.form_submit { stroke: #fbbc05; }
+.link.javascript { stroke: #ea4335; }
+.link.reload { stroke: #7986cb; }
+.link.history_back, 
+.link.history_forward { stroke: #9c27b0; }
+.link.session_link { stroke: #555; }
+
+/* 重定向连接线 */
+.link.redirect {
+  stroke: #ff9800;
+  stroke-dasharray: 5,3;
+}
+
+/* 箭头标记 */
+#arrow path {
+  fill: #999;
+}
+
+/* ======= 错误信息样式 ======= */
+.error-message {
+  fill: red;
+  font-size: 16px;
+  text-anchor: middle;
+}
+
+.error-info {
+  fill: #333;
+  font-size: 14px;
+  text-anchor: middle;
+}
+
+.error-action {
+  fill: #0066cc;
+  font-size: 14px;
+  text-anchor: middle;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 循环警告 */
+.cycle-warning {
+  fill: #ff5722;
+  font-size: 12px;
+  text-anchor: end;
+}
+
+/* 空树消息 */
+.empty-tree-message {
+  fill: #666;
+  font-size: 18px;
+  text-anchor: middle;
+}
