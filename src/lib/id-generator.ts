@@ -27,7 +27,12 @@ export class IdGenerator {
     // 返回格式: tabId-domain-urlHash
     return `${tabId}-${domain}-${urlHash}`;
   }
-  
+  /**
+   * 生成边ID
+   */
+  public static generateEdgeId(sourceId: string, targetId: string, timestamp: number): string {
+    return `edge-${sourceId}-${targetId}-${timestamp}`;
+  }
   /**
    * 规范化URL
    */
