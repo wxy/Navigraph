@@ -48,26 +48,65 @@
   function initialize() {
     console.log('初始化导航追踪器...');
     
+    const currentUrl = window.location.href;
+    
+    // 如果是系统页面，不进行追踪
+    if (isSystemPage(currentUrl)) {
+      console.log('系统页面，不追踪导航:', currentUrl);
+      return;
+    }
+    
     // 请求当前页面的节点ID
-    requestNodeId(window.location.href);
+    requestNodeId(currentUrl);
     
     // 设置事件监听器 - 即使没有节点ID也设置，节点ID获取后会自动生效
     setupEventListeners();
   }
   
   /**
+   * 判断URL是否为系统页面
+   * @param {string} url 要检查的URL
+   * @returns {boolean} 是否为系统页面
+   */
+  function isSystemPage(url) {
+    if (!url) return false;
+    
+    return url.startsWith('chrome://') || 
+           url.startsWith('chrome-extension://') || 
+           url.startsWith('devtools://') ||
+           url.startsWith('about:') ||
+           url.startsWith('edge://') ||
+           url.startsWith('brave://') ||
+           url.startsWith('opera://') ||
+           url.startsWith('vivaldi://') ||
+           url.startsWith('webkit://') ||
+           url.startsWith('view-source:') ||
+           url.startsWith('file://') ||
+           url.startsWith('data:') ||
+           url.startsWith('blob:');
+  }
+
+  /**
    * 请求当前页面的节点ID
    * @param {string} url 当前页面URL
+   * @param {number} [retryCount=0] 重试次数
    */
-  function requestNodeId(url) {
+  function requestNodeId(url, retryCount = 0) {
     if (!url) return;
+    
+    // 系统页面不需要节点ID
+    if (isSystemPage(url)) {
+      console.log('系统页面，不需要节点ID:', url);
+      standardNodeId = null;
+      return;
+    }
     
     // 限制请求频率
     const now = Date.now();
-    if (now - lastRequestTime < 500) return;
+    if (now - lastRequestTime < 500 && retryCount === 0) return;
     lastRequestTime = now;
     
-    console.log('向后台请求节点ID:', url);
+    console.log(`向后台请求节点ID (尝试 ${retryCount + 1}/3):`, url);
     
     // 发送请求到后台脚本
     safeSendMessage({
@@ -79,11 +118,25 @@
         console.log('导航追踪器: 获取到当前页面ID:', standardNodeId);
       } else {
         // 处理未找到节点ID的情况
-        console.warn('导航追踪器: 未找到当前页面ID:', url);
-        standardNodeId = null; // 确保节点ID为null
-        
-        // 虽然没有节点ID，仍然发送页面加载事件，以便后台可以获取更多信息
-        sendPageLoadedMessage();
+        if (retryCount < 2) {
+          // 如果是第一次或第二次尝试，等待一段时间后重试
+          // 每次重试增加等待时间，提高成功率
+          const delay = 500 * (retryCount + 1);
+          console.log(`节点ID请求失败，${delay}ms后重试 (${retryCount + 1}/3)`);
+          
+          setTimeout(() => {
+            requestNodeId(url, retryCount + 1);
+          }, delay);
+        } else {
+          // 最后一次尝试失败，记录警告但不报错
+          if (!isSystemPage(url)) {
+            console.warn('导航追踪器: 多次尝试后仍未找到当前页面ID:', url);
+          }
+          standardNodeId = null; // 确保节点ID为null
+          
+          // 虽然没有节点ID，仍然发送页面加载事件，以便后台可以获取更多信息
+          sendPageLoadedMessage();
+        }
       }
     });
   }
@@ -92,21 +145,32 @@
    * 发送页面已加载消息
    */
   function sendPageLoadedMessage() {
+    const currentUrl = window.location.href;
+    
+    // 系统页面不发送
+    if (isSystemPage(currentUrl)) {
+      return;
+    }
+    
     safeSendMessage({
       action: 'pageLoaded',
       pageInfo: {
         nodeId: standardNodeId,  // 可能为null，后台会处理
-        url: window.location.href,
+        url: currentUrl,
         title: document.title,
         timestamp: Date.now(),
         referrer: document.referrer,
-        favicon: getFaviconUrl()  // 添加favicon信息
+        favicon: getFaviconUrl(),  // 添加favicon信息
+        // 增加有助于页面识别的额外信息
+        userAgent: navigator.userAgent,
+        windowName: window.name,
+        ancestorOrigins: Array.from(location.ancestorOrigins || [])
       }
     }, function(response) {
       // 如果后台返回了节点ID，更新本地存储的ID
       if (response && response.success && response.nodeId) {
         if (standardNodeId !== response.nodeId) {
-          console.log(`更新节点ID: ${standardNodeId} -> ${response.nodeId}`);
+          console.log(`更新节点ID: ${standardNodeId || 'null'} -> ${response.nodeId}`);
           standardNodeId = response.nodeId;
         }
       }

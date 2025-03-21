@@ -345,7 +345,6 @@ async function handleGetNavigationTreeWithContext(
     // 记录调试信息
     const nodeCount = treeData.nodes.length;
     const edgeCount = treeData.edges.length;
-    const rootCount = treeData.roots ? treeData.roots.length : 0;
     
     // 如果数据为空，记录特别调试信息
     if (nodeCount === 0) {
@@ -353,16 +352,14 @@ async function handleGetNavigationTreeWithContext(
       const recordCount = await getRecordCount();
       console.log(`数据库中有 ${recordCount} 条记录`);
     } else {
-      console.log(`导航树数据已准备好: ${nodeCount} 个节点, ${edgeCount} 条边, ${rootCount} 个根节点`);
+      console.log(`导航树数据已准备好: ${nodeCount} 个节点, ${edgeCount} 条边`);
     }
     
     // 发送响应，包含更丰富的数据
     ctx.success({
       data: {
         nodes: treeData.nodes,
-        edges: treeData.edges,
-        roots: treeData.roots || [],
-        session: treeData.session
+        edges: treeData.edges
       },
       timestamp: Date.now() // 添加当前时间戳，客户端用于增量更新
     });

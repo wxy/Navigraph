@@ -556,6 +556,18 @@ export function renderTreeLayout(
       .append('title')
       .text((d: any) => `包含${d.data.filteredChildrenCount || 0}个被过滤的子节点`);
     
+    // 在渲染树之前，处理重定向节点
+    const redirectNodes = nodes.filter(node => node.type === 'redirect');
+    if (redirectNodes.length > 0) {
+      console.log(`检测到 ${redirectNodes.length} 个重定向节点`);
+      
+      // 为重定向节点添加特殊样式
+      redirectNodes.forEach(node => {
+        // 添加样式标记，可在渲染时使用
+        (node as any).isRedirect = true;
+      });
+    }
+
     // 添加交互
     node.on('click', function(event: MouseEvent, d: any) {
       if (d.data.id === 'session-root') return;
@@ -571,6 +583,20 @@ export function renderTreeLayout(
       
       d3.select(event.currentTarget as Element)
         .classed('highlighted', true);
+    });
+
+    // 在渲染节点时应用特殊样式
+    node.each(function(this: SVGImageElement, d: any) {
+      // 检查是否为重定向节点
+      if (d.isRedirect) {
+        d3.select(this).select('circle')
+          .style('stroke', '#ff9800')
+          .style('stroke-dasharray', '3,2');
+        
+        d3.select(this).select('text')
+          .style('font-style', 'italic')
+          .attr('fill', '#ff9800');
+      }
     });
 
     // 应用初始变换以适应视图

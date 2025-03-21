@@ -858,7 +858,6 @@ export class NavigationVisualizer {
   
   /**
    * 根据筛选条件过滤节点
-   * 实现原本缺失的 filterNodes 方法
    */
   private filterNodes(): void {
     // 确保有原始数据可供筛选
@@ -873,18 +872,24 @@ export class NavigationVisualizer {
     let filteredNodes = [...this.allNodes];
     let filteredEdges = [...this.allEdges];
     
-    // 应用类型筛选
-    const allowedTypes: string[] = [];
-    if (this.filters.typeLink) allowedTypes.push('link_click');
-    if (this.filters.typeAddress) allowedTypes.push('address_bar');
-    if (this.filters.typeForm) allowedTypes.push('form_submit');
-    if (this.filters.typeJs) allowedTypes.push('javascript');
-    
-    // 应用其他筛选条件
+    // 修改类型筛选逻辑 - 使用白名单方式，但不过滤未知类型
+    // 并确保指定的类型能正确通过
     filteredNodes = filteredNodes.filter(node => {
-      // 类型筛选
-      if (node.type && !allowedTypes.includes(node.type)) {
-        return false;
+      // 创建一个节点描述，方便调试
+      const nodeDesc = `${node.id} (${node.title || 'Untitled'}, 类型=${node.type || 'unknown'})`;
+      
+      // 类型筛选 - 只过滤明确禁用的已知类型
+      if (node.type) {
+        // 特定类型使用对应的过滤配置
+        if (
+          (node.type === 'link_click' && !this.filters.typeLink) ||
+          (node.type === 'address_bar' && !this.filters.typeAddress) ||
+          (node.type === 'form_submit' && !this.filters.typeForm) ||
+          (node.type === 'javascript' && !this.filters.typeJs)
+        ) {
+          console.log(`过滤掉节点：${nodeDesc} - 类型被禁用`);
+          return false;
+        }
       }
       
       // 刷新筛选
@@ -907,23 +912,22 @@ export class NavigationVisualizer {
         return false;
       }
       
+      // 通过其他类型，包括 redirect 类型
       return true;
     });
     
-    // 获取所有符合条件的节点ID
+    console.log(`筛选结果: 从${this.allNodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
+    
+    // 获取所有符合条件的节点ID集合，用于边过滤
     const nodeIds = new Set(filteredNodes.map(node => node.id));
     
     // 过滤连接，只保留两端都在筛选后节点中的连接
-    filteredEdges = filteredEdges.filter(edge => 
-      nodeIds.has(edge.source) && nodeIds.has(edge.target)
-    );
-    
-    // 统计过滤前后的差异
-    const originalNodeCount = this.allNodes.length;
-    const filteredNodeCount = filteredNodes.length;
-    const removedCount = originalNodeCount - filteredNodeCount;
-    
-    console.log(`筛选结果: 从${originalNodeCount}个节点中筛选出${filteredNodeCount}个符合条件的节点，移除了${removedCount}个节点`);
+    filteredEdges = filteredEdges.filter(edge => {
+      const sourceId = edge.source;
+      const targetId = edge.target;
+      
+      return nodeIds.has(sourceId) && nodeIds.has(targetId);
+    });
     
     // 更新当前使用的节点和边
     this.nodes = filteredNodes;
