@@ -71,7 +71,19 @@ export class NavigationVisualizer {
   ];
   // 添加调试工具属性
   private debugTools: DebugTools | null = null;
-
+  /**
+   * 筛选器配置定义
+   */
+  private readonly filterConfigs = [
+    { id: 'filter-reload', text: '显示刷新', property: 'reload', defaultValue: true },
+    { id: 'filter-history', text: '显示历史', property: 'history', defaultValue: true },
+    { id: 'filter-closed', text: '显示已关闭', property: 'closed', defaultValue: false },
+    { id: 'filter-tracking', text: '显示跟踪页面', property: 'showTracking', defaultValue: false },
+    { id: 'type-link', text: '链接点击', property: 'typeLink', defaultValue: true },
+    { id: 'type-address', text: '地址栏输入', property: 'typeAddress', defaultValue: true },
+    { id: 'type-form', text: '表单提交', property: 'typeForm', defaultValue: true },
+    { id: 'type-js', text: 'JS导航', property: 'typeJs', defaultValue: true }
+  ];
   /**
    * 构造函数
    */
@@ -462,7 +474,26 @@ export class NavigationVisualizer {
       this.showNoData('刷新失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
-  
+  /**
+   * 处理筛选器变化
+   */
+  private handleFilterChange(filterId: string, checked: boolean): void {
+    // 查找对应的筛选器配置
+    const config = this.filterConfigs.find(f => f.id === filterId);
+    if (!config) {
+      console.warn(`未知筛选器ID: ${filterId}`);
+      return;
+    }
+    
+    // 更新筛选器状态
+    (this.filters as any)[config.property] = checked;
+    
+    console.log(`筛选器 ${filterId} (${config.property}) 已更改为 ${checked}`);
+    
+    // 使用完整的刷新流程
+    this.refreshVisualization(undefined, { restoreTransform: true });
+  }
+
   /**
    * 创建工具栏
    */
@@ -509,74 +540,37 @@ export class NavigationVisualizer {
     filterGroup.className = 'filter-group';
     toolbar.appendChild(filterGroup);
     
-    // 添加过滤器
-    const filters = [
-      { id: 'filter-reload', text: '显示刷新', checked: this.filters.reload },
-      { id: 'filter-history', text: '显示历史', checked: this.filters.history },
-      { id: 'filter-closed', text: '显示已关闭', checked: this.filters.closed },
-      { id: 'filter-tracking', text: '显示跟踪页面', checked: this.filters.showTracking },
-      { id: 'type-link', text: '链接点击', checked: this.filters.typeLink },
-      { id: 'type-address', text: '地址栏输入', checked: this.filters.typeAddress },
-      { id: 'type-form', text: '表单提交', checked: this.filters.typeForm },
-      { id: 'type-js', text: 'JS导航', checked: this.filters.typeJs }
-    ];
-    
-    filters.forEach(filter => {
+   // 使用配置创建筛选器
+   this.createFilters(filterGroup);
+  }
+  /**
+   * 创建筛选器元素
+   */
+  private createFilters(container: HTMLElement): void {
+    this.filterConfigs.forEach(config => {
       const checkboxContainer = document.createElement('label');
       checkboxContainer.className = 'checkbox-container';
       
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.id = filter.id;
-      checkbox.checked = filter.checked;
+      checkbox.id = config.id;
+      checkbox.checked = (this.filters as any)[config.property];
       
       const span = document.createElement('span');
       span.className = 'checkbox-text';
-      span.textContent = filter.text;
+      span.textContent = config.text;
       
       checkboxContainer.appendChild(checkbox);
       checkboxContainer.appendChild(span);
-      filterGroup.appendChild(checkboxContainer);
+      container.appendChild(checkboxContainer);
       
       // 添加事件监听器
       checkbox.addEventListener('change', (e) => {
         const target = e.target as HTMLInputElement;
-        
-        switch (filter.id) {
-          case 'filter-reload':
-            this.filters.reload = target.checked;
-            break;
-          case 'filter-history':
-            this.filters.history = target.checked;
-            break;
-          case 'filter-closed':
-            this.filters.closed = target.checked;
-            break;
-          case 'filter-tracking':
-            this.filters.showTracking = target.checked;
-            break;
-          case 'type-link':
-            this.filters.typeLink = target.checked;
-            break;
-          case 'type-address':
-            this.filters.typeAddress = target.checked;
-            break;
-          case 'type-form':
-            this.filters.typeForm = target.checked;
-            break;
-          case 'type-js':
-            this.filters.typeJs = target.checked;
-            break;
-        }
-        
-        console.log(`筛选器 ${filter.id} 已更改为 ${target.checked}`);
-  
-        // 使用完整的刷新流程而不是仅应用过滤器
-        this.refreshVisualization(undefined, { restoreTransform: true });
+        this.handleFilterChange(config.id, target.checked);
       });
     });
   }
-  
   /**
    * 处理会话加载事件
    */
@@ -1341,67 +1335,23 @@ export class NavigationVisualizer {
    */
   private initializeFilters(): void {
     console.log('初始化筛选器...');
-
-    // 获取所有筛选器复选框
-    const filterControls = {
-      'filter-reload': this.filters.reload,
-      'filter-history': this.filters.history,
-      'filter-closed': this.filters.closed,
-      'filter-tracking': this.filters.showTracking,
-      'type-link': this.filters.typeLink,
-      'type-address': this.filters.typeAddress,
-      'type-form': this.filters.typeForm,
-      'type-js': this.filters.typeJs
-    };
-    
     // 为每个筛选器绑定事件处理程序
-    for (const [id, initialValue] of Object.entries(filterControls)) {
-      const checkbox = document.getElementById(id) as HTMLInputElement;
+    this.filterConfigs.forEach(config => {
+      const checkbox = document.getElementById(config.id) as HTMLInputElement;
       if (checkbox) {
         // 设置初始值
-        checkbox.checked = initialValue;
+        checkbox.checked = (this.filters as any)[config.property];
         
         // 添加事件监听器
         checkbox.addEventListener('change', () => {
-          // 更新筛选器状态
-          switch (id) {
-            case 'filter-reload':
-              this.filters.reload = checkbox.checked;
-              break;
-            case 'filter-history':
-              this.filters.history = checkbox.checked;
-              break;
-            case 'filter-closed':
-              this.filters.closed = checkbox.checked;
-              break;
-            case 'filter-tracking':
-              this.filters.showTracking = checkbox.checked;
-              break;
-            case 'type-link':
-              this.filters.typeLink = checkbox.checked;
-              break;
-            case 'type-address':
-              this.filters.typeAddress = checkbox.checked;
-              break;
-            case 'type-form':
-              this.filters.typeForm = checkbox.checked;
-              break;
-            case 'type-js':
-              this.filters.typeJs = checkbox.checked;
-              break;
-          }
-          
-          console.log(`筛选器 ${id} 已更改为 ${checkbox.checked}`);
-  
-          // 使用完整的刷新流程而不是仅应用过滤器
-          this.refreshVisualization(undefined, { restoreTransform: true });
+          this.handleFilterChange(config.id, checkbox.checked);
         });
         
-        console.log(`已绑定筛选器 ${id}, 初始状态: ${checkbox.checked}`);
+        console.log(`已绑定筛选器 ${config.id}, 初始状态: ${checkbox.checked}`);
       } else {
-        console.warn(`未找到筛选器元素: ${id}`);
+        console.warn(`未找到筛选器元素: ${config.id}`);
       }
-    }
+    });
   }
 
   /**
