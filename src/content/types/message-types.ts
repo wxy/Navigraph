@@ -58,11 +58,15 @@ export interface GetNodeIdRequestMessage extends BaseMessage {
 export interface PageLoadedRequestMessage extends BaseMessage {
   action: 'pageLoaded';
   pageInfo: {
+    nodeId?: string | null;
     url: string;
     title?: string;
     referrer?: string;
     timestamp?: number;
     favicon?: string;
+    userAgent?: string;
+    windowName?: string;
+    ancestorOrigins?: string[];
   };
 }
 
@@ -94,6 +98,39 @@ export interface LinkClickedRequestMessage extends BaseMessage {
     isNewTab: boolean;
     timestamp: number;
   };
+}
+
+// 添加缺少的消息类型
+export interface PageTitleUpdatedMessage extends BaseMessage {
+  action: 'pageTitleUpdated';
+  nodeId: string | null;
+  title: string;
+}
+
+export interface FaviconUpdatedMessage extends BaseMessage {
+  action: 'faviconUpdated';
+  nodeId: string | null;
+  favicon: string;
+}
+
+export interface FormSubmittedMessage extends BaseMessage {
+  action: 'formSubmitted';
+  formInfo: {
+    sourceNodeId: string;
+    sourceUrl: string;
+    formAction: string;
+    method: string;
+    timestamp: number;
+  };
+}
+
+export interface JsNavigationMessage extends BaseMessage {
+  action: 'jsNavigation';
+  sourceNodeId: string;
+  sourceUrl: string;
+  targetUrl: string;
+  navigationType: 'pushState' | 'replaceState';
+  timestamp: number;
 }
 
 // ===== 响应消息类型 =====
