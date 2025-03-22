@@ -15,10 +15,6 @@ import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-import type { 
-  RequestResponseMap,
-  BaseResponseMessage
-} from '../types/message-types.js';
 
 export class NavigationVisualizer {
   // 可视化容器
@@ -90,8 +86,8 @@ export class NavigationVisualizer {
     }
     this.noData = document.getElementById('no-data');
     
-    // 初始化
-    this.initialize();
+    // 不要在构造函数里面初始化，而应该外部初始化
+    //this.initialize();
   }
   
   /**
@@ -263,51 +259,6 @@ export class NavigationVisualizer {
         
         // 返回false表示我们已经同步处理了响应
         return false;
-      });
-    
-    // 注册调试消息处理函数
-    registerMessageHandler<'debug'>('debug', 
-      (message, sender, sendResponse) => {
-        // 使用类型化消息
-        const typedMessage = getTypedMessage('debug', message);
-        console.log('收到调试命令:', typedMessage.command);
-        
-        // 如果已初始化调试工具
-        if (this.debugTools) {
-          try {
-            switch (typedMessage.command) {
-              case 'debug-check-data':
-                this.debugTools.checkData();
-                break;
-              case 'debug-check-dom':
-                this.debugTools.checkDOM();
-                break;
-              case 'debug-clear-data':
-                this.debugTools.clearData();
-                break;
-              default:
-                console.warn('未知调试命令:', typedMessage.command);
-                const errorResponse = createResponse('debug', message.requestId, false, '未知命令');
-                sendResponse(errorResponse);
-                return true;
-            }
-            
-            const successResponse = createResponse('debug', message.requestId);
-            sendResponse(successResponse);
-          } catch (error) {
-            console.error('执行调试命令失败:', error);
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            const errorResponse = createResponse('debug', message.requestId, false, errorMsg);
-            sendResponse(errorResponse);
-          }
-        } else {
-          console.warn('调试工具未初始化，无法执行命令');
-          const errorResponse = createResponse('debug', message.requestId, false, '调试工具未初始化');
-          sendResponse(errorResponse);
-        }
-        
-        // 返回true表示我们已经处理了响应
-        return true;
       });
     
     // 注册页面活动消息处理函数
@@ -907,7 +858,6 @@ export class NavigationVisualizer {
   
   /**
    * 根据筛选条件过滤节点
-   * 实现原本缺失的 filterNodes 方法
    */
   private filterNodes(): void {
     // 确保有原始数据可供筛选
@@ -922,18 +872,24 @@ export class NavigationVisualizer {
     let filteredNodes = [...this.allNodes];
     let filteredEdges = [...this.allEdges];
     
-    // 应用类型筛选
-    const allowedTypes: string[] = [];
-    if (this.filters.typeLink) allowedTypes.push('link_click');
-    if (this.filters.typeAddress) allowedTypes.push('address_bar');
-    if (this.filters.typeForm) allowedTypes.push('form_submit');
-    if (this.filters.typeJs) allowedTypes.push('javascript');
-    
-    // 应用其他筛选条件
+    // 修改类型筛选逻辑 - 使用白名单方式，但不过滤未知类型
+    // 并确保指定的类型能正确通过
     filteredNodes = filteredNodes.filter(node => {
-      // 类型筛选
-      if (node.type && !allowedTypes.includes(node.type)) {
-        return false;
+      // 创建一个节点描述，方便调试
+      const nodeDesc = `${node.id} (${node.title || 'Untitled'}, 类型=${node.type || 'unknown'})`;
+      
+      // 类型筛选 - 只过滤明确禁用的已知类型
+      if (node.type) {
+        // 特定类型使用对应的过滤配置
+        if (
+          (node.type === 'link_click' && !this.filters.typeLink) ||
+          (node.type === 'address_bar' && !this.filters.typeAddress) ||
+          (node.type === 'form_submit' && !this.filters.typeForm) ||
+          (node.type === 'javascript' && !this.filters.typeJs)
+        ) {
+          console.log(`过滤掉节点：${nodeDesc} - 类型被禁用`);
+          return false;
+        }
       }
       
       // 刷新筛选
@@ -956,23 +912,22 @@ export class NavigationVisualizer {
         return false;
       }
       
+      // 通过其他类型，包括 redirect 类型
       return true;
     });
     
-    // 获取所有符合条件的节点ID
+    console.log(`筛选结果: 从${this.allNodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
+    
+    // 获取所有符合条件的节点ID集合，用于边过滤
     const nodeIds = new Set(filteredNodes.map(node => node.id));
     
     // 过滤连接，只保留两端都在筛选后节点中的连接
-    filteredEdges = filteredEdges.filter(edge => 
-      nodeIds.has(edge.source) && nodeIds.has(edge.target)
-    );
-    
-    // 统计过滤前后的差异
-    const originalNodeCount = this.allNodes.length;
-    const filteredNodeCount = filteredNodes.length;
-    const removedCount = originalNodeCount - filteredNodeCount;
-    
-    console.log(`筛选结果: 从${originalNodeCount}个节点中筛选出${filteredNodeCount}个符合条件的节点，移除了${removedCount}个节点`);
+    filteredEdges = filteredEdges.filter(edge => {
+      const sourceId = edge.source;
+      const targetId = edge.target;
+      
+      return nodeIds.has(sourceId) && nodeIds.has(targetId);
+    });
     
     // 更新当前使用的节点和边
     this.nodes = filteredNodes;

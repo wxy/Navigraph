@@ -3,54 +3,16 @@
  * 负责绘制层次化的导航树结构
  */
 
-const d3 = window.d3;
+// 导入类型定义
+import { 
+  NavNode, 
+  NavLink, 
+  ExtendedNavNode,
+  D3TreeNode,
+  D3TreeLink,
+  Visualizer 
+} from '../types/navigation.js';
 
-// 为d3的层次结构添加特定接口，避免类型错误
-interface HierarchyNode<T> {
-  data: T;
-  depth: number;
-  height: number;
-  parent: HierarchyNode<T> | null;
-  children?: HierarchyNode<T>[];
-  x: number;
-  y: number;
-  descendants(): HierarchyNode<T>[];
-  links(): { source: HierarchyNode<T>; target: HierarchyNode<T> }[];
-}
-
-// 添加链接接口，用于d3.links()返回值
-interface HierarchyLink<T> {
-  source: HierarchyNode<T>;
-  target: HierarchyNode<T>;
-}
-
-// 扩展NavNode类型
-interface ExtendedNavNode extends NavNode {
-  children?: ExtendedNavNode[];
-  isRoot?: boolean;
-  isSelfLoop?: boolean;
-  isClosed?: boolean;
-  depth?: number;
-  hasFilteredChildren?: boolean;
-  filteredChildrenCount?: number;
-}
-
-// 添加D3特定的接口
-interface D3TreeNode {
-  x: number;
-  y: number;
-  data: ExtendedNavNode;
-  children?: D3TreeNode[];
-  parent?: D3TreeNode | null;
-  depth: number;
-}
-
-interface D3TreeLink {
-  source: D3TreeNode;
-  target: D3TreeNode;
-}
-
-import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import { 
   getNodeColor, 
   getEdgeColor, 
@@ -64,8 +26,7 @@ import {
   updateStatusBar
 } from '../utils/state-manager.js';
 
-// 声明要使用的d3函数类型
-type D3LinkHorizontal = (data: { source: any; target: any }) => string;
+const d3 = window.d3;
 
 /**
  * 渲染树形图布局
@@ -73,15 +34,27 @@ type D3LinkHorizontal = (data: { source: any; target: any }) => string;
 export function renderTreeLayout(
   container: HTMLElement, 
   svg: any, 
-  nodes: any[], 
+  nodes: NavNode[], 
   links: any[], 
   width: number, 
   height: number, 
-  visualizer: any
+  visualizer: Visualizer
 ): void {
   console.log('使用模块化树形图渲染器');
 
   try {
+    // 规范化输入的链接数据
+    const normalizedInputLinks = normalizeLinks(links);
+    
+    // 检查是否有链接需要规范化
+    const needsNormalization = links.some(link => 
+      typeof link.source === 'object' || typeof link.target === 'object'
+    );
+    
+    if (needsNormalization) {
+      console.warn('检测到链接数据包含对象引用格式，已规范化为字符串ID');
+    }
+    
     // 1. 确保基本DOM结构存在
     if (!svg.select('.main-group').node()) {
       console.log('创建主视图组');
@@ -131,7 +104,8 @@ export function renderTreeLayout(
       
       // 保存并应用缩放行为
       visualizer.zoom = zoom;
-      svg.call(zoom);
+      svg.call(zoom)
+        .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动;
       
       console.log('已设置树形图缩放行为');
     } catch (error) {
@@ -244,25 +218,52 @@ export function renderTreeLayout(
       } as NavLink));
     
     // 合并所有链接
-    const allLinks = [...sessionLinks, ...links];
-    
-    // 声明接收d3.stratify结果的变量类型
-    let hierarchy: any;
+    const allLinks = [...sessionLinks, ...normalizedInputLinks];
+
+    // 在调用d3.stratify之前应用循环检测及修复
+    // 对所有链接进行预处理，确保格式一致
+    const normalizedAllLinks = normalizeLinks(allLinks);
+
+    // 检测并移除导致循环的链接
+    const safeLinks = detectAndBreakCycles(allNodes, normalizedAllLinks);
+
+    // 如果移除了链接，显示警告
+    if (safeLinks.length < allLinks.length) {
+      const removedCount = allLinks.length - safeLinks.length;
+      console.warn(`已移除 ${removedCount} 条导致循环的连接以确保树形图可以正常渲染`);
+      
+      // 添加视觉警告提示
+      svg.append('text')
+        .attr('x', width - 200)
+        .attr('y', 20)
+        .attr('class', 'cycle-message')
+        .text(`⚠️ 已修复 ${removedCount} 个循环连接`);
+    }
+
+    // 使用安全链接替换原来的链接列表
+    const safeAllLinks = safeLinks.map(link => ({
+      id: link.id,
+      source: link.source,
+      target: link.target,
+      type: link.type
+    }));
+
+    // 声明接收d3处理结果的变量
     let treeData: any;
-    let descendants: any[];
+    let descendants: D3TreeNode[];
     
     try {
       // 创建层次化树形布局
       const treeLayout = d3.tree()
         .nodeSize([30, 140])
-        .separation((a: any, b: any) => {
+        .separation((a: D3TreeNode, b: D3TreeNode) => {
           // 更细致的间距控制
           const depthFactor = Math.min(1.3, (a.depth + b.depth) * 0.08 + 1);
           return (a.parent === b.parent ? 3 : 4.5) * depthFactor;
         });
       
       // 创建层次结构
-      hierarchy = d3.stratify()
+      const hierarchy = d3.stratify()
         .id((d: any) => d.id)
         .parentId((d: any) => {
           // 如果是会话根节点，则没有父节点
@@ -270,7 +271,13 @@ export function renderTreeLayout(
           
           // 如果有父ID并且父节点存在，使用此父ID
           if (d.parentId && nodeById[d.parentId]) {
-            return d.parentId;
+            // 检查此父子关系是否在安全链接列表中
+            const parentLinkExists = safeLinks.some(link => 
+              link.source === d.parentId && link.target === d.id);
+              
+            if (parentLinkExists) {
+              return d.parentId;
+            }
           }
           
           // 默认情况：连接到会话根节点
@@ -282,11 +289,47 @@ export function renderTreeLayout(
       treeData = treeLayout(hierarchy);
       
       // 获取所有节点
-      descendants = treeData.descendants();
+      descendants = treeData.descendants() as D3TreeNode[];
       
     } catch (err) {
       console.error('树布局计算失败:', err);
-      throw new Error(`树布局计算失败: ${err}`);
+      
+      // 更简洁的错误处理
+      let errorMessage = '树布局计算失败';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      
+      // 检查是否包含循环依赖错误
+      if (errMsg.includes('cycle')) {
+        errorMessage = '数据中存在无法自动修复的循环依赖';
+        
+        // 尝试渲染可视化的错误信息，帮助用户理解
+        svg.append('text')
+          .attr('x', width / 2)
+          .attr('y', height / 2 - 40)
+          .text('无法渲染树形视图：检测到循环依赖');
+          
+        svg.append('text')
+          .attr('x', width / 2)
+          .attr('y', height / 2)
+          .attr('class', 'empty-tree-message')
+          .text('请尝试使用时间线视图或筛选节点以解决问题');
+          
+        // 如果visualizer可用，建议切换视图
+        if (visualizer && typeof visualizer.switchToTimelineView === 'function') {
+          svg.append('text')
+            .attr('x', width / 2)
+            .attr('y', height / 2 + 30)
+            .attr('class', 'error-action')
+            .text('点击此处切换到时间线视图')
+            .on('click', () => {
+              visualizer.switchView('tree');
+            });
+        }
+      } else {
+        errorMessage = String(err);
+      }
+      
+      throw new Error(errorMessage);
     }
     
     // 立即计算树的边界
@@ -334,8 +377,7 @@ export function renderTreeLayout(
       .attr('markerHeight', 6)
       .attr('orient', 'auto')
       .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#999');
+      .attr('d', 'M0,-5L10,0L0,5');
     
     // 获取节点和链接分组
     const linksGroup = svg.select('.main-group .links-group');
@@ -345,9 +387,9 @@ export function renderTreeLayout(
     linksGroup.selectAll('path')
       .data(treeData.links())
       .join('path')
-      .attr('class', (d: any) => `link ${d.target.data.type || ''}`)
-      .attr('d', (d: any) => {
-        // 创建平滑曲线，从源节点到目标节点
+      .attr('class', (d: D3TreeLink) => `link ${d.target.data.type || ''}`)
+      .attr('d', (d: D3TreeLink) => {
+        // 创建平滑曲线
         const linkHorizontal = d3.linkHorizontal()
           .x((node: any) => node.y)
           .y((node: any) => node.x);
@@ -357,17 +399,13 @@ export function renderTreeLayout(
           target: d.target
         });
       })
-      .attr('stroke', (d: any) => d.target.data.type === 'session' ? 
-        '#555' : getEdgeColor(d.target.data.type || ''))
-      .attr('stroke-width', 1.5)
-      .attr('fill', 'none')
       .attr('marker-end', 'url(#arrow)');
     
     // 绘制节点
     const node = nodesGroup.selectAll('.node')
       .data(descendants)
       .join('g')
-      .attr('class', (d: any) => {
+      .attr('class', (d: D3TreeNode) => {
         // 合并多个类名
         let classes = `node ${d.data.type || ''}`;
         
@@ -388,37 +426,30 @@ export function renderTreeLayout(
         
         return classes;
       })
-      .attr('transform', (d: any) => `translate(${d.y},${d.x})`);
+      .attr('transform', (d: D3TreeNode) => `translate(${d.y},${d.x})`);
     
     // 会话节点特殊处理
-    node.filter((d: any) => d.data.id === 'session-root')
+    node.filter((d: D3TreeNode) => d.data.id === 'session-root')
       .append('rect')
       .attr('width', 120)
       .attr('height', 40)
       .attr('x', -60)
-      .attr('y', -20)
-      .attr('rx', 8)
-      .attr('ry', 8)
-      .attr('fill', '#444')
-      .attr('stroke', '#222');
+      .attr('y', -20);
     
     // 普通节点
-    node.filter((d: any) => d.data.id !== 'session-root')
+    node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
       .append('circle')
-      .attr('r', 20)
-      .attr('fill', (d: any) => getNodeColor(d.data.type || ''))
-      .attr('stroke', '#333')
-      .attr('stroke-width', 1.5);
+      .attr('r', 20);
     
     // 添加图标
-    node.filter((d: any) => d.data.id !== 'session-root' && d.data.favicon)
+    node.filter((d: D3TreeNode) => d.data.id !== 'session-root' && d.data.favicon)
       .append('image')
-      .attr('xlink:href', (d: any) => d.data.favicon || chrome.runtime.getURL('images/logo-48.png'))
+      .attr('xlink:href', (d: D3TreeNode) => d.data.favicon || chrome.runtime.getURL('images/logo-48.png'))
       .attr('x', -8)
       .attr('y', -8)
       .attr('width', 16)
       .attr('height', 16)
-      .attr('class', (d: any) => d.data.favicon ? '' : 'default-icon')
+      .attr('class', (d: D3TreeNode) => d.data.favicon ? '' : 'default-icon')
       .on('error', function(this: SVGImageElement) {
         // 图像加载失败时替换为默认图标
         d3.select(this)
@@ -428,15 +459,13 @@ export function renderTreeLayout(
     
     // 添加节点标题
     node.append('title')
-      .text((d: any) => d.data.title || d.data.url || '未命名节点');
+      .text((d: D3TreeNode) => d.data.title || d.data.url || '未命名节点');
     
     // 为会话节点添加文字标签
-    node.filter((d: any) => d.data.id === 'session-root')
+    node.filter((d: D3TreeNode) => d.data.id === 'session-root')
       .append('text')
       .attr('dy', '.35em')
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .text((d: any) => {
+      .text((d: D3TreeNode) => {
         if (visualizer.currentSession) {
           const date = new Date(visualizer.currentSession.startTime);
           return date.toLocaleDateString();
@@ -445,32 +474,38 @@ export function renderTreeLayout(
       });
     
     // 为普通节点添加简短标签
-    node.filter((d: any) => d.data.id !== 'session-root')
+    node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
       .append('text')
       .attr('dy', 35)
-      .attr('text-anchor', 'middle')
-      .attr('fill', '#333')
-      .style('font-size', '12px')
-      .text((d: any) => {
+      .text((d: D3TreeNode) => {
         if (!d.data.title) return '';
         return d.data.title.length > 15 ? d.data.title.substring(0, 12) + '...' : d.data.title;
       });
     
     // 为有被过滤子节点的节点添加标记
-    node.filter((d: any) => d.data.hasFilteredChildren)
+    node.filter((d: D3TreeNode) => d.data.hasFilteredChildren)
       .append('circle')
       .attr('r', 6)
       .attr('cx', 18)
       .attr('cy', -18)
-      .attr('fill', '#ff5722')
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 1)
       .attr('class', 'filtered-indicator')
       .append('title')
-      .text((d: any) => `包含${d.data.filteredChildrenCount || 0}个被过滤的子节点`);
+      .text((d: D3TreeNode) => `包含${d.data.filteredChildrenCount || 0}个被过滤的子节点`);
     
+    // 在渲染树之前，处理重定向节点
+    const redirectNodes = nodes.filter(node => node.type === 'redirect');
+    if (redirectNodes.length > 0) {
+      console.log(`检测到 ${redirectNodes.length} 个重定向节点`);
+      
+      // 为重定向节点添加特殊样式
+      redirectNodes.forEach(node => {
+        // 添加样式标记，可在渲染时使用
+        (node as any).isRedirect = true;
+      });
+    }
+
     // 添加交互
-    node.on('click', function(event: MouseEvent, d: any) {
+    node.on('click', function(event: MouseEvent, d: D3TreeNode) {
       if (d.data.id === 'session-root') return;
       
       // 显示节点详情
@@ -484,6 +519,13 @@ export function renderTreeLayout(
       
       d3.select(event.currentTarget as Element)
         .classed('highlighted', true);
+    });
+
+    // 在渲染节点时应用特殊样式
+    node.each(function(this: SVGImageElement, d: D3TreeNode) {
+      if (d.data && d.data.type === 'redirect') {
+        d3.select(this).classed('redirect', true);
+      }
     });
 
     // 应用初始变换以适应视图
@@ -537,5 +579,125 @@ export function renderTreeLayout(
       .attr('fill', 'red')
       .text(`渲染错误: ${err instanceof Error ? err.message : '未知错误'}`);
   }
+}
 
+/**
+ * 规范化链接数据，确保source和target都是字符串ID
+ * @param links 原始链接数据
+ * @returns 规范化后的链接数据
+ */
+function normalizeLinks(links: any[]): NavLink[] {
+  return links.map(link => ({
+    id: link.id || `link-${Math.random().toString(36).substring(2, 9)}`,
+    source: typeof link.source === 'object' ? link.source.id : link.source,
+    target: typeof link.target === 'object' ? link.target.id : link.target,
+    type: link.type || ''
+  }));
+}
+
+/**
+ * 检测并移除导致循环的连接
+ * @param nodes 节点列表
+ * @param links 连接列表 (已规范化为NavLink)
+ * @returns 安全连接列表（已移除循环连接）
+ */
+function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLink[] {
+  console.log('检测并打破循环...');
+  
+  // 创建节点ID映射表
+  const nodeById: Record<string, boolean> = {};
+  nodes.forEach(node => {
+    nodeById[node.id] = true;
+  });
+  
+  // 构建图的邻接表表示
+  const graph: Record<string, string[]> = {};
+  nodes.forEach(node => {
+    graph[node.id] = [];
+  });
+  
+  // 填充图 - 直接使用NavLink的source和target
+  links.forEach(link => {
+    if (graph[link.source]) {
+      graph[link.source].push(link.target);
+    }
+  });
+  
+  // 用来跟踪已发现的循环
+  const cyclicLinks: Set<string> = new Set();
+  
+  // 用DFS检测循环
+  function detectCycle(nodeId: string, visited: Set<string>, path: Set<string>, pathList: string[]): boolean {
+    // 当前节点已在路径中 -> 发现循环!
+    if (path.has(nodeId)) {
+      console.warn('检测到循环:', [...pathList, nodeId].join(' -> '));
+      
+      // 标记循环中的所有边
+      const cycleStart = pathList.indexOf(nodeId);
+      if (cycleStart >= 0) {
+        const cycle = pathList.slice(cycleStart);
+        cycle.push(nodeId);
+        
+        // 生成循环中的边
+        for (let i = 0; i < cycle.length - 1; i++) {
+          const linkId = `${cycle[i]}->${cycle[i+1]}`;
+          cyclicLinks.add(linkId);
+        }
+      }
+      
+      return true;
+    }
+    
+    // 已访问但不在当前路径中 -> 无循环
+    if (visited.has(nodeId)) {
+      return false;
+    }
+    
+    // 标记为已访问并添加到当前路径
+    visited.add(nodeId);
+    path.add(nodeId);
+    pathList.push(nodeId);
+    
+    // 检查所有邻居节点
+    const neighbors = graph[nodeId] || [];
+    for (const neighbor of neighbors) {
+      if (detectCycle(neighbor, visited, path, pathList)) {
+        return true;
+      }
+    }
+    
+    // 回溯时从路径中移除节点
+    path.delete(nodeId);
+    pathList.pop();
+    
+    return false;
+  }
+  
+  // 对每个未访问节点开始DFS
+  const visited = new Set<string>();
+  for (const nodeId in graph) {
+    if (!visited.has(nodeId)) {
+      detectCycle(nodeId, visited, new Set<string>(), []);
+    }
+  }
+  
+  // 过滤掉导致循环的连接
+  const safeLinks = links.filter(link => {
+    // 确保source和target都是字符串ID
+    const source = link.source;
+    const target = link.target;
+    
+    const linkId = `${source}->${target}`;
+    const isSafe = !cyclicLinks.has(linkId);
+    
+    if (!isSafe) {
+      console.log(`跳过导致循环的连接: ${source} -> ${target}`);
+    }
+    
+    return isSafe;
+  });
+  
+  console.log(`检测出 ${cyclicLinks.size} 条导致循环的连接，剩余 ${safeLinks.length} 条安全连接`);
+  
+  return safeLinks;
 }

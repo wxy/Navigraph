@@ -31,22 +31,34 @@ export interface NavigationRecord {
   url: string;                 // 必需: URL
   timestamp: number;           // 必需: 时间戳
   sessionId: string;           // 必需: 所属会话ID
-  parentId: string | null;     // 必需: 父节点ID，根节点为null
+  parentId: string;            // 必需: 父节点ID，根节点为 ''
   navigationType: NavigationType; // 必需: 导航类型
   openTarget: OpenTarget;      // 必需: 打开目标
-
-  title?: string;
-  favicon?: string;
-  firstVisit?: number;  // 首次访问时间
-  lastVisit?: number;   // 最后访问时间
-  visitCount?: number;  // 访问计数
-  reloadCount?: number; // 重新加载计数
-  activeTime?: number;
-  loadTime?: number;
-  referrer?: string;
-  frameId?: number;
-  parentFrameId?: number;
-  isClosed?: boolean;
+  source: string;              // 必需: 来源 ('chrome_api'|'content_script'|'navigation_event')
+  
+  // 可选字段 - 基本信息
+  title?: string;              // 页面标题
+  favicon?: string;            // 网站图标URL
+  
+  // 可选字段 - 时间与计数统计
+  firstVisit?: number;         // 首次访问时间
+  lastVisit?: number;          // 最后访问时间
+  visitCount?: number;         // 访问次数
+  reloadCount?: number;        // 重新加载次数
+  activeTime?: number;         // 活跃时间(毫秒)
+  loadTime?: number;           // 页面加载时间(毫秒)
+  
+  // 可选字段 - 状态
+  isClosed?: boolean;          // 是否已关闭
+  
+  // 可选字段 - 内容与关系
+  referrer?: string;           // 引用页面
+  description?: string;        // 页面描述
+  keywords?: string;           // 页面关键词
+  
+  // 可选字段 - 框架信息
+  frameId?: number;            // 框架ID
+  parentFrameId?: number;      // 父框架ID
 }
 
 /**
@@ -102,7 +114,7 @@ export interface ExtendedNavigationDetails {
 
 export type ExtendedCommittedDetails = ExtendedNavigationDetails;
 export type ExtendedTransitionDetails = ExtendedNavigationDetails;
-
+export type ExtendedCompletedDetails = ExtendedNavigationDetails;
 /**
  * Chrome原生API类型扩展
  */
@@ -113,4 +125,31 @@ declare namespace chrome {
       transitionType?: string;
     }
   }
+}
+
+// 添加待处理导航类型
+export interface PendingNavigation {
+  type: NavigationType;        // 导航类型
+  sourceNodeId?: string;       // 源节点ID
+  sourceTabId: number;         // 源标签页ID
+  sourceUrl: string;           // 源URL
+  targetUrl: string;           // 目标URL
+  isNewTab?: boolean;          // 是否在新标签页打开
+  data: any;                   // 相关数据
+  timestamp: number;           // 时间戳
+  expiresAt: number;           // 过期时间
+  targetTabId?: number;        // 目标标签页ID
+}
+
+// 添加标签页状态类型
+export interface TabState {
+  id: number;                  // 标签页ID
+  url: string;                 // 当前URL
+  title?: string;              // 标题
+  activated?: number;          // 激活时间
+  created?: number;            // 创建时间
+  lastNavigation?: number;     // 最后导航时间
+  lastNodeId?: string;         // 最后节点ID 
+  favicon?: string;            // 图标URL
+  lastActiveTime?: number;     // 最后活跃时间
 }
