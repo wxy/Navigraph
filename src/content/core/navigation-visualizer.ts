@@ -423,7 +423,7 @@ export class NavigationVisualizer {
    * 刷新可视化
    * 处理外部请求刷新可视化的消息
    */
-  refreshVisualization(data?: any): void {
+  refreshVisualization(data?: any, options: { restoreTransform?: boolean } = {}): void {
     console.log('执行刷新可视化...', data ? '使用提供的数据' : '使用现有数据');
     
     try {
@@ -445,9 +445,14 @@ export class NavigationVisualizer {
       // 重新应用过滤器
       this.applyFilters();
       
-      // 重新渲染
-      this.renderVisualization({ restoreTransform: true });
+      // 重新渲染可视化
+      this.renderVisualization({ 
+        restoreTransform: options.restoreTransform === true 
+      });
       
+      // 更新URL
+      this.updateUrl();
+
       // 更新状态栏
       this.updateStatusBar();
       
@@ -564,7 +569,10 @@ export class NavigationVisualizer {
             break;
         }
         
-        this.applyFilters();
+        console.log(`筛选器 ${filter.id} 已更改为 ${target.checked}`);
+  
+        // 使用完整的刷新流程而不是仅应用过滤器
+        this.refreshVisualization(undefined, { restoreTransform: true });
       });
     });
   }
@@ -597,11 +605,7 @@ export class NavigationVisualizer {
     // 显示数据
     this.hideNoData();
     
-    // 应用过滤器 - 替换直接渲染
-    this.applyFilters();
-    
-    // 更新状态栏
-    this.updateStatusBar();
+    this.refreshVisualization(undefined, { restoreTransform: true });
   }
   
   /**
@@ -845,15 +849,6 @@ export class NavigationVisualizer {
     
     // 从所有节点中筛选出符合条件的节点
     this.filterNodes();
-    
-    // 重新渲染可视化
-    this.renderVisualization();
-    
-    // 更新 URL
-    this.updateUrl();
-    
-    // 更新状态栏显示
-    this.updateStatusBar();
   }
   
   /**
@@ -1397,8 +1392,9 @@ export class NavigationVisualizer {
           }
           
           console.log(`筛选器 ${id} 已更改为 ${checkbox.checked}`);
-          // 应用筛选器
-          this.applyFilters();
+  
+          // 使用完整的刷新流程而不是仅应用过滤器
+          this.refreshVisualization(undefined, { restoreTransform: true });
         });
         
         console.log(`已绑定筛选器 ${id}, 初始状态: ${checkbox.checked}`);
