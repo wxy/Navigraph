@@ -691,19 +691,15 @@ export class NavigationVisualizer {
       this.initializeSvg();
       
       // 重新渲染
-      this.renderVisualization();
+      this.refreshVisualization(undefined, { restoreTransform: true });
       
-      // 更新 URL
-      const url = new URL(window.location.href);
-      url.searchParams.set('view', view);
-      window.history.replaceState(null, '', url);
     } catch (error) {
       console.error('切换视图失败:', error);
       
       // 恢复到先前的视图
       this.currentView = previousView;
       this.updateViewButtonsState();
-      this.renderVisualization();
+      this.refreshVisualization(undefined, { restoreTransform: true });
     }
   }
   
@@ -962,11 +958,11 @@ export class NavigationVisualizer {
     if (!this.statusBar || !this.currentSession) return;
     
     try {
-      // 计算统计数据
+      // 计算关键统计数据
       const totalNodes = this.nodes.length;
-      const totalEdges = this.edges.length;
-      const uniqueUrls = new Set(this.nodes.map(node => node.url)).size;
-      const navigations = this.edges.filter(edge => !edge.generated).length;
+      
+      // 过滤的节点数量
+      const filteredCount = this.allNodes ? this.allNodes.length - this.nodes.length : 0;
       
       // 计算会话时长
       let sessionDuration = 0;
@@ -975,18 +971,37 @@ export class NavigationVisualizer {
         sessionDuration = Math.floor((endTime - this.currentSession.startTime) / 60000); // 分钟
       }
       
-      // 过滤的节点数量
-      const filteredCount = 0; // 这将由过滤实现提供
+      // 获取当前视图类型的显示名称
+      const viewName = this.currentView === 'tree' ? '树形图' : '时间线';
+  
+      // 获取当前缩放比例
+      let zoomLevel = 1.0;
+      if (this.zoom) {
+        if (this._savedTransform && this._savedTransform.k) {
+          zoomLevel = this._savedTransform.k;
+        } else if (this.svg) {
+          const transform = window.d3.zoomTransform(this.svg.node());
+          if (transform) {
+            zoomLevel = transform.k;
+          }
+        }
+      }
       
-      // 定义要更新的状态项
+      // 格式化缩放级别，保留两位小数
+      const formattedZoom = zoomLevel.toFixed(2);
+      
+      // 格式化会话日期
+      const sessionDate = this.currentSession.startTime ? 
+        new Date(this.currentSession.startTime).toLocaleDateString() : '未知';
+  
+      // 定义简化后的状态项
       const statusUpdates = {
+        'status-date': `会话日期: ${sessionDate}`,
+        'status-duration': `时长: ${sessionDuration}分钟`,
         'status-nodes': `节点: ${totalNodes}`,
-        'status-edges': `连接: ${totalEdges}`,
-        'status-pages': `页面: ${uniqueUrls}`,
-        'status-navigations': `导航: ${navigations}`,
-        'status-time': `时间: ${sessionDuration}分钟`,
-        'status-filtered': `已过滤: ${filteredCount}`,
-        'status-message': '就绪'
+        'status-filtered': `已隐藏: ${filteredCount}`,
+        'status-view': `视图: ${viewName}`,
+        'status-zoom': `缩放: ${formattedZoom}x`
       };
       
       // 批量更新状态栏
@@ -994,8 +1009,8 @@ export class NavigationVisualizer {
       
     } catch (error) {
       console.error('更新状态栏失败:', error);
-      // 尝试至少更新状态消息以显示错误
-      this.updateStatusElement('status-message', '状态更新失败');
+      // 简化错误信息
+      this.updateStatusElement('status-view', '状态更新失败');
     }
   }
 
