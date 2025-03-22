@@ -1151,6 +1151,7 @@ export class NavigationVisualizer {
         case 'history_forward': typeText = '历史前进'; break;
         case 'javascript': typeText = 'JavaScript导航'; break;
         case 'tab_open': typeText = '标签页打开'; break;
+        case 'redirect': typeText = '页面重定向'; break;
       }
       
       typeValue.textContent = typeText;
