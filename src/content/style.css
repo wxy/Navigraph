@@ -978,7 +978,6 @@ path.link.closed, .edge.closed {
 .node.session text {
   fill: white;
   text-anchor: middle;
-  dominant-baseline: middle;
 }
 
 /* 节点类型颜色 */
