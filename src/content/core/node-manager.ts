@@ -81,11 +81,11 @@ export class NodeManager {
       // 转换为边数组
       this.edges = edgeIds.map(id => this.convertToNavLink(edgeMap[id]));
       
-      // 添加基于重构的父子关系创建附加边
-      this.enhanceEdgesFromParentChildRelationships();
-      
       // 构建节点映射表
       this.buildNodeMap();
+
+      // 添加基于重构的父子关系创建附加边
+      this.enhanceEdgesFromParentChildRelationships();
       
       console.log('会话数据处理完成');
       console.log('节点:', this.nodes.length);
