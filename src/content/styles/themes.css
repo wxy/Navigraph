@@ -1,0 +1,532 @@
+/* 暗色主题 */
+[data-theme="dark"] {
+  --background-color: #1a1d21;
+  --card-bg: #272b33;
+  --text-color: #e0e0e0;         /* 主文本颜色 - 亮色 */
+  --label-color: #a0a0a0;        /* 标签文本颜色 - 中等亮度 */
+  --border-color: #3a3f48;
+  --node-bg: #333842;
+  --node-hover: #3e4350;
+  --node-selected: #4a6ee0;
+  --link-color: rgba(255, 255, 255, 0.3);
+  --status-bg: #1f232a;
+  --popup-bg: #272b33;
+  --popup-header: #1f232a;
+  --toolbar-bg: #272b33;
+  --btn-bg: #333842;
+  --btn-text: #e0e0e0;
+  --btn-hover: #3e4350;
+  --btn-primary: #4a6ee0;
+  --btn-primary-hover: #3a5ec0;
+  --scrollbar-track: #1a1d21;
+  --scrollbar-thumb: #3a3f48;
+  --zoom-controls-bg: rgba(39, 43, 51, 0.8);
+  
+  /* 新增工具栏变量 */
+  --toolbar-text: #e0e0e0;       /* 工具栏文字 - 亮色 */
+  --toolbar-border: #3a3f48;
+  --toolbar-button: #333842;
+  --toolbar-button-hover: #3e4350;
+  --toolbar-button-text: #e0e0e0;
+  
+  /* 新增筛选器变量 */
+  --filter-bg: #272b33;
+  --filter-text: #e0e0e0;
+  --filter-border: #3a3f48;
+  --filter-active: #4a6ee0;
+  --filter-hover: #3e4350;
+  
+  /* 新增状态栏变量 */
+  --status-text: #a0a0a0;
+  --status-border: #3a3f48;
+  
+  /* SVG 相关变量 */
+  --svg-node-fill: #333842;
+  --svg-node-stroke: #999999;
+  --svg-text: #e0e0e0;
+  --svg-link: rgba(255, 255, 255, 0.3);
+  --svg-background: rgba(26, 29, 33, 1);
+  
+  /* 其他变量... */
+}
+
+/* 亮色主题 */
+[data-theme="light"] {
+  --background-color: #f5f7fa;
+  --card-bg: #ffffff;
+  --text-color: #333333;
+  --label-color: #555555;
+  --border-color: #e0e0e0;
+  --node-bg: #ffffff;
+  --node-hover: #f5f5f5;
+  --node-selected: #4a6ee0;
+  --link-color: rgba(0, 0, 0, 0.2);
+  --status-bg: #f8f9fa;
+  --popup-bg: #ffffff;
+  --popup-header: #f5f7fa;
+  --toolbar-bg: #ffffff;
+  --btn-bg: #f5f7fa;
+  --btn-text: #333333;
+  --btn-hover: #e9ecef;
+  --btn-primary: #4a6ee0;
+  --btn-primary-hover: #3a5ec0;
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #d1d1d1;
+  --zoom-controls-bg: rgba(255, 255, 255, 0.8);
+  
+  /* 工具栏变量 */
+  --toolbar-text: #333333;
+  --toolbar-border: #e0e0e0;
+  --toolbar-button: #f5f7fa;
+  --toolbar-button-hover: #e9ecef;
+  --toolbar-button-text: #333333;
+  
+  /* 筛选器变量 */
+  --filter-bg: #ffffff;
+  --filter-text: #333333;
+  --filter-border: #e0e0e0;
+  --filter-active: #4a6ee0;
+  --filter-hover: #f5f5f5;
+  
+  /* 状态栏变量 */
+  --status-text: #555555;
+  --status-border: #e0e0e0;
+  
+  /* SVG 相关变量 */
+  --svg-node-fill: #ffffff;
+  --svg-node-stroke: #999999;
+  --svg-text: #333333;
+  --svg-link: rgba(0, 0, 0, 0.2);
+  --svg-background: rgba(255, 255, 255, 0.5);
+  
+  /* 其他变量... */
+}
+
+/* 视图容器 */
+.navigation-container {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* 节点样式 */
+.node-card {
+  background-color: var(--node-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.node-card:hover {
+  background-color: var(--node-hover);
+}
+
+.node-selected {
+  background-color: var(--node-selected) !important;
+  color: white;
+}
+
+/* 连接线 */
+.link {
+  stroke: var(--link-color);
+}
+
+/* 工具栏 */
+.toolbar {
+  background-color: var(--toolbar-bg);
+  color: var(--toolbar-text);
+  border-color: var(--toolbar-border);
+}
+
+.toolbar .btn {
+  background-color: var(--toolbar-button);
+  color: var(--toolbar-button-text);
+}
+
+.toolbar .btn:hover {
+  background-color: var(--toolbar-button-hover);
+}
+
+.toolbar .btn-primary {
+  background-color: var(--btn-primary);
+}
+
+.toolbar .btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+}
+
+/* 筛选器 */
+.filter-panel {
+  background-color: var(--filter-bg);
+  color: var(--filter-text);
+  border-color: var(--filter-border);
+}
+
+.filter-item {
+  color: var(--filter-text);
+}
+
+.filter-item:hover {
+  background-color: var(--filter-hover);
+}
+
+.filter-item.active {
+  background-color: var(--filter-active);
+  color: white;
+}
+
+/* 筛选器面板强制应用深色主题 */
+[data-theme="dark"] .filter-panel,
+[data-theme="dark"] .filter-container,
+[data-theme="dark"] .filters-section,
+[data-theme="dark"] .filter-group,
+[data-theme="dark"] .filter-list,
+[data-theme="dark"] .filter-header {
+  background-color: var(--filter-bg) !important;
+  color: var(--filter-text) !important;
+  border-color: var(--filter-border) !important;
+}
+
+[data-theme="dark"] .filter-title,
+[data-theme="dark"] .filter-label,
+[data-theme="dark"] .filter-count {
+  color: var(--filter-text) !important;
+}
+
+[data-theme="dark"] .filter-item {
+  background-color: transparent !important;
+  color: var(--filter-text) !important;
+}
+
+[data-theme="dark"] .filter-item:hover {
+  background-color: var(--filter-hover) !important;
+}
+
+[data-theme="dark"] .filter-item.active {
+  background-color: var(--filter-active) !important;
+  color: white !important;
+}
+
+/* 筛选器内的图标和徽章 */
+[data-theme="dark"] .filter-icon,
+[data-theme="dark"] .filter-badge {
+  color: var(--filter-text) !important;
+}
+
+/* 筛选器内的输入框和下拉菜单 */
+[data-theme="dark"] .filter-input,
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .filter-dropdown {
+  background-color: var(--node-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* 状态栏 */
+.status-bar {
+  background-color: var(--status-bg);
+  color: var(--status-text);
+  border-color: var(--status-border);
+}
+
+/* 状态栏强制应用深色主题 */
+[data-theme="dark"] .status-bar,
+[data-theme="dark"] .status-container,
+[data-theme="dark"] .app-status,
+[data-theme="dark"] .navigation-status {
+  background-color: var(--status-bg) !important;
+  color: var(--status-text) !important;
+  border-color: var(--status-border) !important;
+}
+
+[data-theme="dark"] .status-item,
+[data-theme="dark"] .status-label,
+[data-theme="dark"] .status-value,
+[data-theme="dark"] .status-info {
+  color: var(--status-text) !important;
+}
+
+/* 状态栏内的图标和徽章 */
+[data-theme="dark"] .status-icon,
+[data-theme="dark"] .status-badge {
+  color: var(--status-text) !important;
+}
+
+/* 状态栏内的按钮 */
+[data-theme="dark"] .status-button {
+  background-color: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+}
+
+[data-theme="dark"] .status-button:hover {
+  background-color: var(--btn-hover) !important;
+}
+
+/* 缩放控件 */
+.zoom-controls {
+  background-color: var(--zoom-controls-bg);
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #aaaaaa);
+}
+
+/* 为暗色主题设置特定的悬停颜色 */
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color);
+}
+
+/* SVG 元素样式 */
+[data-theme="dark"] svg {
+  /* SVG背景 */
+  background-color: var(--svg-background);
+}
+
+[data-theme="dark"] svg text {
+  fill: var(--svg-text, #e0e0e0);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+  font-size: 12px;
+}
+
+[data-theme="dark"] svg .node {
+  fill: var(--svg-node-fill);
+}
+
+[data-theme="dark"] svg .link {
+  stroke: var(--svg-link);
+}
+
+/* SVG特定元素的样式 */
+[data-theme="dark"] svg .node-label {
+  fill: var(--svg-text);
+}
+
+[data-theme="dark"] svg .node-icon {
+  fill: var(--svg-text);
+}
+
+/* 亮色主题同样设置 */
+[data-theme="light"] svg text {
+  fill: var(--svg-text, #333333);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+  font-size: 12px;
+}
+
+[data-theme="light"] svg .node {
+  fill: var(--svg-node-fill);
+}
+
+[data-theme="light"] svg .link {
+  stroke: var(--svg-link);
+}
+
+/* 确保 SVG 节点样式在主题切换时保持一致 */
+svg .node text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif !important;
+  font-size: 12px !important;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* URL 文本特殊样式 */
+svg .node text.url {
+  font-size: 10px !important;
+}
+
+/* 修复 monospace 样式在深色主题下的显示 */
+[data-theme="dark"] .monospace {
+  background-color: #333842;
+  color: #e0e0e0;
+}
+
+/* 视图切换按钮在深色主题下的样式 */
+[data-theme="dark"] .view-toggle,
+[data-theme="dark"] .view-switch,
+[data-theme="dark"] .view-buttons,
+[data-theme="dark"] .view-selector {
+  background-color: var(--toolbar-button) !important;
+  color: var(--toolbar-text) !important;
+  border-color: var(--toolbar-border) !important;
+}
+
+[data-theme="dark"] .view-toggle-button,
+[data-theme="dark"] .view-button,
+[data-theme="dark"] .toggle-view {
+  background-color: var(--toolbar-button) !important;
+  color: var(--toolbar-text) !important;
+  border-color: var(--toolbar-border) !important;
+}
+
+[data-theme="dark"] .view-toggle-button:hover,
+[data-theme="dark"] .view-button:hover,
+[data-theme="dark"] .toggle-view:hover {
+  background-color: var(--toolbar-button-hover) !important;
+}
+
+[data-theme="dark"] .view-toggle-button.active,
+[data-theme="dark"] .view-button.active,
+[data-theme="dark"] .toggle-view.active {
+  background-color: var(--btn-primary) !important;
+  color: white !important;
+}
+
+/* 视图切换按钮中的图标 */
+[data-theme="dark"] .view-icon {
+  color: var(--toolbar-text) !important;
+}
+
+/* 节点详情面板在深色主题下的样式 */
+[data-theme="dark"] .node-details,
+[data-theme="dark"] .details-panel,
+[data-theme="dark"] .node-info,
+[data-theme="dark"] .info-panel {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* 节点详情面板标题 */
+[data-theme="dark"] .node-details-title,
+[data-theme="dark"] .details-title,
+[data-theme="dark"] .info-title {
+  color: var(--text-color) !important;
+}
+
+/* 节点详情面板内容 */
+[data-theme="dark"] .node-details-content,
+[data-theme="dark"] .details-content,
+[data-theme="dark"] .info-content {
+  color: var(--text-color) !important;
+}
+
+/* 节点详情标签和值 */
+[data-theme="dark"] .detail-label,
+[data-theme="dark"] .info-label {
+  color: var(--label-color) !important;
+}
+
+[data-theme="dark"] .detail-value,
+[data-theme="dark"] .info-value {
+  color: var(--text-color) !important;
+}
+
+/* 节点详情中的链接 */
+[data-theme="dark"] .node-details a,
+[data-theme="dark"] .details-panel a,
+[data-theme="dark"] .node-info a,
+[data-theme="dark"] .info-panel a {
+  color: var(--btn-primary) !important;
+}
+
+/* 节点详情中的按钮 */
+[data-theme="dark"] .node-details .btn,
+[data-theme="dark"] .details-panel .btn,
+[data-theme="dark"] .node-info .btn,
+[data-theme="dark"] .info-panel .btn {
+  background-color: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .node-details .btn:hover,
+[data-theme="dark"] .details-panel .btn:hover,
+[data-theme="dark"] .node-info .btn:hover,
+[data-theme="dark"] .info-panel .btn:hover {
+  background-color: var(--btn-hover) !important;
+}
+
+[data-theme="dark"] .node-details .btn-primary,
+[data-theme="dark"] .details-panel .btn-primary,
+[data-theme="dark"] .node-info .btn-primary,
+[data-theme="dark"] .info-panel .btn-primary {
+  background-color: var(--btn-primary) !important;
+  color: white !important;
+}
+
+[data-theme="dark"] .node-details .btn-primary:hover,
+[data-theme="dark"] .details-panel .btn-primary:hover,
+[data-theme="dark"] .node-info .btn-primary:hover,
+[data-theme="dark"] .info-panel .btn-primary:hover {
+  background-color: var(--btn-primary-hover) !important;
+}
+
+/* 输入控件在深色主题下的样式 */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+[data-theme="dark"] .form-control {
+  background-color: var(--node-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] .form-control:focus {
+  border-color: var(--btn-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(74, 110, 224, 0.25) !important;
+}
+
+/* 卡片和面板在深色主题下的样式 */
+[data-theme="dark"] .card,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .box {
+  background-color: var(--card-bg) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .panel-header,
+[data-theme="dark"] .box-header {
+  background-color: var(--popup-header) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .card-footer,
+[data-theme="dark"] .panel-footer,
+[data-theme="dark"] .box-footer {
+  background-color: var(--popup-header) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* 处理嵌套组件的样式 */
+[data-theme="dark"] .card .card,
+[data-theme="dark"] .panel .panel,
+[data-theme="dark"] .box .box {
+  background-color: var(--node-bg) !important;
+}
+
+/* 处理颜色反转的图标 */
+[data-theme="dark"] .icon-dark {
+  filter: invert(1);
+}
+
+/* 确保所有文本颜色都正确应用 */
+[data-theme="dark"] * {
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+[data-theme="dark"] label,
+[data-theme="dark"] .label,
+[data-theme="dark"] small,
+[data-theme="dark"] .small {
+  color: var(--label-color);
+}

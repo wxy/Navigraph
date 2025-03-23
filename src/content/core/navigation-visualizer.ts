@@ -1111,10 +1111,11 @@ export class NavigationVisualizer {
     const title = document.createElement('h3');
     title.textContent = node.title || '未命名页面';
     title.style.cssText = `
-      margin: 0 0 15px 0;
-      padding-bottom: 10px;
+      margin: 30px 0 15px 0;
+      padding: 5px;
       border-bottom: 1px solid #555;
       padding-right: 20px;
+      overflow: hidden;
     `;
     panel.appendChild(title);
     
@@ -1125,7 +1126,7 @@ export class NavigationVisualizer {
     if (node.url) {
       const urlContainer = document.createElement('div');
       urlContainer.className = 'detail-item';
-      urlContainer.style.marginBottom = '10px';
+      urlContainer.style.margin = '5px';
       
       const urlLabel = document.createElement('span');
       urlLabel.textContent = 'URL: ';
@@ -1147,7 +1148,7 @@ export class NavigationVisualizer {
     if (node.type) {
       const typeContainer = document.createElement('div');
       typeContainer.className = 'detail-item';
-      typeContainer.style.marginBottom = '10px';
+      typeContainer.style.margin = '5px';
       
       const typeLabel = document.createElement('span');
       typeLabel.textContent = '类型: ';
@@ -1180,7 +1181,7 @@ export class NavigationVisualizer {
     if (node.timestamp) {
       const timeContainer = document.createElement('div');
       timeContainer.className = 'detail-item';
-      timeContainer.style.marginBottom = '10px';
+      timeContainer.style.margin = '5px';
       
       const timeLabel = document.createElement('span');
       timeLabel.textContent = '时间: ';
@@ -1198,7 +1199,7 @@ export class NavigationVisualizer {
     // 状态
     const statusContainer = document.createElement('div');
     statusContainer.className = 'detail-item';
-    statusContainer.style.marginBottom = '10px';
+    statusContainer.style.margin = '5px';
     
     const statusLabel = document.createElement('span');
     statusLabel.textContent = '状态: ';
@@ -1227,6 +1228,7 @@ export class NavigationVisualizer {
     
     const summary = document.createElement('summary');
     summary.textContent = '技术详情';
+    summary.style.margin = '5px';
     summary.style.cursor = 'pointer';
     summary.style.outline = 'none';
     
@@ -1239,7 +1241,7 @@ export class NavigationVisualizer {
     if (node.tabId) {
         const tabContainer = document.createElement('div');
         tabContainer.className = 'detail-item';
-        tabContainer.style.marginBottom = '10px';
+        tabContainer.style.margin = '5px';
         
         const tabLabel = document.createElement('span');
         tabLabel.textContent = '标签ID: ';
@@ -1255,14 +1257,14 @@ export class NavigationVisualizer {
   
     // 节点ID
     const idContainer = document.createElement('div');
-    idContainer.style.marginBottom = '8px';
+    idContainer.style.margin = '5px';
     idContainer.innerHTML = `<span style="color:#aaa">节点ID: </span>${node.id}`;
     detailContent.appendChild(idContainer);
     
     // 父节点ID
     if (node.parentId) {
       const parentContainer = document.createElement('div');
-      parentContainer.style.marginBottom = '8px';
+      parentContainer.style.margin = '5px';
       parentContainer.innerHTML = `<span style="color:#aaa">父节点ID: </span>${node.parentId}`;
       detailContent.appendChild(parentContainer);
     }
@@ -1270,7 +1272,7 @@ export class NavigationVisualizer {
     // 引用来源
     if (node.referrer) {
       const referrerContainer = document.createElement('div');
-      referrerContainer.style.marginBottom = '8px';
+      referrerContainer.style.margin = '5px';
       referrerContainer.innerHTML = `<span style="color:#aaa">引用来源: </span>${node.referrer}`;
       detailContent.appendChild(referrerContainer);
     }
@@ -1307,6 +1309,7 @@ export class NavigationVisualizer {
       left: 0;
       right: 30px; /* 留出关闭按钮的空间 */
       height: 30px;
+      background: transparent;
       cursor: move;
     `;
     element.appendChild(handle);

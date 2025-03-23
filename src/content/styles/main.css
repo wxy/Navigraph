@@ -458,13 +458,11 @@ path.link.closed, .edge.closed {
 
 .node text {
   font-size: 12px;
-  fill: #212121;
   pointer-events: none;
 }
 
 .node text.url {
   font-size: 10px;
-  fill: #757575;
 }
 
 .edge {

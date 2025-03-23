@@ -38,7 +38,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["dist/content/*", "images/*"],
+      "resources": ["dist/content/*", "dist/content/styles/*.css", "images/*"],
       "matches": ["<all_urls>"]
     }
   ],
