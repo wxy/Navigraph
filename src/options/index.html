@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigraph 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Navigraph 导航图谱 - 设置</h1>
+      <p>自定义浏览历史可视化体验</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-button active" data-tab="basic-settings">基本设置</button>
+      <button class="tab-button" data-tab="session-settings">会话管理</button>
+      <button class="tab-button" data-tab="data-settings">数据与隐私</button>
+      <button class="tab-button" data-tab="performance-settings">性能优化</button>
+    </div>
+
+    <main>
+      <!-- 基本设置选项卡 -->
+      <div id="basic-settings" class="tab-pane active">
+        <div class="card">
+          <div class="card-header">
+            <h2>界面设置</h2>
+          </div>
+          <div class="card-body">
+            <div class="setting-group">
+              <label for="theme">主题模式：</label>
+              <select id="theme">
+                <option value="light">明亮模式</option>
+                <option value="dark">暗黑模式</option>
+                <option value="system">跟随系统</option>
+              </select>
+            </div>
+
+            <div class="setting-group">
+              <label for="default-view">默认视图：</label>
+              <select id="default-view">
+                <option value="tree">树形图</option>
+                <option value="timeline">时间线</option>
+              </select>
+              <div id="view-preview" class="preview-box tree-preview">
+                <div class="preview-hint">视图预览</div>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label for="default-zoom">默认缩放级别：</label>
+              <div class="range-with-value">
+                <input type="range" id="default-zoom" min="0.5" max="2" step="0.1" value="1.0">
+                <span id="zoom-value">1.0x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 会话管理选项卡 -->
+      <div id="session-settings" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>会话创建</h2>
+          </div>
+          <div class="card-body">
+            <div class="setting-group">
+              <label for="session-mode">会话创建模式：</label>
+              <select id="session-mode">
+                <option value="daily">每日工作模式</option>
+                <option value="activity">活动感知模式</option>
+                <option value="smart">混合智能模式（推荐）</option>
+                <option value="manual">手动模式</option>
+              </select>
+              <div class="description">
+                <p><strong>每日工作模式</strong>: 每个工作日自动创建一个会话</p>
+                <p><strong>活动感知模式</strong>: 基于浏览活动自动检测会话</p>
+                <p><strong>混合智能模式</strong>: 智能结合工作日和浏览习惯</p>
+                <p><strong>手动模式</strong>: 由您手动控制会话的创建和结束</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="advanced-session-settings" class="card">
+          <div class="card-header">
+            <h2>高级会话设置</h2>
+            <div class="coming-soon-badge">即将推出</div>
+          </div>
+          <div class="card-body">
+            <p class="placeholder-text">高级会话管理选项将在后续更新中添加</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据与隐私选项卡 -->
+      <div id="data-settings" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>数据保留</h2>
+          </div>
+          <div class="card-body">
+            <div class="setting-group">
+              <label for="data-retention">保留浏览历史数据：</label>
+              <select id="data-retention">
+                <option value="7">7天</option>
+                <option value="14">14天</option>
+                <option value="30">30天</option>
+                <option value="90">90天</option>
+                <option value="180">180天</option>
+                <option value="365">1年</option>
+                <option value="0">永久保留</option>
+              </select>
+              <div class="description">
+                超过此时间的历史数据将被自动清除
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>数据管理</h2>
+          </div>
+          <div class="card-body">
+            <div class="setting-group">
+              <button id="clear-data-btn" class="btn danger">清除所有导航数据</button>
+              <div class="description warning">
+                此操作将永久删除所有收集的浏览历史数据，无法恢复
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 性能优化选项卡 -->
+      <div id="performance-settings" class="tab-pane">
+        <div class="card">
+          <div class="card-header">
+            <h2>性能设置</h2>
+            <div class="coming-soon-badge">即将推出</div>
+          </div>
+          <div class="card-body">
+            <p class="placeholder-text">性能优化选项将在后续更新中添加</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <button id="save-btn" class="btn primary">保存设置</button>
+      <button id="reset-btn" class="btn secondary">恢复默认值</button>
+    </footer>
+
+    <div id="notification" class="notification hidden">设置已保存</div>
+  </div>
+  
+  <script type="module" src="options.js"></script>
+</body>
+</html>

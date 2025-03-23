@@ -20,6 +20,17 @@ async function initialize() {
     const messageHandlerModule = await import('./core/message-handler.js');
     messageHandlerModule.setupMessageListener();
     console.log('消息处理系统设置完成');
+  
+    // 初始化主题管理器
+    console.log('初始化主题管理器...');
+    const themeManagerModule = await import('./utils/theme-manager.js');
+    const themeManager = themeManagerModule.getThemeManager();
+    
+    // 初始化主题管理器
+    themeManager.initialize();
+    
+    // 从存储读取当前设置
+    await loadAndApplyTheme(themeManager);
     
     // 然后导入并创建可视化器
     const visualizerModule = await import('./core/navigation-visualizer.js');
@@ -38,10 +49,60 @@ async function initialize() {
     
     // 设置页面活动监听器
     setupPageActivityListeners();
-    
+
+    console.log('其他初始化逻辑完成');
   } catch (error) {
     console.error('初始化可视化器失败:', error);
     showErrorMessage('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
+  }
+}
+
+/**
+ * 从存储加载并应用主题
+ */
+async function loadAndApplyTheme(themeManager: any): Promise<void> {
+  try {
+    // 尝试从本地存储直接读取主题
+    let savedTheme = null;
+    try {
+      savedTheme = localStorage.getItem('navigraph_theme');
+      if (savedTheme) {
+        console.log('从本地存储加载主题:', savedTheme);
+        themeManager.applyTheme(savedTheme);
+      }
+    } catch (localError) {
+      console.warn('从本地存储加载主题失败:', localError);
+    }
+    
+    // 然后从 chrome.storage 读取设置（这样能保持同步，但稍慢）
+    try {
+      const settings = await chrome.storage.sync.get('navigraph_settings');
+      if (settings && settings.navigraph_settings && settings.navigraph_settings.theme) {
+        console.log('从 chrome.storage 加载主题设置:', settings.navigraph_settings.theme);
+        themeManager.applyThemeSetting(settings.navigraph_settings.theme);
+      } else {
+        // 尝试单独获取 theme 键（向后兼容）
+        const themeSettings = await chrome.storage.sync.get('theme');
+        if (themeSettings && themeSettings.theme) {
+          console.log('从 chrome.storage 加载主题设置(旧格式):', themeSettings.theme);
+          themeManager.applyThemeSetting(themeSettings.theme);
+        } else if (!savedTheme) {
+          // 如果本地存储和chrome存储都没有设置，使用系统主题
+          console.log('没有找到保存的主题设置，使用系统主题');
+          themeManager.applyThemeSetting('system');
+        }
+      }
+    } catch (storageError) {
+      console.warn('从 chrome.storage 加载主题设置失败:', storageError);
+      // 如果没有从本地存储成功加载，设置为系统主题
+      if (!savedTheme) {
+        themeManager.applyThemeSetting('system');
+      }
+    }
+  } catch (error) {
+    console.error('加载主题失败:', error);
+    // 出错时尝试应用系统主题
+    themeManager.applyThemeSetting('system');
   }
 }
 

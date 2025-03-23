@@ -35,11 +35,15 @@
   ],
   "host_permissions": [
     "<all_urls>"
-],
+  ],
   "web_accessible_resources": [
     {
       "resources": ["dist/content/*", "images/*"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "options_ui": {
+    "page": "dist/options/index.html",
+    "open_in_tab": true
+  }
 }
