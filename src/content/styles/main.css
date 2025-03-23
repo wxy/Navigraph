@@ -1100,3 +1100,118 @@ path.link.closed, .edge.closed {
   font-size: 18px;
   text-anchor: middle;
 }
+
+/* 节点详情面板样式 */
+.node-details-panel {
+  position: absolute;
+  right: 20px;
+  top: 70px;
+  width: 300px;
+  background: rgba(40, 44, 52, 0.9);
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 15px;
+  color: white;
+  font-size: 14px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  transition: none; /* 禁用可能导致拖动问题的过渡效果 */
+}
+
+.node-details-panel.dragging {
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* 关闭按钮 */
+.node-details-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  outline: none;
+  z-index: 1001;
+}
+
+/* 详情面板标题 */
+.node-details-title {
+  margin: 30px 0 15px 0;
+  padding: 5px;
+  border-bottom: 1px solid #555;
+  padding-right: 20px;
+  overflow: hidden;
+  font-weight: bold;
+}
+
+/* 详情项容器 */
+.detail-item {
+  margin: 5px;
+  line-height: 1.5;
+}
+
+/* 详情标签 */
+.detail-label {
+  color: #aaa;
+}
+
+/* 详情值 */
+.detail-value {
+  color: inherit;
+}
+
+/* URL 链接 */
+.detail-url {
+  color: #6bf;
+  text-decoration: none;
+}
+
+.detail-url:hover {
+  text-decoration: underline;
+}
+
+/* 状态值 */
+.status-active {
+  color: #6f6;
+}
+
+.status-closed {
+  color: #f66;
+}
+
+/* 技术详情部分 */
+.technical-details {
+  margin-top: 15px;
+  border-top: 1px solid #444;
+  padding-top: 10px;
+}
+
+.technical-details summary {
+  margin: 5px;
+  cursor: pointer;
+  outline: none;
+}
+
+.technical-content {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #ccc;
+}
+
+/* 拖拽手柄 */
+.drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  cursor: move;
+  background: transparent;
+  z-index: 10;
+}

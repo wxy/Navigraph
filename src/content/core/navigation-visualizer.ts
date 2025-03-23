@@ -1073,50 +1073,18 @@ export class NavigationVisualizer {
     // 创建详情面板
     const panel = document.createElement('div');
     panel.className = 'node-details-panel';
-    panel.style.cssText = `
-      position: absolute;
-      right: 20px;
-      top: 70px;
-      width: 300px;
-      background: rgba(40, 44, 52, 0.9);
-      border: 1px solid #555;
-      border-radius: 8px;
-      padding: 15px;
-      color: white;
-      font-size: 14px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      max-height: calc(100vh - 140px);
-      overflow-y: auto;
-    `;
     
     // 添加关闭按钮
     const closeButton = document.createElement('button');
     closeButton.innerHTML = '&times;';
-    closeButton.style.cssText = `
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-      outline: none;
-    `;
+    closeButton.className = 'node-details-close';
     closeButton.onclick = () => panel.remove();
     panel.appendChild(closeButton);
     
     // 添加标题
     const title = document.createElement('h3');
     title.textContent = node.title || '未命名页面';
-    title.style.cssText = `
-      margin: 30px 0 15px 0;
-      padding: 5px;
-      border-bottom: 1px solid #555;
-      padding-right: 20px;
-      overflow: hidden;
-    `;
+    title.className = 'node-details-title';
     panel.appendChild(title);
     
     // 添加内容
@@ -1126,17 +1094,16 @@ export class NavigationVisualizer {
     if (node.url) {
       const urlContainer = document.createElement('div');
       urlContainer.className = 'detail-item';
-      urlContainer.style.margin = '5px';
       
       const urlLabel = document.createElement('span');
       urlLabel.textContent = 'URL: ';
-      urlLabel.style.color = '#aaa';
+      urlLabel.className = 'detail-label';
       
       const urlValue = document.createElement('a');
       urlValue.href = node.url;
       urlValue.textContent = node.url.length > 35 ? node.url.substring(0, 32) + '...' : node.url;
       urlValue.target = '_blank';
-      urlValue.style.color = '#6bf';
+      urlValue.className = 'detail-url';
       urlValue.title = node.url;
       
       urlContainer.appendChild(urlLabel);
@@ -1148,13 +1115,13 @@ export class NavigationVisualizer {
     if (node.type) {
       const typeContainer = document.createElement('div');
       typeContainer.className = 'detail-item';
-      typeContainer.style.margin = '5px';
       
       const typeLabel = document.createElement('span');
       typeLabel.textContent = '类型: ';
-      typeLabel.style.color = '#aaa';
+      typeLabel.className = 'detail-label';
       
       const typeValue = document.createElement('span');
+      typeValue.className = 'detail-value';
       
       // 将类型代码转换为更友好的描述
       let typeText = node.type;
@@ -1181,13 +1148,13 @@ export class NavigationVisualizer {
     if (node.timestamp) {
       const timeContainer = document.createElement('div');
       timeContainer.className = 'detail-item';
-      timeContainer.style.margin = '5px';
       
       const timeLabel = document.createElement('span');
       timeLabel.textContent = '时间: ';
-      timeLabel.style.color = '#aaa';
+      timeLabel.className = 'detail-label';
       
       const timeValue = document.createElement('span');
+      timeValue.className = 'detail-value';
       const date = new Date(node.timestamp);
       timeValue.textContent = date.toLocaleString();
       
@@ -1199,81 +1166,101 @@ export class NavigationVisualizer {
     // 状态
     const statusContainer = document.createElement('div');
     statusContainer.className = 'detail-item';
-    statusContainer.style.margin = '5px';
     
     const statusLabel = document.createElement('span');
     statusLabel.textContent = '状态: ';
-    statusLabel.style.color = '#aaa';
+    statusLabel.className = 'detail-label';
     
     const statusValue = document.createElement('span');
     if (node.isClosed) {
       statusValue.textContent = '已关闭';
-      statusValue.style.color = '#f66';
+      statusValue.className = 'status-closed';
     } else {
       statusValue.textContent = '活跃';
-      statusValue.style.color = '#6f6';
+      statusValue.className = 'status-active';
     }
     
     statusContainer.appendChild(statusLabel);
     statusContainer.appendChild(statusValue);
     content.appendChild(statusContainer);
     
-    // 其他属性
-    
-    // 更多技术详情 - 可折叠部分
+    // 技术详情 - 可折叠部分
     const technicalDetails = document.createElement('details');
-    technicalDetails.style.marginTop = '15px';
-    technicalDetails.style.borderTop = '1px solid #444';
-    technicalDetails.style.paddingTop = '10px';
+    technicalDetails.className = 'technical-details';
     
     const summary = document.createElement('summary');
     summary.textContent = '技术详情';
-    summary.style.margin = '5px';
-    summary.style.cursor = 'pointer';
-    summary.style.outline = 'none';
     
     const detailContent = document.createElement('div');
-    detailContent.style.marginTop = '10px';
-    detailContent.style.fontSize = '12px';
-    detailContent.style.color = '#ccc';
-
+    detailContent.className = 'technical-content';
+  
     // 标签ID
     if (node.tabId) {
-        const tabContainer = document.createElement('div');
-        tabContainer.className = 'detail-item';
-        tabContainer.style.margin = '5px';
-        
-        const tabLabel = document.createElement('span');
-        tabLabel.textContent = '标签ID: ';
-        tabLabel.style.color = '#aaa';
-        
-        const tabValue = document.createElement('span');
-        tabValue.textContent = node.tabId;
-        
-        tabContainer.appendChild(tabLabel);
-        tabContainer.appendChild(tabValue);
-        detailContent.appendChild(tabContainer);
-      }
+      const tabContainer = document.createElement('div');
+      tabContainer.className = 'detail-item';
+      
+      const tabLabel = document.createElement('span');
+      tabLabel.textContent = '标签ID: ';
+      tabLabel.className = 'detail-label';
+      
+      const tabValue = document.createElement('span');
+      tabValue.className = 'detail-value';
+      tabValue.textContent = node.tabId;
+      
+      tabContainer.appendChild(tabLabel);
+      tabContainer.appendChild(tabValue);
+      detailContent.appendChild(tabContainer);
+    }
   
     // 节点ID
     const idContainer = document.createElement('div');
-    idContainer.style.margin = '5px';
-    idContainer.innerHTML = `<span style="color:#aaa">节点ID: </span>${node.id}`;
+    idContainer.className = 'detail-item';
+    
+    const idLabel = document.createElement('span');
+    idLabel.textContent = '节点ID: ';
+    idLabel.className = 'detail-label';
+    
+    const idValue = document.createElement('span');
+    idValue.className = 'detail-value';
+    idValue.textContent = node.id;
+    
+    idContainer.appendChild(idLabel);
+    idContainer.appendChild(idValue);
     detailContent.appendChild(idContainer);
     
     // 父节点ID
     if (node.parentId) {
       const parentContainer = document.createElement('div');
-      parentContainer.style.margin = '5px';
-      parentContainer.innerHTML = `<span style="color:#aaa">父节点ID: </span>${node.parentId}`;
+      parentContainer.className = 'detail-item';
+      
+      const parentLabel = document.createElement('span');
+      parentLabel.textContent = '父节点ID: ';
+      parentLabel.className = 'detail-label';
+      
+      const parentValue = document.createElement('span');
+      parentValue.className = 'detail-value';
+      parentValue.textContent = node.parentId;
+      
+      parentContainer.appendChild(parentLabel);
+      parentContainer.appendChild(parentValue);
       detailContent.appendChild(parentContainer);
     }
     
     // 引用来源
     if (node.referrer) {
       const referrerContainer = document.createElement('div');
-      referrerContainer.style.margin = '5px';
-      referrerContainer.innerHTML = `<span style="color:#aaa">引用来源: </span>${node.referrer}`;
+      referrerContainer.className = 'detail-item';
+      
+      const referrerLabel = document.createElement('span');
+      referrerLabel.textContent = '引用来源: ';
+      referrerLabel.className = 'detail-label';
+      
+      const referrerValue = document.createElement('span');
+      referrerValue.className = 'detail-value';
+      referrerValue.textContent = node.referrer;
+      
+      referrerContainer.appendChild(referrerLabel);
+      referrerContainer.appendChild(referrerValue);
       detailContent.appendChild(referrerContainer);
     }
     
@@ -1298,54 +1285,105 @@ export class NavigationVisualizer {
    * 使元素可拖拽
    */
   private makeDraggable(element: HTMLElement): void {
-    let offsetX = 0, offsetY = 0;
+    // 状态变量
     let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let originalLeft = 0, originalTop = 0;
+    
+    // 设置初始位置 - 放置在右上角
+    element.style.position = 'absolute';
+    element.style.right = 'auto';
+    element.style.bottom = 'auto';
+    
+    // 设置右上角位置
+    const containerRect = this.container ? 
+      this.container.getBoundingClientRect() : 
+      { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+      
+    // 初始位置：右上角，距离右侧20px，距离顶部70px
+    element.style.left = `${containerRect.width - 320}px`;
+    element.style.top = '70px';
     
     // 创建拖拽手柄
     const handle = document.createElement('div');
-    handle.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 30px; /* 留出关闭按钮的空间 */
-      height: 30px;
-      background: transparent;
-      cursor: move;
-    `;
+    handle.className = 'drag-handle';
     element.appendChild(handle);
     
-    handle.addEventListener('mousedown', startDrag);
-    
-    function startDrag(e: MouseEvent) {
-      isDragging = true;
-      offsetX = e.clientX - element.getBoundingClientRect().left;
-      offsetY = e.clientY - element.getBoundingClientRect().top;
-      
-      document.addEventListener('mousemove', drag);
-      document.addEventListener('mouseup', stopDrag);
-      
-      // 防止文本选择
-      e.preventDefault();
+    // 标题也可以用来拖动
+    const title = element.querySelector('.node-details-title');
+    if (title) {
+      (title as HTMLElement).style.cursor = 'move';
     }
     
-    function drag(e: MouseEvent) {
+    // 拖动开始处理函数
+    const onDragStart = (e: MouseEvent) => {
+      // 只响应鼠标左键
+      if (e.button !== 0) return;
+      
+      // 检查目标元素是否为手柄或标题
+      const target = e.target as HTMLElement;
+      if (!(target === handle || target === title)) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 记录开始拖动时的状态
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      
+      // 记录元素原始位置
+      originalLeft = parseInt(element.style.left || '0', 10);
+      originalTop = parseInt(element.style.top || '0', 10);
+      
+      // 添加拖动中的样式
+      element.classList.add('dragging');
+      
+      // 添加文档级事件监听
+      document.addEventListener('mousemove', onDragMove);
+      document.addEventListener('mouseup', onDragEnd);
+    };
+    
+    // 拖动过程处理函数
+    const onDragMove = (e: MouseEvent) => {
       if (!isDragging) return;
       
-      const x = e.clientX - offsetX;
-      const y = e.clientY - offsetY;
+      e.preventDefault();
       
-      // 限制在视口内
-      const maxX = window.innerWidth - element.offsetWidth;
-      const maxY = window.innerHeight - element.offsetHeight;
+      // 计算拖动距离
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
       
-      element.style.left = `${Math.max(0, Math.min(x, maxX))}px`;
-      element.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
-    }
+      // 计算新位置（基于原始位置）
+      const newLeft = originalLeft + deltaX;
+      const newTop = originalTop + deltaY;
+      
+      // 限制在容器内
+      const maxX = containerRect.width - element.offsetWidth;
+      const maxY = containerRect.height - element.offsetHeight;
+      
+      // 应用新位置
+      element.style.left = `${Math.max(0, Math.min(newLeft, maxX))}px`;
+      element.style.top = `${Math.max(0, Math.min(newTop, maxY))}px`;
+    };
     
-    function stopDrag() {
+    // 拖动结束处理函数
+    const onDragEnd = () => {
+      if (!isDragging) return;
+      
+      // 清理状态
       isDragging = false;
-      document.removeEventListener('mousemove', drag);
-      document.removeEventListener('mouseup', stopDrag);
+      element.classList.remove('dragging');
+      
+      // 移除文档级事件监听
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('mouseup', onDragEnd);
+    };
+    
+    // 添加拖动开始事件监听
+    handle.addEventListener('mousedown', onDragStart);
+    if (title) {
+      title.addEventListener('mousedown', onDragStart);
     }
   }
 

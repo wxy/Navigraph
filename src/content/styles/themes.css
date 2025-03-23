@@ -530,3 +530,83 @@ svg .node text.url {
 [data-theme="dark"] .small {
   color: var(--label-color);
 }
+
+/* 节点详情面板 - 深色主题 */
+[data-theme="dark"] .node-details-panel {
+  background: rgba(40, 44, 52, 0.9);
+  border-color: #555;
+  color: #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .node-details-close {
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .node-details-title {
+  border-bottom-color: #555;
+}
+
+[data-theme="dark"] .detail-label {
+  color: #aaa;
+}
+
+[data-theme="dark"] .detail-url {
+  color: #6bf;
+}
+
+[data-theme="dark"] .status-active {
+  color: #6f6;
+}
+
+[data-theme="dark"] .status-closed {
+  color: #f66;
+}
+
+[data-theme="dark"] .technical-details {
+  border-top-color: #444;
+}
+
+[data-theme="dark"] .technical-content {
+  color: #ccc;
+}
+
+/* 节点详情面板 - 亮色主题 */
+[data-theme="light"] .node-details-panel {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #ddd;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .node-details-close {
+  color: #333;
+}
+
+[data-theme="light"] .node-details-title {
+  border-bottom-color: #ddd;
+}
+
+[data-theme="light"] .detail-label {
+  color: #666;
+}
+
+[data-theme="light"] .detail-url {
+  color: #0066cc;
+}
+
+[data-theme="light"] .status-active {
+  color: #00aa00;
+}
+
+[data-theme="light"] .status-closed {
+  color: #cc0000;
+}
+
+[data-theme="light"] .technical-details {
+  border-top-color: #eee;
+}
+
+[data-theme="light"] .technical-content {
+  color: #666;
+}
