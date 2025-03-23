@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "npm run clean && npm run copy-static-files && npm run build-background && npm run build-content && npm run build-options",
+    "build": "npm run clean && npm run copy-static-files && npm run build-lib && npm run build-background && npm run build-content && npm run build-options",
+    "build-lib": "esbuild src/lib/*.ts src/lib/**/*.ts --bundle=false --format=esm --outdir=dist/lib",
     "build-background": "esbuild src/background/*.ts src/background/**/*.ts --bundle=false --format=esm --outdir=dist/background",
     "build-content": "esbuild src/content/*.ts src/content/**/*.ts --bundle=false  --format=esm --outdir=dist/content",
     "build-options": "esbuild src/options/*.ts --bundle=false  --format=esm --outdir=dist/options",

@@ -1,26 +1,7 @@
 import { NavigationManager } from './navigation-manager.js';
-import { BrowsingSession } from './types/webext.js'; // 假设类型在此文件中
 import { MessageContext } from './lib/message-context.js'
-
-interface SessionSummary {
-  id: string;
-  title?: string;
-  startTime: number;
-  endTime?: number;
-  recordCount?: number;
-}
-
-interface GetSessionsResponse {
-  success: boolean;
-  sessions?: SessionSummary[];
-  error?: string;
-}
-
-interface GetSessionDetailsResponse {
-  success: boolean;
-  session?: BrowsingSession; // 使用您现有的BrowsingSession类型
-  error?: string;
-}
+import { NavigraphSettings } from '../lib/settings/types.js';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '../lib/settings/constants.js';
 
 /**
  * 主要的后台脚本，负责初始化跟踪器和处理消息
@@ -32,6 +13,23 @@ console.log('Navigraph 扩展已启动');
 
 // 使用navigationManager中的存储实例，而不是创建新实例
 const storage = navigationManager.getStorage();
+
+/**
+ * 初始化导航图谱后台
+ */
+(async () => {
+  try {
+    console.log('导航图谱后台初始化开始...');
+    await storage.initialize();
+    
+    // 初始化NavigationManager
+    await navigationManager.initialize();
+    
+    console.log('导航图谱后台初始化成功');
+  } catch (error) {
+    console.error('导航图谱后台初始化失败:', error);
+  }
+})();
 
 // 处理扩展安装或更新
 chrome.runtime.onInstalled.addListener((details) => {
@@ -418,23 +416,6 @@ async function getRecordCount(): Promise<number> {
     return 0;
   }
 }
-
-/**
- * 初始化导航图谱后台
- */
-(async () => {
-  try {
-    console.log('导航图谱后台初始化开始...');
-    await storage.initialize();
-    
-    // 初始化NavigationManager
-    await navigationManager.initialize();
-    
-    console.log('导航图谱后台初始化成功');
-  } catch (error) {
-    console.error('导航图谱后台初始化失败:', error);
-  }
-})();
 
 // 添加到文件合适位置 - 通常是在初始化时
 function setupDebugContextMenu() {

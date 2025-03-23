@@ -1,0 +1,233 @@
+import { NavigraphSettings, SettingsChangeListener } from './types.js';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SETTINGS_CACHE_KEY } from './constants.js';
+
+/**
+ * 设置服务类 - 单例模式
+ * 管理 Navigraph 扩展的设置
+ */
+export class SettingsService {
+  private static instance: SettingsService;
+  private currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
+  private listeners: SettingsChangeListener[] = [];
+  private initialized: boolean = false;
+  
+  /**
+   * 私有构造函数（单例模式）
+   */
+  private constructor() {
+    // 初始化
+    this.init();
+  }
+  
+  /**
+   * 获取设置服务实例
+   */
+  public static getInstance(): SettingsService {
+    if (!SettingsService.instance) {
+      SettingsService.instance = new SettingsService();
+    }
+    return SettingsService.instance;
+  }
+  
+  /**
+   * 初始化设置服务
+   */
+  private async init(): Promise<void> {
+    try {
+      // 尝试从缓存加载设置（快速响应）
+      this.loadFromCache();
+      
+      // 从存储加载设置（最新状态）
+      await this.loadFromStorage();
+      
+      // 设置初始化完成
+      this.initialized = true;
+      
+      console.log('设置服务初始化完成');
+    } catch (error) {
+      console.error('设置服务初始化失败:', error);
+    }
+  }
+  
+  /**
+   * 从本地存储缓存加载设置
+   */
+  private loadFromCache(): void {
+    try {
+      const cachedSettings = localStorage.getItem(SETTINGS_CACHE_KEY);
+      if (cachedSettings) {
+        const settings = JSON.parse(cachedSettings);
+        this.updateSettingsInternal(settings);
+      }
+    } catch (error) {
+      console.warn('从缓存加载设置失败，使用默认设置:', error);
+    }
+  }
+  
+  /**
+   * 从 Chrome 存储加载设置
+   */
+  private async loadFromStorage(): Promise<void> {
+    try {
+      const items = await chrome.storage.sync.get(SETTINGS_STORAGE_KEY);
+      
+      if (items && items[SETTINGS_STORAGE_KEY]) {
+        const settings = items[SETTINGS_STORAGE_KEY] as NavigraphSettings;
+        this.updateSettingsInternal(settings);
+      } else {
+        // 如果存储中没有设置，保存默认设置
+        await this.saveToStorage(DEFAULT_SETTINGS);
+      }
+    } catch (error) {
+      console.error('从存储加载设置失败:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 保存设置到 Chrome 存储
+   */
+  private async saveToStorage(settings: NavigraphSettings): Promise<void> {
+    try {
+      // 使用单一键存储所有设置，减少碎片化
+      await chrome.storage.sync.set({ [SETTINGS_STORAGE_KEY]: settings });
+      
+      // 同时更新本地缓存
+      this.updateCache(settings);
+    } catch (error) {
+      console.error('保存设置到存储失败:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 更新本地缓存
+   */
+  private updateCache(settings: NavigraphSettings): void {
+    try {
+      localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(settings));
+    } catch (error) {
+      console.warn('更新设置缓存失败:', error);
+    }
+  }
+  
+  /**
+   * 更新设置内部状态（不保存到存储）
+   */
+  private updateSettingsInternal(settings: Partial<NavigraphSettings>): void {
+    // 合并设置
+    this.currentSettings = {
+      ...this.currentSettings,
+      ...settings
+    };
+    
+    // 通知监听器
+    this.notifyListeners();
+  }
+  
+  /**
+   * 检查是否已初始化
+   */
+  public isInitialized(): boolean {
+    return this.initialized;
+  }
+  
+  /**
+   * 获取当前设置
+   */
+  public getSettings(): NavigraphSettings {
+    return { ...this.currentSettings };
+  }
+  
+  /**
+   * 获取特定设置项
+   */
+  public getSetting<K extends keyof NavigraphSettings>(key: K): NavigraphSettings[K] {
+    return this.currentSettings[key];
+  }
+  
+  /**
+   * 更新设置
+   */
+  public async updateSettings(settings: Partial<NavigraphSettings>): Promise<void> {
+    try {
+      // 合并新旧设置
+      const newSettings = { ...this.currentSettings, ...settings };
+      
+      // 保存到存储
+      await this.saveToStorage(newSettings);
+      
+      // 更新内部状态
+      this.updateSettingsInternal(newSettings);
+      
+      // 不再广播设置变更，改为显示用户提示
+    } catch (error) {
+      console.error('更新设置失败:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 重置为默认设置
+   */
+  public async resetSettings(): Promise<void> {
+    try {
+      // 保存默认设置
+      await this.saveToStorage(DEFAULT_SETTINGS);
+      
+      // 更新内部状态
+      this.updateSettingsInternal(DEFAULT_SETTINGS);
+      
+      // 不再广播设置变更，改为显示用户提示
+    } catch (error) {
+      console.error('重置设置失败:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 添加设置变更监听器
+   */
+  public addChangeListener(listener: SettingsChangeListener): () => void {
+    this.listeners.push(listener);
+    
+    // 如果已初始化，立即调用监听器
+    if (this.initialized) {
+      try {
+        listener(this.getSettings());
+      } catch (error) {
+        console.error('调用设置监听器失败:', error);
+      }
+    }
+    
+    // 返回移除监听器的函数
+    return () => this.removeChangeListener(listener);
+  }
+  
+  /**
+   * 移除设置变更监听器
+   */
+  public removeChangeListener(listener: SettingsChangeListener): void {
+    const index = this.listeners.indexOf(listener);
+    if (index !== -1) {
+      this.listeners.splice(index, 1);
+    }
+  }
+  
+  /**
+   * 通知所有监听器
+   */
+  private notifyListeners(): void {
+    const settings = this.getSettings();
+    for (const listener of this.listeners) {
+      try {
+        listener(settings);
+      } catch (error) {
+        console.error('通知设置监听器时出错:', error);
+      }
+    }
+  }
+}
+
+// 导出单例实例访问器
+export const getSettingsService = (): SettingsService => SettingsService.getInstance();
