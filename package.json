@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "build": "npm run clean && npm run build-background && npm run build-content && npm run copy-static-files",
+    "build": "npm run clean && npm run copy-static-files && npm run build-background && npm run build-content && npm run build-options",
     "build-background": "esbuild src/background/*.ts src/background/**/*.ts --bundle=false --format=esm --outdir=dist/background",
     "build-content": "esbuild src/content/*.ts src/content/**/*.ts --bundle=false  --format=esm --outdir=dist/content",
-    "copy-static-files": "mkdir -p dist/content && cp -r src/content/*.html src/content/*.css src/content/*.js dist/content/",
+    "build-options": "esbuild src/options/*.ts --bundle=false  --format=esm --outdir=dist/options",
+    "copy-static-files": "mkdir -pv dist/content && cp -rv src/content/*.html src/content/*.css src/content/*.js dist/content/ && mkdir -pv dist/options && cp -rv src/options/*.html src/options/*.css dist/options/",
     "clean": "rm -rf dist",
     "watch": "npm run build -- --watch",
     "package": "zip -r ../navigraph.zip * --exclude @.gitignore"
