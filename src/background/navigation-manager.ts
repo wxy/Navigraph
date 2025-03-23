@@ -1,5 +1,5 @@
-import { NavigationStorage } from '../lib/storage.js';
-import { IdGenerator } from '../lib/id-generator.js';
+import { NavigationStorage } from './lib/storage.js';
+import { IdGenerator } from './lib/id-generator.js';
 import { 
   NavigationRecord,
   NavigationEdge,
@@ -11,7 +11,7 @@ import {
   ExtendedTransitionDetails,
   TabState,
   PendingNavigation
-} from '../types/webext';
+} from './types/webext';
 
 /**
  * 导航管理器 - 负责创建和管理导航节点、事件和关系

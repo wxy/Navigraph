@@ -1,8 +1,6 @@
 import { NavigationManager } from './navigation-manager.js';
-import { NavigationStorage } from '../lib/storage.js';
-import { BrowsingSession } from '../types/webext.js'; // 假设类型在此文件中
-import { IdGenerator } from '../lib/id-generator.js';
-import { MessageContext } from '../lib/message-context.js'
+import { BrowsingSession } from './types/webext.js'; // 假设类型在此文件中
+import { MessageContext } from './lib/message-context.js'
 
 interface SessionSummary {
   id: string;
