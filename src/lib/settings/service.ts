@@ -15,8 +15,7 @@ export class SettingsService {
    * 私有构造函数（单例模式）
    */
   private constructor() {
-    // 初始化
-    this.init();
+
   }
   
   /**
@@ -32,7 +31,7 @@ export class SettingsService {
   /**
    * 初始化设置服务
    */
-  private async init(): Promise<void> {
+  public async initialize(): Promise<void> {
     try {
       // 尝试从缓存加载设置（快速响应）
       this.loadFromCache();
@@ -74,9 +73,20 @@ export class SettingsService {
       if (items && items[SETTINGS_STORAGE_KEY]) {
         const settings = items[SETTINGS_STORAGE_KEY] as NavigraphSettings;
         this.updateSettingsInternal(settings);
+        // 更新本地缓存
+        this.updateCache(settings);
+        console.log('已从存储加载设置:', settings);
       } else {
+        console.log('存储中没有找到设置，使用默认值');
         // 如果存储中没有设置，保存默认设置
-        await this.saveToStorage(DEFAULT_SETTINGS);
+        if (this.initialized) {
+          // 如果已经初始化，只更新内部状态，不保存到存储
+          // 避免重复存储操作
+          this.updateSettingsInternal(DEFAULT_SETTINGS);
+        } else {
+          // 首次初始化，保存默认设置到存储
+          await this.saveToStorage(DEFAULT_SETTINGS);
+        }
       }
     } catch (error) {
       console.error('从存储加载设置失败:', error);
@@ -186,6 +196,23 @@ export class SettingsService {
   }
   
   /**
+   * 刷新设置
+   * 从存储中重新加载最新设置
+   */
+  public async refreshSettings(): Promise<NavigraphSettings> {
+    try {
+      // 重新从存储加载设置
+      await this.loadFromStorage();
+      
+      // 返回最新的设置
+      return this.getSettings();
+    } catch (error) {
+      console.error('刷新设置失败:', error);
+      return this.getSettings(); // 即使出错也返回当前设置
+    }
+  }
+  
+  /**
    * 添加设置变更监听器
    */
   public addChangeListener(listener: SettingsChangeListener): () => void {
@@ -231,3 +258,14 @@ export class SettingsService {
 
 // 导出单例实例访问器
 export const getSettingsService = (): SettingsService => SettingsService.getInstance();
+
+// 以下是便捷的快捷函数，可以直接使用
+export const getSettings = (): NavigraphSettings => getSettingsService().getSettings();
+export const getSetting = <K extends keyof NavigraphSettings>(key: K): NavigraphSettings[K] => 
+  getSettingsService().getSetting(key);
+export const refreshSettings = (): Promise<NavigraphSettings> => 
+  getSettingsService().refreshSettings();
+export const updateSettings = (settings: Partial<NavigraphSettings>): Promise<void> => 
+  getSettingsService().updateSettings(settings);
+export const resetSettings = (): Promise<void> => 
+  getSettingsService().resetSettings();
