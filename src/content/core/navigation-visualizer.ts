@@ -1383,7 +1383,7 @@ export class NavigationVisualizer {
     // 添加拖动开始事件监听
     handle.addEventListener('mousedown', onDragStart);
     if (title) {
-      title.addEventListener('mousedown', onDragStart);
+      handle.addEventListener('mousedown', onDragStart);
     }
   }
 

@@ -1,4 +1,4 @@
-/* 全局样式 */
+/* ========== 基础样式 ========== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,13 +7,14 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
-  color: #333;
-  background-color: #f5f5f5;
+  color: var(--text-color, #333);
+  background-color: var(--background-color, #f5f5f5);
   line-height: 1.5;
   height: 100vh;
   overflow: hidden;
 }
 
+/* ========== 布局组件 ========== */
 /* 主布局容器 */
 .app-container {
   display: flex;
@@ -21,6 +22,8 @@ body {
   height: 100vh;
   width: 100%;
   overflow: hidden;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 /* 顶部工具栏 */
@@ -29,11 +32,12 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: var(--toolbar-bg, #ffffff);
+  border-bottom: 1px solid var(--toolbar-border, #e0e0e0);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   z-index: 10;
   flex: 0 0 auto; /* 不伸缩，保持自身高度 */
+  color: var(--toolbar-text, #333333);
 }
 
 .logo {
@@ -52,6 +56,7 @@ body {
   font-weight: 500;
 }
 
+/* 会话控制 */
 .session-controls {
   display: flex;
   align-items: center;
@@ -60,34 +65,38 @@ body {
 
 #session-selector {
   padding: 6px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   font-size: 14px;
   min-width: 200px;
+  background-color: var(--node-bg);
+  color: var(--text-color);
 }
 
+/* 视图模式切换 */
 .view-mode {
   display: flex;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .view-mode button {
-  background: none;
+  background: var(--toolbar-button, none);
   border: none;
   padding: 6px 12px;
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
+  color: var(--toolbar-button-text, #333);
 }
 
 .view-mode button:hover {
-  background-color: #f0f0f0;
+  background-color: var(--toolbar-button-hover, #f0f0f0);
 }
 
 .view-mode button.active {
-  background-color: #4285f4;
+  background-color: var(--btn-primary, #4285f4);
   color: white;
 }
 
@@ -97,26 +106,29 @@ body {
   display: flex;
   overflow: hidden;
   position: relative; /* 为绝对定位的子元素提供参考 */
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
-/* 左侧筛选面板 */
+/* ========== 筛选面板 ========== */
 .filters-panel {
   width: 250px;
   min-width: 250px;
   padding: 16px;
-  background-color: #fff;
-  border-right: 1px solid #e0e0e0;
+  background-color: var(--filter-bg, #fff);
+  border-right: 1px solid var(--filter-border, #e0e0e0);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  color: var(--filter-text, #333);
 }
 
 .filters-panel h2 {
   font-size: 16px;
   font-weight: 500;
   margin-bottom: 12px;
-  color: #424242;
+  color: var(--label-color, #424242);
 }
 
 .filter-section {
@@ -127,7 +139,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 8px;
-  color: #616161;
+  color: var(--label-color, #616161);
 }
 
 .filter-option {
@@ -146,40 +158,43 @@ body {
 .filter-option label {
   font-size: 14px;
   cursor: pointer;
+  color: var(--filter-text);
 }
 
 .statistics {
   margin-top: auto;
   padding-top: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border-color, #e0e0e0);
 }
 
 .statistics h3 {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 8px;
-  color: #616161;
+  color: var(--label-color, #616161);
 }
 
 .statistics div {
   font-size: 13px;
-  color: #757575;
+  color: var(--label-color, #757575);
   margin-bottom: 4px;
 }
 
-
-/* 中间可视化区域 */
+/* ========== 可视化区域 ========== */
 .visualization-container {
   flex: 1;
   position: relative;
   overflow: hidden;
   min-height: 500px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-color, #333);
+  background-color: var(--background-color);
 }
+
 /* 确保其他元素不会意外挤压可视化容器 */
 .controls-bar, .status-bar {
   flex-shrink: 0;
 }
+
 #visualization {
   width: 100%;
   height: 100%;
@@ -189,13 +204,14 @@ body {
   width: 100%;
   height: 100%;
   cursor: grab;
+  background-color: var(--svg-background);
 }
 
 #visualization svg:active {
   cursor: grabbing;
 }
 
-/* 加载和无数据状态 */
+/* ========== 加载和无数据状态 ========== */
 #loading, #no-data {
   position: absolute;
   top: 0;
@@ -230,7 +246,7 @@ body {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #4285f4;
+  border-top: 4px solid var(--btn-primary, #4285f4);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -249,22 +265,23 @@ body {
 #no-data h2 {
   font-size: 18px;
   font-weight: 500;
-  color: #616161;
+  color: #fff;
 }
 
 #no-data p {
   font-size: 14px;
-  color: #9e9e9e;
+  color: #ddd;
 }
 
-/* 右侧详情面板 */
+/* ========== 详情面板 ========== */
 .details-container {
   width: 300px;
   min-width: 300px;
   padding: 16px;
-  background-color: #fff;
-  border-left: 1px solid #e0e0e0;
+  background-color: var(--card-bg, #fff);
+  border-left: 1px solid var(--border-color, #e0e0e0);
   overflow-y: auto;
+  color: var(--text-color);
 }
 
 #details-pane {
@@ -279,7 +296,7 @@ body {
 }
 
 #details-pane .empty-state p {
-  color: #9e9e9e;
+  color: var(--label-color, #9e9e9e);
   font-size: 15px;
 }
 
@@ -296,7 +313,7 @@ body {
 }
 
 #details-pane a {
-  color: #4285f4;
+  color: var(--btn-primary, #4285f4);
   text-decoration: none;
 }
 
@@ -304,36 +321,74 @@ body {
   text-decoration: underline;
 }
 
-/* 底部状态栏 */
+/* ========== 状态栏 ========== */
 .status-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 6px 16px;
-  background-color: #f5f5f5;
-  border-top: 1px solid #e0e0e0;
+  background-color: var(--status-bg, #f5f5f5);
+  border-top: 1px solid var(--status-border, #e0e0e0);
   font-size: 13px;
-  color: #757575;
+  color: var(--status-text, #757575);
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   padding: 5px 10px;
-  background: rgba(30, 30, 30, 0.8);
-  color: #ddd;
-  font-size: 12px;
-  border-top: 1px solid #555;
+  z-index: 5;
 }
 
 .status-bar.zoomed-out {
-  color: #aaa;
+  opacity: 0.8;
 }
 
 .status-bar.zoomed-in {
-  color: #fff;
+  opacity: 1;
 }
 
-/* 工具提示 */
+/* ========== Windows风格状态栏 ========== */
+.windows-status-bar {
+  display: flex;
+  background-color: var(--status-bg, #f0f0f0);
+  border-top: 1px solid var(--status-border, #ddd);
+  height: 24px;
+  align-items: stretch;
+  font-size: 12px;
+  color: var(--status-text, #333);
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+  flex: 0 0 auto;
+}
+
+.status-cell {
+  padding: 0 8px;
+  border: 1px solid;
+  border-color: var(--status-border-dark, #808080) var(--status-border-light, #fff) var(--status-border-light, #fff) var(--status-border-dark, #808080);
+  background-color: var(--status-cell-bg, #e0e0e0);
+  display: flex;
+  align-items: center;
+  margin-right: 2px;
+  min-width: 80px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.status-cell-stretch {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-cell-highlight {
+  font-weight: 500;
+}
+
+/* ========== 工具提示 ========== */
 #tooltip {
   position: absolute;
   display: none;
@@ -365,58 +420,47 @@ body {
   opacity: 0.9;
 }
 
-/* 节点和连线样式 */
+/* ========== SVG 元素样式 ========== */
+/* 基本节点样式 */
 .node rect {
-  fill: white;
-  stroke: #ddd;
+  fill: var(--svg-node-fill, white);
+  stroke: var(--svg-node-stroke, #ddd);
   stroke-width: 1px;
 }
 
-/* 已关闭的节点 - 圆形样式（针对时间线视图） */
+.node circle {
+  fill: var(--svg-node-fill);
+  stroke: var(--svg-node-stroke);
+  stroke-width: 2px; /* 增加边框宽度以增强可见性 */
+}
+
+/* 已关闭的节点样式 */
 .node.closed circle {
-  fill: #f5f5f5;
+  fill: var(--node-bg, #f5f5f5);
   stroke-dasharray: 3, 3;
   opacity: 0.7;
 }
 
 .node.closed rect {
-  fill: #f5f5f5;
+  fill: var(--node-bg, #f5f5f5);
   stroke-dasharray: 3, 3;
   opacity: 0.7;
 }
 
-/* 为已关闭节点添加额外标记 */
-.node.closed::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  top: -6px;
-  right: -6px;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23999"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  pointer-events: none; /* 确保不干扰鼠标事件 */
-}
-
-/* 降低关闭节点的文本不透明度 */
+/* 已关闭节点文本 */
 .node.closed text {
   opacity: 0.7;
 }
 
-/* 降低关闭节点的连接线不透明度 */
+/* 连接线样式 */
 path.link.closed, .edge.closed {
   opacity: 0.5;
   stroke-dasharray: 3, 3;
 }
 
-/* 跟踪页面的样式 */
+/* 跟踪页面样式 */
 .node.tracking {
-  opacity: 0.6; /* 半透明 */
+  opacity: 0.6;
 }
 
 .node.tracking circle {
@@ -425,8 +469,8 @@ path.link.closed, .edge.closed {
 }
 
 .edge.tracking {
-  stroke-dasharray: 2, 2; /* 虚线连接 */
-  opacity: 0.5; /* 半透明 */
+  stroke-dasharray: 2, 2;
+  opacity: 0.5;
 }
 
 .filtered-indicator {
@@ -445,35 +489,50 @@ path.link.closed, .edge.closed {
   font-weight: 500;
 }
 
+/* 根节点样式 */
 .node.root rect {
-  stroke: #4285f4;
+  stroke: var(--btn-primary, #4285f4);
   stroke-width: 2px;
 }
 
+/* 选中节点样式 */
 .node.selected rect {
-  stroke: #4285f4;
+  stroke: var(--btn-primary, #4285f4);
   stroke-width: 2px;
-  fill: #e8f0fe;
+  fill: var(--node-hover, #e8f0fe);
 }
 
+/* 节点文本样式 */
 .node text {
   font-size: 12px;
   pointer-events: none;
+  fill: var(--svg-text, #333);
+  text-anchor: middle; /* 确保文本居中 */
+  dominant-baseline: middle; /* 垂直方向也居中 */
 }
 
+.node text.title {
+  text-anchor: middle !important; /* 强制居中标题文本 */
+  dominant-baseline: text-after-edge; /* 文本位于节点下方 */
+}
+svg .node-label {
+  text-anchor: middle;
+}
 .node text.url {
   font-size: 10px;
+  fill: var(--label-color, #555);
 }
 
+/* 边线样式 */
 .edge {
   fill: none;
-  stroke: #bdbdbd;
+  stroke: var(--svg-link, rgba(0, 0, 0, 0.2));
   stroke-width: 1.5px;
   opacity: 0.6;
 }
 
 .edge.highlighted {
-  stroke: #4285f4;
+  stroke: var(--btn-primary, #4285f4);
   stroke-width: 2px;
   opacity: 1;
 }
@@ -486,19 +545,7 @@ path.link.closed, .edge.closed {
   stroke: #ff9800;
 }
 
-/* 深度颜色差异 */
-.node.depth-0 rect { stroke: #4285f4; }
-.node.depth-1 rect { stroke: #0f9d58; }
-.node.depth-2 rect { stroke: #f4b400; }
-.node.depth-3 rect { stroke: #db4437; }
-.node.depth-4 rect { stroke: #673ab7; }
-.node.depth-5 rect { stroke: #00bcd4; }
-.node.depth-6 rect { stroke: #ff5722; }
-.node.depth-7 rect { stroke: #607d8b; }
-.node.depth-8 rect { stroke: #795548; }
-.node.depth-9 rect { stroke: #9c27b0; }
-
-/* 节点和边样式 */
+/* 节点交互样式 */
 .node {
   cursor: pointer;
 }
@@ -506,10 +553,6 @@ path.link.closed, .edge.closed {
 .node.highlighted circle {
   stroke: #ff6600;
   stroke-width: 3px;
-}
-
-.node.session text {
-  font-weight: bold;
 }
 
 .link {
@@ -520,177 +563,197 @@ path.link.closed, .edge.closed {
   stroke-width: 3px;
 }
 
-/* 导航类型的颜色 */
-.node.link_click circle {
-  fill: #7cb9e8;
-}
-
-.node.address_bar circle {
-  fill: #c0e8a5;
-}
-
-.node.form_submit circle {
-  fill: #f5d76e;
-}
-
-.node.reload circle {
-  fill: #bcbcbc;
-}
-
-.node.history_back circle,
-.node.history_forward circle {
-  fill: #d3a4f9;
-}
-
-.node.redirect circle {
-  fill: #ff9966;
-}
-
-.node.javascript circle {
-  fill: #66ccff;
-}
-
-.node.session rect {
-  fill: #FFF;
-}
-
-/* 节点详情面板 */
-#node-details {
+/* ========== 节点详情面板 ========== */
+.node-details-panel {
   position: absolute;
-  top: 20px;
   right: 20px;
+  top: 70px;
   width: 300px;
-  background: #fff;
+  background: var(--popup-bg, rgba(40, 44, 52, 0.9));
+  border: 1px solid var(--border-color, #555);
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   padding: 15px;
-  display: none;
-  z-index: 100;
+  color: var(--text-color, white);
+  font-size: 14px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  transition: none !important; /* 禁用可能导致拖动问题的过渡效果 */
 }
 
-#node-details.visible {
-  display: block;
+/* 拖动时样式 */
+.node-details-panel.dragging {
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.9;
 }
 
-#node-details h3 {
-  margin-top: 0;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-#node-details .details-header
-{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#node-details .details-header .close-btn {
-  width: 16px;
-  height: 16px;
+/* 关闭按钮 */
+.node-details-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-color, white);
+  font-size: 18px;
   cursor: pointer;
+  outline: none;
+  z-index: 1001;
 }
 
-.detail-row {
-  margin-bottom: 8px;
-  display: flex;
-  flex-direction: column;
+/* 详情面板标题 */
+.node-details-title {
+  margin: 30px 0 15px 0;
+  padding: 5px;
+  border-bottom: 1px solid var(--border-color, #555);
+  padding-right: 20px;
+  overflow: hidden;
+  font-weight: bold;
+  color: var(--text-color) !important;
 }
 
-.detail-row .label {
-  font-weight: 500;
-  color: #888;
-  margin-bottom: 2px;
+/* 详情项容器 */
+.detail-item {
+  margin: 5px;
+  line-height: 1.5;
+  color: var(--text-color) !important;
 }
 
-.detail-row .value, 
-.detail-row a {
-  word-break: break-all;
+/* 详情标签 */
+.detail-label {
+  color: var(--label-color) !important;
 }
 
-.url-link {
-  color: #4285f4;
+/* 详情值 */
+.detail-value {
+  color: var(--text-color) !important;
+}
+
+/* URL 链接 */
+.detail-url {
+  color: var(--btn-primary, #6bf);
   text-decoration: none;
 }
 
-.url-link:hover {
+.detail-url:hover {
   text-decoration: underline;
 }
 
-.tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  color: white;
+/* 状态值 */
+.status-active {
+  color: #6f6;
 }
 
-.type-link_click { background-color: #7cb9e8; }
-.type-address_bar { background-color: #c0e8a5; }
-.type-form_submit { background-color: #f5d76e; color: #333; }
-.type-reload { background-color: #bcbcbc; }
-.type-history_back, .type-history_forward { background-color: #d3a4f9; }
-.type-redirect { background-color: #ff9966; }
-.type-javascript { background-color: #66ccff; }
+.status-closed {
+  color: #f66;
+}
 
-.actions {
+/* 技术详情部分 */
+.technical-details {
   margin-top: 15px;
-  display: flex;
-  gap: 10px;
-}
-
-/* 调试工具样式 */
-.debug-section {
-  border-top: 1px dashed #ff6600;
-  margin-top: 20px;
+  border-top: 1px solid var(--border-color, #444);
   padding-top: 10px;
 }
 
-.debug-btn {
-  display: block;
-  width: 100%;
-  margin: 5px 0;
-  padding: 8px;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 4px;
+.technical-details summary {
+  margin: 5px;
   cursor: pointer;
-  font-size: 13px;
+  outline: none;
+  color: var(--text-color);
 }
 
-.debug-btn:hover {
-  background-color: #444;
+.technical-content {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--label-color, #ccc);
 }
 
-.debug-btn.danger {
-  background-color: #c62828;
-}
-
-.debug-btn.danger:hover {
-  background-color: #e53935;
-}
-
-/* 调试工具 - 可在需要时取消注释 */
-/*
-[id]:empty {
-  min-height: 30px;
-  border: 1px dashed red;
-  position: relative;
-}
-
-[id]:empty::after {
-  content: attr(id);
+/* 拖拽手柄 */
+.drag-handle {
   position: absolute;
   top: 0;
   left: 0;
-  background: rgba(255,0,0,0.2);
-  color: #fff;
-  font-size: 10px;
-  padding: 2px;
+  right: 30px; /* 为关闭按钮留出空间 */
+  height: 30px;
+  cursor: move;
+  background: transparent;
+  z-index: 10;
 }
-*/
 
-/* 响应式调整 */
+/* ========== 时间线相关样式 ========== */
+.timeline-svg {
+  filter: drop-shadow(0px -2px 3px rgba(0,0,0,0.3));
+  transition: width 0.1s ease-out;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overflow: visible !important;
+  z-index: 10 !important;
+  background-color: var(--svg-background) !important;
+}
+
+/* 时间轴背景样式 */
+.timeline-svg .timeline-background,
+.timeline-svg rect.time-axis-background {
+  fill: var(--card-bg);
+  width: 100%;
+}
+
+/* 时间轴刻度文字样式 */
+.time-axis .tick text {
+  font-weight: 400;
+  font-size: 10px;
+  fill: var(--svg-text, #eee) !important;
+}
+
+/* 时间轴线条样式 */
+.time-axis-group .time-axis .domain {
+  stroke-width: 1px;
+  opacity: 0.7;
+  stroke: var(--border-color, #444);
+}
+
+/* 时间线网格样式 */
+.time-axis-group .grid .tick line {
+  opacity: 0.2;
+  stroke: var(--border-color);
+}
+
+/* 当前时间指示器 */
+.timeline-svg .current-time-indicator {
+  stroke: #ff7700;
+  stroke-width: 2px;
+  stroke-dasharray: 3,3;
+}
+
+/* ========== 可读性工具 - monospace 样式 ========== */
+.monospace {
+  font-family: monospace;
+  background-color: var(--node-bg, #f5f5f5);
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--text-color, #333);
+  font-size: 90%;
+}
+
+/* ========== 节点图标样式 ========== */
+.node-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.default-icon {
+  opacity: 0.8;
+  filter: grayscale(30%);
+  border-radius: 50%;
+}
+
+/* ========== 响应式调整 ========== */
 @media (max-width: 1200px) {
   .filters-panel, .details-container {
     width: 200px;
@@ -714,258 +777,53 @@ path.link.closed, .edge.closed {
   }
 }
 
-/* 添加到样式表 */
-.links path {
-  transition: stroke-width 0.2s, opacity 0.2s;
-  opacity: 0.7;
-}
-
-.links path:hover {
-  stroke-width: 3px;
-  opacity: 1;
-}
-
-.node circle,
-.node rect {
-  transition: transform 0.2s;
-}
-
-.node.highlighted circle,
-.node.highlighted rect {
-  stroke: #ff9900;
-  stroke-width: 3px;
-  transform: scale(1.1);
-}
-
-/* 添加节点ID样式 */
-.monospace {
-  font-family: monospace;
-  background-color: #f5f5f5;
-  padding: 2px 4px;
-  border-radius: 3px;
-  color: #333;
-  font-size: 90%;
-}
-
-/* 添加到style.css文件 */
-.node-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 5px;
-  vertical-align: middle;
-}
-
-.default-icon {
-  opacity: 0.8;
-  filter: grayscale(30%);
-  border-radius: 50%;
-}
-
-.link [href*="google.com/s2/favicons"] {
-  filter: saturate(1.2); /* 增强Google默认图标的饱和度 */
-}
-
-/* 可以添加到您的CSS文件中 */
-.timeline-svg {
-  filter: drop-shadow(0px -2px 3px rgba(0,0,0,0.3));
-  transition: width 0.1s ease-out;
-  width: 100% !important; /* 确保始终占满宽度 */
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important; /* 确保始终在底部 */
-  overflow: visible !important; /* 确保时间轴在缩放时可见 */
-  z-index: 10 !important; /* 确保在正确的层级 */
-}
-
-/* 确保时间轴背景矩形充满 */
-.timeline-svg .timeline-background {
-  width: 100%;
-}
-
-/* 增强时间轴可见性 */
-.time-axis .domain {
-  stroke-width: 1px !important;
-}
-
-/* 让时间刻度文字更清晰 */
-.time-axis .tick text {
-  font-weight: 500 !important;
-  font-size: 10px !important;
-  fill: #eee !important;
-}
-
-/* 在缩放时突出显示时间线 */
-.timeline-svg.zoomed {
-  z-index: 100;
-}
-
-.time-axis .tick text {
-  font-weight: 400 !important;
-  font-size: 10px !important;
-  fill: #eee !important;
-}
-.timeline-svg rect {
-  fill: #333; /* 深色背景 */
-}
-/* 时间线中高亮当前时间的样式 */
-.timeline-svg .current-time-indicator {
-  stroke: #ff7700;
+/* ========== 节点类型样式 ========== */
+/* 节点类型颜色 */
+.node.link_click circle { 
+  fill: #4285f4; 
+  stroke: #2a75f3;
   stroke-width: 2px;
-  stroke-dasharray: 3,3;
-}
-/* 改进时间线网格 */
-.time-axis-group .grid .tick line {
-  opacity: 0.2;
 }
 
-/* 确保时间线轴的轴线能够延伸整个宽度 */
-.time-axis-group .time-axis .domain {
-  stroke-width: 1px;
-  opacity: 0.7;
-}
-
-/* Windows风格的状态栏 */
-.windows-status-bar {
-  display: flex;
-  background-color: #f0f0f0;
-  border-top: 1px solid #ddd;
-  height: 24px;
-  align-items: stretch;
-  font-size: 12px;
-  color: #333;
-  user-select: none;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
-  flex: 0 0 auto; /* 不伸缩，保持自身高度 */
-}
-
-/* 状态栏中的格子 */
-.status-cell {
-  padding: 0 8px;
-  border: 1px solid;
-  border-color: #808080 #fff #fff #808080;
-  background-color: #e0e0e0;
-  display: flex;
-  align-items: center;
-  margin-right: 2px;
-  min-width: 80px;
-  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-/* 右侧自动伸缩的格子 */
-.status-cell-stretch {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 不同信息类型的视觉区分 */
-.status-cell-highlight {
-  font-weight: 500;
-}
-
-/* 可以在页面级别添加，或者通过JavaScript注入 */
-.view-toolbar {
-  display: flex;
-  padding: 5px;
-  background: #333;
-  border-bottom: 1px solid #555;
-}
-
-.view-toolbar button {
-  margin-right: 5px;
-  padding: 3px 10px;
-  background: #444;
-  border: 1px solid #666;
-  color: #eee;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.view-toolbar button:hover {
-  background: #555;
-}
-
-.view-toolbar button.active {
-  background: #666;
-  border-color: #999;
-  font-weight: bold;
-}
-
-/* 视图工具栏样式 - 添加到现有样式表 */
-.view-toolbar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  padding: 5px;
-  background: rgba(30, 30, 30, 0.8);
-  border-bottom: 1px solid #555;
-  z-index: 10;
-}
-
-.view-toolbar button {
-  margin-right: 5px;
-  padding: 3px 10px;
-  background: #444;
-  border: 1px solid #666;
-  color: #eee;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.view-toolbar button:hover {
-  background: #555;
-}
-
-.view-toolbar button.active {
-  background: #666;
-  border-color: #999;
-  font-weight: bold;
-}
-
-/* 过滤指示器样式 */
-.filtering-indicator {
-  position: absolute;
-  top: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 87, 34, 0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 3px;
-  font-size: 12px;
-  z-index: 11;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-}
-
-/* ======= 树形图节点样式 ======= */
-
-/* 节点基本样式 */
-.node circle {
-  fill: #888;
-  stroke: #333;
-  stroke-width: 1.5px;
-}
-
-/* 根节点 */
-.node.root circle {
+.node.address_bar circle { 
+  fill: #34a853; 
+  stroke: #2c8c46;
   stroke-width: 2px;
-  stroke: #2c3e50;
 }
 
-/* 已关闭节点 */
-.node.closed circle {
-  opacity: 0.6;
+.node.form_submit circle { 
+  fill: #fbbc05; 
+  stroke: #f5a303;
+  stroke-width: 2px;
 }
 
-/* 会话节点 */
+.node.javascript circle { 
+  fill: #66ccff; 
+  stroke: #33bbff;
+  stroke-width: 2px;
+}
+
+.node.reload circle { 
+  fill: #7986cb; 
+  stroke: #5c6bc0;
+  stroke-width: 2px;
+}
+
+.node.history_back circle, 
+.node.history_forward circle { 
+  fill: #9c27b0; 
+  stroke: #7b1fa2;
+  stroke-width: 2px;
+}
+
+.node.redirect circle { 
+  fill: #ff9966; 
+  stroke: #ff7733;
+  stroke-width: 2px;
+  stroke-dasharray: 3,2;
+}
+
+/* 会话节点样式 */
 .node.session rect {
   fill: #444;
   stroke: #222;
@@ -976,22 +834,14 @@ path.link.closed, .edge.closed {
 .node.session text {
   fill: white;
   text-anchor: middle;
+  font-weight: bold;
 }
-
-/* 节点类型颜色 */
-.node.link_click circle { fill: #4285f4; }
-.node.address_bar circle { fill: #34a853; }
-.node.form_submit circle { fill: #fbbc05; }
-.node.javascript circle { fill: #ea4335; }
-.node.reload circle { fill: #7986cb; }
-.node.history_back circle, 
-.node.history_forward circle { fill: #9c27b0; }
 
 /* 重定向节点样式 */
 .node.redirect circle {
+  fill: #ff9966;
   stroke: #ff9800;
   stroke-dasharray: 3,2;
-  fill: #ff9966;
 }
 
 .node.redirect text {
@@ -999,219 +849,70 @@ path.link.closed, .edge.closed {
   fill: #ff9800;
 }
 
-/* 高亮节点 */
-.node.highlighted circle {
-  stroke: #03a9f4;
-  stroke-width: 3px;
-  filter: drop-shadow(0 0 5px rgba(3, 169, 244, 0.5));
+/* ========== 连接线类型样式 ========== */
+/* 连接线类型 */
+/* 连接线基础样式 */
+.link, .edge {
+  fill: none;
+  stroke-width: 1.5px;
+  opacity: 0.8; /* 提高默认不透明度 */
+}
+/* 曲线连接 */
+.link {
+  transition: stroke-width 0.2s, opacity 0.2s;
 }
 
-/* 跟踪页面节点 */
-.node.tracking circle {
-  stroke: #ff5722;
+/* 连接线类型样式 */
+.link.link_click, .edge.link_click { 
+  stroke: #4285f4; 
   stroke-width: 2px;
 }
 
-/* 节点文本标签 */
-.node text {
-  font-size: 12px;
-  text-anchor: middle;
-  fill: #333;
-  pointer-events: none;
+.link.address_bar, .edge.address_bar { 
+  stroke: #34a853; 
+  stroke-width: 2px;
 }
 
-/* 过滤指示器 */
-.filtered-indicator {
-  fill: #ff5722;
-  stroke: #fff;
-  stroke-width: 1px;
+.link.form_submit, .edge.form_submit { 
+  stroke: #fbbc05; 
+  stroke-width: 2px;
 }
 
-/* 节点图标 */
-.node image {
-  pointer-events: none;
+.link.javascript, .edge.javascript { 
+  stroke: #ea4335; 
+  stroke-width: 2px;
 }
 
-.node image.default-icon {
-  opacity: 0.7;
+.link.reload, .edge.reload { 
+  stroke: #7986cb; 
+  stroke-width: 2px;
+  stroke-dasharray: 5,5;
 }
 
-/* ======= 连接线样式 ======= */
+.link.history_back, .link.history_forward, 
+.edge.history_back, .edge.history_forward { 
+  stroke: #9c27b0; 
+  stroke-width: 2px;
+}
 
-/* 基本连接线 */
-.link {
-  fill: none;
-  stroke: #999;
+.link.redirect, .edge.redirect { 
+  stroke: #ff9800; 
+  stroke-width: 2.5px; /* 增加宽度以提高可见性 */
+  opacity: 0.9; /* 提高不透明度 */
+}
+
+.link.session_link, .edge.session_link { 
+  stroke: #555; 
   stroke-width: 1.5px;
 }
 
-/* 连接线类型 */
-.link.link_click { stroke: #4285f4; }
-.link.address_bar { stroke: #34a853; }
-.link.form_submit { stroke: #fbbc05; }
-.link.javascript { stroke: #ea4335; }
-.link.reload { stroke: #7986cb; }
-.link.history_back, 
-.link.history_forward { stroke: #9c27b0; }
-.link.session_link { stroke: #555; }
-
-/* 重定向连接线 */
-.link.redirect {
-  stroke: #ff9800;
-  stroke-dasharray: 5,3;
+/* 确保连接线在悬停时更明显 */
+.link:hover, .edge:hover {
+  stroke-width: 3px;
+  opacity: 1;
 }
 
 /* 箭头标记 */
 #arrow path {
   fill: #999;
-}
-
-/* ======= 错误信息样式 ======= */
-.error-message {
-  fill: red;
-  font-size: 16px;
-  text-anchor: middle;
-}
-
-.error-info {
-  fill: #333;
-  font-size: 14px;
-  text-anchor: middle;
-}
-
-.error-action {
-  fill: #0066cc;
-  font-size: 14px;
-  text-anchor: middle;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-/* 循环警告 */
-.cycle-warning {
-  fill: #ff5722;
-  font-size: 12px;
-  text-anchor: end;
-}
-
-/* 空树消息 */
-.empty-tree-message {
-  fill: #666;
-  font-size: 18px;
-  text-anchor: middle;
-}
-
-/* 节点详情面板样式 */
-.node-details-panel {
-  position: absolute;
-  right: 20px;
-  top: 70px;
-  width: 300px;
-  background: rgba(40, 44, 52, 0.9);
-  border: 1px solid #555;
-  border-radius: 8px;
-  padding: 15px;
-  color: white;
-  font-size: 14px;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
-  transition: none; /* 禁用可能导致拖动问题的过渡效果 */
-}
-
-.node-details-panel.dragging {
-  user-select: none;
-  pointer-events: none;
-  opacity: 0.9;
-}
-
-/* 关闭按钮 */
-.node-details-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
-  outline: none;
-  z-index: 1001;
-}
-
-/* 详情面板标题 */
-.node-details-title {
-  margin: 30px 0 15px 0;
-  padding: 5px;
-  border-bottom: 1px solid #555;
-  padding-right: 20px;
-  overflow: hidden;
-  font-weight: bold;
-}
-
-/* 详情项容器 */
-.detail-item {
-  margin: 5px;
-  line-height: 1.5;
-}
-
-/* 详情标签 */
-.detail-label {
-  color: #aaa;
-}
-
-/* 详情值 */
-.detail-value {
-  color: inherit;
-}
-
-/* URL 链接 */
-.detail-url {
-  color: #6bf;
-  text-decoration: none;
-}
-
-.detail-url:hover {
-  text-decoration: underline;
-}
-
-/* 状态值 */
-.status-active {
-  color: #6f6;
-}
-
-.status-closed {
-  color: #f66;
-}
-
-/* 技术详情部分 */
-.technical-details {
-  margin-top: 15px;
-  border-top: 1px solid #444;
-  padding-top: 10px;
-}
-
-.technical-details summary {
-  margin: 5px;
-  cursor: pointer;
-  outline: none;
-}
-
-.technical-content {
-  margin-top: 10px;
-  font-size: 12px;
-  color: #ccc;
-}
-
-/* 拖拽手柄 */
-.drag-handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 30px;
-  cursor: move;
-  background: transparent;
-  z-index: 10;
 }
