@@ -52,6 +52,8 @@ export class SettingsService {
    * 从本地存储缓存加载设置
    */
   private loadFromCache(): void {
+    if (!this.canUseLocalStorage()) return;
+  
     try {
       const cachedSettings = localStorage.getItem(SETTINGS_CACHE_KEY);
       if (cachedSettings) {
@@ -59,7 +61,7 @@ export class SettingsService {
         this.updateSettingsInternal(settings);
       }
     } catch (error) {
-      console.warn('从缓存加载设置失败，使用默认设置:', error);
+      console.warn('从缓存加载设置失败:', error);
     }
   }
   
@@ -114,10 +116,29 @@ export class SettingsService {
    * 更新本地缓存
    */
   private updateCache(settings: NavigraphSettings): void {
+    if (!this.canUseLocalStorage()) return;
+    
     try {
-      localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(settings));
+      const cacheData = {
+        version: "1.0", // 缓存格式版本
+        timestamp: Date.now(),
+        data: settings
+      };
+      localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(cacheData));
     } catch (error) {
       console.warn('更新设置缓存失败:', error);
+    }
+  }
+  
+  /**
+   * 检查是否可以使用本地存储
+   */
+  private canUseLocalStorage(): boolean {
+    try {
+      return typeof window !== 'undefined' && 
+             typeof localStorage !== 'undefined';
+    } catch {
+      return false;
     }
   }
   

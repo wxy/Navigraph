@@ -4,11 +4,23 @@ import { NavigraphSettings } from './types.js';
  * 默认设置
  */
 export const DEFAULT_SETTINGS: NavigraphSettings = {
+  // 界面设置
   theme: 'system',
   defaultView: 'tree',
   defaultZoom: 1.0,
+  
+  // 会话管理
   sessionMode: 'smart',
-  dataRetention: 30
+  sessionTimeout: 30,
+  
+  // 数据设置
+  dataRetention: 30,
+  trackAnonymous: false,
+  
+  // 性能设置
+  animationEnabled: true,
+  showLabels: true,
+  maxNodes: 100
 };
 
 /**

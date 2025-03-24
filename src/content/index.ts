@@ -3,8 +3,9 @@
  * 主入口文件
  */
 
-// 更新导入的类型
+// 导入类型
 import type { PageActivityRequestMessage } from './types/message-types.js';
+import type { NavigraphSettings } from '../lib/settings/types.js';
 
 // 用于控制页面活动事件频率的变量
 let lastActivityTime = 0;
@@ -15,6 +16,15 @@ async function initialize() {
   console.log('初始化 Navigraph 可视化...');
   
   try {
+    // 初始化配置管理器
+    console.log('初始化配置管理...');
+    const settingsModule = await import('../lib/settings/service.js');
+    const settingsService = settingsModule.getSettingsService();
+    await settingsService.initialize();
+    // 将设置保存为全局变量以便访问
+    window.navigraphSettings = settingsService.getSettings();
+    console.log('全局设置已加载:', window.navigraphSettings);
+
     // 先导入并设置消息处理系统
     console.log('设置消息处理系统...');
     const messageHandlerModule = await import('./core/message-handler.js');
@@ -28,9 +38,7 @@ async function initialize() {
     
     // 初始化主题管理器
     themeManager.initialize();
-    
-    // 从存储读取当前设置
-    await loadAndApplyTheme(themeManager);
+    applyThemeFromSettings(themeManager);
     
     // 然后导入并创建可视化器
     const visualizerModule = await import('./core/navigation-visualizer.js');
@@ -58,51 +66,27 @@ async function initialize() {
 }
 
 /**
- * 从存储加载并应用主题
+ * 应用主题设置
+ * 直接使用已加载的全局设置
  */
-async function loadAndApplyTheme(themeManager: any): Promise<void> {
+function applyThemeFromSettings(themeManager: any): void {
   try {
-    // 尝试从本地存储直接读取主题
-    let savedTheme = null;
-    try {
-      savedTheme = localStorage.getItem('navigraph_theme');
-      if (savedTheme) {
-        console.log('从本地存储加载主题:', savedTheme);
-        themeManager.applyTheme(savedTheme);
-      }
-    } catch (localError) {
-      console.warn('从本地存储加载主题失败:', localError);
-    }
+    console.log('从全局设置应用主题...');
     
-    // 然后从 chrome.storage 读取设置（这样能保持同步，但稍慢）
-    try {
-      const settings = await chrome.storage.sync.get('navigraph_settings');
-      if (settings && settings.navigraph_settings && settings.navigraph_settings.theme) {
-        console.log('从 chrome.storage 加载主题设置:', settings.navigraph_settings.theme);
-        themeManager.applyThemeSetting(settings.navigraph_settings.theme);
-      } else {
-        // 尝试单独获取 theme 键（向后兼容）
-        const themeSettings = await chrome.storage.sync.get('theme');
-        if (themeSettings && themeSettings.theme) {
-          console.log('从 chrome.storage 加载主题设置(旧格式):', themeSettings.theme);
-          themeManager.applyThemeSetting(themeSettings.theme);
-        } else if (!savedTheme) {
-          // 如果本地存储和chrome存储都没有设置，使用系统主题
-          console.log('没有找到保存的主题设置，使用系统主题');
-          themeManager.applyThemeSetting('system');
-        }
-      }
-    } catch (storageError) {
-      console.warn('从 chrome.storage 加载主题设置失败:', storageError);
-      // 如果没有从本地存储成功加载，设置为系统主题
-      if (!savedTheme) {
-        themeManager.applyThemeSetting('system');
-      }
+    // 从全局设置中获取主题设置
+    if (window.navigraphSettings && window.navigraphSettings.theme) {
+      const themeSetting = window.navigraphSettings.theme;
+      console.log('应用主题设置:', themeSetting);
+      themeManager.applyTheme(themeSetting);
+    } else {
+      // 如果全局设置中没有主题设置，使用系统主题
+      console.log('全局设置中没有主题设置，使用系统主题');
+      themeManager.applyTheme('system');
     }
   } catch (error) {
-    console.error('加载主题失败:', error);
+    console.error('应用主题设置失败:', error);
     // 出错时尝试应用系统主题
-    themeManager.applyThemeSetting('system');
+    themeManager.applyTheme('system');
   }
 }
 
@@ -144,10 +128,10 @@ async function triggerPageActivity(source: string) {
       // 动态导入消息处理模块
       const messageModule = await import('./core/message-handler.js');
       
-      // 使用新的类型定义并发送消息
+      // 发送消息
       await messageModule.sendMessage('pageActivity', {
         source: source
-      }).catch(err => {
+      } as PageActivityRequestMessage).catch(err => {
         console.warn('发送页面活动消息失败:', err);
       });
     } catch (err) {

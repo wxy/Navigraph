@@ -112,6 +112,9 @@ export class NavigationVisualizer {
       // 设置消息监听器
       this.initMessageListener();
       
+      // 应用全局配置
+      this.applyGlobalConfig();
+      
       // 确保DOM已加载完成
       if (document.readyState !== 'complete') {
         console.log('等待DOM加载完成...');
@@ -177,6 +180,38 @@ export class NavigationVisualizer {
       }
     });
   }
+
+  /**
+   * 应用全局配置
+   */
+  applyGlobalConfig() {
+    if (!window.navigraphSettings) {
+      console.log('全局配置不可用，使用默认设置');
+      return;
+    }
+    
+    try {
+      const config = window.navigraphSettings;
+      
+      // 应用默认视图
+      if (config.defaultView) {
+        console.log('应用默认视图:', config.defaultView);
+        this.currentView = config.defaultView;
+      }
+      
+      // 应用缩放级别
+      if (config.defaultZoom) {
+        console.log('应用默认缩放级别:', config.defaultZoom);
+        this.zoom = config.defaultZoom;
+      }
+      
+      // 其他配置项应用...
+      
+    } catch (error) {
+      console.warn('应用全局配置出错:', error);
+    }
+  }
+
   /**
    * 初始化调试工具
    */

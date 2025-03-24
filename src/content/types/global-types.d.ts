@@ -2,18 +2,15 @@
 // 添加TypeScript的特殊注释，确保编译器始终包含该文件
 /// <reference types="d3" />
 
+type NavigraphSettingsType = import('../../lib/settings/types').NavigraphSettings;
 type NavigationVisualizerType = import('../core/navigation-visualizer').NavigationVisualizer;
 
 declare global {
   interface Window {
     // 添加 d3 全局变量声明
     d3: any;
-    
-    /*Navigraph: {
-      enhanceVisualizer?: () => Promise<void>;
-      [key: string]: any;
-    };*/
-    
+
+    navigraphSettings: NavigraphSettingsType;
     visualizer: NavigationVisualizerType;
     
     // 构造函数类型
