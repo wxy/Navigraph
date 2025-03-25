@@ -10,6 +10,7 @@ export class ThemeManager {
   private settingsService = getSettingsService();
   private themeStylesheet: HTMLStyleElement | null = null;
   private currentTheme: Theme = "light";
+  private initialized: boolean = false; // 添加初始化标志
 
   private constructor() {
     // 私有构造函数
@@ -30,69 +31,66 @@ export class ThemeManager {
    * 创建样式元素并应用初始主题
    */
   public async initialize(): Promise<void> {
-    // 监听系统主题变化
-    this.listenForSystemThemeChanges();
-
+    // 防止重复初始化
+    if (this.initialized) {
+      console.log("主题管理器已初始化，跳过");
+      return;
+    }
+    
+    this.initialized = true; // 设置初始化标志
+    
     // 确保主题样式表已加载
     this.ensureStylesheetLoaded();
-
-    // 应用初始主题
+    
+    // 初始化系统主题监听
+    this.initializeSystemThemeListener();
+    
     try {
-      // 从全局配置获取主题，如果存在
+      // 从全局配置或设置服务获取主题
       let theme: Theme = 'system';
       
       if (window.navigraphSettings && window.navigraphSettings.theme) {
         theme = window.navigraphSettings.theme;
         console.log('从全局配置读取主题设置:', theme);
+      } else {
+        // 尝试从设置服务获取
+        theme = this.settingsService.getSetting("theme") || 'system';
+        console.log('从设置服务读取主题设置:', theme);
       }
       
+      // 在初始化时应用主题
       this.applyTheme(theme);
     } catch (error) {
       console.warn("获取主题设置失败，使用系统主题", error);
       this.applyTheme("system");
     }
-
+  
     console.log("主题管理器初始化完成，当前主题:", this.currentTheme);
   }
 
   /**
-   * 创建主题样式表
+   * 检查主题管理器是否已初始化
    */
-  private createThemeStylesheet(): void {
-    // 检查是否已存在
-    if (document.getElementById("navigraph-theme-stylesheet")) {
-      this.themeStylesheet = document.getElementById(
-        "navigraph-theme-stylesheet"
-      ) as HTMLStyleElement;
-      return;
-    }
-
-    // 创建新的样式表
-    this.themeStylesheet = document.createElement("style");
-    this.themeStylesheet.id = "navigraph-theme-stylesheet";
-    document.head.appendChild(this.themeStylesheet);
-    console.log("创建了主题样式表元素");
+  public isInitialized(): boolean {
+    return this.initialized;
   }
 
   /**
-   * 监听系统主题变化
+   * 初始化系统主题监听器，但不立即触发
    */
-  private listenForSystemThemeChanges(): void {
+  private initializeSystemThemeListener(): void {
     const darkModeMediaQuery = window.matchMedia(
       "(prefers-color-scheme: dark)"
     );
 
-    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+    const handleChange = (event: MediaQueryListEvent) => {
       const theme = this.settingsService.getSetting("theme");
       if (theme === "system") {
-        this.applyTheme(event.matches ? "dark" : "light");
+        this.applySpecificTheme(event.matches ? "dark" : "light");
       }
     };
 
-    // 设置初始状态
-    handleChange(darkModeMediaQuery);
-
-    // 监听变化
+    // 只监听变化，不立即触发
     darkModeMediaQuery.addEventListener("change", handleChange);
   }
 
@@ -102,7 +100,7 @@ export class ThemeManager {
    */
   public applyTheme(theme: Theme): void {
     console.log("应用主题设置:", theme);
-
+    
     if (theme === "system") {
       // 使用系统主题
       const isDarkMode = window.matchMedia(
@@ -118,7 +116,8 @@ export class ThemeManager {
    * 应用指定主题
    */
   private applySpecificTheme(theme: Theme): void {
-    if (this.currentTheme === theme && this.themeStylesheet?.textContent) {
+    // 如果主题已经应用，避免重复工作
+    if (this.currentTheme === theme) {
       console.log("主题已经是", theme, "，无需更改");
       return;
     }
@@ -129,23 +128,13 @@ export class ThemeManager {
     // 在根元素上设置主题属性
     document.documentElement.setAttribute("data-theme", theme);
 
-    // 更新样式
-    this.updateThemeStyles(theme);
-
     // 更新SVG元素
     this.updateSvgElementsForTheme(theme);
 
-    // 保存到本地存储
-    this.saveThemeToLocalStorage(theme);
-  }
-
-  /**
-   * 更新主题样式
-   */
-  private updateThemeStyles(theme: Theme): void {
-    // 不再需要创建内联样式表
-    // 只需要设置根元素的 data-theme 属性
-    document.documentElement.setAttribute("data-theme", theme);
+    // 保存到本地存储（除非是通过系统主题而应用的）
+    if (this.settingsService.getSetting("theme") !== "system") {
+      this.saveThemeToLocalStorage(theme);
+    }
 
     console.log("已更新主题为:", theme);
   }

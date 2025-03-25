@@ -38,7 +38,6 @@ async function initialize() {
     
     // 初始化主题管理器
     themeManager.initialize();
-    applyThemeFromSettings(themeManager);
     
     // 然后导入并创建可视化器
     const visualizerModule = await import('./core/navigation-visualizer.js');
