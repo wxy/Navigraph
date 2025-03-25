@@ -230,7 +230,7 @@ export function renderTreeLayout(
     // 如果移除了链接，显示警告
     if (safeLinks.length < allLinks.length) {
       const removedCount = allLinks.length - safeLinks.length;
-      console.warn(`已移除 ${removedCount} 条导致循环的连接以确保树形图可以正常渲染`);
+      console.log(`已移除 ${removedCount} 条导致循环的连接以确保树形图可以正常渲染`);
       
       // 添加视觉警告提示
       svg.append('text')
@@ -398,8 +398,7 @@ export function renderTreeLayout(
           source: d.source,
           target: d.target
         });
-      })
-      .attr('marker-end', 'url(#arrow)');
+      });
     
     // 绘制节点
     const node = nodesGroup.selectAll('.node')
@@ -596,10 +595,10 @@ function normalizeLinks(links: any[]): NavLink[] {
 }
 
 /**
- * 检测并移除导致循环的连接
+ * 检测并移除导致循环的连接，但只移除回边
  * @param nodes 节点列表
  * @param links 连接列表 (已规范化为NavLink)
- * @returns 安全连接列表（已移除循环连接）
+ * @returns 安全连接列表（仅移除回边）
  */
 function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLink[] {
   console.log('检测并打破循环...');
@@ -623,26 +622,26 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     }
   });
   
-  // 用来跟踪已发现的循环
-  const cyclicLinks: Set<string> = new Set();
+  // 用来跟踪已发现的回边（只标记循环中的最后一条边）
+  const backEdges: Set<string> = new Set();
   
   // 用DFS检测循环
   function detectCycle(nodeId: string, visited: Set<string>, path: Set<string>, pathList: string[]): boolean {
     // 当前节点已在路径中 -> 发现循环!
     if (path.has(nodeId)) {
-      console.warn('检测到循环:', [...pathList, nodeId].join(' -> '));
+      console.log('检测到循环:', [...pathList, nodeId].join(' -> '));
       
-      // 标记循环中的所有边
+      // 标记循环中的回边（最后一条边）
       const cycleStart = pathList.indexOf(nodeId);
       if (cycleStart >= 0) {
         const cycle = pathList.slice(cycleStart);
-        cycle.push(nodeId);
         
-        // 生成循环中的边
-        for (let i = 0; i < cycle.length - 1; i++) {
-          const linkId = `${cycle[i]}->${cycle[i+1]}`;
-          cyclicLinks.add(linkId);
-        }
+        // 只标记回边 - 循环的最后一条边
+        const lastNodeInCycle = pathList[pathList.length - 1];
+        const backEdgeId = `${lastNodeInCycle}->${nodeId}`;
+        
+        backEdges.add(backEdgeId);
+        console.log(`标记回边: ${lastNodeInCycle} -> ${nodeId}`);
       }
       
       return true;
@@ -661,9 +660,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     // 检查所有邻居节点
     const neighbors = graph[nodeId] || [];
     for (const neighbor of neighbors) {
-      if (detectCycle(neighbor, visited, path, pathList)) {
-        return true;
-      }
+      detectCycle(neighbor, visited, new Set(path), [...pathList]);
     }
     
     // 回溯时从路径中移除节点
@@ -681,23 +678,19 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     }
   }
   
-  // 过滤掉导致循环的连接
+  // 过滤掉回边，保留所有其他连接
   const safeLinks = links.filter(link => {
-    // 确保source和target都是字符串ID
-    const source = link.source;
-    const target = link.target;
-    
-    const linkId = `${source}->${target}`;
-    const isSafe = !cyclicLinks.has(linkId);
+    const linkId = `${link.source}->${link.target}`;
+    const isSafe = !backEdges.has(linkId);
     
     if (!isSafe) {
-      console.log(`跳过导致循环的连接: ${source} -> ${target}`);
+      console.log(`移除回边: ${link.source} -> ${link.target}`);
     }
     
     return isSafe;
   });
   
-  console.log(`检测出 ${cyclicLinks.size} 条导致循环的连接，剩余 ${safeLinks.length} 条安全连接`);
+  console.log(`检测出 ${backEdges.size} 条回边，保留 ${safeLinks.length} 条安全连接`);
   
   return safeLinks;
 }
