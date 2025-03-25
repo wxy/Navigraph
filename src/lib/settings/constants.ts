@@ -7,7 +7,6 @@ export const DEFAULT_SETTINGS: NavigraphSettings = {
   // 界面设置
   theme: 'system',
   defaultView: 'tree',
-  defaultZoom: 1.0,
   
   // 会话管理
   sessionMode: 'smart',

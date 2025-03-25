@@ -92,15 +92,6 @@ function setupEventListeners(): void {
     });
   }
   
-  // 缩放级别滑块
-  const zoomSlider = document.getElementById('default-zoom') as HTMLInputElement;
-  const zoomValue = document.getElementById('zoom-value');
-  if (zoomSlider && zoomValue) {
-    zoomSlider.addEventListener('input', () => {
-      zoomValue.textContent = `${Number(zoomSlider.value).toFixed(1)}x`;
-    });
-  }
-  
   // 会话模式选择
   const sessionModeSelect = document.getElementById('session-mode') as HTMLSelectElement;
   if (sessionModeSelect) {
@@ -201,14 +192,6 @@ function applySettingsToUI(): void {
     updateViewPreview(currentSettings.defaultView || 'tree');
   }
   
-  // 缩放级别
-  const zoomSlider = document.getElementById('default-zoom') as HTMLInputElement;
-  const zoomValue = document.getElementById('zoom-value');
-  if (zoomSlider && zoomValue) {
-    zoomSlider.value = currentSettings.defaultZoom?.toString() || '1.0';
-    zoomValue.textContent = `${Number(zoomSlider.value).toFixed(1)}x`;
-  }
-  
   // 会话模式
   const sessionModeSelect = document.getElementById('session-mode') as HTMLSelectElement;
   if (sessionModeSelect) {
@@ -240,10 +223,6 @@ function collectSettingsFromUI(): NavigraphSettings {
   // 默认视图
   const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'timeline' || 'tree';
   
-  // 缩放级别
-  const defaultZoomStr = (document.getElementById('default-zoom') as HTMLInputElement)?.value || '1.0';
-  const defaultZoom = parseFloat(defaultZoomStr);
-  
   // 会话模式
   const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'activity' | 'smart' | 'manual' || 'smart';
   
@@ -254,9 +233,13 @@ function collectSettingsFromUI(): NavigraphSettings {
   return {
     theme,
     defaultView,
-    defaultZoom,
     sessionMode,
-    dataRetention
+    dataRetention,
+    sessionTimeout: 30,
+    maxNodes: 1000,
+    trackAnonymous: false,
+    animationEnabled: true,
+    showLabels: true
   };
 }
 
@@ -295,8 +278,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     
   const affectsFrontend =
     oldSettings.theme !== newSettings.theme ||
-    oldSettings.defaultView !== newSettings.defaultView ||
-    oldSettings.defaultZoom !== newSettings.defaultZoom;
+    oldSettings.defaultView !== newSettings.defaultView;
   
   let message = '设置已保存';
   let type: 'success' | 'error' = 'success'; // 显式添加类型注解

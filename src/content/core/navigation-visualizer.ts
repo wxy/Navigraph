@@ -42,7 +42,6 @@ export class NavigationVisualizer {
   // 状态跟踪
   _isRestoringTransform: boolean = false;
   _savedTransform?: {x: number, y: number, k: number};
-  _savedZoom: any = null; // 通用缓存
   _treeZoom: any = null; // 树形视图的缩放状态
   _timelineZoom: any = null; // 时间线视图的缩放状态
   
@@ -198,13 +197,7 @@ export class NavigationVisualizer {
         console.log('应用默认视图:', config.defaultView);
         this.currentView = config.defaultView;
       }
-      
-      // 应用缩放级别
-      if (config.defaultZoom) {
-        console.log('应用默认缩放级别:', config.defaultZoom);
-        this.zoom = config.defaultZoom;
-      }
-      
+            
       // 其他配置项应用...
       
     } catch (error) {
@@ -774,6 +767,12 @@ export class NavigationVisualizer {
         if (this._timelineZoom) {
           console.log('使用保存的时间线缩放');
           this.zoom = this._timelineZoom;
+        } else {
+          // 未保存过时间线缩放时使用默认值 1.0
+          console.log('时间线视图没有保存的缩放，使用默认值 1.0');
+          this.zoom = 1.0;
+          // 首次应用后立即保存，使其成为该视图的"记忆值"
+          this._timelineZoom = 1.0;
         }
         
         // 直接调用导入的时间线渲染函数
@@ -792,6 +791,12 @@ export class NavigationVisualizer {
         if (this._treeZoom) {
           console.log('使用保存的树形视图缩放');
           this.zoom = this._treeZoom;
+        } else {
+          // 未保存过树形视图缩放时使用默认值 1.0
+          console.log('树形视图没有保存的缩放，使用默认值 1.0');
+          this.zoom = 1.0;
+          // 首次应用后立即保存，使其成为该视图的"记忆值"
+          this._treeZoom = 1.0;
         }
         
         // 直接调用导入的树形渲染函数

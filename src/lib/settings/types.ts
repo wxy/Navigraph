@@ -21,7 +21,6 @@ export interface NavigraphSettings {
   // 界面设置
   theme: Theme;
   defaultView: ViewType;
-  defaultZoom: number;
   
   // 会话管理
   sessionMode: SessionMode;
