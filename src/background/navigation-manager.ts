@@ -1,5 +1,7 @@
 import { NavigationStorage } from './lib/storage.js';
 import { IdGenerator } from './lib/id-generator.js';
+import { BackgroundMessageService } from './lib/bg-message-service.js';
+import { MessageHandler } from '../types/message-types';
 import { 
   NavigationRecord,
   NavigationEdge,
@@ -15,7 +17,7 @@ import {
 
 /**
  * 导航管理器 - 负责创建和管理导航节点、事件和关系
- * 
+* 
  * 该类处理：
  * 1. 通过Chrome浏览器API监听导航事件并创建节点
  * 2. 处理从内容脚本收到的用户交互事件（链接点击、表单提交等）
@@ -55,10 +57,13 @@ export class NavigationManager {
   // 调试标志
   private debugMode = false;
 
+
   /**
    * 构造函数 - 初始化导航管理器
+   * @param messageService 消息服务实例（通过依赖注入）
    */
-  constructor() {
+  constructor(messageService: BackgroundMessageService) {
+
     // 创建存储实例
     this.storage = new NavigationStorage();
 
@@ -68,6 +73,9 @@ export class NavigationManager {
 
     // 初始化事件侦听器
     this.setupEventListeners();
+
+    // 注册消息处理程序
+    this.registerMessageHandlers(messageService);
 
     console.log("导航管理器已初始化");
   }
@@ -1848,14 +1856,19 @@ export class NavigationManager {
   }
 
   /**
-   * 获取当前会话的节点数
+   * 获取记录总数
    */
   public async getNodeCount(): Promise<number> {
-    const records = await this.storage.queryRecords({
-      sessionId: (await this.storage.getCurrentSession()).id,
-    });
-
-    return records.length;
+    try {
+      const session = await this.getStorage().getCurrentSession();
+      if (!session || !session.records) {
+        return 0;
+      }
+      return Object.keys(session.records).length;
+    } catch (error) {
+      console.error('获取记录数量失败:', error);
+      return 0;
+    }
   }
 
   /**
@@ -1913,6 +1926,304 @@ export class NavigationManager {
     } catch (error) {
       console.error(`获取标签页[${tabId}]历史失败:`, error);
       return [];
+    }
+  }
+
+  /**
+   * 注册消息处理程序
+   */
+  private registerMessageHandlers(service: BackgroundMessageService): void {
+    // 获取节点ID请求
+    service.registerHandler('getNodeId', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      try {
+        const tabId = ctx.getTabId();
+        const url = message.url || ctx.getUrl() || '';
+        
+        if (!tabId) {
+          console.error('获取节点ID失败：无法确定标签页ID');
+          return ctx.error('无法获取标签页信息');
+        }
+        
+        this.getNodeIdForTab(tabId, url)
+          .then(nodeId => {
+            if (nodeId) {
+              console.log(`内容脚本请求节点ID: 标签页=${tabId}, URL=${url}, 返回=${nodeId}`);
+              return ctx.success({ nodeId, tabId });
+            } else {
+              return ctx.error(`未找到URL对应的节点: ${url}`);
+            }
+          })
+          .catch(err => {
+            return ctx.error(`获取节点ID失败: ${err.message}`);
+          });
+          
+        return true; // 异步响应
+      } catch (error) {
+        return ctx.error(`获取节点ID时出错: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
+    
+    // 页面标题更新请求
+    service.registerHandler('pageTitleUpdated', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (message.nodeId && message.title) {
+        this.updateNodeMetadata(
+          message.nodeId,
+          { title: message.title },
+          'content_script'
+        )
+          .then(() => ctx.success())
+          .catch(error => ctx.error(`更新页面标题失败: ${error.message}`));
+          
+        return true; // 异步响应
+      } else {
+        return ctx.error('缺少节点ID或标题');
+      }
+    });
+    
+    // favicon 更新请求
+    service.registerHandler('faviconUpdated', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (message.nodeId && message.favicon) {
+        this.updateNodeMetadata(
+          message.nodeId,
+          { favicon: message.favicon },
+          'content_script'
+        )
+          .then(() => ctx.success())
+          .catch(error => ctx.error(`更新页面图标失败: ${error.message}`));
+          
+        return true; // 异步响应
+      } else {
+        return ctx.error('缺少节点ID或图标');
+      }
+    });
+    
+    // 页面加载请求
+    service.registerHandler('pageLoaded', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = ctx.getTabId();
+      const pageInfo = message.pageInfo || {};
+      const url = pageInfo.url || ctx.getUrl() || '';
+      
+      if (!tabId || !url) {
+        return ctx.error('缺少必要的页面信息');
+      }
+      
+      console.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
+      
+      this.updatePageMetadata(tabId, {
+        ...pageInfo,
+        url: url
+      })
+        .then(nodeId => {
+          if (nodeId) {
+            return ctx.success({ nodeId });
+          } else {
+            return ctx.error('未找到此页面的节点ID');
+          }
+        })
+        .catch(error => ctx.error(`处理页面加载失败: ${error.message}`));
+        
+      return true; // 异步响应
+    });
+    
+    // 页面活动消息
+    service.registerHandler('pageActivity', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      console.log(
+        "收到页面活动消息:",
+        message.source || "unknown source",
+        message.timestamp
+          ? new Date(message.timestamp).toLocaleTimeString()
+          : "unknown time"
+      );
+      
+      return ctx.success({ acknowledged: true });
+    });
+    
+    // 链接点击请求
+    service.registerHandler('linkClicked', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = ctx.getTabId();
+      if (tabId !== undefined && message.linkInfo) {
+        try {
+          this.handleLinkClicked(tabId, message.linkInfo);
+          return ctx.success();
+        } catch (error) {
+          console.error('处理链接点击失败:', error);
+          return ctx.error(`处理链接点击失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      } else {
+        return ctx.error('缺少链接信息或标签页ID');
+      }
+    });
+    
+    // 表单提交请求
+    service.registerHandler('formSubmitted', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = ctx.getTabId();
+      if (tabId !== undefined && message.formInfo) {
+        try {
+          this.handleFormSubmitted(tabId, message.formInfo);
+          return ctx.success();
+        } catch (error) {
+          console.error('处理表单提交失败:', error);
+          return ctx.error(`处理表单提交失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      } else {
+        return ctx.error('缺少表单信息或标签页ID');
+      }
+    });
+    
+    // JS导航请求
+    service.registerHandler('jsNavigation', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = ctx.getTabId();
+      if (tabId !== undefined) {
+        try {
+          this.handleJsNavigation(tabId, message);
+          return ctx.success();
+        } catch (error) {
+          console.error('处理JS导航失败:', error);
+          return ctx.error(`处理JS导航失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      } else {
+        return ctx.error('无效的消息来源或标签页ID');
+      }
+    });
+    
+    // 获取会话列表请求
+    service.registerHandler('getSessions', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      this.getStorage().getSessions()
+        .then(sessions => {
+          // 创建简化的会话摘要
+          const sessionSummaries = Array.isArray(sessions) ? sessions.map(session => ({
+            id: session.id,
+            title: session.title || session.id,
+            startTime: session.startTime,
+            endTime: session.endTime || 0,
+            recordCount: session.records ? Object.keys(session.records).length : 0
+          })) : [];
+          
+          return ctx.success({ sessions: sessionSummaries });
+        })
+        .catch(error => {
+          console.error('获取会话列表失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+    
+    // 获取会话详情请求
+    service.registerHandler('getSessionDetails', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (!message.sessionId) {
+        return ctx.error('缺少会话ID参数');
+      }
+      
+      this.getStorage().getSession(message.sessionId)
+        .then(session => {
+          if (session) {
+            return ctx.success({ session });
+          } else {
+            return ctx.error(`未找到会话: ${message.sessionId}`);
+          }
+        })
+        .catch(error => {
+          console.error('获取会话详情失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+    
+    // 获取导航树请求
+    service.registerHandler('getNavigationTree', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const options = message.options || {};
+      console.log('获取导航树数据...', options);
+      
+      // 首先获取当前会话ID
+      this.getStorage().getCurrentSessionId()
+        .then(currentSessionId => {
+          // 然后获取导航树
+          return this.getStorage().getNavigationTree()
+            .then(treeData => {
+              // 检查是否需要提供上次更新时间（用于增量更新）
+              if (options && options.lastUpdate) {
+                // 如果客户端提供了上次更新时间，标记在此时间后更新的节点
+                const lastUpdateTime = parseInt(options.lastUpdate);
+                if (!isNaN(lastUpdateTime)) {
+                  this.markUpdatedNodes(treeData, lastUpdateTime);
+                }
+              }
+              
+              return ctx.success({
+                data: {
+                  nodes: treeData.nodes,
+                  edges: treeData.edges
+                },
+                sessionId: currentSessionId,
+                timestamp: Date.now() // 添加当前时间戳，客户端用于增量更新
+              });
+            });
+        })
+        .catch(error => {
+          console.error('获取导航树失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+    
+    // 清除所有记录请求
+    service.registerHandler('clearAllRecords', (message, sender, sendResponse) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      this.getStorage().clearAllRecords()
+        .then(() => {
+          return ctx.success();
+        })
+        .catch(error => {
+          console.error('清空记录失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+  }
+  
+  /**
+   * 为导航树中的节点标记更新状态
+   */
+  private markUpdatedNodes(treeData: { nodes: any[]; edges: any[] }, lastUpdateTime: number): void {
+    // 遍历所有节点，标记新增或更新的
+    for (const node of treeData.nodes) {
+      if (node.timestamp > lastUpdateTime) {
+        node.isUpdated = true;
+      }
+    }
+    
+    // 遍历所有边，标记新增或更新的
+    for (const edge of treeData.edges) {
+      if (edge.timestamp > lastUpdateTime) {
+        edge.isUpdated = true;
+      }
     }
   }
 }

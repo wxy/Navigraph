@@ -4,17 +4,13 @@
  */
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
-import { 
-  registerMessageHandler, 
-  unregisterMessageHandler,
-  getTypedMessage,
-  createResponse
-} from './message-handler.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
 import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
+import { sendMessage, registerMessageHandler, unregisterMessageHandler } from './content-message-service.js';
+
 
 export class NavigationVisualizer {
   // 可视化容器
@@ -267,64 +263,65 @@ export class NavigationVisualizer {
   /**
    * 初始化消息监听
    */
-  initMessageListener() {
-    console.log('注册消息处理函数...');
+  private initMessageListener(): void {
+    console.log('初始化可视化器消息监听...');
+    
+    // 使用已导入的 registerMessageHandler 函数
+    // 避免每次都动态导入
     
     // 注册刷新可视化消息处理函数
-    registerMessageHandler<'refreshVisualization'>('refreshVisualization', 
-      (message, sender, sendResponse) => {
-        // 使用类型化消息
-        const typedMessage = getTypedMessage('refreshVisualization', message);
-        console.log('收到可视化刷新请求', typedMessage.timestamp ? 
-          new Date(typedMessage.timestamp).toLocaleTimeString() : 'unknown');
-        
-        // 如果需要回复，使用类型化响应
-        if (message.requestId) {
-          const response = createResponse('refreshVisualization', message.requestId);
-          sendResponse(response);
+    registerMessageHandler('refreshVisualization', (message, sender, sendResponse) => {
+      console.log('收到可视化刷新请求', message.timestamp ? 
+        new Date(message.timestamp).toLocaleTimeString() : 'unknown');
+      
+      // 如果需要回复，发送响应
+      if (message.requestId) {
+        sendResponse({
+          action: 'refreshVisualization',
+          success: true,
+          requestId: message.requestId
+        });
+      }
+      
+      // 延迟执行刷新操作
+      setTimeout(async () => {
+        try {
+          console.log('🔄 开始执行刷新操作...');
+          await sessionManager.loadSessions();
+          await sessionManager.loadCurrentSession();
+          this.refreshVisualization();
+          console.log('✅ 刷新操作完成');
+        } catch (err) {
+          console.error('❌ 自动刷新可视化失败:', err);
         }
-        
-        // 延迟执行刷新操作
-        setTimeout(async () => {
-          try {
-            console.log('🔄 开始执行刷新操作...');
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            console.log('✅ 刷新操作完成');
-          } catch (err) {
-            console.error('❌ 自动刷新可视化失败:', err);
-          }
-        }, 50);
-        
-        // 返回false表示我们已经同步处理了响应
-        return false;
-      });
+      }, 50);
+      
+      // 返回false表示已同步处理了响应
+      return false;
+    });
     
     // 注册页面活动消息处理函数
-    registerMessageHandler<'pageActivity'>('pageActivity', 
-      (message) => {
-        // 使用类型化消息
-        const typedMessage = getTypedMessage('pageActivity', message);
-        console.log('收到页面活动事件，触发刷新', typedMessage.source);
-        
-        // 触发刷新操作
-        this.triggerRefresh();
-        
-        // 不需要回复
-        return false;
-      });
+    registerMessageHandler('pageActivity', (message) => {
+      console.log('收到页面活动事件，触发刷新', message.source);
+      
+      // 触发刷新操作
+      this.triggerRefresh();
+      
+      // 不需要回复
+      return false;
+    });
     
     // 链接点击消息处理
-    registerMessageHandler<'linkClicked'>('linkClicked', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('linkClicked', message);
-      console.log('收到链接点击消息:', typedMessage.linkInfo);
+    registerMessageHandler('linkClicked', (message, sender, sendResponse) => {
+      console.log('收到链接点击消息:', message.linkInfo);
       
-      // 确认收到，使用类型化响应
+      // 确认收到
       if (message.requestId) {
-        const response = createResponse('linkClicked', message.requestId);
-        sendResponse(response);
+        sendResponse({
+          action: 'linkClicked',
+          success: true,
+          requestId: message.requestId
+        });
       }
       
       // 延迟刷新可视化图表
@@ -339,59 +336,89 @@ export class NavigationVisualizer {
         }
       }, 100);
       
-      // 返回false表示已同步处理响应
+      return false;
+    });
+    
+    // 表单提交消息处理
+    registerMessageHandler('formSubmitted', (message, sender, sendResponse) => {
+      console.log('收到表单提交消息:', message.formInfo);
+      
+      // 确认收到
+      if (message.requestId) {
+        sendResponse({
+          action: 'formSubmitted',
+          success: true,
+          requestId: message.requestId
+        });
+      }
+      
+      // 延迟刷新可视化图表
+      setTimeout(async () => {
+        try {
+          await sessionManager.loadSessions();
+          await sessionManager.loadCurrentSession();
+          this.refreshVisualization();
+          console.log('基于表单提交刷新可视化完成');
+        } catch (err) {
+          console.error('表单提交后刷新可视化失败:', err);
+        }
+      }, 150);
+      
       return false;
     });
     
     // 节点ID获取消息处理
-    registerMessageHandler<'getNodeId'>('getNodeId', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('getNodeId', message);
-      console.log('收到获取节点ID请求:', typedMessage.url);
+    registerMessageHandler('getNodeId', (message, sender, sendResponse) => {
+      console.log('收到获取节点ID请求:', message.url);
       
       // 从当前数据中查找URL对应的节点ID
       let nodeId: string | undefined = undefined;
-      if (this.nodes && typedMessage.url) {
-        const node = this.nodes.find(n => n.url === typedMessage.url);
+      if (this.nodes && message.url) {
+        const node = this.nodes.find(n => n.url === message.url);
         nodeId = node?.id;
       }
       
-      // 返回找到的节点ID，使用类型化响应
-      const response = createResponse('getNodeId', message.requestId);
-      (response as any).nodeId = nodeId; // 添加特定字段
-      sendResponse(response);
+      // 返回找到的节点ID
+      sendResponse({
+        action: 'getNodeId',
+        success: true,
+        nodeId,
+        requestId: message.requestId
+      });
       
       return false; // 同步处理
     });
     
     // favicon更新消息处理
-    registerMessageHandler<'faviconUpdated'>('faviconUpdated', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('faviconUpdated', message);
-      console.log('收到favicon更新消息:', typedMessage.url, typedMessage.favicon);
+    registerMessageHandler('faviconUpdated', (message, sender, sendResponse) => {
+      console.log('收到favicon更新消息:', message.url, message.favicon);
       
-      // 确认收到，使用类型化响应
+      // 确认收到
       if (message.requestId) {
-        const response = createResponse('faviconUpdated', message.requestId);
-        sendResponse(response);
+        sendResponse({
+          action: 'faviconUpdated',
+          success: true,
+          requestId: message.requestId
+        });
       }
       
       return false; // 同步处理
     });
     
     // 页面加载完成消息处理
-    registerMessageHandler<'pageLoaded'>('pageLoaded', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('pageLoaded', message);
-      console.log('收到页面加载完成消息:', typedMessage.pageInfo?.url);
+    registerMessageHandler('pageLoaded', (message, sender, sendResponse) => {
+      console.log('收到页面加载完成消息:', message.pageInfo?.url);
       
-      // 确认收到，使用类型化响应
+      // 确认收到
       if (message.requestId) {
-        const response = createResponse('pageLoaded', message.requestId);
-        sendResponse(response);
+        sendResponse({
+          action: 'pageLoaded',
+          success: true,
+          requestId: message.requestId
+        });
       }
       
-      // 如果配置了自动刷新，延迟刷新视图
+      // 延迟刷新视图
       setTimeout(async () => {
         try {
           await sessionManager.loadSessions();
@@ -406,6 +433,8 @@ export class NavigationVisualizer {
       // 返回false表示已同步处理响应
       return false;
     });
+    
+    console.log('消息监听器初始化完成');
   }
   /**
    * 清理资源

@@ -515,6 +515,20 @@ export class NavigationStorage {
   }
   
   /**
+   * 获取当前会话ID
+   * 返回当前活跃会话的ID
+   */
+  public async getCurrentSessionId(): Promise<string> {
+    try {
+      const currentSession = await this.getCurrentSession();
+      return currentSession?.id || "";
+    } catch (error) {
+      console.error('获取当前会话ID失败:', error);
+      return "";
+    }
+  }
+  
+  /**
    * 更新会话结束时间
    */
   public async closeSession(sessionId: string): Promise<BrowsingSession | null> {

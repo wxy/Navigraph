@@ -4,7 +4,7 @@
  */
 
 // 导入类型
-import type { PageActivityRequestMessage } from './types/message-types.js';
+import { setupMessageService } from './core/content-message-service.js';
 import type { NavigraphSettings } from '../lib/settings/types.js';
 
 // 用于控制页面活动事件频率的变量
@@ -25,11 +25,10 @@ async function initialize() {
     window.navigraphSettings = settingsService.getSettings();
     console.log('全局设置已加载:', window.navigraphSettings);
 
-    // 先导入并设置消息处理系统
-    console.log('设置消息处理系统...');
-    const messageHandlerModule = await import('./core/message-handler.js');
-    messageHandlerModule.setupMessageListener();
-    console.log('消息处理系统设置完成');
+    // 初始化消息服务
+    console.log('初始化消息服务...');
+    setupMessageService();
+    console.log('消息服务初始化完成');
   
     // 初始化主题管理器
     console.log('初始化主题管理器...');
@@ -124,13 +123,14 @@ async function triggerPageActivity(source: string) {
     console.log(`检测到页面活动(${source})，触发刷新`);
     
     try {
-      // 动态导入消息处理模块
-      const messageModule = await import('./core/message-handler.js');
+      // 动态导入消息服务模块
+      const messageServiceModule = await import('./core/content-message-service.js');
       
       // 发送消息
-      await messageModule.sendMessage('pageActivity', {
-        source: source
-      } as PageActivityRequestMessage).catch(err => {
+      await messageServiceModule.sendMessage('pageActivity', {
+        source: source,
+        timestamp: now
+      }).catch(err => {
         console.warn('发送页面活动消息失败:', err);
       });
     } catch (err) {
