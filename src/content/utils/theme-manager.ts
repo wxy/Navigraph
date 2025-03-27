@@ -116,6 +116,8 @@ export class ThemeManager {
    * 应用指定主题
    */
   private applySpecificTheme(theme: Theme): void {
+    // 在根元素上设置主题属性
+    document.documentElement.setAttribute("data-theme", theme);
     // 如果主题已经应用，避免重复工作
     if (this.currentTheme === theme) {
       console.log("主题已经是", theme, "，无需更改");
@@ -125,8 +127,7 @@ export class ThemeManager {
     console.log("设置主题为:", theme);
     this.currentTheme = theme;
 
-    // 在根元素上设置主题属性
-    document.documentElement.setAttribute("data-theme", theme);
+
 
     // 更新SVG元素
     this.updateSvgElementsForTheme(theme);
