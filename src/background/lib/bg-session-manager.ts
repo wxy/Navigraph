@@ -358,7 +358,10 @@ export class BackgroundSessionManager {
       
       // 填充节点记录
       nodes.forEach(node => {
-        records[node.id] = node;
+        records[node.id] = {
+          ...node,
+          parentId: node.parentId || '' // 确保parentId始终为字符串，避免类型不兼容
+        };
       });
       
       // 填充边记录

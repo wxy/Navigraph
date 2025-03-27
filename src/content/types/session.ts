@@ -1,37 +1,28 @@
 /**
  * 会话类型定义
- * 确保与后端定义兼容
+ * 前端使用的会话类型，与后端保持一致
  */
 
-// 导入后端定义的类型，确保一致性
-import { 
-  BrowsingSession as BackendSession,
+// 直接重新导出后端定义的类型
+// 只导出需要的后端类型
+import {
+  BrowsingSession,
+  SessionSummary,
   NavNode,
   NavLink
 } from '../../types/session-types';
 
-// 导出会话摘要类型 - 用于会话列表
-export interface Session {
-  id: string;
-  title: string;
-  startTime: number;
-  endTime?: number;
-  isActive: boolean;
-  nodeCount?: number;
-  recordCount?: number; // 兼容旧代码
-}
+// 导出会话类型
+export type Session = SessionSummary;
+export type SessionDetails = BrowsingSession;
 
-// 导出会话详情类型 - 使用后端定义的类型
-export interface SessionDetails extends BackendSession {
-  // 确保包含前端代码需要的字段
-  records: Record<string, NavNode>;
-  edges: Record<string, NavLink>;
-  rootIds: string[];
-}
+// 导出节点类型
+export type NodeRecord = NavNode;
+export type EdgeRecord = NavLink;
 
-// 导航节点类型
-export interface NodeRecord extends NavNode {}
-
-// 导航边类型
-export interface EdgeRecord extends NavLink {}
-
+// 为确保接口一致性，重新导出原始类型
+export {
+  BrowsingSession,
+  NavNode,
+  NavLink
+};

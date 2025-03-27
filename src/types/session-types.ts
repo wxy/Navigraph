@@ -186,10 +186,13 @@ export interface NavNode {
   tabId: number;               // 标签页ID
   timestamp: number;           // 创建时间戳
   sessionId: string;           // 所属会话ID
-  parentId?: string;           // 父节点ID
-  favIconUrl?: string;         // 网站图标URL
+  parentId: string;        // 父节点ID
+  favicon?: string;         // 网站图标URL
   type: string;                // 节点类型
+  isClosed?: boolean;          // 是否已关闭
   metadata?: Record<string, any>; // 节点元数据
+  children?: NavNode[];        // 子节点列表
+  [key: string]: any;          // 允许其他属性  
 }
 
 /**

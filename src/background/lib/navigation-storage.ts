@@ -17,7 +17,7 @@ export interface NavNode {
   timestamp: number;           // 创建时间戳
   sessionId: string;           // 所属会话ID
   type: string;                // 节点类型
-  parentId?: string;           // 父节点ID
+  parentId: string | '';           // 父节点ID
   favIconUrl?: string;         // 网站图标URL
   metadata?: NodeMetadata;     // 元数据
 }
