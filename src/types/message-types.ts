@@ -192,6 +192,21 @@ export interface PageActivityResponse extends BaseResponseMessage {
   acknowledged: boolean;      // 活动是否已确认
 }
 
+// ============ 标签页相关消息 ============
+/**
+ * 获取标签页ID请求
+ */
+export interface GetTabIdRequest extends BaseMessage {
+  action: 'getTabId';
+}
+
+/**
+ * 获取标签页ID响应
+ */
+export interface GetTabIdResponse extends BaseResponseMessage {
+  tabId: number;
+}
+
 // ============ 导航相关消息 ============
 
 /**
@@ -436,7 +451,11 @@ export interface RequestResponseMap {
     request: PageActivityRequest;
     response: PageActivityResponse;
   };
-
+  // 标签页消息
+  getTabId: {
+    request: GetTabIdRequest;
+    response: GetTabIdResponse;
+  };
   // 导航相关
   getNodeId: {
     request: GetNodeIdRequest;

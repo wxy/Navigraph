@@ -4,7 +4,6 @@
  */
 
 // 导入类型
-import { setupMessageService } from './core/content-message-service.js';
 import type { NavigraphSettings } from '../lib/settings/types.js';
 
 // 用于控制页面活动事件频率的变量
@@ -27,7 +26,8 @@ async function initialize() {
 
     // 初始化消息服务
     console.log('初始化消息服务...');
-    setupMessageService();
+    const messageServiceModule = await import('./core/content-message-service.js');
+    messageServiceModule.setupMessageService();
     console.log('消息服务初始化完成');
   
     // 初始化主题管理器

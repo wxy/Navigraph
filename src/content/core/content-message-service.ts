@@ -1,4 +1,4 @@
-import { BaseMessage, BaseResponseMessage, RequestResponseMap, MessageHandler } from '../../types/message-types';
+import { BaseMessage, RequestResponseMap, MessageHandler } from '../../types/message-types';
 
 /**
  * 内容脚本消息服务
@@ -39,7 +39,19 @@ class ContentMessageService {
         return false;
       }
       
-      console.log(`收到消息: ${message.action} [ID:${message.requestId || 'none'}]`);
+      // 忽略目标为后台的消息，这些应该由后台处理
+      if (message.target === 'background') {
+        console.log(`跳过发往后台的消息: ${message.action}`);
+        return false;
+      }
+      
+      // 只处理目标为content的消息
+      if (message.target !== 'content' && message.target !== undefined) {
+        console.warn(`未知的消息目标: ${message.target}，跳过处理`);
+        return false;
+      }
+      
+      console.log(`处理内容脚本消息: ${message.action} [ID:${message.requestId || 'none'}]`);
       
       // 获取对应的处理程序
       const handlers = this.handlers.get(message.action) || [];
@@ -131,42 +143,43 @@ class ContentMessageService {
    */
   public sendMessage<T extends keyof RequestResponseMap>(
     action: T, 
-    data: Omit<RequestResponseMap[T]['request'], 'action' | 'requestId'>
+    data: Omit<RequestResponseMap[T]['request'], 'action' | 'requestId'> = {} as any
   ): Promise<RequestResponseMap[T]['response']> {
     return new Promise((resolve, reject) => {
       try {
         const requestId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         
-        const message: BaseMessage = {
+        // 构建消息对象，设置默认target为background
+        const message = {
           action: action as string,
           requestId,
-          ...data
+          ...data,
+          target: 'background' // 默认target为background
         };
         
-        console.log(`发送消息: ${action} [ID:${requestId}]`, data);
+        console.log(`发送消息: ${action} [ID:${requestId}], target: ${message.target}`);
         
         chrome.runtime.sendMessage(message, (response) => {
-          const error = chrome.runtime.lastError;
-          if (error) {
-            console.error(`发送消息失败: ${error.message}`);
-            reject(new Error(`发送消息失败: ${error.message}`));
+          if (chrome.runtime.lastError) {
+            console.error('发送消息时出错:', chrome.runtime.lastError);
+            reject(chrome.runtime.lastError);
             return;
           }
           
           if (!response) {
-            reject(new Error('未收到响应'));
+            reject(new Error('没有收到响应'));
             return;
           }
           
-          if (response.success === false) {
-            reject(new Error(response.error || '未知错误'));
+          if (response.error) {
+            reject(new Error(response.error));
             return;
           }
           
           resolve(response);
         });
       } catch (error) {
-        console.error('发送消息时出错:', error);
+        console.error('发送消息异常:', error);
         reject(error);
       }
     });

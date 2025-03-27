@@ -43,17 +43,8 @@ export class BackgroundMessageService {
     sender: chrome.runtime.MessageSender, 
     sendResponse: (response?: any) => void
   ): boolean {
-    // 检查是否为响应消息
-    if (message.isResponse && message.requestId) {
-      return this.handleResponseMessage(message);
-    }
     
-    // 确保消息有一个请求ID
-    if (!message.requestId) {
-      message.requestId = this.generateRequestId();
-    }
-    
-    console.log('收到消息:', message.action, `[ID:${message.requestId}]`);
+    console.log('收到消息:', message.action, `[ID:${message.requestId}]`, 'target:', message.target);
     
     if (!message || !message.action) {
       if (sendResponse) {
@@ -64,6 +55,12 @@ export class BackgroundMessageService {
           action: message.action
         });
       }
+      return false;
+    }
+    
+    // 忽略不是发给后台的消息
+    if (message.target !== undefined && message.target !== 'background') {
+      console.log(`跳过非后台目标消息: ${message.action}, target: ${message.target}`);
       return false;
     }
     
