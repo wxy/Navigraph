@@ -3,6 +3,15 @@
  * 为前后台通信提供类型安全的接口
  */
 
+import {
+  BrowsingSession,
+  SessionSummary,
+  SessionCreationOptions,
+  SessionUpdateOptions,
+  SessionQueryOptions,
+  SessionStatistics
+} from './session-types';
+
 // ============ 基础消息类型 ============
 
 /**
@@ -27,29 +36,18 @@ export interface BaseResponseMessage extends BaseMessage {
 // ============ 会话相关消息 ============
 
 /**
- * 会话摘要信息
- * 用于会话列表展示
- */
-export interface SessionSummary {
-  id: string;                 // 会话ID
-  title: string;              // 会话标题
-  startTime: number;          // 开始时间戳
-  endTime?: number;           // 结束时间戳(0或未定义表示未结束)
-  recordCount: number;        // 记录数量
-}
-
-/**
  * 获取会话列表请求
  */
 export interface GetSessionsRequest extends BaseMessage {
   action: 'getSessions';
+  options?: SessionQueryOptions; // 使用新定义的查询选项
 }
 
 /**
  * 获取会话列表响应
  */
 export interface GetSessionsResponse extends BaseResponseMessage {
-  sessions: SessionSummary[];
+  sessions: SessionSummary[]; // 使用新定义的会话摘要类型
 }
 
 /**
@@ -64,7 +62,7 @@ export interface GetSessionDetailsRequest extends BaseMessage {
  * 获取会话详情响应
  */
 export interface GetSessionDetailsResponse extends BaseResponseMessage {
-  session?: any;              // 会话详细信息
+  session?: BrowsingSession;  // 使用新定义的完整会话类型
 }
 
 /**
@@ -72,14 +70,30 @@ export interface GetSessionDetailsResponse extends BaseResponseMessage {
  */
 export interface CreateSessionRequest extends BaseMessage {
   action: 'createSession';
-  title?: string;             // 会话标题(可选)
+  options?: SessionCreationOptions; // 使用新定义的创建选项
 }
 
 /**
  * 创建会话响应
  */
 export interface CreateSessionResponse extends BaseResponseMessage {
-  session?: SessionSummary;   // 创建的会话信息
+  session?: BrowsingSession;   // 使用新定义的完整会话类型
+}
+
+/**
+ * 更新会话请求
+ */
+export interface UpdateSessionRequest extends BaseMessage {
+  action: 'updateSession';
+  sessionId: string;           // 会话ID
+  updates: SessionUpdateOptions; // 使用新定义的更新选项
+}
+
+/**
+ * 更新会话响应
+ */
+export interface UpdateSessionResponse extends BaseResponseMessage {
+  session?: BrowsingSession;   // 更新后的会话
 }
 
 /**
@@ -95,7 +109,7 @@ export interface EndSessionRequest extends BaseMessage {
  */
 export interface EndSessionResponse extends BaseResponseMessage {
   sessionId: string;          // 已结束的会话ID
-  message?: string;           // 响应消息
+  session?: BrowsingSession;  // 结束后的会话对象
 }
 
 /**
@@ -111,6 +125,54 @@ export interface SetCurrentSessionRequest extends BaseMessage {
  */
 export interface SetCurrentSessionResponse extends BaseResponseMessage {
   sessionId: string | null;   // 设置的会话ID
+  session?: BrowsingSession;  // 设置的会话信息
+}
+
+/**
+ * 获取当前会话请求
+ */
+export interface GetCurrentSessionRequest extends BaseMessage {
+  action: 'getCurrentSession';
+}
+
+/**
+ * 获取当前会话响应
+ */
+export interface GetCurrentSessionResponse extends BaseResponseMessage {
+  session?: BrowsingSession;  // 当前会话信息
+  sessionId?: string | null;  // 当前会话ID
+}
+
+/**
+ * 删除会话请求
+ */
+export interface DeleteSessionRequest extends BaseMessage {
+  action: 'deleteSession';
+  sessionId: string;          // 要删除的会话ID
+  confirm?: boolean;          // 是否确认删除
+}
+
+/**
+ * 删除会话响应
+ */
+export interface DeleteSessionResponse extends BaseResponseMessage {
+  sessionId: string;          // 已删除的会话ID
+}
+
+/**
+ * 获取会话统计信息请求
+ */
+export interface GetSessionStatsRequest extends BaseMessage {
+  action: 'getSessionStats';
+  sessionId: string;          // 会话ID
+}
+
+/**
+ * 获取会话统计信息响应
+ */
+export interface GetSessionStatsResponse extends BaseResponseMessage {
+  sessionId: string;          // 会话ID
+  statistics?: SessionStatistics; // 统计信息
 }
 
 /**
@@ -333,7 +395,7 @@ export type TypedMessageHandler<T extends keyof RequestResponseMap> = (
  * 将每种请求类型映射到对应的响应类型
  */
 export interface RequestResponseMap {
-    // 会话相关
+  // 会话相关
   getSessions: {
     request: GetSessionsRequest;
     response: GetSessionsResponse;
@@ -346,6 +408,10 @@ export interface RequestResponseMap {
     request: CreateSessionRequest;
     response: CreateSessionResponse;
   };
+  updateSession: {
+    request: UpdateSessionRequest;
+    response: UpdateSessionResponse;
+  };
   endSession: {
     request: EndSessionRequest;
     response: EndSessionResponse;
@@ -353,6 +419,18 @@ export interface RequestResponseMap {
   setCurrentSession: {
     request: SetCurrentSessionRequest;
     response: SetCurrentSessionResponse;
+  };
+  getCurrentSession: {
+    request: GetCurrentSessionRequest;
+    response: GetCurrentSessionResponse;
+  };
+  deleteSession: {
+    request: DeleteSessionRequest;
+    response: DeleteSessionResponse;
+  };
+  getSessionStats: {
+    request: GetSessionStatsRequest;
+    response: GetSessionStatsResponse;
   };
   pageActivity: {
     request: PageActivityRequest;

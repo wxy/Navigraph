@@ -27,12 +27,24 @@ export class IdGenerator {
     // 返回格式: tabId-domain-urlHash
     return `${tabId}-${domain}-${urlHash}`;
   }
+  
   /**
    * 生成边ID
    */
   public static generateEdgeId(sourceId: string, targetId: string, timestamp: number): string {
     return `edge-${sourceId}-${targetId}-${timestamp}`;
   }
+  
+  /**
+   * 生成会话ID
+   * @returns 唯一的会话标识符
+   */
+  public generateSessionId(): string {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000000);
+    return `session-${timestamp}-${random.toString(36)}`;
+  }
+  
   /**
    * 规范化URL
    */

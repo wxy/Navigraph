@@ -1,50 +1,37 @@
 /**
- * 会话相关类型定义
+ * 会话类型定义
+ * 确保与后端定义兼容
  */
 
-// 会话基本信息
+// 导入后端定义的类型，确保一致性
+import { 
+  BrowsingSession as BackendSession,
+  NavNode,
+  NavLink
+} from '../../types/session-types';
+
+// 导出会话摘要类型 - 用于会话列表
 export interface Session {
   id: string;
+  title: string;
   startTime: number;
   endTime?: number;
-  title?: string;
+  isActive: boolean;
+  nodeCount?: number;
+  recordCount?: number; // 兼容旧代码
 }
 
-// 会话详细信息
-export interface SessionDetails {
-  id: string;
-  startTime: number;
-  endTime?: number;
-  title?: string;
-  records: { [key: string]: NodeRecord };
-  edges: { [key: string]: EdgeRecord };
-  [key: string]: any;
+// 导出会话详情类型 - 使用后端定义的类型
+export interface SessionDetails extends BackendSession {
+  // 确保包含前端代码需要的字段
+  records: Record<string, NavNode>;
+  edges: Record<string, NavLink>;
+  rootIds: string[];
 }
 
-// 节点记录
-export interface NodeRecord {
-  id: string;
-  url: string;
-  title?: string;
-  favicon?: string;
-  navigationType?: string;
-  timestamp: number;
-  tabId: string;
-  parentId?: string | null;
-  referrer?: string;
-  isClosed?: boolean;
-  activeTime?: number;
-  loadTime?: number;
-  [key: string]: any;
-}
+// 导航节点类型
+export interface NodeRecord extends NavNode {}
 
-// 边记录
-export interface EdgeRecord {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  timestamp: number;
-  action?: string;
-  [key: string]: any;
-}
+// 导航边类型
+export interface EdgeRecord extends NavLink {}
 
