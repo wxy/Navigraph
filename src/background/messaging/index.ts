@@ -12,10 +12,7 @@ export function registerAllBackgroundHandlers(): void {
   
   // 仅注册实际需要的处理程序
   registerTabHandlers(messageService);
-  //registerSettingsHandlers(messageService);
-  
-  // 不再直接注册navigation处理程序，而是通过NavigationManager来处理
-  // registerNavigationHandlers(messageService); // 移除此行
+  registerSettingsHandlers(messageService);
   
   console.log('后台消息处理程序注册完成');
 }

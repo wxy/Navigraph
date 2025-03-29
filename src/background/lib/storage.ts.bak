@@ -170,9 +170,11 @@ export class NavigationStorage {
     if (!this.db) await this.initialize();
     
     try {
+      console.log('DB', this.db);
       const tx = this.db!.transaction(this.STORES.RECORDS, 'readonly');
       const store = tx.objectStore(this.STORES.RECORDS);
-      
+      console.log('TX', tx);
+      console.log('STORE', store);
       return new Promise<NavigationRecord | null>((resolve, reject) => {
         const request = store.get(id);
         request.onsuccess = () => resolve(request.result || null);

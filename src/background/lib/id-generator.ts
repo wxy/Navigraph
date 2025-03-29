@@ -8,7 +8,7 @@ export class IdGenerator {
    * @param url URL
    * @returns 基于标签ID和URL生成的节点ID
    */
-  static generateNodeId(tabId: number, url: string): string {
+  public static generateNodeId(tabId: number, url: string): string {
     // 规范化URL
     const normalizedUrl = this.normalizeUrl(url);
     
@@ -39,7 +39,7 @@ export class IdGenerator {
    * 生成会话ID
    * @returns 唯一的会话标识符
    */
-  public generateSessionId(): string {
+  public static generateSessionId(): string {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000000);
     return `session-${timestamp}-${random.toString(36)}`;

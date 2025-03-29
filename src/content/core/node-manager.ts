@@ -17,47 +17,30 @@ export class NodeManager {
   private nodeMap: Map<string, NavNode> = new Map();
 
   /**
-   * 将NodeRecord转换为NavNode
+   * 处理导航节点，添加前端所需属性
    */
-  private convertToNavNode(record: NodeRecord): NavNode {
-    // 创建符合NavNode类型的对象
-    // 先列出NavNode必需的所有字段
-    const node: NavNode = {
-      id: record.id,
-      url: record.url,
-      title: record.title || this.extractTitle(record.url),
-      tabId: record.tabId,
-      timestamp: record.timestamp,
-      sessionId: record.sessionId || '',
-      type: record.type || record.navigationType || 'unknown',
-      // 可选字段
-      parentId: record.parentId === record.id ? '' : record.parentId,
-      favicon: record.favicon,
-      isClosed: record.isClosed || false,
-      // 如果原记录有metadata，也保留它
-      metadata: record.metadata || {}
-    };
+  private processNavNode(record: NavNode): NavNode {
+    // 已经是NavNode类型，只需添加前端所需的属性和修正数据
     
-    // 对于类型定义中没有但前端需要的属性，使用类型断言添加
-    (node as any).children = [];
-    (node as any).depth = 0;
-    if (record.isClosed) (node as any).isClosed = record.isClosed;
+    // 处理必要字段默认值
+    if (!record.title) {
+      record.title = this.extractTitle(record.url);
+    }
     
-    return node;
-  }
-
-  /**
-   * 将EdgeRecord转换为NavLink
-   */
-  private convertToNavLink(edge: EdgeRecord): NavLink {
-    return {
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      type: edge.type || 'unknown',
-      timestamp: edge.timestamp,
-      sessionId: edge.sessionId || ''
-    };
+    if (!record.type) {
+      record.type = 'unknown';
+    }
+    
+    // 修正自引用问题
+    if (record.parentId === record.id) {
+      record.parentId = '';
+    }
+    
+    // 添加前端特定属性
+    (record as any).children = [];
+    (record as any).depth = 0;
+    
+    return record;
   }
 
   /**
@@ -76,7 +59,7 @@ export class NodeManager {
       console.log(`处理${recordIds.length}条记录`);
       
       // 转换为节点数组
-      this.nodes = recordIds.map(id => this.convertToNavNode(records[id]));
+      this.nodes = recordIds.map(id => this.processNavNode(records[id]));
       
       // 重建父子关系
       this.reconstructParentChildRelationships();
@@ -91,7 +74,11 @@ export class NodeManager {
       console.log(`处理${edgeIds.length}条边`);
       
       // 转换为边数组
-      this.edges = edgeIds.map(id => this.convertToNavLink(edgeMap[id] as EdgeRecord));
+      this.edges = edgeIds.map(id => ({
+        ...edgeMap[id],
+        type: edgeMap[id].type || 'unknown',
+        sessionId: edgeMap[id].sessionId || ''
+      }));
       
       // 构建节点映射表
       this.buildNodeMap();
@@ -176,11 +163,8 @@ export class NodeManager {
         return;
       }
       
-      // 获取导航类型
-      const navigationType = node.type;
-      
       // 根据导航类型确定父节点
-      switch(navigationType) {
+      switch(node.type) {
         case 'link_click':
           // 链接点击通常来自同一标签页的前一个节点
           const tabId = String(node.tabId || '');
@@ -233,8 +217,7 @@ export class NodeManager {
           // 用边信息补充 - 这是原始记录的实际导航关系
           if (this.edges) {
             const directEdges = this.edges.filter(e => 
-              (e.target === node.id) && 
-              (e.type !== 'generated') // 跳过推断生成的边
+              (e.target === node.id)
             );
             
             if (directEdges.length > 0) {
@@ -368,6 +351,7 @@ export class NodeManager {
             source: source,
             target: target,
             type: node.type || 'unknown',
+            sequence: 0,
             timestamp: node.timestamp,
             sessionId: node.sessionId || ''
           });

@@ -5,9 +5,9 @@ import { NavigationManager } from './navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
 import { setupContextMenus } from './lib/context-menus.js';
-// 修改导入，使用新的消息系统
 import { getBackgroundMessageService } from './messaging/bg-message-service.js';
 import { registerAllBackgroundHandlers } from './messaging/index.js';
+import { getBackgroundSessionManager } from './lib/bg-session-manager.js';
 
 // 声明但不立即初始化（模块级别变量）
 let settingsService: any;
@@ -39,33 +39,35 @@ async function initialize(): Promise<void> {
     
     // 1. 首先创建消息服务实例
     console.log('初始化消息服务...');
-    messageService = getBackgroundMessageService();
-    
+    messageService = getBackgroundMessageService();    
     // 2. 注册基础消息处理程序（tab和settings相关）
     console.log('注册基础消息处理程序...');
     registerAllBackgroundHandlers();
-    console.log('基础消息处理程序注册完成');
     
     // 3. 然后创建设置服务
     console.log('初始化设置服务...');
     settingsService = getSettingsService();
     await settingsService.initialize();
-    
-    // 4. 最后创建导航管理器
-    console.log('创建导航管理器...');
-    navigationManager = new NavigationManager(messageService);
-    
-    // 导航管理器会在自己的构造函数中注册导航相关的消息处理程序
-    
-    // 5. 初始化存储和导航管理器
-    const storage = navigationManager.getStorage();
-    await storage.initialize();
+        
+    // 4. 创建并初始化导航管理器
+    console.log('初始化导航管理器...');
+    navigationManager = new NavigationManager(messageService);    
+    // 导航管理器会在自己内部初始化所需的存储
     await navigationManager.initialize();
+
+    // 5. 初始化会话管理器
+    console.log('初始化会话管理器...');
+    const sessionManager = getBackgroundSessionManager();
+    // 会话管理器会在自己内部初始化所需的存储
+    await sessionManager.initialize();
+    // 6. 注册会话管理器的消息处理程序
+    console.log('注册会话管理器消息处理程序...');
+    sessionManager.registerMessageHandlers(messageService);
     
-    // 6. 设置事件监听器和上下文菜单
+    // 7. 设置事件监听器和上下文菜单
     setupEventListeners(navigationManager);
     setupContextMenus(navigationManager);
-    
+
     console.log('导航图谱后台初始化成功');
   } catch (error) {
     console.error('导航图谱后台初始化失败:', error);

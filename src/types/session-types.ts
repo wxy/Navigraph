@@ -3,6 +3,63 @@
  * 包含与会话管理相关的所有类型
  */
 
+// 在文件顶部添加 Chrome API 相关类型增强
+
+/**
+ * Chrome扩展API类型增强
+ */
+export interface ExtendedNavigationDetails {
+  tabId: number;
+  url: string;
+  processId: number;
+  frameId: number;
+  timeStamp: number;
+  parentFrameId?: number;
+  transitionType?: string;
+  transitionQualifiers?: string[];
+}
+
+export type ExtendedCommittedDetails = ExtendedNavigationDetails;
+export type ExtendedTransitionDetails = ExtendedNavigationDetails;
+export type ExtendedCompletedDetails = ExtendedNavigationDetails;
+
+// Chrome原生API类型扩展
+declare namespace chrome {
+  namespace webNavigation {
+    interface WebNavigationFramedCallbackDetails {
+      transitionQualifiers?: string[];
+      transitionType?: string;
+    }
+  }
+}
+
+// 添加标签页状态类型
+export interface TabState {
+  id: number;                  // 标签页ID
+  url: string;                 // 当前URL
+  title?: string;              // 标题
+  activated?: number;          // 激活时间
+  created?: number;            // 创建时间
+  lastNavigation?: number;     // 最后导航时间
+  lastNodeId?: string;         // 最后节点ID 
+  favicon?: string;            // 图标URL
+  lastActiveTime?: number;     // 最后活跃时间
+}
+
+// 添加待处理导航类型
+export interface PendingNavigation {
+  type: NavigationType;        // 导航类型
+  sourceNodeId?: string;       // 源节点ID
+  sourceTabId: number;         // 源标签页ID
+  sourceUrl: string;           // 源URL
+  targetUrl: string;           // 目标URL
+  isNewTab?: boolean;          // 是否在新标签页打开
+  data: any;                   // 相关数据
+  timestamp: number;           // 时间戳
+  expiresAt: number;           // 过期时间
+  targetTabId?: number;        // 目标标签页ID
+}
+
 // ============ 会话核心类型 ============
 
 /**
@@ -175,36 +232,94 @@ export interface SessionStatistics {
   activityByHour: {hour: number, count: number}[]; // 按小时的活动统计
 }
 
+// 确保导航类型与旧的保持兼容
+export type NavigationType = "unknown" | "link_click" | "form_submit" | "address_bar" | 
+  "history_back" | "history_forward" | "reload" | "javascript" | 
+  "redirect" | "initial" | "bookmark";
+
+export type OpenTarget = "same_tab" | "new_tab" | "popup" | "frame";
+
 /**
  * 导航节点
- * 表示浏览历史中的一个页面
+ * 表示一个浏览器导航事件
  */
 export interface NavNode {
-  id: string;                  // 节点ID
-  url: string;                 // 页面URL
-  title: string;               // 页面标题
-  tabId: number;               // 标签页ID
-  timestamp: number;           // 创建时间戳
-  sessionId: string;           // 所属会话ID
-  parentId: string;        // 父节点ID
-  favicon?: string;         // 网站图标URL
-  type: string;                // 节点类型
-  isClosed?: boolean;          // 是否已关闭
-  metadata?: Record<string, any>; // 节点元数据
-  children?: NavNode[];        // 子节点列表
-  [key: string]: any;          // 允许其他属性  
+  id: string;                // 唯一标识符
+  tabId: number;             // 所属标签页ID
+  url: string;               // URL
+  timestamp: number;         // 时间戳
+  sessionId: string;         // 所属会话ID
+  parentId?: string;         // 父节点ID
+  
+  // 核心字段
+  type: NavigationType;      // 导航类型
+  openTarget: OpenTarget;    // 打开目标
+  source: string;            // 数据来源: chrome_api | content_script | navigation_event
+  
+  // 元数据
+  title?: string;            // 页面标题
+  favicon?: string;          // 网站图标URL
+  description?: string;      // 网站描述
+  keywords?: string;         // 关键词
+  referrer?: string;         // 引用页URL
+  
+  // 访问信息
+  firstVisit: number;        // 首次访问时间
+  lastVisit: number;         // 最近访问时间
+  visitCount: number;        // 访问次数
+  reloadCount: number;       // 重新加载次数
+  loadTime?: number;         // 加载时间(毫秒)
+  activeTime?: number;       // 活跃时间(毫秒)
+  
+  // 框架信息
+  frameId: number;           // 框架ID
+  parentFrameId: number;     // 父框架ID
+  
+  // 状态
+  isClosed?: boolean;        // 是否已关闭
+
+  children?: NavNode[];      // 子节点列表
+  depth?: number;            // 深度
 }
 
 /**
- * 导航边
- * 表示节点之间的连接关系
+ * 导航边 - 表示节点之间的关系
  */
 export interface NavLink {
-  id: string;                  // 边ID
-  source: string;              // 源节点ID
-  target: string;              // 目标节点ID
-  timestamp: number;           // 创建时间戳
-  sessionId: string;           // 所属会话ID
-  type: string;                // 边类型
-  metadata?: Record<string, any>; // 边元数据
+  id: string;            // 唯一标识符
+  source: string;        // 源节点ID
+  target: string;        // 目标节点ID
+  type: NavigationType;  // 边类型
+  timestamp: number;     // 创建时间
+  sequence: number;      // 序列号(用于排序)
+  sessionId: string;     // 所属会话ID
+  data?: any;            // 可选附加数据
+}
+
+/**
+ * 导航数据查询选项
+ * 用于过滤导航节点和边的查询
+ */
+export interface NavDataQueryOptions {
+  // 会话相关
+  sessionId?: string;   // 会话ID过滤
+  
+  // 节点相关
+  tabId?: number;       // 标签页ID过滤
+  url?: string;         // URL过滤
+  
+  // 边相关
+  source?: string;      // 源节点ID
+  target?: string;      // 目标节点ID
+  type?: string;        // 类型过滤
+  
+  // 时间范围
+  startTime?: number;   // 开始时间戳（含）
+  endTime?: number;     // 结束时间戳（含）
+  
+  // 分页和排序
+  limit?: number;       // 结果数量限制
+  offset?: number;      // 结果偏移量
+  sortBy?: string;      // 排序字段
+  sortOrder?: 'asc' | 'desc'; // 排序顺序
 }

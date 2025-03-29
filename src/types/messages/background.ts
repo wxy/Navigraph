@@ -1,6 +1,13 @@
 import { BaseMessage, BaseResponse } from './common.js';
-import { BrowsingSession } from '../../background/types/webext.js';
-
+import { BrowsingSession } from '../session-types.js';
+// 添加这些新的类型定义
+import { 
+    SessionQueryOptions,
+    SessionCreationOptions, 
+    SessionUpdateOptions,
+    SessionStatistics 
+  } from '../../types/session-types.js';
+  
 export namespace BackgroundMessages {
   /**
    * 获取标签页ID请求
@@ -174,6 +181,7 @@ export namespace BackgroundMessages {
   export interface GetSessionsRequest extends BaseMessage {
     action: 'getSessions';
     target: 'background';
+    options?: SessionQueryOptions;
   }
 
   /**
@@ -203,6 +211,70 @@ export namespace BackgroundMessages {
   export interface ClearAllRecordsRequest extends BaseMessage {
     action: 'clearAllRecords';
     target: 'background';
+  }
+
+  /**
+   * 创建会话请求
+   */
+  export interface CreateSessionRequest extends BaseMessage {
+    action: 'createSession';
+    target: 'background';
+    options?: SessionCreationOptions;
+  }
+
+  /**
+   * 更新会话请求
+   */
+  export interface UpdateSessionRequest extends BaseMessage {
+    action: 'updateSession';
+    target: 'background';
+    sessionId: string;
+    updates: SessionUpdateOptions;
+  }
+
+  /**
+   * 结束会话请求
+   */
+  export interface EndSessionRequest extends BaseMessage {
+    action: 'endSession';
+    target: 'background';
+    sessionId: string;
+  }
+
+  /**
+   * 设置当前会话请求
+   */
+  export interface SetCurrentSessionRequest extends BaseMessage {
+    action: 'setCurrentSession';
+    target: 'background';
+    sessionId: string;
+  }
+
+  /**
+   * 获取当前会话请求
+   */
+  export interface GetCurrentSessionRequest extends BaseMessage {
+    action: 'getCurrentSession';
+    target: 'background';
+  }
+
+  /**
+   * 删除会话请求
+   */
+  export interface DeleteSessionRequest extends BaseMessage {
+    action: 'deleteSession';
+    target: 'background';
+    sessionId: string;
+    confirm: boolean; // 安全措施，要求显式确认删除
+  }
+
+  /**
+   * 获取会话统计信息请求
+   */
+  export interface GetSessionStatsRequest extends BaseMessage {
+    action: 'getSessionStats';
+    target: 'background';
+    sessionId: string;
   }
 }
 
@@ -315,8 +387,10 @@ export namespace BackgroundResponses {
       id: string;
       title: string;
       startTime: number;
-      endTime: number;
-      recordCount: number;
+      endTime?: number;
+      isActive: boolean;
+      nodeCount: number;
+      recordCount: number; // 兼容旧代码
     }>;
   }
 
@@ -344,6 +418,59 @@ export namespace BackgroundResponses {
    */
   export interface ClearAllRecordsResponse extends BaseResponse {
     // 基本的成功/失败信息已包含在BaseResponse中
+  }
+
+  /**
+   * 创建会话响应
+   */
+  export interface CreateSessionResponse extends BaseResponse {
+    session: BrowsingSession;
+  }
+
+  /**
+   * 更新会话响应
+   */
+  export interface UpdateSessionResponse extends BaseResponse {
+    session: BrowsingSession;
+  }
+
+  /**
+   * 结束会话响应
+   */
+  export interface EndSessionResponse extends BaseResponse {
+    sessionId: string;
+    session?: BrowsingSession;
+  }
+
+  /**
+   * 设置当前会话响应
+   */
+  export interface SetCurrentSessionResponse extends BaseResponse {
+    sessionId: string;
+    session?: BrowsingSession;
+  }
+
+  /**
+   * 获取当前会话响应
+   */
+  export interface GetCurrentSessionResponse extends BaseResponse {
+    sessionId: string | null;
+    session?: BrowsingSession;
+  }
+
+  /**
+   * 删除会话响应
+   */
+  export interface DeleteSessionResponse extends BaseResponse {
+    sessionId: string;
+  }
+
+  /**
+   * 获取会话统计信息响应
+   */
+  export interface GetSessionStatsResponse extends BaseResponse {
+    sessionId: string;
+    statistics: SessionStatistics;
   }
 }
 
@@ -444,5 +571,40 @@ export interface BackgroundAPI {
   clearAllRecords: {
     request: BackgroundMessages.ClearAllRecordsRequest;
     response: BackgroundResponses.ClearAllRecordsResponse;
+  };
+
+  createSession: {
+    request: BackgroundMessages.CreateSessionRequest;
+    response: BackgroundResponses.CreateSessionResponse;
+  };
+
+  updateSession: {
+    request: BackgroundMessages.UpdateSessionRequest;
+    response: BackgroundResponses.UpdateSessionResponse;
+  };
+
+  endSession: {
+    request: BackgroundMessages.EndSessionRequest;
+    response: BackgroundResponses.EndSessionResponse;
+  };
+
+  setCurrentSession: {
+    request: BackgroundMessages.SetCurrentSessionRequest;
+    response: BackgroundResponses.SetCurrentSessionResponse;
+  };
+
+  getCurrentSession: {
+    request: BackgroundMessages.GetCurrentSessionRequest;
+    response: BackgroundResponses.GetCurrentSessionResponse;
+  };
+
+  deleteSession: {
+    request: BackgroundMessages.DeleteSessionRequest;
+    response: BackgroundResponses.DeleteSessionResponse;
+  };
+
+  getSessionStats: {
+    request: BackgroundMessages.GetSessionStatsRequest;
+    response: BackgroundResponses.GetSessionStatsResponse;
   };
 }
