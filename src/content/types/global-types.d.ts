@@ -2,8 +2,8 @@
 // 添加TypeScript的特殊注释，确保编译器始终包含该文件
 /// <reference types="d3" />
 
-type NavigraphSettingsType = import('../../lib/settings/types').NavigraphSettings;
-type NavigationVisualizerType = import('../core/navigation-visualizer').NavigationVisualizer;
+type NavigraphSettingsType = import('../../lib/settings/types.js').NavigraphSettings;
+type NavigationVisualizerType = import('../core/navigation-visualizer.js').NavigationVisualizer;
 
 declare global {
   interface Window {

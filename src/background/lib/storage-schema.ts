@@ -8,7 +8,7 @@
  * Navigraph应用的数据库架构具体配置
  */
 
-import { DatabaseSchema } from '../../types/storage-types';
+import { DatabaseSchema } from '../../types/storage-types.js';
 
 /**
  * Navigraph 存储架构

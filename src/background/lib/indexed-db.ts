@@ -3,7 +3,7 @@
  * 提供对IndexedDB的低级封装，增强类型安全
  */
 
-import { DatabaseSchema, StoreDefinition } from '../../types/storage-types';
+import { DatabaseSchema, StoreDefinition } from '../../types/storage-types.js';
 
 /**
  * IndexedDB存储类

@@ -3,7 +3,7 @@
  * 负责会话数据的持久化存储与检索
  */
 
-import { BrowsingSession, SessionQueryOptions } from '../../types/session-types';
+import { BrowsingSession, SessionQueryOptions } from '../../types/session-types.js';
 import { IndexedDBStorage } from './indexed-db.js';
 import { StorageSchema } from './storage-schema.js';
 

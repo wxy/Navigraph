@@ -1,4 +1,4 @@
-import { MessageHandler, BaseMessage } from '../../types/message-types';
+import { MessageHandler, BaseMessage } from '../../types/message-types.js';
 
 /**
  * 后台消息服务

@@ -3,7 +3,7 @@
  * 提供会话相关事件的发布-订阅功能
  */
 
-import { SessionEvent, SessionEventType } from '../../types/session-types';
+import { SessionEvent, SessionEventType } from '../../types/session-types.js';
 
 /**
  * 会话事件监听器类型

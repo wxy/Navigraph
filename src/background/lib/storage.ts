@@ -3,7 +3,7 @@ import {
   NavigationEdge, 
   BrowsingSession,
   NavigationQueryCriteria
-} from '../types/webext';
+} from '../types/webext.js';
 import { IdGenerator } from './id-generator.js';
 
 /**

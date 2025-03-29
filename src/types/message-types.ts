@@ -10,7 +10,7 @@ import {
   SessionUpdateOptions,
   SessionQueryOptions,
   SessionStatistics
-} from './session-types';
+} from './session-types.js';
 
 // ============ 基础消息类型 ============
 

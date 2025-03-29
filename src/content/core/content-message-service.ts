@@ -1,4 +1,4 @@
-import { BaseMessage, RequestResponseMap, MessageHandler } from '../../types/message-types';
+import { BaseMessage, RequestResponseMap, MessageHandler } from '../../types/message-types.js';
 
 /**
  * 内容脚本消息服务

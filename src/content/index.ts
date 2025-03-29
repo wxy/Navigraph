@@ -4,7 +4,6 @@
  */
 
 // 导入类型
-import type { NavigraphSettings } from '../lib/settings/types.js';
 
 // 用于控制页面活动事件频率的变量
 let lastActivityTime = 0;

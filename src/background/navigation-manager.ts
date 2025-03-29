@@ -1,7 +1,7 @@
 import { NavigationStorage } from './lib/storage.js';
 import { IdGenerator } from './lib/id-generator.js';
-import { BackgroundMessageService } from './lib/bg-message-service.js';
-import { MessageHandler } from '../types/message-types';
+import { BackgroundMessageService } from './messaging/bg-message-service.js';
+import { BackgroundMessages, BackgroundResponses } from '../types/messages/background.js';
 import { 
   NavigationRecord,
   NavigationEdge,
@@ -13,7 +13,7 @@ import {
   ExtendedTransitionDetails,
   TabState,
   PendingNavigation
-} from './types/webext';
+} from './types/webext.js';
 
 /**
  * 导航管理器 - 负责创建和管理导航节点、事件和关系
@@ -1034,37 +1034,60 @@ export class NavigationManager {
 
   /**
    * 处理链接点击事件
-   * 内容脚本发送的事件
    */
-  public handleLinkClicked(tabId: number, linkInfo: any): void {
-    if (!linkInfo || !tabId) return;
-
-    const expiresAt = Date.now() + this.expirationTime;
-
-    // 生成待处理导航记录
-    const pendingNav: PendingNavigation = {
-      type: "link_click",
-      sourceNodeId: linkInfo.sourcePageId, // 存储源节点ID
-      sourceTabId: tabId,
-      sourceUrl: linkInfo.sourceUrl,
-      targetUrl: linkInfo.targetUrl,
-      isNewTab: linkInfo.isNewTab,
-      data: linkInfo,
-      timestamp: linkInfo.timestamp || Date.now(),
-      expiresAt,
-    };
-
-    // 添加到待处理列表
-    const targetUrl = this.normalizeUrl(linkInfo.targetUrl);
-    if (!this.pendingNavigations.has(targetUrl)) {
-      this.pendingNavigations.set(targetUrl, []);
-    }
-    this.pendingNavigations.get(targetUrl)?.push(pendingNav);
-
-    if (this.debugMode) {
-      console.log(
-        `链接点击: ${linkInfo.sourceUrl} -> ${targetUrl} (源节点: ${linkInfo.sourcePageId})`
-      );
+  private handleLinkClick(linkInfo: {
+    sourcePageId: string;
+    sourceUrl: string;
+    targetUrl: string;
+    anchorText: string;
+    isNewTab: boolean;
+    timestamp: number;
+  }): void {
+    try {
+      const { sourcePageId, sourceUrl, targetUrl, anchorText, isNewTab, timestamp } = linkInfo;
+      
+      // 创建一个待处理的导航记录，稍后当用户访问目标URL时会自动关联
+      const expiresAt = timestamp + this.expirationTime;
+      
+      // 创建一个待处理导航记录
+      const pendingNav: PendingNavigation = {
+        type: "link_click",
+        sourceNodeId: sourcePageId,
+        sourceUrl: sourceUrl,
+        targetUrl: targetUrl,
+        data: {
+          anchorText: anchorText,
+          isNewTab: isNewTab
+        },
+        timestamp: timestamp,
+        expiresAt: expiresAt,
+        // 如果知道源标签页ID，可以从linkInfo中获取并添加
+        sourceTabId: 0 // 此处可能需要从上下文中获取tabId
+      };
+      
+      // 添加到待处理导航列表
+      const normalizedUrl = this.normalizeUrl(targetUrl);
+      if (!this.pendingNavigations.has(normalizedUrl)) {
+        this.pendingNavigations.set(normalizedUrl, []);
+      }
+      this.pendingNavigations.get(normalizedUrl)?.push(pendingNav);
+      
+      // 如果目标是在新标签页打开，记录这个信息
+      if (isNewTab) {
+        pendingNav.isNewTab = true;
+      }
+      
+      // 记录到控制台
+      if (this.debugMode) {
+        console.log(
+          `记录链接点击: 从[${sourceUrl}](${sourcePageId}) -> 到[${targetUrl}], ` +
+          `文本="${anchorText}", 新标签页=${isNewTab}`
+        );
+      } else {
+        console.log(`记录链接点击: ${sourceUrl} -> ${targetUrl}`);
+      }
+    } catch (error) {
+      console.error('处理链接点击失败:', error);
     }
   }
 
@@ -1931,91 +1954,65 @@ export class NavigationManager {
 
   /**
    * 注册消息处理程序
+   * 修改后与内容脚本、扩展页和选项页的交互更加清晰
    */
   private registerMessageHandlers(service: BackgroundMessageService): void {
     // 获取节点ID请求
-    service.registerHandler('getNodeId', (message, sender, sendResponse) => {
+    service.registerHandler('getNodeId', (
+      message: BackgroundMessages.GetNodeIdRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetNodeIdResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
-      try {
-        const tabId = ctx.getTabId();
-        const url = message.url || ctx.getUrl() || '';
-        
-        if (!tabId) {
-          console.error('获取节点ID失败：无法确定标签页ID');
-          return ctx.error('无法获取标签页信息');
-        }
-        
-        this.getNodeIdForTab(tabId, url)
-          .then(nodeId => {
-            if (nodeId) {
-              console.log(`内容脚本请求节点ID: 标签页=${tabId}, URL=${url}, 返回=${nodeId}`);
-              return ctx.success({ nodeId, tabId });
-            } else {
-              return ctx.error(`未找到URL对应的节点: ${url}`);
-            }
-          })
-          .catch(err => {
-            return ctx.error(`获取节点ID失败: ${err.message}`);
+      const handleRequest = async () => {
+        try {
+          const { tabId, url, referrer, timestamp } = message;
+          
+          // 获取或创建节点
+          const node = await this.getOrCreateNodeForUrl(url, {
+            tabId,
+            referrer: referrer || '',  // 如果客户端没遵循新类型，提供默认值作为后备
+            timestamp: timestamp || Date.now()  // 如果客户端没遵循新类型，提供默认值作为后备
           });
           
-        return true; // 异步响应
-      } catch (error) {
-        return ctx.error(`获取节点ID时出错: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    });
-    
-    // 页面标题更新请求
-    service.registerHandler('pageTitleUpdated', (message, sender, sendResponse) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
+          if (node && node.id) {
+            console.log(`为URL分配节点ID: ${url} -> ${node.id}`);
+            ctx.success({ nodeId: node.id });
+          } else {
+            ctx.error('无法创建节点');
+          }
+        } catch (error) {
+          console.error('处理getNodeId失败:', error);
+          ctx.error(`获取节点ID失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      };
       
-      if (message.nodeId && message.title) {
-        this.updateNodeMetadata(
-          message.nodeId,
-          { title: message.title },
-          'content_script'
-        )
-          .then(() => ctx.success())
-          .catch(error => ctx.error(`更新页面标题失败: ${error.message}`));
-          
-        return true; // 异步响应
-      } else {
-        return ctx.error('缺少节点ID或标题');
-      }
-    });
-    
-    // favicon 更新请求
-    service.registerHandler('faviconUpdated', (message, sender, sendResponse) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
+      // 执行异步处理
+      handleRequest();
       
-      if (message.nodeId && message.favicon) {
-        this.updateNodeMetadata(
-          message.nodeId,
-          { favicon: message.favicon },
-          'content_script'
-        )
-          .then(() => ctx.success())
-          .catch(error => ctx.error(`更新页面图标失败: ${error.message}`));
-          
-        return true; // 异步响应
-      } else {
-        return ctx.error('缺少节点ID或图标');
-      }
+      return true; // 异步响应
     });
-    
+
     // 页面加载请求
-    service.registerHandler('pageLoaded', (message, sender, sendResponse) => {
+    service.registerHandler('pageLoaded', (
+      message: BackgroundMessages.PageLoadedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.PageLoadedResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
-      const tabId = ctx.getTabId();
+      const tabId = sender.tab?.id;
       const pageInfo = message.pageInfo || {};
-      const url = pageInfo.url || ctx.getUrl() || '';
+      const url = pageInfo.url || sender.tab?.url || '';
       
       if (!tabId || !url) {
         return ctx.error('缺少必要的页面信息');
       }
       
-      console.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
+      if (this.debugMode) {
+        console.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
+      }
       
       this.updatePageMetadata(tabId, {
         ...pageInfo,
@@ -2028,82 +2025,214 @@ export class NavigationManager {
             return ctx.error('未找到此页面的节点ID');
           }
         })
-        .catch(error => ctx.error(`处理页面加载失败: ${error.message}`));
+        .catch(error => ctx.error(`处理页面加载失败: ${error instanceof Error ? error.message : String(error)}`));
         
       return true; // 异步响应
     });
     
-    // 页面活动消息
-    service.registerHandler('pageActivity', (message, sender, sendResponse) => {
+    // 页面标题更新请求
+    service.registerHandler('pageTitleUpdated', (
+      message: BackgroundMessages.PageTitleUpdatedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.PageTitleUpdatedResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
-      console.log(
-        "收到页面活动消息:",
-        message.source || "unknown source",
-        message.timestamp
-          ? new Date(message.timestamp).toLocaleTimeString()
-          : "unknown time"
-      );
+      // 获取节点ID，优先使用消息中的，或者尝试查找
+      const handleUpdate = async () => {
+        try {
+          let nodeId = message.nodeId;
+          
+          // 如果没有提供节点ID，尝试查找
+          if (!nodeId) {
+            const tabId = sender.tab?.id;
+            const url = sender.tab?.url;
+            
+            if (!tabId || !url) {
+              return ctx.error('无法确定标签页信息');
+            }
+            
+            const result = await this.getNodeIdForTab(tabId, url);
+            if (!result) {
+              return ctx.error('未找到节点ID');
+            }
+            nodeId = result;
+          }
+          
+          // 更新标题
+          await this.updateNodeMetadata(
+            nodeId,
+            { title: message.title },
+            'content_script'
+          );
+          return ctx.success();
+        } catch (error) {
+          return ctx.error(`更新页面标题失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      };
+      
+      handleUpdate();
+      return true; // 异步响应
+    });
+    
+    // favicon 更新请求
+    service.registerHandler('faviconUpdated', (
+      message: BackgroundMessages.FaviconUpdatedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.FaviconUpdatedResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const handleUpdate = async () => {
+        try {
+          let nodeId = message.nodeId;
+          
+          // 如果没有提供节点ID，尝试查找
+          if (!nodeId) {
+            const tabId = sender.tab?.id;
+            const url = sender.tab?.url;
+            
+            if (!tabId || !url) {
+              return ctx.error('无法确定标签页信息');
+            }
+            
+            const result = await this.getNodeIdForTab(tabId, url);
+            if (!result) {
+              return ctx.error('未找到节点ID');
+            }
+            nodeId = result;
+          }
+          
+          // 更新favicon
+          await this.updateNodeMetadata(
+            nodeId,
+            { favicon: message.faviconUrl },
+            'content_script'
+          );
+          return ctx.success();
+        } catch (error) {
+          return ctx.error(`更新页面图标失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      };
+      
+      handleUpdate();
+      return true; // 异步响应
+    });
+    
+    // 页面活动消息
+    service.registerHandler('pageActivity', (
+      message: BackgroundMessages.PageActivityRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.PageActivityResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (this.debugMode) {
+        console.log(
+          "收到页面活动消息:",
+          message.source || "unknown source",
+          message.timestamp
+            ? new Date(message.timestamp).toLocaleTimeString()
+            : "unknown time"
+        );
+      }
+      
+      // 这里可以添加更多处理逻辑，例如更新节点的最后访问时间
       
       return ctx.success({ acknowledged: true });
     });
     
     // 链接点击请求
-    service.registerHandler('linkClicked', (message, sender, sendResponse) => {
+    service.registerHandler('linkClicked', (
+      message: BackgroundMessages.LinkClickedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.LinkClickedResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
-      const tabId = ctx.getTabId();
-      if (tabId !== undefined && message.linkInfo) {
+      if (message.linkInfo) {
         try {
-          this.handleLinkClicked(tabId, message.linkInfo);
-          return ctx.success();
+          const { sourcePageId, sourceUrl, targetUrl, anchorText, isNewTab, timestamp } = message.linkInfo;
+          
+          // 处理链接点击，始终使用值，不需要检查是否存在
+          this.handleLinkClick({
+            sourcePageId,
+            sourceUrl, 
+            targetUrl,
+            anchorText: anchorText || '',  // 如果客户端没遵循新类型，提供默认值作为后备
+            isNewTab: isNewTab ?? false,   // 使用空值合并运算符处理布尔型属性
+            timestamp: timestamp || Date.now()  // 如果客户端没遵循新类型，提供默认值作为后备
+          });
+          
+          ctx.success();
         } catch (error) {
           console.error('处理链接点击失败:', error);
-          return ctx.error(`处理链接点击失败: ${error instanceof Error ? error.message : String(error)}`);
+          ctx.error(`处理链接点击失败: ${error instanceof Error ? error.message : String(error)}`);
         }
+        return false;
       } else {
-        return ctx.error('缺少链接信息或标签页ID');
+        ctx.error('缺少链接信息');
+        return false;
       }
     });
     
     // 表单提交请求
-    service.registerHandler('formSubmitted', (message, sender, sendResponse) => {
+    service.registerHandler('formSubmitted', (
+      message: BackgroundMessages.FormSubmittedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.FormSubmittedResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
-      const tabId = ctx.getTabId();
-      if (tabId !== undefined && message.formInfo) {
-        try {
-          this.handleFormSubmitted(tabId, message.formInfo);
-          return ctx.success();
-        } catch (error) {
-          console.error('处理表单提交失败:', error);
-          return ctx.error(`处理表单提交失败: ${error instanceof Error ? error.message : String(error)}`);
-        }
-      } else {
-        return ctx.error('缺少表单信息或标签页ID');
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        ctx.error('无法确定标签页ID');
+        return false; // 同步响应
       }
+      
+      if (!message.formInfo) {
+        ctx.error('缺少表单信息');
+        return false; // 同步响应
+      }
+      
+      try {
+        this.handleFormSubmitted(tabId, message.formInfo);
+        ctx.success();
+      } catch (error) {
+        console.error('处理表单提交失败:', error);
+        ctx.error(`处理表单提交失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      return false; // 同步响应
     });
     
     // JS导航请求
-    service.registerHandler('jsNavigation', (message, sender, sendResponse) => {
+    service.registerHandler('jsNavigation', (
+      message: BackgroundMessages.JsNavigationRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.JsNavigationResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
-      const tabId = ctx.getTabId();
-      if (tabId !== undefined) {
-        try {
-          this.handleJsNavigation(tabId, message);
-          return ctx.success();
-        } catch (error) {
-          console.error('处理JS导航失败:', error);
-          return ctx.error(`处理JS导航失败: ${error instanceof Error ? error.message : String(error)}`);
-        }
-      } else {
-        return ctx.error('无效的消息来源或标签页ID');
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        return ctx.error('无法确定标签页ID');
+      }
+      
+      try {
+        this.handleJsNavigation(tabId, message);
+        return ctx.success();
+      } catch (error) {
+        console.error('处理JS导航失败:', error);
+        return ctx.error(`处理JS导航失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
     
     // 获取会话列表请求
-    service.registerHandler('getSessions', (message, sender, sendResponse) => {
+    service.registerHandler('getSessions', (
+      message: BackgroundMessages.GetSessionsRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetSessionsResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
       this.getStorage().getSessions()
@@ -2128,7 +2257,11 @@ export class NavigationManager {
     });
     
     // 获取会话详情请求
-    service.registerHandler('getSessionDetails', (message, sender, sendResponse) => {
+    service.registerHandler('getSessionDetails', (
+      message: BackgroundMessages.GetSessionDetailsRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetSessionDetailsResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
       if (!message.sessionId) {
@@ -2152,11 +2285,17 @@ export class NavigationManager {
     });
     
     // 获取导航树请求
-    service.registerHandler('getNavigationTree', (message, sender, sendResponse) => {
+    service.registerHandler('getNavigationTree', (
+      message: BackgroundMessages.GetNavigationTreeRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetNavigationTreeResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
       const options = message.options || {};
-      console.log('获取导航树数据...', options);
+      if (this.debugMode) {
+        console.log('获取导航树数据...', options);
+      }
       
       // 首先获取当前会话ID
       this.getStorage().getCurrentSessionId()
@@ -2192,7 +2331,11 @@ export class NavigationManager {
     });
     
     // 清除所有记录请求
-    service.registerHandler('clearAllRecords', (message, sender, sendResponse) => {
+    service.registerHandler('clearAllRecords', (
+      message: BackgroundMessages.ClearAllRecordsRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.ClearAllRecordsResponse) => void
+    ) => {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
       this.getStorage().clearAllRecords()
@@ -2206,8 +2349,112 @@ export class NavigationManager {
       
       return true; // 异步响应
     });
+    
+    console.log('导航管理器消息处理程序已注册');
   }
-  
+    /**
+   * 获取或创建URL对应的节点
+   * 如果节点已存在则返回现有节点，否则创建新节点
+   */
+  private async getOrCreateNodeForUrl(url: string, options: {
+    tabId: number;
+    referrer?: string;
+    timestamp?: number;
+  }): Promise<{ id: string; isNew?: boolean } | null> {
+    try {
+      const { tabId, referrer, timestamp = Date.now() } = options;
+      
+      // 1. 首先尝试从标签页中查找节点
+      let nodeId = await this.getNodeIdForTab(tabId, url);
+      
+      if (nodeId) {
+        // 找到现有节点，更新访问信息
+        await this.storage.updateRecord(nodeId, {
+          lastVisit: timestamp,
+          visitCount: await this.incrementVisitCount(nodeId)
+        });
+        
+        return { id: nodeId };
+      }
+      
+      // 2. 如果没找到，创建新节点
+      nodeId = IdGenerator.generateNodeId(tabId, url);
+      
+      // 3. 记录节点ID到标签页历史
+      this.addToTabNavigationHistory(tabId, nodeId);
+      
+      // 4. 更新标签页状态
+      this.updateTabState(tabId, {
+        url: url,
+        lastNodeId: nodeId,
+        lastNavigation: timestamp
+      });
+      
+      // 5. 添加到待更新列表
+      this.addToPendingUpdates(tabId, nodeId);
+      
+      // 6. 更新缓存
+      this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
+      
+      // 7. 查找可能的父节点
+      let parentId = "";
+      
+      // 首先检查是否有待处理导航
+      const pendingNav = this.getPendingNavigationForUrl(url, tabId);
+      
+      if (pendingNav && pendingNav.sourceNodeId) {
+        // 使用待处理导航的源节点作为父节点
+        parentId = pendingNav.sourceNodeId;
+      } else if (referrer) {
+        // 使用引用页面作为父节点
+        const referrerNodeId = await this.findNodeByUrl(referrer);
+        if (referrerNodeId) {
+          parentId = referrerNodeId;
+        }
+      }
+      
+      // 如果还没找到父节点，尝试使用当前标签页的最后一个节点
+      if (!parentId) {
+        parentId = await this.findLastNodeIdForTab(tabId) || "";
+      }
+      
+      // 8. 创建导航记录
+      const record: NavigationRecord = {
+        id: nodeId,
+        tabId: tabId,
+        url: url,
+        timestamp: timestamp,
+        sessionId: (await this.storage.getCurrentSession()).id,
+        parentId: parentId,
+        navigationType: pendingNav ? pendingNav.type : "initial",
+        openTarget: "same_tab",
+        source: "chrome_api",
+        firstVisit: timestamp,
+        lastVisit: timestamp,
+        visitCount: 1,
+        reloadCount: 0,
+        frameId: 0,
+        parentFrameId: -1
+      };
+      
+      // 9. 保存记录
+      await this.storage.saveRecord(record);
+      
+      // 10. 如果存在父节点，创建边
+      if (parentId) {
+        await this.createNavigationEdge(parentId, nodeId, timestamp, record.navigationType);
+      }
+      
+      if (this.debugMode) {
+        console.log(`创建新节点: ID=${nodeId}, URL=${url}, 父节点=${parentId || "无"}`);
+      }
+      
+      return { id: nodeId, isNew: true };
+    } catch (error) {
+      console.error("获取或创建节点失败:", error);
+      return null;
+    }
+  }
   /**
    * 为导航树中的节点标记更新状态
    */

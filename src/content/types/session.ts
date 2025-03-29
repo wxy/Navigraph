@@ -10,7 +10,7 @@ import {
   SessionSummary,
   NavNode,
   NavLink
-} from '../../types/session-types';
+} from '../../types/session-types.js';
 
 // 导出会话类型
 export type Session = SessionSummary;
