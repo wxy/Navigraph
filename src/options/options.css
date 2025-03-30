@@ -217,7 +217,6 @@ select:focus, input:focus {
 }
 
 input[type="range"] {
-  -webkit-appearance: none;
   width: 100%;
   height: 6px;
   border-radius: 5px;
@@ -226,7 +225,6 @@ input[type="range"] {
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
   appearance: none;
   width: 18px;
   height: 18px;
@@ -244,7 +242,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 .preview-box {
   margin-top: 12px;
-  height: 120px;
+  height: 140px; /* 增加高度以更好地显示内容 */
   border: 1px solid var(--border-color);
   border-radius: 6px;
   position: relative;
@@ -252,18 +250,43 @@ input[type="range"]::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(74, 110, 224, 0.05);
+  background-color: var(--card-bg); /* 使用卡片背景色以匹配主题 */
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.05); /* 添加内阴影增强视觉效果 */
+  transition: background-color var(--transition-speed); /* 添加过渡效果 */
+}
+
+/* 添加预览标签 */
+.preview-box::before {
+  content: attr(data-view-type);
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 10px;
+  padding: 2px 6px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 3px;
+  opacity: 0.8;
+  text-transform: capitalize;
+}
+
+.preview-box.tree-preview::before {
+  content: "树形图视图";
+}
+
+.preview-box.timeline-preview::before {
+  content: "时间线视图";
 }
 
 .preview-box.tree-preview {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100"><path d="M100,10 L100,30 L60,30 L60,50 L40,50 L40,70 L20,70 M60,50 L80,70 M100,30 L140,30 L140,50 L120,70 M140,50 L160,70" stroke="%234a6ee0" fill="none" stroke-width="2"/><circle cx="100" cy="10" r="5" fill="%234a6ee0"/><circle cx="100" cy="30" r="5" fill="%234a6ee0"/><circle cx="60" cy="30" r="5" fill="%234a6ee0"/><circle cx="140" cy="30" r="5" fill="%234a6ee0"/><circle cx="60" cy="50" r="5" fill="%234a6ee0"/><circle cx="140" cy="50" r="5" fill="%234a6ee0"/><circle cx="40" cy="50" r="5" fill="%234a6ee0"/><circle cx="40" cy="70" r="5" fill="%234a6ee0"/><circle cx="20" cy="70" r="5" fill="%234a6ee0"/><circle cx="80" cy="70" r="5" fill="%234a6ee0"/><circle cx="120" cy="70" r="5" fill="%234a6ee0"/><circle cx="160" cy="70" r="5" fill="%234a6ee0"/></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100"><defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="%234a6ee0"/></marker></defs><path d="M40,50 C70,50 90,30 120,30" stroke="%234a6ee0" fill="none" stroke-width="2" marker-end="url(%23arrowhead)"/><path d="M40,50 C70,50 90,50 120,50" stroke="%234a6ee0" fill="none" stroke-width="2" marker-end="url(%23arrowhead)"/><path d="M40,50 C70,50 90,70 120,70" stroke="%234a6ee0" fill="none" stroke-width="2" marker-end="url(%23arrowhead)"/><circle cx="40" cy="50" r="12" fill="%234a6ee0" stroke="white" stroke-width="2"/><circle cx="120" cy="30" r="10" fill="white" stroke="%234a6ee0" stroke-width="2"/><circle cx="120" cy="50" r="10" fill="white" stroke="%234a6ee0" stroke-width="2"/><circle cx="120" cy="70" r="10" fill="white" stroke="%234a6ee0" stroke-width="2"/><text x="40" y="50" font-family="Arial" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle"></text></svg>');
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
 }
 
 .preview-box.timeline-preview {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100"><line x1="20" y1="50" x2="180" y2="50" stroke="%234a6ee0" stroke-width="2"/><circle cx="40" cy="50" r="5" fill="%234a6ee0"/><circle cx="80" cy="50" r="5" fill="%234a6ee0"/><circle cx="120" cy="50" r="5" fill="%234a6ee0"/><circle cx="160" cy="50" r="5" fill="%234a6ee0"/><line x1="40" y1="30" x2="40" y2="40" stroke="%234a6ee0" stroke-width="2"/><line x1="80" y1="60" x2="80" y2="70" stroke="%234a6ee0" stroke-width="2"/><line x1="120" y1="30" x2="120" y2="40" stroke="%234a6ee0" stroke-width="2"/><line x1="160" y1="60" x2="160" y2="70" stroke="%234a6ee0" stroke-width="2"/></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100"><rect x="10" y="10" width="180" height="20" rx="3" fill="%23eaeaea" stroke="%23cccccc"/><line x1="20" y1="25" x2="180" y2="25" stroke="%234a6ee0" stroke-width="1"/><text x="20" y="20" font-family="Arial" font-size="6" fill="%23666666" dominant-baseline="middle">00:00</text><text x="180" y="20" font-family="Arial" font-size="6" fill="%23666666" text-anchor="end" dominant-baseline="middle">03:00</text><line x1="40" y1="30" x2="40" y2="45" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><line x1="80" y1="30" x2="80" y2="65" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><line x1="120" y1="30" x2="120" y2="50" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><line x1="160" y1="30" x2="160" y2="70" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><circle cx="40" cy="45" r="8" fill="%234285f4"/><circle cx="80" cy="65" r="8" fill="%2334a853"/><circle cx="120" cy="50" r="8" fill="%23fbbc05"/><circle cx="160" cy="70" r="8" fill="%23ea4335"/><path d="M40,45 L80,65 L120,50 L160,70" stroke="%23999999" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/></svg>');
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -328,27 +351,46 @@ footer {
 
 .notification {
   position: fixed;
-  bottom: 20px;
+  top: 20px;
   right: 20px;
-  background-color: var(--success-color);
+  padding: 12px 16px;
+  background-color: #4caf50;
   color: white;
-  padding: 12px 24px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(0);
-  opacity: 1;
-  transition: all 0.3s ease;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   z-index: 1000;
-}
-
-.notification.error {
-  background-color: var(--danger-color);
+  transition: opacity 0.3s, transform 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 80%;
 }
 
 .notification.hidden {
-  transform: translateY(100px);
   opacity: 0;
+  transform: translateY(-20px);
   pointer-events: none;
+}
+
+.notification.error {
+  background-color: #f44336;
+}
+
+
+.notification-action {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.notification-action:hover {
+  background: rgba(255,255,255,0.3);
 }
 
 /* 响应式调整 */

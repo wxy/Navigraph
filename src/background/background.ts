@@ -1,22 +1,33 @@
-import { NavigationManager } from './navigation-manager.js';
-import { MessageContext } from './lib/message-context.js';
-import { getSettingsService } from '../lib/settings/service.js';
-import { setupEventListeners } from './lib/event-listeners.js';
-import { setupContextMenus } from './lib/context-menus.js';
-import { handleMessage } from './lib/message-handler.js';
-
 /**
  * 主要的后台脚本，负责初始化和协调各个组件
  */
+import { NavigationManager } from './navigation-manager.js';
+import { getSettingsService } from '../lib/settings/service.js';
+import { setupEventListeners } from './lib/event-listeners.js';
+import { setupContextMenus } from './lib/context-menus.js';
+import { getBackgroundMessageService } from './messaging/bg-message-service.js';
+import { registerAllBackgroundHandlers } from './messaging/index.js';
+import { getBackgroundSessionManager } from './lib/bg-session-manager.js';
 
-// 获取设置服务实例
-const settingsService = getSettingsService();
+// 声明但不立即初始化（模块级别变量）
+let settingsService: any;
+let navigationManager: NavigationManager;
+let messageService: ReturnType<typeof getBackgroundMessageService>; // 使用泛型而非具体类型
 
-// 创建导航节点管理器实例
-const navigationManager = new NavigationManager();
+// 导出访问器函数，而不是直接导出实例
+export function getNavigationManager(): NavigationManager {
+  if (!navigationManager) {
+    throw new Error('NavigationManager 尚未初始化');
+  }
+  return navigationManager;
+}
 
-// 导出以便其他模块使用
-export { navigationManager };
+export function getMessageService() {
+  if (!messageService) {
+    throw new Error('MessageService 尚未初始化');
+  }
+  return messageService;
+}
 
 /**
  * 初始化后台脚本
@@ -26,42 +37,41 @@ async function initialize(): Promise<void> {
     console.log('Navigraph 扩展已启动');
     console.log('导航图谱后台初始化开始...');
     
-    // 首先初始化设置服务
+    // 1. 首先创建消息服务实例
+    console.log('初始化消息服务...');
+    messageService = getBackgroundMessageService();    
+    // 2. 注册基础消息处理程序（tab和settings相关）
+    console.log('注册基础消息处理程序...');
+    registerAllBackgroundHandlers();
+    
+    // 3. 然后创建设置服务
+    console.log('初始化设置服务...');
+    settingsService = getSettingsService();
     await settingsService.initialize();
-    
-    // 获取存储实例
-    const storage = navigationManager.getStorage();
-    
-    // 初始化存储
-    await storage.initialize();
-    
-    // 初始化NavigationManager
+        
+    // 4. 创建并初始化导航管理器
+    console.log('初始化导航管理器...');
+    navigationManager = new NavigationManager(messageService);    
+    // 导航管理器会在自己内部初始化所需的存储
     await navigationManager.initialize();
+
+    // 5. 初始化会话管理器
+    console.log('初始化会话管理器...');
+    const sessionManager = getBackgroundSessionManager();
+    // 会话管理器会在自己内部初始化所需的存储
+    await sessionManager.initialize();
+    // 6. 注册会话管理器的消息处理程序
+    console.log('注册会话管理器消息处理程序...');
+    sessionManager.registerMessageHandlers(messageService);
     
-    // 设置事件监听器（包括扩展安装、图标点击等）
+    // 7. 设置事件监听器和上下文菜单
     setupEventListeners(navigationManager);
-    
-    // 设置上下文菜单
     setupContextMenus(navigationManager);
-    
-    // 设置消息处理
-    setupMessageHandler();
-    
+
     console.log('导航图谱后台初始化成功');
   } catch (error) {
     console.error('导航图谱后台初始化失败:', error);
   }
-}
-
-/**
- * 设置消息处理器
- */
-function setupMessageHandler(): void {
-  // 处理扩展消息
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // 转发给消息处理模块
-    return handleMessage(message, sender, sendResponse, navigationManager);
-  });
 }
 
 // 启动初始化

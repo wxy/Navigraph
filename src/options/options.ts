@@ -9,22 +9,34 @@ const settingsService = getSettingsService();
 let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
 
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
+  console.log('DOM已加载，开始初始化选项页...');
+  
   // 初始化UI
   setupTabs();
   setupEventListeners();
   
-  // 加载设置
-  await loadSettings();
-  
-  // 应用主题到选项页面
-  applyThemeToOptionsPage();
-  
-  // 添加设置变更监听器
-  settingsService.addChangeListener(settings => {
-    currentSettings = { ...settings };
-    applySettingsToUI();
+  try {
+    // 确保设置服务初始化完成
+    await settingsService.initialize();
+    
+    // 加载设置
+    await loadSettings();
+    console.log('配置加载成功:', currentSettings);
+    
+    // 应用主题到选项页面
     applyThemeToOptionsPage();
-  });
+    
+    // 添加设置变更监听器
+    settingsService.addChangeListener(settings => {
+      console.log('检测到设置变更:', settings);
+      currentSettings = { ...settings };
+      applySettingsToUI();
+      applyThemeToOptionsPage();
+    });
+  } catch (error) {
+    console.error('初始化选项页面失败:', error);
+    showNotification('加载设置失败，请重试', 'error');
+  }
 });
 
 /**
@@ -77,15 +89,6 @@ function setupEventListeners(): void {
   if (viewSelect) {
     viewSelect.addEventListener('change', () => {
       updateViewPreview(viewSelect.value as 'tree' | 'timeline');
-    });
-  }
-  
-  // 缩放级别滑块
-  const zoomSlider = document.getElementById('default-zoom') as HTMLInputElement;
-  const zoomValue = document.getElementById('zoom-value');
-  if (zoomSlider && zoomValue) {
-    zoomSlider.addEventListener('input', () => {
-      zoomValue.textContent = `${Number(zoomSlider.value).toFixed(1)}x`;
     });
   }
   
@@ -146,7 +149,11 @@ function applyThemeToOptionsPage(theme?: 'light' | 'dark' | 'system'): void {
 function updateViewPreview(view: 'tree' | 'timeline'): void {
   const previewContainer = document.getElementById('view-preview');
   if (previewContainer) {
+    // 更新类名
     previewContainer.className = `preview-box ${view}-preview`;
+    
+    // 添加数据属性以支持 ::before 伪元素的内容
+    previewContainer.setAttribute('data-view-type', view === 'tree' ? '树形图视图' : '时间线视图');
   }
 }
 
@@ -156,7 +163,7 @@ function updateViewPreview(view: 'tree' | 'timeline'): void {
 async function loadSettings(): Promise<void> {
   try {
     // 从设置服务加载
-    currentSettings = settingsService.getSettings();
+    currentSettings = await settingsService.getSettings();
     
     // 应用设置到UI
     applySettingsToUI();
@@ -183,14 +190,6 @@ function applySettingsToUI(): void {
   if (viewSelect) {
     viewSelect.value = currentSettings.defaultView || 'tree';
     updateViewPreview(currentSettings.defaultView || 'tree');
-  }
-  
-  // 缩放级别
-  const zoomSlider = document.getElementById('default-zoom') as HTMLInputElement;
-  const zoomValue = document.getElementById('zoom-value');
-  if (zoomSlider && zoomValue) {
-    zoomSlider.value = currentSettings.defaultZoom?.toString() || '1.0';
-    zoomValue.textContent = `${Number(zoomSlider.value).toFixed(1)}x`;
   }
   
   // 会话模式
@@ -224,10 +223,6 @@ function collectSettingsFromUI(): NavigraphSettings {
   // 默认视图
   const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'timeline' || 'tree';
   
-  // 缩放级别
-  const defaultZoomStr = (document.getElementById('default-zoom') as HTMLInputElement)?.value || '1.0';
-  const defaultZoom = parseFloat(defaultZoomStr);
-  
   // 会话模式
   const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'activity' | 'smart' | 'manual' || 'smart';
   
@@ -238,9 +233,13 @@ function collectSettingsFromUI(): NavigraphSettings {
   return {
     theme,
     defaultView,
-    defaultZoom,
     sessionMode,
-    dataRetention
+    dataRetention,
+    sessionTimeout: 30,
+    maxNodes: 1000,
+    trackAnonymous: false,
+    animationEnabled: true,
+    showLabels: true
   };
 }
 
@@ -261,17 +260,73 @@ async function saveSettings(): Promise<void> {
     // 更新当前设置引用
     currentSettings = { ...newSettings };
     
-    // 显示保存成功通知
-    showNotification('设置已保存');
-    
-    // 检查设置变更并显示相应提示
-    checkSettingsChanges(oldSettings, newSettings);
+    // 检查设置变更并显示综合通知
+    showSettingsSavedNotification(oldSettings, newSettings);
   } catch (error) {
     console.error('保存设置时出错:', error);
-    showNotification('保存设置失败', 'error');
+    showNotification('保存设置失败', 'error', 3000);
   }
 }
-
+/**
+ * 显示设置保存成功通知，根据变更类型自动添加相应的刷新提示
+ */
+function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettings: NavigraphSettings): void {
+  // 检查设置变更类型
+  const affectsBackground = 
+    oldSettings.sessionMode !== newSettings.sessionMode || 
+    oldSettings.dataRetention !== newSettings.dataRetention;
+    
+  const affectsFrontend =
+    oldSettings.theme !== newSettings.theme ||
+    oldSettings.defaultView !== newSettings.defaultView;
+  
+  let message = '设置已保存';
+  let type: 'success' | 'error' = 'success'; // 显式添加类型注解
+  let duration = 3000; // 基础持续时间：3秒
+  
+  // 根据变更类型添加额外提示
+  if (affectsBackground) {
+    message += ' - 需要重新加载扩展才能完全生效';
+    duration = 5000; // 增加显示时间
+    
+    // 创建并添加重载按钮（可选）
+    const notification = document.getElementById('notification');
+    if (notification) {
+      // 清除现有内容
+      notification.innerHTML = '';
+      
+      // 添加消息
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = message;
+      notification.appendChild(messageSpan);
+      
+      // 添加重载按钮
+      const reloadBtn = document.createElement('button');
+      reloadBtn.className = 'notification-action';
+      reloadBtn.textContent = '立即重载';
+      reloadBtn.onclick = () => chrome.runtime.reload();
+      notification.appendChild(reloadBtn);
+      
+      // 显示通知
+      notification.className = 'notification';
+      notification.classList.remove('error'); // 确保移除error类
+      notification.classList.remove('hidden');
+      
+      // 设置自动隐藏
+      setTimeout(() => {
+        notification?.classList.add('hidden');
+      }, duration);
+      
+      return; // 提前返回，因为已手动处理了通知
+    }
+  } else if (affectsFrontend) {
+    message += ' - 请刷新已打开的扩展页以应用新设置';
+    duration = 4000; // 增加显示时间
+  }
+  
+  // 显示通知
+  showNotification(message, type, duration);
+}
 /**
  * 重置设置
  */
@@ -290,11 +345,8 @@ async function resetSettings(): Promise<void> {
       // 重新应用到UI
       applySettingsToUI();
       
-      // 显示重置成功通知
-      showNotification('已恢复默认设置');
-      
-      // 检查设置变更并显示相应提示
-      checkSettingsChanges(oldSettings, currentSettings);
+      // 显示综合重置通知
+      showSettingsSavedNotification(oldSettings, currentSettings);
     }
   } catch (error) {
     console.error('重置设置时出错:', error);
@@ -326,8 +378,11 @@ async function clearAllData(): Promise<void> {
 
 /**
  * 显示通知
+ * @param message 通知消息
+ * @param type 通知类型
+ * @param duration 显示持续时间（毫秒）
  */
-function showNotification(message: string, type: 'success' | 'error' = 'success'): void {
+function showNotification(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
   const notification = document.getElementById('notification');
   if (notification) {
     notification.textContent = message;
@@ -339,103 +394,6 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
     
     setTimeout(() => {
       notification?.classList.add('hidden');
-    }, 3000);
-  }
-}
-
-/**
- * 检查设置变更类型并显示相应提示
- */
-function checkSettingsChanges(oldSettings: NavigraphSettings, newSettings: NavigraphSettings): void {
-  const affectsBackground = 
-    oldSettings.sessionMode !== newSettings.sessionMode || 
-    oldSettings.dataRetention !== newSettings.dataRetention;
-    
-  const affectsFrontend =
-    oldSettings.theme !== newSettings.theme ||
-    oldSettings.defaultView !== newSettings.defaultView ||
-    oldSettings.defaultZoom !== newSettings.defaultZoom;
-  
-  if (affectsBackground) {
-    showExtensionReloadNotice();
-  } else if (affectsFrontend) {
-    showTabReloadNotice();
-  }
-}
-
-/**
- * 显示需要重新加载扩展的提示
- */
-function showExtensionReloadNotice(): void {
-  let notice = document.getElementById('extension-reload-notice');
-  
-  if (!notice) {
-    notice = document.createElement('div');
-    notice.id = 'extension-reload-notice';
-    notice.className = 'reload-notice extension-reload';
-    
-    notice.innerHTML = `
-      <div class="reload-content">
-        <p><strong>重要设置已更改!</strong> 您修改的设置影响后台功能，需要重新加载扩展才能完全生效。</p>
-        <div class="reload-actions">
-          <button id="reload-extension" class="btn primary">立即重新加载扩展</button>
-          <button id="dismiss-extension-notice" class="btn secondary">稍后手动重新加载</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(notice);
-    
-    // 添加重新加载扩展按钮事件
-    const reloadBtn = document.getElementById('reload-extension');
-    if (reloadBtn) {
-      reloadBtn.addEventListener('click', () => {
-        chrome.runtime.reload();
-      });
-    }
-    
-    // 添加关闭按钮事件
-    const dismissBtn = document.getElementById('dismiss-extension-notice');
-    if (dismissBtn) {
-      dismissBtn.addEventListener('click', () => {
-        notice?.classList.add('hidden');
-      });
-    }
-  } else {
-    // 如果提示已存在，确保它可见
-    notice.classList.remove('hidden');
-  }
-}
-
-/**
- * 显示需要重新加载标签页的提示
- */
-function showTabReloadNotice(): void {
-  let notice = document.getElementById('tab-reload-notice');
-  
-  if (!notice) {
-    notice = document.createElement('div');
-    notice.id = 'tab-reload-notice';
-    notice.className = 'reload-notice tab-reload';
-    
-    notice.innerHTML = `
-      <div class="reload-content">
-        <p><strong>设置已更改!</strong> 请重新加载已打开的Navigraph标签页以应用新设置。</p>
-        <button id="dismiss-tab-notice" class="btn secondary">我知道了</button>
-      </div>
-    `;
-    
-    document.body.appendChild(notice);
-    
-    // 添加关闭按钮事件
-    const dismissBtn = document.getElementById('dismiss-tab-notice');
-    if (dismissBtn) {
-      dismissBtn.addEventListener('click', () => {
-        notice?.classList.add('hidden');
-      });
-    }
-  } else {
-    // 如果提示已存在，确保它可见
-    notice.classList.remove('hidden');
+    }, duration);
   }
 }

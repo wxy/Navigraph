@@ -1,17 +1,42 @@
 /**
+ * 主题设置类型
+ */
+export type Theme = 'light' | 'dark' | 'system';
+
+/**
+ * 视图类型
+ */
+export type ViewType = 'tree' | 'timeline';
+
+/**
+ * 会话模式
+ */
+export type SessionMode = 'auto' | 'manual' | 'smart' | 'daily' | 'activity';
+
+/**
  * Navigraph 设置接口
+ * 定义用户可配置的所有设置项
  */
 export interface NavigraphSettings {
-  // 基本设置
-  theme: 'light' | 'dark' | 'system';
-  defaultView: 'tree' | 'timeline';
-  defaultZoom: number;
+  // 界面设置
+  theme: Theme;
+  defaultView: ViewType;
   
   // 会话管理
-  sessionMode: 'daily' | 'activity' | 'smart' | 'manual';
+  sessionMode: SessionMode;
+  sessionTimeout: number;
   
-  // 数据保留
-  dataRetention: 7 | 14 | 30 | 90 | 180 | 365 | 0; // 0表示永久
+  // 数据设置
+  dataRetention: number;
+  trackAnonymous: boolean;
+  
+  // 性能设置
+  animationEnabled: boolean;
+  showLabels: boolean;
+  maxNodes: number;
+  
+  // 其他设置
+  [key: string]: any;
 }
 
 /**

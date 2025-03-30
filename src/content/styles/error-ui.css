@@ -1,0 +1,121 @@
+/* 错误容器样式 */
+.error-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(40, 40, 40, 0.95);
+  color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  z-index: 100000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  max-width: 80%;
+}
+
+.error-container.detailed {
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+}
+
+/* 错误标题栏 */
+.error-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.error-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* 错误消息 */
+.error-message {
+  margin-bottom: 15px;
+}
+
+/* 详细技术信息 */
+.error-details {
+  margin-top: 10px;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.error-details summary {
+  cursor: pointer;
+  padding: 5px;
+  margin-bottom: 5px;
+}
+
+.error-stack {
+  overflow: auto;
+  max-height: 200px;
+  padding: 8px;
+  background: #222;
+  font-family: monospace;
+  white-space: pre-wrap;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+/* 操作按钮 */
+.error-actions {
+  margin-top: 15px;
+}
+
+.refresh-button {
+  padding: 8px 16px;
+  background: #4285f4;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.dismiss-button {
+  padding: 8px 16px;
+  background: #555;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* 通知消息样式 */
+.toast-message {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(220, 53, 69, 0.95);
+  color: white;
+  padding: 12px 15px;
+  border-radius: 5px;
+  z-index: 100000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  animation: fadeIn 0.3s, fadeOut 0.5s 4.5s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

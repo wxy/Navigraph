@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>导航图谱</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles/main.css">
   <script src="d3.v7.min.js"></script>
 </head>
 <body>
@@ -102,6 +102,39 @@
       <h2>暂无数据</h2>
       <p id="status-text">尚未记录导航数据</p>
     </div>
+    
+    <!-- 错误UI组件 - 默认隐藏 -->
+    <div id="navigraph-error" class="error-container" style="display: none;">
+      <div class="error-header">
+        <h3 class="error-title">错误</h3>
+        <button class="close-button" onclick="this.parentNode.parentNode.style.display='none'">&times;</button>
+      </div>
+      <p class="error-message"></p>
+      <div class="error-actions">
+        <button class="refresh-button" onclick="location.reload()">刷新页面</button>
+        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'">关闭</button>
+      </div>
+    </div>
+    
+    <!-- 详细错误UI组件 - 默认隐藏 -->
+    <div id="navigraph-error-detailed" class="error-container detailed" style="display: none;">
+      <div class="error-header">
+        <h3 class="error-title"></h3>
+        <button class="close-button" onclick="this.parentNode.parentNode.style.display='none'">&times;</button>
+      </div>
+      <p class="error-message"></p>
+      <details>
+        <summary>技术细节</summary>
+        <pre class="error-stack"></pre>
+      </details>
+      <div class="error-actions">
+        <button class="refresh-button" onclick="location.reload()">刷新页面</button>
+        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'">关闭</button>
+      </div>
+    </div>
+    
+    <!-- 通知消息组件 - 默认隐藏 -->
+    <div id="navigraph-toast" class="toast-message" style="display: none;"></div>
     
     <!-- 底部状态栏 -->
     <div class="windows-status-bar">

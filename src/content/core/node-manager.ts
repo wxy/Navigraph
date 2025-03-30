@@ -2,8 +2,14 @@
  * 节点管理模块
  * 负责处理节点和边的数据转换与关系管理
  */
-import type { SessionDetails, NodeRecord, EdgeRecord } from '../types/session.js';
-import type { NavNode, NavLink } from '../types/navigation.js';
+// 使用全局类型定义，替代前端特定类型
+import type { BrowsingSession, NavNode, NavLink } from '../../types/session-types.js';
+
+// 为方便代码迁移，定义类型别名
+type SessionDetails = BrowsingSession;
+// 定义Record类型别名
+type NodeRecord = NavNode;
+type EdgeRecord = NavLink;
 
 export class NodeManager {
   private nodes: NavNode[] = [];
@@ -11,41 +17,30 @@ export class NodeManager {
   private nodeMap: Map<string, NavNode> = new Map();
 
   /**
-   * 将NodeRecord转换为NavNode
+   * 处理导航节点，添加前端所需属性
    */
-  private convertToNavNode(record: NodeRecord): NavNode {
-    return {
-      id: record.id,
-      timestamp: record.timestamp,
-      type: record.navigationType || 'unknown',
-      title: record.title || this.extractTitle(record.url),
-      url: record.url,
-      favicon: record.favicon,
-      isClosed: record.isClosed || false,
-      // 额外属性使用索引签名添加
-      tabId: record.tabId,
-      parentId: record.parentId === record.id ? null : record.parentId,
-      referrer: record.referrer || '',
-      // 内部使用的额外属性
-      children: [] as NavNode[],
-      depth: 0,
-      // 其他属性...
-    };
-  }
-
-  /**
-   * 将EdgeRecord转换为NavLink
-   */
-  private convertToNavLink(edge: EdgeRecord): NavLink {
-    return {
-      source: edge.sourceId,
-      target: edge.targetId,
-      type: edge.action || 'unknown',
-      // 额外属性使用索引签名添加
-      id: edge.id,
-      timestamp: edge.timestamp,
-      action: edge.action
-    };
+  private processNavNode(record: NavNode): NavNode {
+    // 已经是NavNode类型，只需添加前端所需的属性和修正数据
+    
+    // 处理必要字段默认值
+    if (!record.title) {
+      record.title = this.extractTitle(record.url);
+    }
+    
+    if (!record.type) {
+      record.type = 'unknown';
+    }
+    
+    // 修正自引用问题
+    if (record.parentId === record.id) {
+      record.parentId = '';
+    }
+    
+    // 添加前端特定属性
+    (record as any).children = [];
+    (record as any).depth = 0;
+    
+    return record;
   }
 
   /**
@@ -64,7 +59,7 @@ export class NodeManager {
       console.log(`处理${recordIds.length}条记录`);
       
       // 转换为节点数组
-      this.nodes = recordIds.map(id => this.convertToNavNode(records[id]));
+      this.nodes = recordIds.map(id => this.processNavNode(records[id]));
       
       // 重建父子关系
       this.reconstructParentChildRelationships();
@@ -79,7 +74,11 @@ export class NodeManager {
       console.log(`处理${edgeIds.length}条边`);
       
       // 转换为边数组
-      this.edges = edgeIds.map(id => this.convertToNavLink(edgeMap[id]));
+      this.edges = edgeIds.map(id => ({
+        ...edgeMap[id],
+        type: edgeMap[id].type || 'unknown',
+        sessionId: edgeMap[id].sessionId || ''
+      }));
       
       // 构建节点映射表
       this.buildNodeMap();
@@ -126,7 +125,7 @@ export class NodeManager {
     // 按标签页和时间排序
     const nodesByTabId: {[key: string]: NavNode[]} = {};
     this.nodes.forEach(node => {
-      const tabId = node.tabId as string | undefined;
+      const tabId = String(node.tabId || '');
       if (!tabId) return;
       
       if (!nodesByTabId[tabId]) {
@@ -160,18 +159,15 @@ export class NodeManager {
       // 自循环检测 - 将自引用修正为根节点
       if (node.parentId === node.id) {
         console.log(`节点 ${node.id} 是自循环，修正为根节点`);
-        node.parentId = null;
+        node.parentId = '';
         return;
       }
       
-      // 获取导航类型
-      const navigationType = node.type;
-      
       // 根据导航类型确定父节点
-      switch(navigationType) {
+      switch(node.type) {
         case 'link_click':
           // 链接点击通常来自同一标签页的前一个节点
-          const tabId = node.tabId as string | undefined;
+          const tabId = String(node.tabId || '');
           if (!tabId) break;
           
           const sameTabNodes = nodesByTabId[tabId] || [];
@@ -187,18 +183,18 @@ export class NodeManager {
         case 'address_bar':
           // 地址栏输入通常是新的导航序列，可能没有父节点
           // 但如果是在现有标签页中输入，可能与前一页有关
-          const nodeTabId = node.tabId as string | undefined;
+          const nodeTabId = String(node.tabId || '');
           if (nodeTabId && activeNodesByTabId[nodeTabId]) {
             node.parentId = activeNodesByTabId[nodeTabId].id;
             assignedCount++;
           } else {
-            node.parentId = null; // 新标签页的第一次导航
+            node.parentId = ''; // 新标签页的第一次导航
           }
           break;
           
         case 'form_submit':
           // 表单提交通常来自同一标签页的前一个节点
-          const formTabId = node.tabId as string | undefined;
+          const formTabId = String(node.tabId || '');
           if (formTabId && activeNodesByTabId[formTabId]) {
             node.parentId = activeNodesByTabId[formTabId].id;
             assignedCount++;
@@ -221,8 +217,7 @@ export class NodeManager {
           // 用边信息补充 - 这是原始记录的实际导航关系
           if (this.edges) {
             const directEdges = this.edges.filter(e => 
-              (e.target === node.id) && 
-              (e.type !== 'generated') // 跳过推断生成的边
+              (e.target === node.id)
             );
             
             if (directEdges.length > 0) {
@@ -240,7 +235,7 @@ export class NodeManager {
       }
       
       // 更新当前标签页的活跃节点
-      const nodeTabId = node.tabId as string | undefined;
+      const nodeTabId = String(node.tabId || '');
       if (nodeTabId) {
         activeNodesByTabId[nodeTabId] = node;
       }
@@ -248,14 +243,23 @@ export class NodeManager {
     
     // 重新构建子节点引用
     this.nodes.forEach(node => {
-      (node as any).children = [];
+      // 移除类型断言，直接设置children字段
+      if (!node.children) {
+        node.children = [];
+      } else {
+        node.children = [];
+      }
     });
     
     // 填充子节点数组
     this.nodes.forEach(node => {
       const parentId = node.parentId as string | undefined;
       if (parentId && nodesById[parentId]) {
-        (nodesById[parentId] as any).children.push(node);
+        // 确保children是数组
+        if (!nodesById[parentId].children) {
+          nodesById[parentId].children = [];
+        }
+        nodesById[parentId].children!.push(node);
       }
     });
     
@@ -272,20 +276,26 @@ export class NodeManager {
       
       if (rootNodes.length === 0) {
         console.warn('没有找到根节点，设置所有节点深度为0');
-        this.nodes.forEach(node => (node as any).depth = 0);
+        this.nodes.forEach(node => {
+          // 直接设置depth字段
+          node.depth = 0;
+        });
         return;
       }
       
       // 为每个根节点及其子节点计算深度
       rootNodes.forEach(rootNode => {
-        (rootNode as any).depth = 0;
+        // 直接设置depth字段
+        rootNode.depth = 0;
         this.calculateChildDepths(rootNode, 1);
       });
     } catch (error) {
       console.error('计算节点深度失败:', error);
       // 出错时确保所有节点至少有深度值
       this.nodes.forEach(node => {
-        if (typeof (node as any).depth === 'undefined') (node as any).depth = 0;
+        if (typeof node.depth === 'undefined') {
+          node.depth = 0;
+        }
       });
     }
   }
@@ -303,7 +313,8 @@ export class NodeManager {
     
     // 设置子节点深度并递归处理
     childNodes.forEach(childNode => {
-      (childNode as any).depth = depth;
+      // 直接设置depth字段
+      childNode.depth = depth;
       // 防止循环引用导致栈溢出
       if (childNode.id !== parentNode.id) {
         this.calculateChildDepths(childNode, depth + 1);
@@ -336,14 +347,13 @@ export class NodeManager {
         // 如果这个关系的边不存在，添加一个新的
         if (!existingEdgeMap[key] && this.nodeMap.has(source)) {
           newEdges.push({
+            id: `generated-${key}`,
             source: source,
             target: target,
             type: node.type || 'unknown',
-            // 额外属性
-            id: `generated-${key}`,
+            sequence: 0,
             timestamp: node.timestamp,
-            action: node.type || 'unknown',
-            generated: true // 标记为生成的边
+            sessionId: node.sessionId || ''
           });
         }
       }
@@ -360,6 +370,9 @@ export class NodeManager {
    * 当节点没有原始标题时，尝试从URL中提取有意义的信息作为标题
    */
   private extractTitle(url: string): string {
+    // 代码不变
+    // ...
+    
     try {
       if (!url) return '未知页面';
       

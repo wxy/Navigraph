@@ -1,50 +1,28 @@
 /**
- * 会话相关类型定义
+ * 会话类型定义
+ * 前端使用的会话类型，与后端保持一致
  */
 
-// 会话基本信息
-export interface Session {
-  id: string;
-  startTime: number;
-  endTime?: number;
-  title?: string;
-}
+// 直接重新导出后端定义的类型
+// 只导出需要的后端类型
+import {
+  BrowsingSession,
+  SessionSummary,
+  NavNode,
+  NavLink
+} from '../../types/session-types.js';
 
-// 会话详细信息
-export interface SessionDetails {
-  id: string;
-  startTime: number;
-  endTime?: number;
-  title?: string;
-  records: { [key: string]: NodeRecord };
-  edges: { [key: string]: EdgeRecord };
-  [key: string]: any;
-}
+// 导出会话类型
+export type Session = SessionSummary;
+export type SessionDetails = BrowsingSession;
 
-// 节点记录
-export interface NodeRecord {
-  id: string;
-  url: string;
-  title?: string;
-  favicon?: string;
-  navigationType?: string;
-  timestamp: number;
-  tabId: string;
-  parentId?: string | null;
-  referrer?: string;
-  isClosed?: boolean;
-  activeTime?: number;
-  loadTime?: number;
-  [key: string]: any;
-}
+// 导出节点类型
+export type NodeRecord = NavNode;
+export type EdgeRecord = NavLink;
 
-// 边记录
-export interface EdgeRecord {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  timestamp: number;
-  action?: string;
-  [key: string]: any;
-}
-
+// 为确保接口一致性，重新导出原始类型
+export {
+  BrowsingSession,
+  NavNode,
+  NavLink
+};

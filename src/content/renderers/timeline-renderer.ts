@@ -308,8 +308,7 @@ export function renderTimelineLayout(
       .attr('width', '100%')
       .attr('height', '100%')
       .attr('x', 0)
-      .attr('y', 0)
-      .attr('fill', '#FFF');
+      .attr('y', 0);
     
     // 创建两个主要组：一个用于可缩放内容，一个用于固定的时间轴
     const mainGroup = svg.append('g')

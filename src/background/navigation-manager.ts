@@ -1,8 +1,9 @@
-import { NavigationStorage } from './lib/storage.js';
+import { NavigationStorage } from './store/navigation-storage.js';
+import { SessionStorage } from './store/session-storage.js';
 import { IdGenerator } from './lib/id-generator.js';
+import { BackgroundMessageService } from './messaging/bg-message-service.js';
+import { BackgroundMessages, BackgroundResponses } from '../types/messages/background.js';
 import { 
-  NavigationRecord,
-  NavigationEdge,
   NavigationType,
   OpenTarget,
   BrowsingSession,
@@ -10,12 +11,14 @@ import {
   ExtendedCompletedDetails,
   ExtendedTransitionDetails,
   TabState,
-  PendingNavigation
-} from './types/webext';
+  PendingNavigation,
+  NavNode,
+  NavLink
+} from '../types/session-types.js';
 
 /**
  * 导航管理器 - 负责创建和管理导航节点、事件和关系
- * 
+* 
  * 该类处理：
  * 1. 通过Chrome浏览器API监听导航事件并创建节点
  * 2. 处理从内容脚本收到的用户交互事件（链接点击、表单提交等）
@@ -24,7 +27,11 @@ import {
  */
 export class NavigationManager {
   // 存储引用
-  private storage: NavigationStorage;
+  private navigationStorage: NavigationStorage;
+  private sessionStorage: SessionStorage;
+
+  // 会话ID - 只存储当前使用的会话ID
+  private currentSessionId: string = '';
 
   // 标签页追踪状态
   private tabStates = new Map<number, TabState>();
@@ -55,12 +62,21 @@ export class NavigationManager {
   // 调试标志
   private debugMode = false;
 
+
   /**
    * 构造函数 - 初始化导航管理器
+   * @param messageService 消息服务实例
+   * @param navStorage 导航存储实例（可选，用于依赖注入）
+   * @param sessionStorage 会话存储实例（可选，用于依赖注入）
    */
-  constructor() {
+  constructor(
+    messageService: BackgroundMessageService,
+    navigationStorage?: NavigationStorage,
+    sessionStorage?: SessionStorage
+  ) {
     // 创建存储实例
-    this.storage = new NavigationStorage();
+    this.navigationStorage = navigationStorage || new NavigationStorage();
+    this.sessionStorage = sessionStorage || new SessionStorage();
 
     // 设置定期清理任务
     setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
@@ -69,7 +85,44 @@ export class NavigationManager {
     // 初始化事件侦听器
     this.setupEventListeners();
 
+    // 注册消息处理程序
+    this.registerMessageHandlers(messageService);
+
     console.log("导航管理器已初始化");
+  }
+  /**
+   * 初始化导航管理器
+   */
+  public async initialize(): Promise<void> {
+    try {
+      console.log("初始化导航管理器...");
+      
+      // 初始化导航存储
+      await this.navigationStorage.initialize();
+      
+      // 初始化会话存储
+      await this.sessionStorage.initialize();
+  
+      // 确保有活跃会话
+      const currentSession = await this.sessionStorage.getCurrentSession();
+      if (!currentSession) {
+        console.log("未找到活跃会话，创建新的默认会话...");
+        const newSession = await this.sessionStorage.createSession({
+          title: `浏览会话 ${new Date().toLocaleString()}`,
+          makeActive: true
+        });
+        this.currentSessionId = newSession.id;
+      } else {
+        this.currentSessionId = currentSession.id;
+      }
+
+      console.log(`导航管理器使用会话ID: ${this.currentSessionId}`);
+    
+      console.log("导航管理器初始化完成");
+    } catch (error) {
+      console.error("导航管理器初始化失败:", error);
+      throw new Error(`导航管理器初始化失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
@@ -79,35 +132,18 @@ export class NavigationManager {
     this.debugMode = enabled;
     console.log(`导航管理器调试模式: ${enabled ? "已启用" : "已禁用"}`);
   }
-
   /**
-   * 获取存储实例
+   * 获取导航存储实例
    */
-  public getStorage(): NavigationStorage {
-    return this.storage;
+  public getNavigationStorage(): NavigationStorage {
+    return this.navigationStorage;
   }
 
   /**
-   * 初始化存储和会话
+   * 获取会话存储实例
    */
-  public async initialize(): Promise<void> {
-    try {
-      console.log("初始化导航管理器存储...");
-      await this.storage.initialize();
-
-      // 获取当前会话，如果不存在则创建一个
-      const currentSession = await this.storage.getCurrentSession();
-      if (!currentSession) {
-        console.log("创建新的浏览会话...");
-        await this.storage.createSession();
-      }
-
-      console.log("导航管理器初始化完成");
-      return Promise.resolve();
-    } catch (error) {
-      console.error("导航管理器初始化失败:", error);
-      return Promise.reject(error);
-    }
+  public getSessionStorage(): SessionStorage {
+    return this.sessionStorage;
   }
 
   /**
@@ -342,9 +378,9 @@ export class NavigationManager {
       const history = this.tabNavigationHistory.get(tabId) || [];
       for (const nodeId of history) {
         try {
-          const record = await this.storage.getRecord(nodeId);
+          const record = await this.navigationStorage.getNode(nodeId);
           if (record && !record.isClosed) {
-            await this.storage.updateRecord(nodeId, { isClosed: true });
+            await this.navigationStorage.updateNode(nodeId, { isClosed: true });
           }
         } catch (e) {
           console.warn(`更新节点关闭状态失败: ${nodeId}`, e);
@@ -571,14 +607,15 @@ export class NavigationManager {
       this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
 
       // 10. 创建导航记录
-      const record: NavigationRecord = {
+      
+      const record: NavNode = {
         id: nodeId,
         tabId: tabId,
         url: url,
         timestamp: now,
-        sessionId: (await this.storage.getCurrentSession()).id,
+        sessionId: this.currentSessionId,
         parentId: parentId || "",
-        navigationType: navigationType,
+        type: navigationType,
         openTarget: openTarget,
         source: "chrome_api",
         firstVisit: now,
@@ -586,14 +623,14 @@ export class NavigationManager {
         visitCount: 1,
         reloadCount: 0,
         frameId: details.frameId,
-        parentFrameId: details.parentFrameId,
+        parentFrameId: details.parentFrameId ?? -1,
       };
 
       // 11. 根据导航类型设置其他字段
       if (navigationType === "reload") {
         // 对于刷新，查找之前的记录并更新计数
         if (parentId) {
-          const parentRecord = await this.storage.getRecord(parentId);
+          const parentRecord = await this.navigationStorage.getNode(parentId);
           if (parentRecord) {
             record.reloadCount = (parentRecord.reloadCount || 0) + 1;
             record.firstVisit = parentRecord.firstVisit || now;
@@ -619,7 +656,7 @@ export class NavigationManager {
       }
 
       // 13. 保存记录
-      await this.storage.saveRecord(record);
+      await this.navigationStorage.saveNode(record);
 
       // 14. 如果存在父节点，创建边
       if (parentId) {
@@ -637,7 +674,7 @@ export class NavigationManager {
       console.error("处理常规导航失败:", error);
     }
   }
-  /**
+/**
    * 处理导航完成事件
    */
   private async handleNavigationCompleted(
@@ -679,7 +716,7 @@ export class NavigationManager {
       const favicon = await this.getFavicon(url, tab.favIconUrl);
 
       // 获取记录
-      const record = await this.storage.getRecord(nodeId);
+      const record = await this.navigationStorage.getNode(nodeId);
 
       // 计算加载时间
       let loadTime: number | undefined = undefined;
@@ -704,7 +741,6 @@ export class NavigationManager {
       console.error("处理导航完成失败:", error);
     }
   }
-
   /**
    * 处理历史状态更新事件
    * 当使用history.pushState或history.replaceState触发导航时
@@ -739,7 +775,7 @@ export class NavigationManager {
 
         // 更新现有节点的访问时间和计数
         const now = Date.now();
-        await this.storage.updateRecord(existingNodeId, {
+        await this.navigationStorage.updateNode(existingNodeId, {
           lastVisit: now,
           visitCount: await this.incrementVisitCount(existingNodeId),
         });
@@ -797,16 +833,16 @@ export class NavigationManager {
       }
 
       // 创建导航记录
-      const record: NavigationRecord = {
+      const record: NavNode = {
         id: nodeId,
         tabId: tabId,
         url: url,
         timestamp: now,
-        sessionId: (await this.storage.getCurrentSession()).id,
+        sessionId: this.currentSessionId,
         parentId: parentId,
         title: title,
         favicon: favicon,
-        navigationType: "javascript",
+        type: "javascript",
         openTarget: "same_tab",
         source: "chrome_api",
         firstVisit: now,
@@ -814,11 +850,11 @@ export class NavigationManager {
         visitCount: 1,
         reloadCount: 0,
         frameId: details.frameId,
-        parentFrameId: details.parentFrameId,
+        parentFrameId: details.parentFrameId ?? -1
       };
 
       // 保存记录
-      await this.storage.saveRecord(record);
+      await this.navigationStorage.saveNode(record);
 
       // 创建边
       await this.createNavigationEdge(parentId, nodeId, now, "javascript");
@@ -886,16 +922,16 @@ export class NavigationManager {
       }
 
       // 创建导航记录
-      const record: NavigationRecord = {
+      const record: NavNode = {
         id: nodeId,
         tabId: tabId,
         url: url,
         timestamp: now,
-        sessionId: (await this.storage.getCurrentSession()).id,
+        sessionId: this.currentSessionId,
         parentId: parentNodeId,
         title: title,
         favicon: favicon,
-        navigationType: "initial",
+        type: "initial",
         openTarget: "same_tab",
         source: "chrome_api",
         firstVisit: now,
@@ -907,7 +943,7 @@ export class NavigationManager {
       };
 
       // 保存记录
-      await this.storage.saveRecord(record);
+      await this.navigationStorage.saveNode(record);
 
       // 如果存在父节点，创建边
       if (parentNodeId) {
@@ -935,28 +971,26 @@ export class NavigationManager {
     targetId: string,
     timestamp: number,
     navigationType: NavigationType
-  ): Promise<NavigationEdge> {
-    // 获取当前会话
-    const session = await this.storage.getCurrentSession();
-
+  ): Promise<NavLink> {
     // 创建边记录
     this.navigationSequence++;
 
-    const edge: NavigationEdge = {
+    const edge: NavLink = {
       id: IdGenerator.generateEdgeId(sourceId, targetId, timestamp),
-      sourceId,
-      targetId,
+      source: sourceId,
+      target: targetId,
       timestamp,
-      action: navigationType,
+      type: navigationType,
       sequence: this.navigationSequence,
-      sessionId: session.id,
+      sessionId: this.currentSessionId,
     };
 
     // 保存边
-    await this.storage.saveEdge(edge);
+    await this.navigationStorage.saveEdge(edge);
 
     return edge;
   }
+
   private cleanupExpiredNavigations(): void {
     const now = Date.now();
     let removedCount = 0;
@@ -990,12 +1024,9 @@ export class NavigationManager {
    */
   private async cleanupPendingUpdates(): Promise<void> {
     try {
-      // 获取当前会话
-      const session = await this.storage.getCurrentSession();
-
       // 查询所有记录
-      const records = await this.storage.queryRecords({
-        sessionId: session.id,
+      const records = await this.navigationStorage.queryNodes({
+        sessionId: this.currentSessionId,
       });
 
       // 创建一个节点ID集合，用于快速查找
@@ -1026,37 +1057,60 @@ export class NavigationManager {
 
   /**
    * 处理链接点击事件
-   * 内容脚本发送的事件
    */
-  public handleLinkClicked(tabId: number, linkInfo: any): void {
-    if (!linkInfo || !tabId) return;
-
-    const expiresAt = Date.now() + this.expirationTime;
-
-    // 生成待处理导航记录
-    const pendingNav: PendingNavigation = {
-      type: "link_click",
-      sourceNodeId: linkInfo.sourcePageId, // 存储源节点ID
-      sourceTabId: tabId,
-      sourceUrl: linkInfo.sourceUrl,
-      targetUrl: linkInfo.targetUrl,
-      isNewTab: linkInfo.isNewTab,
-      data: linkInfo,
-      timestamp: linkInfo.timestamp || Date.now(),
-      expiresAt,
-    };
-
-    // 添加到待处理列表
-    const targetUrl = this.normalizeUrl(linkInfo.targetUrl);
-    if (!this.pendingNavigations.has(targetUrl)) {
-      this.pendingNavigations.set(targetUrl, []);
-    }
-    this.pendingNavigations.get(targetUrl)?.push(pendingNav);
-
-    if (this.debugMode) {
-      console.log(
-        `链接点击: ${linkInfo.sourceUrl} -> ${targetUrl} (源节点: ${linkInfo.sourcePageId})`
-      );
+  private handleLinkClick(linkInfo: {
+    sourcePageId: string;
+    sourceUrl: string;
+    targetUrl: string;
+    anchorText: string;
+    isNewTab: boolean;
+    timestamp: number;
+  }): void {
+    try {
+      const { sourcePageId, sourceUrl, targetUrl, anchorText, isNewTab, timestamp } = linkInfo;
+      
+      // 创建一个待处理的导航记录，稍后当用户访问目标URL时会自动关联
+      const expiresAt = timestamp + this.expirationTime;
+      
+      // 创建一个待处理导航记录
+      const pendingNav: PendingNavigation = {
+        type: "link_click",
+        sourceNodeId: sourcePageId,
+        sourceUrl: sourceUrl,
+        targetUrl: targetUrl,
+        data: {
+          anchorText: anchorText,
+          isNewTab: isNewTab
+        },
+        timestamp: timestamp,
+        expiresAt: expiresAt,
+        // 如果知道源标签页ID，可以从linkInfo中获取并添加
+        sourceTabId: 0 // 此处可能需要从上下文中获取tabId
+      };
+      
+      // 添加到待处理导航列表
+      const normalizedUrl = this.normalizeUrl(targetUrl);
+      if (!this.pendingNavigations.has(normalizedUrl)) {
+        this.pendingNavigations.set(normalizedUrl, []);
+      }
+      this.pendingNavigations.get(normalizedUrl)?.push(pendingNav);
+      
+      // 如果目标是在新标签页打开，记录这个信息
+      if (isNewTab) {
+        pendingNav.isNewTab = true;
+      }
+      
+      // 记录到控制台
+      if (this.debugMode) {
+        console.log(
+          `记录链接点击: 从[${sourceUrl}](${sourcePageId}) -> 到[${targetUrl}], ` +
+          `文本="${anchorText}", 新标签页=${isNewTab}`
+        );
+      } else {
+        console.log(`记录链接点击: ${sourceUrl} -> ${targetUrl}`);
+      }
+    } catch (error) {
+      console.error('处理链接点击失败:', error);
     }
   }
 
@@ -1246,14 +1300,14 @@ export class NavigationManager {
 
     try {
       // 获取现有记录
-      const record = await this.storage.getRecord(nodeId);
+      const record = await this.navigationStorage.getNode(nodeId);
       if (!record) {
         console.warn(`未找到节点 ${nodeId}，无法更新元数据`);
         return;
       }
 
       // 准备更新对象
-      const updates: Partial<NavigationRecord> = {};
+      const updates: Partial<NavNode> = {};
 
       // 标题处理 - 应用优先级策略
       if (metadata.title) {
@@ -1348,7 +1402,7 @@ export class NavigationManager {
 
       // 应用更新
       if (Object.keys(updates).length > 0) {
-        await this.storage.updateRecord(nodeId, updates);
+        await this.navigationStorage.updateNode(nodeId, updates);
         if (this.debugMode) {
           console.log(`已更新节点[${nodeId}]元数据，来源:${source}`);
         }
@@ -1474,12 +1528,9 @@ export class NavigationManager {
       // 标准化URL
       const normalizedUrl = this.normalizeUrl(url);
 
-      // 获取当前会话
-      const session = await this.storage.getCurrentSession();
-
       // 查询记录
-      const records = await this.storage.queryRecords({
-        sessionId: session.id,
+      const records = await this.navigationStorage.queryNodes({
+        sessionId: this.currentSessionId,
       });
 
       // 首先尝试精确匹配
@@ -1523,7 +1574,7 @@ export class NavigationManager {
    */
   private async isSameNodeUrl(nodeId: string, url: string): Promise<boolean> {
     try {
-      const record = await this.storage.getRecord(nodeId);
+      const record = await this.navigationStorage.getNode(nodeId);
       if (!record) return false;
 
       return this.isSameUrl(record.url, url);
@@ -1598,10 +1649,10 @@ export class NavigationManager {
 
       // 更新最后一个节点的活跃时间
       const lastNodeId = history[history.length - 1];
-      const record = await this.storage.getRecord(lastNodeId);
+      const record = await this.navigationStorage.getNode(lastNodeId);
 
       if (record) {
-        await this.storage.updateRecord(lastNodeId, {
+        await this.navigationStorage.updateNode(lastNodeId, {
           activeTime: (record.activeTime || 0) + elapsedTime,
         });
 
@@ -1694,7 +1745,7 @@ export class NavigationManager {
    * 增加节点访问计数
    */
   private async incrementVisitCount(nodeId: string): Promise<number> {
-    const record = await this.storage.getRecord(nodeId);
+    const record = await this.navigationStorage.getNode(nodeId);
     if (!record) return 1;
 
     const newCount = (record.visitCount || 0) + 1;
@@ -1794,13 +1845,13 @@ export class NavigationManager {
   /**
    * 判断是否应该使用引用信息查找父节点
    */
-  private shouldUseReferrerForParent(record: NavigationRecord): boolean {
+  private shouldUseReferrerForParent(record: NavNode): boolean {
     // 如果是JavaScript导航，或者没有父节点，或者是根节点类型，可以使用引用信息
     return (
-      record.navigationType === "javascript" ||
+      record.type === "javascript" ||
       !record.parentId ||
       record.parentId === "" ||
-      !this.shouldBeRootNavigation(record.navigationType, record.url)
+      !this.shouldBeRootNavigation(record.type, record.url)
     );
   }
 
@@ -1825,7 +1876,7 @@ export class NavigationManager {
 
       visited.add(currentId);
 
-      const record = await this.storage.getRecord(currentId);
+      const record = await this.navigationStorage.getNode(currentId);
       if (!record || !record.parentId) {
         break;
       }
@@ -1843,27 +1894,34 @@ export class NavigationManager {
   /**
    * 获取当前会话信息
    */
-  public async getCurrentSession(): Promise<BrowsingSession> {
-    return this.storage.getCurrentSession();
+  public async getCurrentSession(): Promise<BrowsingSession | null> {
+    const currentSession = await this.sessionStorage.getCurrentSession();
+    return currentSession ? currentSession : null;
   }
 
   /**
-   * 获取当前会话的节点数
+   * 获取记录总数
    */
   public async getNodeCount(): Promise<number> {
-    const records = await this.storage.queryRecords({
-      sessionId: (await this.storage.getCurrentSession()).id,
-    });
-
-    return records.length;
+    try {      
+      // 查询节点总数
+      const nodes = await this.navigationStorage.queryNodes({
+        sessionId: this.currentSessionId
+      });
+      
+      return nodes.length;
+    } catch (error) {
+      console.error('获取记录数量失败:', error);
+      return 0;
+    }
   }
 
   /**
    * 获取当前会话的边数
    */
   public async getEdgeCount(): Promise<number> {
-    const edges = await this.storage.queryEdges({
-      sessionId: (await this.storage.getCurrentSession()).id,
+    const edges = await this.navigationStorage.queryEdges({
+      sessionId: this.currentSessionId
     });
 
     return edges.length;
@@ -1873,14 +1931,14 @@ export class NavigationManager {
    * 获取当前活跃的节点
    * 返回每个标签页最后访问的节点
    */
-  public async getActiveNodes(): Promise<NavigationRecord[]> {
+  public async getActiveNodes(): Promise<NavNode[]> {
     try {
-      const activeNodes: NavigationRecord[] = [];
+      const activeNodes: NavNode[] = [];
 
       for (const [tabId, history] of this.tabNavigationHistory.entries()) {
         if (history.length > 0) {
           const lastNodeId = history[history.length - 1];
-          const record = await this.storage.getRecord(lastNodeId);
+          const record = await this.navigationStorage.getNode(lastNodeId);
           if (record) {
             activeNodes.push(record);
           }
@@ -1897,13 +1955,13 @@ export class NavigationManager {
   /**
    * 获取标签页的导航历史
    */
-  public async getTabHistory(tabId: number): Promise<NavigationRecord[]> {
+  public async getTabHistory(tabId: number): Promise<NavNode[]> {
     try {
       const history = this.tabNavigationHistory.get(tabId) || [];
-      const records: NavigationRecord[] = [];
+      const records: NavNode[] = [];
 
       for (const nodeId of history) {
-        const record = await this.storage.getRecord(nodeId);
+        const record = await this.navigationStorage.getNode(nodeId);
         if (record) {
           records.push(record);
         }
@@ -1914,5 +1972,579 @@ export class NavigationManager {
       console.error(`获取标签页[${tabId}]历史失败:`, error);
       return [];
     }
+  }
+
+  /**
+   * 注册消息处理程序
+   * 修改所有方法调用使用正确的存储实例
+   */
+  private registerMessageHandlers(service: BackgroundMessageService): void {
+    // 获取节点ID请求
+    service.registerHandler('getNodeId', (
+      message: BackgroundMessages.GetNodeIdRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetNodeIdResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const handleRequest = async () => {
+        try {
+          const { tabId, url, referrer, timestamp } = message;
+          
+          // 获取或创建节点
+          const node = await this.getOrCreateNodeForUrl(url, {
+            tabId,
+            referrer: referrer || '',  // 如果客户端没遵循新类型，提供默认值作为后备
+            timestamp: timestamp || Date.now()  // 如果客户端没遵循新类型，提供默认值作为后备
+          });
+          
+          if (node && node.id) {
+            console.log(`为URL分配节点ID: ${url} -> ${node.id}`);
+            ctx.success({ nodeId: node.id });
+          } else {
+            ctx.error('无法创建节点');
+          }
+        } catch (error) {
+          console.error('处理getNodeId失败:', error);
+          ctx.error(`获取节点ID失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      };
+      
+      // 执行异步处理
+      handleRequest();
+      
+      return true; // 异步响应
+    });
+
+    // 页面加载请求
+    service.registerHandler('pageLoaded', (
+      message: BackgroundMessages.PageLoadedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.PageLoadedResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = sender.tab?.id;
+      const pageInfo = message.pageInfo || {};
+      const url = pageInfo.url || sender.tab?.url || '';
+      
+      if (!tabId || !url) {
+        return ctx.error('缺少必要的页面信息');
+      }
+      
+      if (this.debugMode) {
+        console.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
+      }
+      
+      this.updatePageMetadata(tabId, {
+        ...pageInfo,
+        url: url
+      })
+        .then(nodeId => {
+          if (nodeId) {
+            return ctx.success({ nodeId });
+          } else {
+            return ctx.error('未找到此页面的节点ID');
+          }
+        })
+        .catch(error => ctx.error(`处理页面加载失败: ${error instanceof Error ? error.message : String(error)}`));
+        
+      return true; // 异步响应
+    });
+    
+    // 页面标题更新请求
+    service.registerHandler('pageTitleUpdated', (
+      message: BackgroundMessages.PageTitleUpdatedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.PageTitleUpdatedResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      // 获取节点ID，优先使用消息中的，或者尝试查找
+      const handleUpdate = async () => {
+        try {
+          let nodeId = message.nodeId;
+          
+          // 如果没有提供节点ID，尝试查找
+          if (!nodeId) {
+            const tabId = sender.tab?.id;
+            const url = sender.tab?.url;
+            
+            if (!tabId || !url) {
+              return ctx.error('无法确定标签页信息');
+            }
+            
+            const result = await this.getNodeIdForTab(tabId, url);
+            if (!result) {
+              return ctx.error('未找到节点ID');
+            }
+            nodeId = result;
+          }
+          
+          // 更新标题
+          await this.updateNodeMetadata(
+            nodeId,
+            { title: message.title },
+            'content_script'
+          );
+          return ctx.success();
+        } catch (error) {
+          return ctx.error(`更新页面标题失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      };
+      
+      handleUpdate();
+      return true; // 异步响应
+    });
+    
+    // favicon 更新请求
+    service.registerHandler('faviconUpdated', (
+      message: BackgroundMessages.FaviconUpdatedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.FaviconUpdatedResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const handleUpdate = async () => {
+        try {
+          let nodeId = message.nodeId;
+          
+          // 如果没有提供节点ID，尝试查找
+          if (!nodeId) {
+            const tabId = sender.tab?.id;
+            const url = sender.tab?.url;
+            
+            if (!tabId || !url) {
+              return ctx.error('无法确定标签页信息');
+            }
+            
+            const result = await this.getNodeIdForTab(tabId, url);
+            if (!result) {
+              return ctx.error('未找到节点ID');
+            }
+            nodeId = result;
+          }
+          
+          // 更新favicon
+          await this.updateNodeMetadata(
+            nodeId,
+            { favicon: message.faviconUrl },
+            'content_script'
+          );
+          return ctx.success();
+        } catch (error) {
+          return ctx.error(`更新页面图标失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      };
+      
+      handleUpdate();
+      return true; // 异步响应
+    });
+    
+    // 页面活动消息
+    service.registerHandler('pageActivity', (
+      message: BackgroundMessages.PageActivityRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.PageActivityResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (this.debugMode) {
+        console.log(
+          "收到页面活动消息:",
+          message.source || "unknown source",
+          message.timestamp
+            ? new Date(message.timestamp).toLocaleTimeString()
+            : "unknown time"
+        );
+      }
+      
+      // 这里可以添加更多处理逻辑，例如更新节点的最后访问时间
+      
+      return ctx.success({ acknowledged: true });
+    });
+    
+    // 链接点击请求
+    service.registerHandler('linkClicked', (
+      message: BackgroundMessages.LinkClickedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.LinkClickedResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (message.linkInfo) {
+        try {
+          const { sourcePageId, sourceUrl, targetUrl, anchorText, isNewTab, timestamp } = message.linkInfo;
+          
+          // 处理链接点击，始终使用值，不需要检查是否存在
+          this.handleLinkClick({
+            sourcePageId,
+            sourceUrl, 
+            targetUrl,
+            anchorText: anchorText || '',  // 如果客户端没遵循新类型，提供默认值作为后备
+            isNewTab: isNewTab ?? false,   // 使用空值合并运算符处理布尔型属性
+            timestamp: timestamp || Date.now()  // 如果客户端没遵循新类型，提供默认值作为后备
+          });
+          
+          ctx.success();
+        } catch (error) {
+          console.error('处理链接点击失败:', error);
+          ctx.error(`处理链接点击失败: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        return false;
+      } else {
+        ctx.error('缺少链接信息');
+        return false;
+      }
+    });
+    
+    // 表单提交请求
+    service.registerHandler('formSubmitted', (
+      message: BackgroundMessages.FormSubmittedRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.FormSubmittedResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        ctx.error('无法确定标签页ID');
+        return false; // 同步响应
+      }
+      
+      if (!message.formInfo) {
+        ctx.error('缺少表单信息');
+        return false; // 同步响应
+      }
+      
+      try {
+        this.handleFormSubmitted(tabId, message.formInfo);
+        ctx.success();
+      } catch (error) {
+        console.error('处理表单提交失败:', error);
+        ctx.error(`处理表单提交失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      return false; // 同步响应
+    });
+    
+    // JS导航请求
+    service.registerHandler('jsNavigation', (
+      message: BackgroundMessages.JsNavigationRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.JsNavigationResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        return ctx.error('无法确定标签页ID');
+      }
+      
+      try {
+        this.handleJsNavigation(tabId, message);
+        return ctx.success();
+      } catch (error) {
+        console.error('处理JS导航失败:', error);
+        return ctx.error(`处理JS导航失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
+    
+    // 获取会话列表请求
+    service.registerHandler('getSessions', (
+      message: BackgroundMessages.GetSessionsRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetSessionsResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      this.sessionStorage.getSessions()
+        .then(sessions => {
+          // 创建简化的会话摘要
+          const sessionSummaries = Array.isArray(sessions) ? sessions.map(session => ({
+            id: session.id,
+            title: session.title || session.id,
+            startTime: session.startTime,
+            endTime: session.endTime || 0,
+            recordCount: session.records ? Object.keys(session.records).length : 0
+          })) : [];
+          
+          return ctx.success({ sessions: sessionSummaries });
+        })
+        .catch(error => {
+          console.error('获取会话列表失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+    
+    // 获取会话详情请求
+    service.registerHandler('getSessionDetails', (
+      message: BackgroundMessages.GetSessionDetailsRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetSessionDetailsResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      if (!message.sessionId) {
+        return ctx.error('缺少会话ID参数');
+      }
+      
+      this.sessionStorage.getSession(message.sessionId)
+        .then(async session => {
+          if (!session) {
+            return ctx.error(`未找到会话: ${message.sessionId}`);
+          }
+          
+          // 获取导航图谱数据
+          try {
+            const graphData = await this.navigationStorage.getSessionGraph(message.sessionId);
+            
+            // 构造完整响应
+            const completeSession = {
+              ...session,              
+              // 添加完整节点和边数据
+              records: graphData.nodes,
+              edges: graphData.edges
+            };
+            
+            return ctx.success({ session: completeSession });
+          } catch (error) {
+            console.error(`获取会话 ${message.sessionId} 的节点和边数据失败:`, error);
+            // 如果图谱数据获取失败，仍然返回基本会话信息
+            return ctx.success({ session });
+          }
+        })
+        .catch(error => {
+          console.error('获取会话详情失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+    
+    // 获取导航树请求
+    service.registerHandler('getNavigationTree', (
+      message: BackgroundMessages.GetNavigationTreeRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.GetNavigationTreeResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      const options = message.options || {};
+      if (this.debugMode) {
+        console.log('获取导航树数据...', options);
+      }
+      
+      this.navigationStorage.getSessionGraph(this.currentSessionId)
+      .then(treeData => {
+        // 检查是否需要提供上次更新时间（用于增量更新）
+        if (options && options.lastUpdate) {
+          // 如果客户端提供了上次更新时间，标记在此时间后更新的节点
+          const lastUpdateTime = parseInt(options.lastUpdate);
+          if (!isNaN(lastUpdateTime)) {
+            this.markUpdatedNodes(treeData, lastUpdateTime);
+          }
+        }
+        
+        return ctx.success({
+          data: {
+            nodes: treeData.nodes,
+            edges: treeData.edges
+          },
+          sessionId: this.currentSessionId,
+          timestamp: Date.now() // 添加当前时间戳，客户端用于增量更新
+        });
+      })
+      .catch(error => {
+        console.error('获取导航树失败:', error);
+        return ctx.error(String(error));
+      });
+      
+      return true; // 异步响应
+    });
+    
+    // 清除所有记录请求
+    service.registerHandler('clearAllRecords', (
+      message: BackgroundMessages.ClearAllRecordsRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.ClearAllRecordsResponse) => void
+    ) => {
+      const ctx = service.createMessageContext(message, sender, sendResponse);
+      
+      // 获取当前会话并清空其相关记录
+      this.sessionStorage.getCurrentSession()
+        .then(session => {
+          if (!session) {
+            return Promise.reject('无法获取当前会话');
+          }
+          //
+          return this.sessionStorage.clearSessionData(session.id)
+            .then(() => {
+              // 重置导航管理器内部状态
+              this.resetNavigationState();
+              
+              // 更新会话统计信息（如有必要）
+              return this.sessionStorage.updateSession(session.id, { 
+                nodeCount: 0 
+              });
+            });
+        })
+        .then(() => {
+          console.log('清空记录成功');
+          return ctx.success();
+        })
+        .catch(error => {
+          console.error('清空记录失败:', error);
+          return ctx.error(String(error));
+        });
+      
+      return true; // 异步响应
+    });
+    
+    console.log('导航管理器消息处理程序已注册');
+  }
+    /**
+   * 获取或创建URL对应的节点
+   * 如果节点已存在则返回现有节点，否则创建新节点
+   */
+  private async getOrCreateNodeForUrl(url: string, options: {
+    tabId: number;
+    referrer?: string;
+    timestamp?: number;
+  }): Promise<{ id: string; isNew?: boolean } | null> {
+    try {
+      const { tabId, referrer, timestamp = Date.now() } = options;
+      
+      // 1. 首先尝试从标签页中查找节点
+      let nodeId = await this.getNodeIdForTab(tabId, url);
+      
+      if (nodeId) {
+        // 找到现有节点，更新访问信息
+        await this.navigationStorage.updateNode(nodeId, {
+          lastVisit: timestamp,
+          visitCount: await this.incrementVisitCount(nodeId)
+        });
+        
+        return { id: nodeId };
+      }
+      
+      // 2. 如果没找到，创建新节点
+      nodeId = IdGenerator.generateNodeId(tabId, url);
+      
+      // 3. 记录节点ID到标签页历史
+      this.addToTabNavigationHistory(tabId, nodeId);
+      
+      // 4. 更新标签页状态
+      this.updateTabState(tabId, {
+        url: url,
+        lastNodeId: nodeId,
+        lastNavigation: timestamp
+      });
+      
+      // 5. 添加到待更新列表
+      this.addToPendingUpdates(tabId, nodeId);
+      
+      // 6. 更新缓存
+      this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
+      
+      // 7. 查找可能的父节点
+      let parentId = "";
+      
+      // 首先检查是否有待处理导航
+      const pendingNav = this.getPendingNavigationForUrl(url, tabId);
+      
+      if (pendingNav && pendingNav.sourceNodeId) {
+        // 使用待处理导航的源节点作为父节点
+        parentId = pendingNav.sourceNodeId;
+      } else if (referrer) {
+        // 使用引用页面作为父节点
+        const referrerNodeId = await this.findNodeByUrl(referrer);
+        if (referrerNodeId) {
+          parentId = referrerNodeId;
+        }
+      }
+      
+      // 如果还没找到父节点，尝试使用当前标签页的最后一个节点
+      if (!parentId) {
+        parentId = await this.findLastNodeIdForTab(tabId) || "";
+      }
+      
+      // 8. 创建导航记录
+      const record: NavNode = {
+        id: nodeId,
+        tabId: tabId,
+        url: url,
+        timestamp: timestamp,
+        sessionId: this.currentSessionId,
+        parentId: parentId,
+        type: pendingNav ? pendingNav.type : "initial",
+        openTarget: "same_tab",
+        source: "chrome_api",
+        firstVisit: timestamp,
+        lastVisit: timestamp,
+        visitCount: 1,
+        reloadCount: 0,
+        frameId: 0,
+        parentFrameId: -1
+      };
+      
+      // 9. 保存记录
+      await this.navigationStorage.saveNode(record);
+      
+      // 10. 如果存在父节点，创建边
+      if (parentId) {
+        await this.createNavigationEdge(parentId, nodeId, timestamp, record.type);
+      }
+      
+      if (this.debugMode) {
+        console.log(`创建新节点: ID=${nodeId}, URL=${url}, 父节点=${parentId || "无"}`);
+      }
+      
+      return { id: nodeId, isNew: true };
+    } catch (error) {
+      console.error("获取或创建节点失败:", error);
+      return null;
+    }
+  }
+  /**
+   * 为导航树中的节点标记更新状态
+   */
+  private markUpdatedNodes(treeData: { nodes: any[]; edges: any[] }, lastUpdateTime: number): void {
+    // 遍历所有节点，标记新增或更新的
+    for (const node of treeData.nodes) {
+      if (node.timestamp > lastUpdateTime) {
+        node.isUpdated = true;
+      }
+    }
+    
+    // 遍历所有边，标记新增或更新的
+    for (const edge of treeData.edges) {
+      if (edge.timestamp > lastUpdateTime) {
+        edge.isUpdated = true;
+      }
+    }
+  }
+  /**
+   * 重置导航状态
+   * 用于清除会话数据后重置内部状态
+   */
+  private resetNavigationState(): void {
+    // 重置标签页导航历史
+    this.tabNavigationHistory.clear();
+    
+    // 清空缓存
+    this.tabNodeIdCache.clear();
+    this.urlToNodeCache.clear();
+    
+    // 重置序列号
+    this.navigationSequence = 0;
+    
+    // 清空待处理更新
+    this.pendingUpdates.clear();
+    this.pendingNavigations.clear();
+    this.pendingJsNavigations.clear();
+    
+    console.log('已重置导航管理器内部状态');
   }
 }

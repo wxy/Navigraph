@@ -4,17 +4,14 @@
  */
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
-import { 
-  registerMessageHandler, 
-  unregisterMessageHandler,
-  getTypedMessage,
-  createResponse
-} from './message-handler.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
 import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
+import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
+import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
+
 
 export class NavigationVisualizer {
   // 可视化容器
@@ -42,7 +39,6 @@ export class NavigationVisualizer {
   // 状态跟踪
   _isRestoringTransform: boolean = false;
   _savedTransform?: {x: number, y: number, k: number};
-  _savedZoom: any = null; // 通用缓存
   _treeZoom: any = null; // 树形视图的缩放状态
   _timelineZoom: any = null; // 时间线视图的缩放状态
   
@@ -112,6 +108,9 @@ export class NavigationVisualizer {
       // 设置消息监听器
       this.initMessageListener();
       
+      // 应用全局配置
+      this.applyGlobalConfig();
+      
       // 确保DOM已加载完成
       if (document.readyState !== 'complete') {
         console.log('等待DOM加载完成...');
@@ -177,6 +176,32 @@ export class NavigationVisualizer {
       }
     });
   }
+
+  /**
+   * 应用全局配置
+   */
+  applyGlobalConfig() {
+    if (!window.navigraphSettings) {
+      console.log('全局配置不可用，使用默认设置');
+      return;
+    }
+    
+    try {
+      const config = window.navigraphSettings;
+      
+      // 应用默认视图
+      if (config.defaultView) {
+        console.log('应用默认视图:', config.defaultView);
+        this.currentView = config.defaultView;
+      }
+            
+      // 其他配置项应用...
+      
+    } catch (error) {
+      console.warn('应用全局配置出错:', error);
+    }
+  }
+
   /**
    * 初始化调试工具
    */
@@ -239,64 +264,56 @@ export class NavigationVisualizer {
   /**
    * 初始化消息监听
    */
-  initMessageListener() {
-    console.log('注册消息处理函数...');
+  private initMessageListener(): void {
+    console.log('初始化可视化器消息监听...');
+    
+    // 使用已导入的 registerHandler 函数
+    // 避免每次都动态导入
     
     // 注册刷新可视化消息处理函数
-    registerMessageHandler<'refreshVisualization'>('refreshVisualization', 
-      (message, sender, sendResponse) => {
-        // 使用类型化消息
-        const typedMessage = getTypedMessage('refreshVisualization', message);
-        console.log('收到可视化刷新请求', typedMessage.timestamp ? 
-          new Date(typedMessage.timestamp).toLocaleTimeString() : 'unknown');
-        
-        // 如果需要回复，使用类型化响应
-        if (message.requestId) {
-          const response = createResponse('refreshVisualization', message.requestId);
-          sendResponse(response);
+    registerHandler<BaseMessage, BaseResponse>('refreshVisualization', (message: any, sender, sendResponse) => {
+      console.log('收到可视化刷新请求');
+      
+      // 如果需要回复，发送响应
+      if (message.requestId) {
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
+      }
+      
+      // 延迟执行刷新操作
+      setTimeout(async () => {
+        try {
+          console.log('🔄 开始执行刷新操作...');
+          await sessionManager.loadSessions();
+          await sessionManager.loadCurrentSession();
+          this.refreshVisualization();
+          console.log('✅ 刷新操作完成');
+        } catch (err) {
+          console.error('❌ 自动刷新可视化失败:', err);
         }
-        
-        // 延迟执行刷新操作
-        setTimeout(async () => {
-          try {
-            console.log('🔄 开始执行刷新操作...');
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            console.log('✅ 刷新操作完成');
-          } catch (err) {
-            console.error('❌ 自动刷新可视化失败:', err);
-          }
-        }, 50);
-        
-        // 返回false表示我们已经同步处理了响应
-        return false;
-      });
+      }, 50);
+      
+      // 返回false表示已同步处理了响应
+      return false;
+    });
     
     // 注册页面活动消息处理函数
-    registerMessageHandler<'pageActivity'>('pageActivity', 
-      (message) => {
-        // 使用类型化消息
-        const typedMessage = getTypedMessage('pageActivity', message);
-        console.log('收到页面活动事件，触发刷新', typedMessage.source);
-        
-        // 触发刷新操作
-        this.triggerRefresh();
-        
-        // 不需要回复
-        return false;
-      });
+    registerHandler<BaseMessage, BaseResponse>('pageActivity', (message: any) => {
+      console.log('收到页面活动事件，触发刷新', message.source);
+      
+      // 触发刷新操作
+      this.triggerRefresh();
+      
+      // 不需要回复
+      return false;
+    });
     
     // 链接点击消息处理
-    registerMessageHandler<'linkClicked'>('linkClicked', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('linkClicked', message);
-      console.log('收到链接点击消息:', typedMessage.linkInfo);
+    registerHandler<BaseMessage, BaseResponse>('linkClicked', (message: any, sender, sendResponse) => {
+      console.log('收到链接点击消息:', message.linkInfo);
       
-      // 确认收到，使用类型化响应
+      // 确认收到
       if (message.requestId) {
-        const response = createResponse('linkClicked', message.requestId);
-        sendResponse(response);
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       // 延迟刷新可视化图表
@@ -311,59 +328,72 @@ export class NavigationVisualizer {
         }
       }, 100);
       
-      // 返回false表示已同步处理响应
+      return false;
+    });
+    
+    // 表单提交消息处理
+    registerHandler<BaseMessage, BaseResponse>('formSubmitted', (message: any, sender, sendResponse) => {
+      console.log('收到表单提交消息:', message.formInfo);
+      
+      // 确认收到
+      if (message.requestId) {
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
+      }
+      
+      // 延迟刷新可视化图表
+      setTimeout(async () => {
+        try {
+          await sessionManager.loadSessions();
+          await sessionManager.loadCurrentSession();
+          this.refreshVisualization();
+          console.log('基于表单提交刷新可视化完成');
+        } catch (err) {
+          console.error('表单提交后刷新可视化失败:', err);
+        }
+      }, 150);
+      
       return false;
     });
     
     // 节点ID获取消息处理
-    registerMessageHandler<'getNodeId'>('getNodeId', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('getNodeId', message);
-      console.log('收到获取节点ID请求:', typedMessage.url);
+    registerHandler<BaseMessage, BaseResponse>('getNodeId', (message: any, sender, sendResponse) => {
+      console.log('收到获取节点ID请求:', message.url);
       
       // 从当前数据中查找URL对应的节点ID
       let nodeId: string | undefined = undefined;
-      if (this.nodes && typedMessage.url) {
-        const node = this.nodes.find(n => n.url === typedMessage.url);
+      if (this.nodes && message.url) {
+        const node = this.nodes.find(n => n.url === message.url);
         nodeId = node?.id;
       }
       
-      // 返回找到的节点ID，使用类型化响应
-      const response = createResponse('getNodeId', message.requestId);
-      (response as any).nodeId = nodeId; // 添加特定字段
-      sendResponse(response);
+      // 返回找到的节点ID
+      sendResponse({ success: true, nodeId, requestId: message.requestId } as BaseResponse);
       
       return false; // 同步处理
     });
     
     // favicon更新消息处理
-    registerMessageHandler<'faviconUpdated'>('faviconUpdated', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('faviconUpdated', message);
-      console.log('收到favicon更新消息:', typedMessage.url, typedMessage.favicon);
+    registerHandler<BaseMessage, BaseResponse>('faviconUpdated', (message: any, sender, sendResponse) => {
+      console.log('收到favicon更新消息:', message.url, message.favicon);
       
-      // 确认收到，使用类型化响应
+      // 确认收到
       if (message.requestId) {
-        const response = createResponse('faviconUpdated', message.requestId);
-        sendResponse(response);
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       return false; // 同步处理
     });
     
     // 页面加载完成消息处理
-    registerMessageHandler<'pageLoaded'>('pageLoaded', (message, sender, sendResponse) => {
-      // 使用类型化消息
-      const typedMessage = getTypedMessage('pageLoaded', message);
-      console.log('收到页面加载完成消息:', typedMessage.pageInfo?.url);
+    registerHandler<BaseMessage, BaseResponse>('pageLoaded', (message: any, sender, sendResponse) => {
+      console.log('收到页面加载完成消息:', message.pageInfo?.url);
       
-      // 确认收到，使用类型化响应
+      // 确认收到
       if (message.requestId) {
-        const response = createResponse('pageLoaded', message.requestId);
-        sendResponse(response);
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
-      // 如果配置了自动刷新，延迟刷新视图
+      // 延迟刷新视图
       setTimeout(async () => {
         try {
           await sessionManager.loadSessions();
@@ -378,6 +408,8 @@ export class NavigationVisualizer {
       // 返回false表示已同步处理响应
       return false;
     });
+    
+    console.log('消息监听器初始化完成');
   }
   /**
    * 清理资源
@@ -387,13 +419,13 @@ export class NavigationVisualizer {
     console.log('清理可视化器资源...');
     
     // 取消注册消息处理函数
-    unregisterMessageHandler('refreshVisualization');
-    unregisterMessageHandler('debug');
-    unregisterMessageHandler('pageActivity');
-    unregisterMessageHandler('linkClicked');
-    unregisterMessageHandler('getNodeId');
-    unregisterMessageHandler('faviconUpdated');
-    unregisterMessageHandler('pageLoaded');
+    unregisterHandler('refreshVisualization');
+    unregisterHandler('debug');
+    unregisterHandler('pageActivity');
+    unregisterHandler('linkClicked');
+    unregisterHandler('getNodeId');
+    unregisterHandler('faviconUpdated');
+    unregisterHandler('pageLoaded');
   
     // 移除事件监听器
     window.removeEventListener('resize', () => this.updateContainerSize());
@@ -739,6 +771,12 @@ export class NavigationVisualizer {
         if (this._timelineZoom) {
           console.log('使用保存的时间线缩放');
           this.zoom = this._timelineZoom;
+        } else {
+          // 未保存过时间线缩放时使用默认值 1.0
+          console.log('时间线视图没有保存的缩放，使用默认值 1.0');
+          this.zoom = 1.0;
+          // 首次应用后立即保存，使其成为该视图的"记忆值"
+          this._timelineZoom = 1.0;
         }
         
         // 直接调用导入的时间线渲染函数
@@ -757,6 +795,12 @@ export class NavigationVisualizer {
         if (this._treeZoom) {
           console.log('使用保存的树形视图缩放');
           this.zoom = this._treeZoom;
+        } else {
+          // 未保存过树形视图缩放时使用默认值 1.0
+          console.log('树形视图没有保存的缩放，使用默认值 1.0');
+          this.zoom = 1.0;
+          // 首次应用后立即保存，使其成为该视图的"记忆值"
+          this._treeZoom = 1.0;
         }
         
         // 直接调用导入的树形渲染函数
@@ -1073,49 +1117,18 @@ export class NavigationVisualizer {
     // 创建详情面板
     const panel = document.createElement('div');
     panel.className = 'node-details-panel';
-    panel.style.cssText = `
-      position: absolute;
-      right: 20px;
-      top: 70px;
-      width: 300px;
-      background: rgba(40, 44, 52, 0.9);
-      border: 1px solid #555;
-      border-radius: 8px;
-      padding: 15px;
-      color: white;
-      font-size: 14px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      max-height: calc(100vh - 140px);
-      overflow-y: auto;
-    `;
     
     // 添加关闭按钮
     const closeButton = document.createElement('button');
     closeButton.innerHTML = '&times;';
-    closeButton.style.cssText = `
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-      outline: none;
-    `;
+    closeButton.className = 'node-details-close';
     closeButton.onclick = () => panel.remove();
     panel.appendChild(closeButton);
     
     // 添加标题
     const title = document.createElement('h3');
     title.textContent = node.title || '未命名页面';
-    title.style.cssText = `
-      margin: 0 0 15px 0;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #555;
-      padding-right: 20px;
-    `;
+    title.className = 'node-details-title';
     panel.appendChild(title);
     
     // 添加内容
@@ -1125,17 +1138,16 @@ export class NavigationVisualizer {
     if (node.url) {
       const urlContainer = document.createElement('div');
       urlContainer.className = 'detail-item';
-      urlContainer.style.marginBottom = '10px';
       
       const urlLabel = document.createElement('span');
       urlLabel.textContent = 'URL: ';
-      urlLabel.style.color = '#aaa';
+      urlLabel.className = 'detail-label';
       
       const urlValue = document.createElement('a');
       urlValue.href = node.url;
       urlValue.textContent = node.url.length > 35 ? node.url.substring(0, 32) + '...' : node.url;
       urlValue.target = '_blank';
-      urlValue.style.color = '#6bf';
+      urlValue.className = 'detail-url';
       urlValue.title = node.url;
       
       urlContainer.appendChild(urlLabel);
@@ -1147,13 +1159,13 @@ export class NavigationVisualizer {
     if (node.type) {
       const typeContainer = document.createElement('div');
       typeContainer.className = 'detail-item';
-      typeContainer.style.marginBottom = '10px';
       
       const typeLabel = document.createElement('span');
       typeLabel.textContent = '类型: ';
-      typeLabel.style.color = '#aaa';
+      typeLabel.className = 'detail-label';
       
       const typeValue = document.createElement('span');
+      typeValue.className = 'detail-value';
       
       // 将类型代码转换为更友好的描述
       let typeText = node.type;
@@ -1180,13 +1192,13 @@ export class NavigationVisualizer {
     if (node.timestamp) {
       const timeContainer = document.createElement('div');
       timeContainer.className = 'detail-item';
-      timeContainer.style.marginBottom = '10px';
       
       const timeLabel = document.createElement('span');
       timeLabel.textContent = '时间: ';
-      timeLabel.style.color = '#aaa';
+      timeLabel.className = 'detail-label';
       
       const timeValue = document.createElement('span');
+      timeValue.className = 'detail-value';
       const date = new Date(node.timestamp);
       timeValue.textContent = date.toLocaleString();
       
@@ -1198,80 +1210,101 @@ export class NavigationVisualizer {
     // 状态
     const statusContainer = document.createElement('div');
     statusContainer.className = 'detail-item';
-    statusContainer.style.marginBottom = '10px';
     
     const statusLabel = document.createElement('span');
     statusLabel.textContent = '状态: ';
-    statusLabel.style.color = '#aaa';
+    statusLabel.className = 'detail-label';
     
     const statusValue = document.createElement('span');
     if (node.isClosed) {
       statusValue.textContent = '已关闭';
-      statusValue.style.color = '#f66';
+      statusValue.className = 'status-closed';
     } else {
       statusValue.textContent = '活跃';
-      statusValue.style.color = '#6f6';
+      statusValue.className = 'status-active';
     }
     
     statusContainer.appendChild(statusLabel);
     statusContainer.appendChild(statusValue);
     content.appendChild(statusContainer);
     
-    // 其他属性
-    
-    // 更多技术详情 - 可折叠部分
+    // 技术详情 - 可折叠部分
     const technicalDetails = document.createElement('details');
-    technicalDetails.style.marginTop = '15px';
-    technicalDetails.style.borderTop = '1px solid #444';
-    technicalDetails.style.paddingTop = '10px';
+    technicalDetails.className = 'technical-details';
     
     const summary = document.createElement('summary');
     summary.textContent = '技术详情';
-    summary.style.cursor = 'pointer';
-    summary.style.outline = 'none';
     
     const detailContent = document.createElement('div');
-    detailContent.style.marginTop = '10px';
-    detailContent.style.fontSize = '12px';
-    detailContent.style.color = '#ccc';
-
+    detailContent.className = 'technical-content';
+  
     // 标签ID
     if (node.tabId) {
-        const tabContainer = document.createElement('div');
-        tabContainer.className = 'detail-item';
-        tabContainer.style.marginBottom = '10px';
-        
-        const tabLabel = document.createElement('span');
-        tabLabel.textContent = '标签ID: ';
-        tabLabel.style.color = '#aaa';
-        
-        const tabValue = document.createElement('span');
-        tabValue.textContent = node.tabId;
-        
-        tabContainer.appendChild(tabLabel);
-        tabContainer.appendChild(tabValue);
-        detailContent.appendChild(tabContainer);
-      }
+      const tabContainer = document.createElement('div');
+      tabContainer.className = 'detail-item';
+      
+      const tabLabel = document.createElement('span');
+      tabLabel.textContent = '标签ID: ';
+      tabLabel.className = 'detail-label';
+      
+      const tabValue = document.createElement('span');
+      tabValue.className = 'detail-value';
+      tabValue.textContent = node.tabId;
+      
+      tabContainer.appendChild(tabLabel);
+      tabContainer.appendChild(tabValue);
+      detailContent.appendChild(tabContainer);
+    }
   
     // 节点ID
     const idContainer = document.createElement('div');
-    idContainer.style.marginBottom = '8px';
-    idContainer.innerHTML = `<span style="color:#aaa">节点ID: </span>${node.id}`;
+    idContainer.className = 'detail-item';
+    
+    const idLabel = document.createElement('span');
+    idLabel.textContent = '节点ID: ';
+    idLabel.className = 'detail-label';
+    
+    const idValue = document.createElement('span');
+    idValue.className = 'detail-value';
+    idValue.textContent = node.id;
+    
+    idContainer.appendChild(idLabel);
+    idContainer.appendChild(idValue);
     detailContent.appendChild(idContainer);
     
     // 父节点ID
     if (node.parentId) {
       const parentContainer = document.createElement('div');
-      parentContainer.style.marginBottom = '8px';
-      parentContainer.innerHTML = `<span style="color:#aaa">父节点ID: </span>${node.parentId}`;
+      parentContainer.className = 'detail-item';
+      
+      const parentLabel = document.createElement('span');
+      parentLabel.textContent = '父节点ID: ';
+      parentLabel.className = 'detail-label';
+      
+      const parentValue = document.createElement('span');
+      parentValue.className = 'detail-value';
+      parentValue.textContent = node.parentId;
+      
+      parentContainer.appendChild(parentLabel);
+      parentContainer.appendChild(parentValue);
       detailContent.appendChild(parentContainer);
     }
     
     // 引用来源
     if (node.referrer) {
       const referrerContainer = document.createElement('div');
-      referrerContainer.style.marginBottom = '8px';
-      referrerContainer.innerHTML = `<span style="color:#aaa">引用来源: </span>${node.referrer}`;
+      referrerContainer.className = 'detail-item';
+      
+      const referrerLabel = document.createElement('span');
+      referrerLabel.textContent = '引用来源: ';
+      referrerLabel.className = 'detail-label';
+      
+      const referrerValue = document.createElement('span');
+      referrerValue.className = 'detail-value';
+      referrerValue.textContent = node.referrer;
+      
+      referrerContainer.appendChild(referrerLabel);
+      referrerContainer.appendChild(referrerValue);
       detailContent.appendChild(referrerContainer);
     }
     
@@ -1296,53 +1329,105 @@ export class NavigationVisualizer {
    * 使元素可拖拽
    */
   private makeDraggable(element: HTMLElement): void {
-    let offsetX = 0, offsetY = 0;
+    // 状态变量
     let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let originalLeft = 0, originalTop = 0;
+    
+    // 设置初始位置 - 放置在右上角
+    element.style.position = 'absolute';
+    element.style.right = 'auto';
+    element.style.bottom = 'auto';
+    
+    // 设置右上角位置
+    const containerRect = this.container ? 
+      this.container.getBoundingClientRect() : 
+      { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+      
+    // 初始位置：右上角，距离右侧20px，距离顶部70px
+    element.style.left = `${containerRect.width - 320}px`;
+    element.style.top = '70px';
     
     // 创建拖拽手柄
     const handle = document.createElement('div');
-    handle.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 30px; /* 留出关闭按钮的空间 */
-      height: 30px;
-      cursor: move;
-    `;
+    handle.className = 'drag-handle';
     element.appendChild(handle);
     
-    handle.addEventListener('mousedown', startDrag);
-    
-    function startDrag(e: MouseEvent) {
-      isDragging = true;
-      offsetX = e.clientX - element.getBoundingClientRect().left;
-      offsetY = e.clientY - element.getBoundingClientRect().top;
-      
-      document.addEventListener('mousemove', drag);
-      document.addEventListener('mouseup', stopDrag);
-      
-      // 防止文本选择
-      e.preventDefault();
+    // 标题也可以用来拖动
+    const title = element.querySelector('.node-details-title');
+    if (title) {
+      (title as HTMLElement).style.cursor = 'move';
     }
     
-    function drag(e: MouseEvent) {
+    // 拖动开始处理函数
+    const onDragStart = (e: MouseEvent) => {
+      // 只响应鼠标左键
+      if (e.button !== 0) return;
+      
+      // 检查目标元素是否为手柄或标题
+      const target = e.target as HTMLElement;
+      if (!(target === handle || target === title)) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 记录开始拖动时的状态
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      
+      // 记录元素原始位置
+      originalLeft = parseInt(element.style.left || '0', 10);
+      originalTop = parseInt(element.style.top || '0', 10);
+      
+      // 添加拖动中的样式
+      element.classList.add('dragging');
+      
+      // 添加文档级事件监听
+      document.addEventListener('mousemove', onDragMove);
+      document.addEventListener('mouseup', onDragEnd);
+    };
+    
+    // 拖动过程处理函数
+    const onDragMove = (e: MouseEvent) => {
       if (!isDragging) return;
       
-      const x = e.clientX - offsetX;
-      const y = e.clientY - offsetY;
+      e.preventDefault();
       
-      // 限制在视口内
-      const maxX = window.innerWidth - element.offsetWidth;
-      const maxY = window.innerHeight - element.offsetHeight;
+      // 计算拖动距离
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
       
-      element.style.left = `${Math.max(0, Math.min(x, maxX))}px`;
-      element.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
-    }
+      // 计算新位置（基于原始位置）
+      const newLeft = originalLeft + deltaX;
+      const newTop = originalTop + deltaY;
+      
+      // 限制在容器内
+      const maxX = containerRect.width - element.offsetWidth;
+      const maxY = containerRect.height - element.offsetHeight;
+      
+      // 应用新位置
+      element.style.left = `${Math.max(0, Math.min(newLeft, maxX))}px`;
+      element.style.top = `${Math.max(0, Math.min(newTop, maxY))}px`;
+    };
     
-    function stopDrag() {
+    // 拖动结束处理函数
+    const onDragEnd = () => {
+      if (!isDragging) return;
+      
+      // 清理状态
       isDragging = false;
-      document.removeEventListener('mousemove', drag);
-      document.removeEventListener('mouseup', stopDrag);
+      element.classList.remove('dragging');
+      
+      // 移除文档级事件监听
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('mouseup', onDragEnd);
+    };
+    
+    // 添加拖动开始事件监听
+    handle.addEventListener('mousedown', onDragStart);
+    if (title) {
+      handle.addEventListener('mousedown', onDragStart);
     }
   }
 

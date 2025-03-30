@@ -3,8 +3,8 @@
  * 负责加载和处理会话数据
  */
 import type { Session, SessionDetails } from '../types/session.js';
-import { sendMessage } from './message-handler.js';
 import { nodeManager } from './node-manager.js';
+import { sendMessage } from '../messaging/content-message-service.js';
 
 type SessionEventCallback = (session: SessionDetails | null) => void;
 
@@ -133,7 +133,9 @@ export class SessionManager {
    */
   async clearAllData(): Promise<boolean> {
     try {
-      const response = await sendMessage('clearAllData');
+      const response = await sendMessage('clearAllData', {
+        timestamp: Date.now() // 添加时间戳或其他所需参数
+      });
       
       if (response && response.success) {
         // 重置本地状态

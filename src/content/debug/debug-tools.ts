@@ -4,13 +4,17 @@
  */
 
 import type { Visualizer } from '../types/navigation.js';
-import { createResponse, getTypedMessage } from '../core/message-handler.js';
+import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
+import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
+
+
 /**
  * 调试工具类
  * 提供各种调试功能
  */
 export class DebugTools {
   private visualizer: Visualizer;
+  private messageHandler: ((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => boolean) | null = null;
   
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -28,23 +32,22 @@ export class DebugTools {
    * 设置消息监听，用于接收背景页发来的调试命令
    */
   private setupMessageListener(): void {
-    // 监听来自扩展背景页的消息
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'debug') {
-          const typedMessage = getTypedMessage('debug', message);
-          console.log('收到调试命令:', typedMessage.command);
-          
-          // 处理调试命令
-          this.handleDebugCommand(typedMessage.command);
-          
-          // 发送响应
-          sendResponse(createResponse('debug', message.requestId));
-          return true; // 保持消息通道开启
-        }
-        return false;
-      });
-    }
+    // 使用新的处理程序注册方法
+    registerHandler<BaseMessage, BaseResponse>('debug', (message: any, sender, sendResponse) => {
+      console.log('收到调试命令:', message.command);
+      
+      // 处理调试命令
+      if (message.command) {
+        this.handleDebugCommand(message.command);
+      }
+      
+      sendResponse({ 
+        success: true, 
+        requestId: message.requestId 
+      } as BaseResponse);
+      
+      return false;
+    });
   }
   
   /**
@@ -223,16 +226,18 @@ export class DebugTools {
         loadingElement.style.display = 'flex';
       }
       
-      // 调用后台API清除数据
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        await chrome.runtime.sendMessage({ 
-          action: 'clearAllData',
-          timestamp: Date.now() 
+      // 使用新的消息系统发送消息
+      try {
+        const response = await sendMessage('clearAllData', {
+          timestamp: Date.now()
         });
-      } else {
-        console.warn('Chrome API不可用，无法发送消息');
-        // 模拟延迟
-        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (!response.success) {
+          throw new Error(response.error || '清除数据时发生未知错误');
+        }
+      } catch (error) {
+        console.error('发送清除数据消息失败:', error);
+        throw error;
       }
       
       // 刷新页面
@@ -251,5 +256,13 @@ export class DebugTools {
         loadingElement.style.display = 'none';
       }
     }
+  }
+  
+  /**
+   * 清理资源
+   */
+  public cleanup(): void {
+    // 使用新的取消注册方法
+    unregisterHandler('debug');
   }
 }

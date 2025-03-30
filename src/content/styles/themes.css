@@ -1,0 +1,436 @@
+/* ========== 主题变量定义 ========== */
+
+/* 暗色主题 */
+[data-theme="dark"] {
+  /* 基础颜色 */
+  --background-color: #1a1d21;
+  --card-bg: #272b33;
+  --text-color: #e0e0e0;
+  --label-color: #a0a0a0;
+  --border-color: #3a3f48;
+  
+  /* 组件背景 */
+  --node-bg: #333842;
+  --node-hover: #3e4350;
+  --node-selected: #4a6ee0;
+  
+  /* 连接与链接 */
+  --link-color: rgba(255, 255, 255, 0.3);
+  --svg-link: rgba(255, 255, 255, 0.3);
+  
+  /* 状态与工具栏 */
+  --status-bg: #1f232a;
+  --status-text: #a0a0a0;
+  --status-border: #3a3f48;
+  
+  /* 弹出框与头部 */
+  --popup-bg: rgba(39, 43, 51, 0.95);
+  --popup-header: #1f232a;
+  
+  /* 工具栏相关 */
+  --toolbar-bg: #272b33;
+  --toolbar-text: #e0e0e0;
+  --toolbar-border: #3a3f48;
+  --toolbar-button: #333842;
+  --toolbar-button-text: #e0e0e0;
+  --toolbar-button-hover: #3e4350;
+  
+  /* 按钮样式 */
+  --btn-bg: #333842;
+  --btn-text: #e0e0e0;
+  --btn-hover: #3e4350;
+  --btn-primary: #4a6ee0;
+  --btn-primary-hover: #3a5ec0;
+  
+  /* 筛选器相关 */
+  --filter-bg: #272b33;
+  --filter-text: #e0e0e0;
+  --filter-border: #3a3f48;
+  --filter-active: #4a6ee0;
+  --filter-hover: #3e4350;
+  
+  /* SVG 元素 */
+  --svg-background: #1a1d21;
+  --svg-node-fill: #333842;
+  --svg-node-stroke: #4a4f58;
+  --svg-text: #e0e0e0;
+  
+  /* 其他元素 */
+  --scrollbar-track: #1a1d21;
+  --scrollbar-thumb: #3a3f48;
+  --scrollbar-thumb-hover: #4a4f58;
+  --zoom-controls-bg: rgba(39, 43, 51, 0.8);
+
+  /* 添加Windows状态栏变量 */
+  --status-cell-bg: #444;
+  --status-border-dark: #222;
+  --status-border-light: #555;
+
+  /* 节点状态颜色 */
+  --status-active: #6f6;
+  --status-closed: #f66;
+}
+
+/* 亮色主题 */
+[data-theme="light"] {
+  /* 基础颜色 */
+  --background-color: #f5f7fa;
+  --card-bg: #ffffff;
+  --text-color: #333333;
+  --label-color: #555555;
+  --border-color: #e0e0e0;
+  
+  /* 组件背景 */
+  --node-bg: #ffffff;
+  --node-hover: #f5f5f5;
+  --node-selected: #4a6ee0;
+  
+  /* 连接与链接 */
+  --link-color: rgba(0, 0, 0, 0.2);
+  --svg-link: rgba(0, 0, 0, 0.2);
+  
+  /* 状态与工具栏 */
+  --status-bg: #f8f9fa;
+  --status-text: #555555;
+  --status-border: #e0e0e0;
+  
+  /* 弹出框与头部 */
+  --popup-bg: rgba(255, 255, 255, 0.95);
+  --popup-header: #f5f7fa;
+  
+  /* 工具栏相关 */
+  --toolbar-bg: #ffffff;
+  --toolbar-text: #333333;
+  --toolbar-border: #e0e0e0;
+  --toolbar-button: #f5f7fa;
+  --toolbar-button-text: #333333;
+  --toolbar-button-hover: #e9ecef;
+  
+  /* 按钮样式 */
+  --btn-bg: #f5f7fa;
+  --btn-text: #333333;
+  --btn-hover: #e9ecef;
+  --btn-primary: #4a6ee0;
+  --btn-primary-hover: #3a5ec0;
+  
+  /* 筛选器相关 */
+  --filter-bg: #ffffff;
+  --filter-text: #333333;
+  --filter-border: #e0e0e0;
+  --filter-active: #4a6ee0;
+  --filter-hover: #f5f5f5;
+  
+  /* SVG 元素 */
+  --svg-background: #ffffff;
+  --svg-node-fill: #ffffff;
+  --svg-node-stroke: #cccccc;
+  --svg-text: #333333;
+  
+  /* 其他元素 */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #d1d1d1;
+  --scrollbar-thumb-hover: #b1b1b1;
+  --zoom-controls-bg: rgba(255, 255, 255, 0.8);
+
+  /* 添加Windows状态栏变量 */
+  --status-cell-bg: #e0e0e0;
+  --status-border-dark: #808080;
+  --status-border-light: #fff;
+
+  /* 节点状态颜色 */
+  --status-active: #00aa00;
+  --status-closed: #cc0000;
+}
+
+/* ========== 滚动条样式 ========== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ========== 时间线视图主题样式 ========== */
+/* 时间线视图深色主题样式 */
+[data-theme="dark"] .timeline-svg {
+  background-color: var(--svg-background);
+}
+
+[data-theme="dark"] .timeline-arrow {
+  fill: var(--text-color);
+}
+
+[data-theme="dark"] .timeline-node-text {
+  fill: var(--text-color);
+}
+
+[data-theme="dark"] .time-axis-background {
+  fill: var(--card-bg);
+}
+
+[data-theme="dark"] .time-axis text {
+  fill: var(--text-color);
+}
+
+[data-theme="dark"] .time-axis line,
+[data-theme="dark"] .time-axis path {
+  stroke: var(--border-color);
+}
+
+[data-theme="dark"] .grid-line {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .time-axis-title {
+  fill: var(--text-color);
+}
+
+/* 时间线视图亮色主题样式 */
+[data-theme="light"] .timeline-svg {
+  background-color: var(--svg-background) !important;
+}
+
+[data-theme="light"] .timeline-arrow {
+  fill: var(--text-color);
+}
+
+[data-theme="light"] .timeline-node-text {
+  fill: var(--text-color);
+}
+
+[data-theme="light"] .time-axis-background {
+  fill: var(--card-bg) !important;
+}
+
+[data-theme="light"] .timeline-background {
+  fill: var(--svg-background) !important;
+}
+
+[data-theme="light"] .time-axis text {
+  fill: var(--text-color);
+}
+
+[data-theme="light"] .time-axis line,
+[data-theme="light"] .time-axis path {
+  stroke: var(--border-color);
+}
+
+[data-theme="light"] .grid-line {
+  stroke: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .time-axis-title {
+  fill: var(--text-color);
+}
+/* 确保整个时间线容器背景正确 */
+[data-theme="light"] .visualization-container,
+[data-theme="light"] .timeline-view,
+[data-theme="light"] .timeline-container,
+[data-theme="light"] #visualization svg {
+  background-color: var(--svg-background) !important;
+}
+/* ========== SVG 元素主题样式 ========== */
+/* SVG 节点文本样式 - 深色主题 */
+[data-theme="dark"] svg text {
+  fill: var(--svg-text);
+}
+
+/* SVG 节点文本样式 - 亮色主题 */
+[data-theme="light"] svg text {
+  fill: var(--svg-text);
+}
+
+/* 确保 SVG 背景正确 */
+[data-theme="dark"] svg {
+  background-color: var(--svg-background);
+}
+
+[data-theme="light"] svg {
+  background-color: var(--svg-background);
+}
+
+/* ========== 特定组件样式覆盖 ========== */
+/* 针对深色主题的特定修复 */
+
+/* 筛选面板 */
+[data-theme="dark"] .filters-panel {
+  background-color: var(--filter-bg);
+  border-color: var(--filter-border);
+  color: var(--filter-text);
+}
+
+[data-theme="dark"] .filters-panel h2,
+[data-theme="dark"] .filters-panel h3 {
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .filter-option label {
+  color: var(--filter-text);
+}
+
+/* 状态栏 */
+[data-theme="dark"] .status-bar {
+  background-color: var(--status-bg);
+  border-color: var(--status-border);
+  color: var(--status-text);
+}
+
+/* 工具栏和按钮 */
+[data-theme="dark"] .toolbar {
+  background-color: var(--toolbar-bg);
+  border-color: var(--toolbar-border);
+}
+
+[data-theme="dark"] .view-mode button {
+  background-color: var(--toolbar-button);
+  color: var(--toolbar-button-text);
+}
+
+[data-theme="dark"] .view-mode button:hover {
+  background-color: var(--toolbar-button-hover);
+}
+
+[data-theme="dark"] .view-mode button.active {
+  background-color: var(--btn-primary);
+  color: white;
+}
+
+/* 节点详情面板 */
+[data-theme="dark"] .node-details-panel {
+  background: var(--popup-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .node-details-close {
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .node-details-title {
+  border-bottom-color: var(--border-color);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .detail-label {
+  color: var(--label-color);
+}
+
+[data-theme="dark"] .detail-url {
+  color: var(--btn-primary);
+}
+
+[data-theme="light"] .node-details-panel {
+  background: var(--popup-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .node-details-close {
+  color: var(--text-color);
+}
+
+/* 表单控件 */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+[data-theme="dark"] .form-control {
+  background-color: var(--node-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] .form-control:focus {
+  border-color: var(--btn-primary);
+  box-shadow: 0 0 0 0.2rem rgba(74, 110, 224, 0.25);
+}
+
+/* 卡片和面板 */
+[data-theme="dark"] .card,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .box {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .panel-header,
+[data-theme="dark"] .box-header {
+  background-color: var(--popup-header);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+/* 修复 monospace 样式 */
+[data-theme="dark"] .monospace {
+  background-color: var(--node-bg);
+  color: var(--text-color);
+}
+
+/* ========== 修复深色主题中可能出现的特定问题 ========== */
+
+/* 确保时间线视图背景正确 */
+[data-theme="dark"] .timeline-view,
+[data-theme="dark"] .timeline-container,
+[data-theme="dark"] .timeline-panel,
+[data-theme="dark"] .timeline-wrapper {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* 处理特殊状态显示 */
+.status-active {
+  color: var(--status-active, #6f6);
+}
+
+.status-closed {
+  color: var(--status-closed, #f66);
+}
+
+[data-theme="light"] .status-active {
+  color: var(--status-active, #00aa00);
+}
+
+[data-theme="light"] .status-closed {
+  color: var(--status-closed, #cc0000);
+}
+
+/* 技术详情部分 */
+[data-theme="dark"] .technical-details {
+  border-top-color: var(--border-color);
+}
+
+[data-theme="dark"] .technical-content {
+  color: var(--label-color);
+}
+
+/* 防止特定图标在深色主题中不可见 */
+[data-theme="dark"] .icon-dark {
+  filter: invert(1);
+}
+
+/* 会话节点在深色主题下的样式 */
+[data-theme="dark"] .node.session rect {
+  fill: #333;
+  stroke: #111;
+}
+
+[data-theme="dark"] .node.redirect text {
+  fill: #ff9800;
+}
