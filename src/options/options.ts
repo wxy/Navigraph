@@ -11,6 +11,15 @@ let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
   console.log('DOM已加载，开始初始化选项页...');
   
+  // 初始化通知元素
+  const notification = document.getElementById('notification');
+  if (notification) {
+    notification.className = 'notification hidden';
+    notification.style.display = 'none';
+  } else {
+    console.warn('未找到通知元素，可能会影响用户反馈');
+  }
+  
   // 初始化UI
   setupTabs();
   setupEventListeners();
@@ -99,9 +108,22 @@ function setupEventListeners(): void {
       // 根据会话模式更新高级设置可见性
       const advancedSettings = document.getElementById('advanced-session-settings');
       if (advancedSettings) {
-        const mode = sessionModeSelect.value;
-        advancedSettings.style.display = 
-          (mode === 'daily' || mode === 'smart') ? 'block' : 'none';
+        // 只在每日模式下显示高级设置
+        advancedSettings.style.display = sessionModeSelect.value === 'daily' ? 'block' : 'none';
+      }
+    });
+  }
+  
+  // 空闲超时输入验证
+  const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
+  if (idleTimeoutInput) {
+    idleTimeoutInput.addEventListener('input', () => {
+      // 确保值在有效范围内
+      const value = parseInt(idleTimeoutInput.value);
+      if (isNaN(value) || value < 5) {
+        idleTimeoutInput.value = '5';
+      } else if (value > 240) {
+        idleTimeoutInput.value = '240';
       }
     });
   }
@@ -195,15 +217,20 @@ function applySettingsToUI(): void {
   // 会话模式
   const sessionModeSelect = document.getElementById('session-mode') as HTMLSelectElement;
   if (sessionModeSelect) {
-    sessionModeSelect.value = currentSettings.sessionMode || 'smart';
+    sessionModeSelect.value = currentSettings.sessionMode || 'daily';
     
     // 设置高级会话设置的可见性
     const advancedSettings = document.getElementById('advanced-session-settings');
     if (advancedSettings) {
       advancedSettings.style.display = 
-        (currentSettings.sessionMode === 'daily' || currentSettings.sessionMode === 'smart') ? 
-        'block' : 'none';
+        (currentSettings.sessionMode === 'daily') ? 'block' : 'none';
     }
+  }
+  
+  // 空闲超时
+  const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
+  if (idleTimeoutInput) {
+    idleTimeoutInput.value = String(currentSettings.idleTimeout || 30);
   }
   
   // 数据保留
@@ -223,23 +250,29 @@ function collectSettingsFromUI(): NavigraphSettings {
   // 默认视图
   const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'timeline' || 'tree';
   
-  // 会话模式
-  const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'activity' | 'smart' | 'manual' || 'smart';
+  // 会话模式 - 限制为 'daily' 或 'manual'
+  const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'manual' || 'daily';
   
   // 数据保留
   const dataRetentionStr = (document.getElementById('data-retention') as HTMLSelectElement)?.value || '30';
   const dataRetention = parseInt(dataRetentionStr) as 7 | 14 | 30 | 90 | 180 | 365 | 0;
+  
+  // 空闲超时
+  const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
+  const idleTimeout = idleTimeoutInput ? 
+    parseInt(idleTimeoutInput.value) || 30 : 
+    currentSettings.idleTimeout || 30;
   
   return {
     theme,
     defaultView,
     sessionMode,
     dataRetention,
-    sessionTimeout: 30,
-    maxNodes: 1000,
-    trackAnonymous: false,
-    animationEnabled: true,
-    showLabels: true
+    idleTimeout, // 添加空闲超时设置
+    maxNodes: currentSettings.maxNodes || 1000,
+    trackAnonymous: currentSettings.trackAnonymous || false,
+    animationEnabled: currentSettings.animationEnabled || true,
+    showLabels: currentSettings.showLabels || true
   };
 }
 
@@ -268,65 +301,93 @@ async function saveSettings(): Promise<void> {
   }
 }
 /**
- * 显示设置保存成功通知，根据变更类型自动添加相应的刷新提示
+ * 显示设置保存成功通知 - 简化版
  */
 function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettings: NavigraphSettings): void {
+  // 跟踪是否有任何设置发生变化
+  const hasChanges = JSON.stringify(oldSettings) !== JSON.stringify(newSettings);
+  
+  // 如果没有变化，显示信息并返回
+  if (!hasChanges) {
+    showNotification('没有设置被更改', 'success', 2000);
+    return;
+  }
+  
   // 检查设置变更类型
   const affectsBackground = 
     oldSettings.sessionMode !== newSettings.sessionMode || 
-    oldSettings.dataRetention !== newSettings.dataRetention;
+    oldSettings.dataRetention !== newSettings.dataRetention ||
+    oldSettings.idleTimeout !== newSettings.idleTimeout;
     
   const affectsFrontend =
     oldSettings.theme !== newSettings.theme ||
     oldSettings.defaultView !== newSettings.defaultView;
   
+  // 构建消息
   let message = '设置已保存';
-  let type: 'success' | 'error' = 'success'; // 显式添加类型注解
-  let duration = 3000; // 基础持续时间：3秒
+  let type: 'success' | 'error' = 'success';
+  let duration = 3000;
   
-  // 根据变更类型添加额外提示
   if (affectsBackground) {
     message += ' - 需要重新加载扩展才能完全生效';
-    duration = 5000; // 增加显示时间
+    duration = 5000;
     
-    // 创建并添加重载按钮（可选）
-    const notification = document.getElementById('notification');
-    if (notification) {
-      // 清除现有内容
-      notification.innerHTML = '';
-      
-      // 添加消息
-      const messageSpan = document.createElement('span');
-      messageSpan.textContent = message;
-      notification.appendChild(messageSpan);
-      
-      // 添加重载按钮
-      const reloadBtn = document.createElement('button');
-      reloadBtn.className = 'notification-action';
-      reloadBtn.textContent = '立即重载';
-      reloadBtn.onclick = () => chrome.runtime.reload();
-      notification.appendChild(reloadBtn);
-      
-      // 显示通知
-      notification.className = 'notification';
-      notification.classList.remove('error'); // 确保移除error类
-      notification.classList.remove('hidden');
-      
-      // 设置自动隐藏
-      setTimeout(() => {
-        notification?.classList.add('hidden');
-      }, duration);
-      
-      return; // 提前返回，因为已手动处理了通知
+    // 带按钮的复杂通知
+    try {
+      const notification = document.getElementById('notification');
+      if (notification) {
+        // 清除通知管理器的计时器
+        notificationManager.clearTimer();
+        
+        // 初始化通知元素
+        notification.className = 'notification';
+        notification.style.cssText = 'display: block; opacity: 1; visibility: visible;';
+        notification.innerHTML = '';
+        
+        // 添加消息文本
+        const msgElement = document.createElement('span');
+        msgElement.textContent = message;
+        notification.appendChild(msgElement);
+        
+        // 添加重载按钮
+        const reloadBtn = document.createElement('button');
+        reloadBtn.className = 'notification-action';
+        reloadBtn.textContent = '立即重载';
+        reloadBtn.onclick = () => {
+          try {
+            chrome.runtime.reload();
+          } catch (e) {
+            console.error('重载扩展失败:', e);
+            showNotification('重载扩展失败，请手动刷新', 'error');
+          }
+        };
+        notification.appendChild(reloadBtn);
+        
+        // 自动隐藏
+        window.setTimeout(() => {
+          notification.classList.add('hidden');
+          window.setTimeout(() => {
+            notification.style.display = 'none';
+          }, 500);
+        }, duration);
+        
+        // 标记通知管理器为活动状态
+        notificationManager.isActive = true;
+        
+        return; // 提前返回
+      }
+    } catch (e) {
+      console.error('创建复杂通知失败，回退到标准通知:', e);
     }
   } else if (affectsFrontend) {
     message += ' - 请刷新已打开的扩展页以应用新设置';
-    duration = 4000; // 增加显示时间
+    duration = 4000;
   }
   
-  // 显示通知
+  // 标准通知
   showNotification(message, type, duration);
 }
+
 /**
  * 重置设置
  */
@@ -377,23 +438,81 @@ async function clearAllData(): Promise<void> {
 }
 
 /**
- * 显示通知
- * @param message 通知消息
- * @param type 通知类型
- * @param duration 显示持续时间（毫秒）
+ * 通知管理器 - 简化版，统一管理所有通知逻辑
  */
-function showNotification(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
-  const notification = document.getElementById('notification');
-  if (notification) {
+const notificationManager = {
+  timer: null as number | null,
+  isActive: false,
+  
+  /**
+   * 显示通知
+   */
+  show(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
+    console.log(`显示通知: "${message}" (${type})`);
+    
+    const notification = document.getElementById('notification');
+    if (!notification) {
+      console.error('找不到通知元素');
+      return;
+    }
+    
+    // 取消现有计时器
+    this.clearTimer();
+    
+    // 设置内容和样式
     notification.textContent = message;
     notification.className = 'notification';
+    
     if (type === 'error') {
       notification.classList.add('error');
     }
-    notification.classList.remove('hidden');
     
-    setTimeout(() => {
-      notification?.classList.add('hidden');
+    // 确保元素可见
+    notification.style.display = 'block';
+    notification.style.opacity = '1';
+    notification.style.visibility = 'visible';
+    
+    this.isActive = true;
+    
+    // 设置自动隐藏
+    this.timer = window.setTimeout(() => {
+      this.hide();
     }, duration);
+  },
+  
+  /**
+   * 隐藏通知
+   */
+  hide(): void {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    
+    // 添加隐藏类
+    notification.classList.add('hidden');
+    
+    // 在过渡效果完成后完全隐藏
+    window.setTimeout(() => {
+      if (notification.classList.contains('hidden')) {
+        notification.style.display = 'none';
+        this.isActive = false;
+      }
+    }, 500);
+  },
+  
+  /**
+   * 清除现有计时器
+   */
+  clearTimer(): void {
+    if (this.timer !== null) {
+      window.clearTimeout(this.timer);
+      this.timer = null;
+    }
   }
+};
+
+/**
+ * 显示通知 - 简化版，使用通知管理器
+ */
+function showNotification(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
+  notificationManager.show(message, type, duration);
 }

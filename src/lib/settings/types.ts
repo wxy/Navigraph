@@ -11,7 +11,7 @@ export type ViewType = 'tree' | 'timeline';
 /**
  * 会话模式
  */
-export type SessionMode = 'auto' | 'manual' | 'smart' | 'daily' | 'activity';
+export type SessionMode = 'daily' | 'manual';
 
 /**
  * Navigraph 设置接口
@@ -24,7 +24,7 @@ export interface NavigraphSettings {
   
   // 会话管理
   sessionMode: SessionMode;
-  sessionTimeout: number;
+  idleTimeout: number;
   
   // 数据设置
   dataRetention: number;

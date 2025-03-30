@@ -108,6 +108,18 @@ export interface SessionMetadata {
   customFields?: Record<string, any>; // 自定义字段
   createdBy?: string;         // 创建者
   lastModified?: number;      // 最后修改时间
+
+  // 会话类型
+  type?: string;              // 'daily', 'manual', 'project', 或其他类型
+  
+  // 日期信息（时间戳）
+  date?: number;
+  
+  // 最后活动时间
+  lastActivityTime?: number;
+  
+  // 扩展属性，允许添加其他未来可能需要的元数据
+  [key: string]: any;
 }
 
 // ============ 会话操作选项 ============
@@ -118,7 +130,7 @@ export interface SessionMetadata {
 export interface SessionCreationOptions {
   title?: string;             // 会话标题
   description?: string;       // 会话描述
-  metadata?: SessionMetadata; // 会话元数据
+  metadata?: SessionMetadata; // 使用更明确的类型
   makeActive?: boolean;       // 是否设为活跃会话(默认:true)
 }
 
@@ -129,7 +141,7 @@ export interface SessionUpdateOptions {
   title?: string;             // 更新标题
   description?: string;       // 更新描述
   isActive?: boolean;         // 更新活跃状态
-  metadata?: Partial<SessionMetadata>; // 更新元数据
+  metadata?: SessionMetadata; // 使用更明确的类型
 }
 
 /**

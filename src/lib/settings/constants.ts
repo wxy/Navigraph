@@ -9,8 +9,9 @@ export const DEFAULT_SETTINGS: NavigraphSettings = {
   defaultView: 'tree',
   
   // 会话管理
-  sessionMode: 'smart',
-  sessionTimeout: 30,
+  // 会话设置默认值
+  sessionMode: 'daily',   // 默认使用工作日模式
+  idleTimeout: 30,        // 默认30分钟空闲结束会话
   
   // 数据设置
   dataRetention: 30,
