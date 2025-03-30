@@ -56,7 +56,7 @@ export function saveViewState(tabId: string, state: ViewState): void {
     
     // 保存到本地存储
     localStorage.setItem(key, JSON.stringify(newState));
-    console.log('保存当前变换状态:', newState);
+    //console.log('保存当前变换状态:', newState);
   } catch (err) {
     console.warn('保存视图状态失败:', err);
   }

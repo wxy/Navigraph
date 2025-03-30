@@ -1,3 +1,8 @@
+/* 现有导入和样式 */
+
+/* 导入错误UI样式 */
+@import 'error-ui.css';
+
 /* ========== 基础样式 ========== */
 * {
   box-sizing: border-box;
