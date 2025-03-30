@@ -9,7 +9,8 @@ import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-import { sendMessage, registerMessageHandler, unregisterMessageHandler } from './content-message-service.js';
+import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
+import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
 
 
 export class NavigationVisualizer {
@@ -266,21 +267,16 @@ export class NavigationVisualizer {
   private initMessageListener(): void {
     console.log('初始化可视化器消息监听...');
     
-    // 使用已导入的 registerMessageHandler 函数
+    // 使用已导入的 registerHandler 函数
     // 避免每次都动态导入
     
     // 注册刷新可视化消息处理函数
-    registerMessageHandler('refreshVisualization', (message, sender, sendResponse) => {
-      console.log('收到可视化刷新请求', message.timestamp ? 
-        new Date(message.timestamp).toLocaleTimeString() : 'unknown');
+    registerHandler<BaseMessage, BaseResponse>('refreshVisualization', (message: any, sender, sendResponse) => {
+      console.log('收到可视化刷新请求');
       
       // 如果需要回复，发送响应
       if (message.requestId) {
-        sendResponse({
-          action: 'refreshVisualization',
-          success: true,
-          requestId: message.requestId
-        });
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       // 延迟执行刷新操作
@@ -301,7 +297,7 @@ export class NavigationVisualizer {
     });
     
     // 注册页面活动消息处理函数
-    registerMessageHandler('pageActivity', (message) => {
+    registerHandler<BaseMessage, BaseResponse>('pageActivity', (message: any) => {
       console.log('收到页面活动事件，触发刷新', message.source);
       
       // 触发刷新操作
@@ -312,16 +308,12 @@ export class NavigationVisualizer {
     });
     
     // 链接点击消息处理
-    registerMessageHandler('linkClicked', (message, sender, sendResponse) => {
+    registerHandler<BaseMessage, BaseResponse>('linkClicked', (message: any, sender, sendResponse) => {
       console.log('收到链接点击消息:', message.linkInfo);
       
       // 确认收到
       if (message.requestId) {
-        sendResponse({
-          action: 'linkClicked',
-          success: true,
-          requestId: message.requestId
-        });
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       // 延迟刷新可视化图表
@@ -340,16 +332,12 @@ export class NavigationVisualizer {
     });
     
     // 表单提交消息处理
-    registerMessageHandler('formSubmitted', (message, sender, sendResponse) => {
+    registerHandler<BaseMessage, BaseResponse>('formSubmitted', (message: any, sender, sendResponse) => {
       console.log('收到表单提交消息:', message.formInfo);
       
       // 确认收到
       if (message.requestId) {
-        sendResponse({
-          action: 'formSubmitted',
-          success: true,
-          requestId: message.requestId
-        });
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       // 延迟刷新可视化图表
@@ -368,7 +356,7 @@ export class NavigationVisualizer {
     });
     
     // 节点ID获取消息处理
-    registerMessageHandler('getNodeId', (message, sender, sendResponse) => {
+    registerHandler<BaseMessage, BaseResponse>('getNodeId', (message: any, sender, sendResponse) => {
       console.log('收到获取节点ID请求:', message.url);
       
       // 从当前数据中查找URL对应的节点ID
@@ -379,43 +367,30 @@ export class NavigationVisualizer {
       }
       
       // 返回找到的节点ID
-      sendResponse({
-        action: 'getNodeId',
-        success: true,
-        nodeId,
-        requestId: message.requestId
-      });
+      sendResponse({ success: true, nodeId, requestId: message.requestId } as BaseResponse);
       
       return false; // 同步处理
     });
     
     // favicon更新消息处理
-    registerMessageHandler('faviconUpdated', (message, sender, sendResponse) => {
+    registerHandler<BaseMessage, BaseResponse>('faviconUpdated', (message: any, sender, sendResponse) => {
       console.log('收到favicon更新消息:', message.url, message.favicon);
       
       // 确认收到
       if (message.requestId) {
-        sendResponse({
-          action: 'faviconUpdated',
-          success: true,
-          requestId: message.requestId
-        });
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       return false; // 同步处理
     });
     
     // 页面加载完成消息处理
-    registerMessageHandler('pageLoaded', (message, sender, sendResponse) => {
+    registerHandler<BaseMessage, BaseResponse>('pageLoaded', (message: any, sender, sendResponse) => {
       console.log('收到页面加载完成消息:', message.pageInfo?.url);
       
       // 确认收到
       if (message.requestId) {
-        sendResponse({
-          action: 'pageLoaded',
-          success: true,
-          requestId: message.requestId
-        });
+        sendResponse({ success: true, requestId: message.requestId } as BaseResponse);
       }
       
       // 延迟刷新视图
@@ -444,13 +419,13 @@ export class NavigationVisualizer {
     console.log('清理可视化器资源...');
     
     // 取消注册消息处理函数
-    unregisterMessageHandler('refreshVisualization');
-    unregisterMessageHandler('debug');
-    unregisterMessageHandler('pageActivity');
-    unregisterMessageHandler('linkClicked');
-    unregisterMessageHandler('getNodeId');
-    unregisterMessageHandler('faviconUpdated');
-    unregisterMessageHandler('pageLoaded');
+    unregisterHandler('refreshVisualization');
+    unregisterHandler('debug');
+    unregisterHandler('pageActivity');
+    unregisterHandler('linkClicked');
+    unregisterHandler('getNodeId');
+    unregisterHandler('faviconUpdated');
+    unregisterHandler('pageLoaded');
   
     // 移除事件监听器
     window.removeEventListener('resize', () => this.updateContainerSize());

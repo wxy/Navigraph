@@ -3,13 +3,14 @@
  * 主入口文件
  */
 
-// 导入类型
 
 // 用于控制页面活动事件频率的变量
 let lastActivityTime = 0;
 const MIN_ACTIVITY_INTERVAL = 5000; // 最少5秒触发一次
 
-// 初始化函数
+/**
+ * 初始化函数
+ */
 async function initialize() {
   console.log('初始化 Navigraph 可视化...');
   
@@ -25,8 +26,11 @@ async function initialize() {
 
     // 初始化消息服务
     console.log('初始化消息服务...');
-    const messageServiceModule = await import('./core/content-message-service.js');
+    const messageServiceModule = await import('./messaging/content-message-service.js');
     messageServiceModule.setupMessageService();
+    const handlerModule = await import('./messaging/index.js');
+    handlerModule.registerContentMessageHandlers();
+    // 注册消息处理程序
     console.log('消息服务初始化完成');
   
     // 初始化主题管理器
@@ -61,7 +65,7 @@ async function initialize() {
     showErrorMessage('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
   }
 }
-
+    
 /**
  * 应用主题设置
  * 直接使用已加载的全局设置
@@ -121,31 +125,15 @@ async function triggerPageActivity(source: string) {
     lastActivityTime = now;
     console.log(`检测到页面活动(${source})，触发刷新`);
     
-    try {
-      // 动态导入消息服务模块
-      const messageServiceModule = await import('./core/content-message-service.js');
-      
-      // 发送消息
-      await messageServiceModule.sendMessage('pageActivity', {
-        source: source,
-        timestamp: now
-      }).catch(err => {
-        console.warn('发送页面活动消息失败:', err);
-      });
-    } catch (err) {
-      console.error('触发页面活动失败:', err);
-      
-      // 尝试直接调用triggerRefresh作为备用方案
-      if (window.visualizer && typeof window.visualizer.triggerRefresh === 'function') {
-        console.log('使用备用方法刷新可视化');
-        window.visualizer.triggerRefresh();
-      }
+    if (window.visualizer && typeof window.visualizer.triggerRefresh === 'function') {
+      console.log('刷新可视化');
+      window.visualizer.triggerRefresh();
     }
   } else {
     console.debug(`页面活动(${source})距离上次时间过短(${now - lastActivityTime}ms)，忽略`);
   }
 }
-
+    
 /**
  * 显示错误消息
  */

@@ -35,7 +35,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
   ): boolean {
     // 验证消息格式
     if (!message || !message.action) {
-      console.error(`[${this.serviceTarget}] 收到无效消息，缺少action字段`);
+      console.error(`[${this.serviceTarget}] 收到无效消息，缺少action字段：`, message);
       sendResponse({ 
         success: false, 
         error: '缺少action字段',

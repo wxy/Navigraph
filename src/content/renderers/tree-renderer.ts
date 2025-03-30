@@ -463,7 +463,6 @@ export function renderTreeLayout(
     // 为会话节点添加文字标签
     node.filter((d: D3TreeNode) => d.data.id === 'session-root')
       .append('text')
-      .attr('dy', '.35em')
       .text((d: D3TreeNode) => {
         if (visualizer.currentSession) {
           const date = new Date(visualizer.currentSession.startTime);

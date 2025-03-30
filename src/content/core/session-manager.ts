@@ -4,7 +4,7 @@
  */
 import type { Session, SessionDetails } from '../types/session.js';
 import { nodeManager } from './node-manager.js';
-import { sendMessage } from './content-message-service.js';
+import { sendMessage } from '../messaging/content-message-service.js';
 
 type SessionEventCallback = (session: SessionDetails | null) => void;
 

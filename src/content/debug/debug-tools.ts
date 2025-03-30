@@ -4,8 +4,9 @@
  */
 
 import type { Visualizer } from '../types/navigation.js';
-// 导入新的消息服务
-import { sendMessage, registerMessageHandler, unregisterMessageHandler } from '../core/content-message-service.js';
+import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
+import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
+
 
 /**
  * 调试工具类
@@ -13,6 +14,7 @@ import { sendMessage, registerMessageHandler, unregisterMessageHandler } from '.
  */
 export class DebugTools {
   private visualizer: Visualizer;
+  private messageHandler: ((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => boolean) | null = null;
   
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -30,8 +32,8 @@ export class DebugTools {
    * 设置消息监听，用于接收背景页发来的调试命令
    */
   private setupMessageListener(): void {
-    // 使用新的消息系统注册处理程序
-    registerMessageHandler('debug', (message, sender, sendResponse) => {
+    // 使用新的处理程序注册方法
+    registerHandler<BaseMessage, BaseResponse>('debug', (message: any, sender, sendResponse) => {
       console.log('收到调试命令:', message.command);
       
       // 处理调试命令
@@ -39,14 +41,12 @@ export class DebugTools {
         this.handleDebugCommand(message.command);
       }
       
-      // 发送响应
-      sendResponse({
-        success: true,
-        action: message.action,
-        requestId: message.requestId
-      });
+      sendResponse({ 
+        success: true, 
+        requestId: message.requestId 
+      } as BaseResponse);
       
-      return false; // 同步响应
+      return false;
     });
   }
   
@@ -262,7 +262,7 @@ export class DebugTools {
    * 清理资源
    */
   public cleanup(): void {
-    // 使用新的消息系统取消注册处理程序
-    unregisterMessageHandler('debug');
+    // 使用新的取消注册方法
+    unregisterHandler('debug');
   }
 }

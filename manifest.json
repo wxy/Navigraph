@@ -29,7 +29,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/content/navigation-tracker.js"],
+      "js": ["dist/content/navigraph-tracker.js"],
       "type": "module",
       "run_at": "document_start"
     }

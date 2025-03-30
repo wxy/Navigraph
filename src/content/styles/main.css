@@ -508,7 +508,7 @@ path.link.closed, .edge.closed {
   pointer-events: none;
   fill: var(--svg-text, #333);
   text-anchor: middle; /* 确保文本居中 */
-  dominant-baseline: middle; /* 垂直方向也居中 */
+  dominant-baseline: central; /* 垂直方向也居中 */
 }
 
 .node text.title {
@@ -835,6 +835,8 @@ svg .node-label {
   fill: white;
   text-anchor: middle;
   font-weight: bold;
+  font-size: 18px;
+  font-family: monospace;
 }
 
 /* 重定向节点样式 */
