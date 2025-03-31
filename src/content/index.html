@@ -9,81 +9,90 @@
 </head>
 <body>
   <div class="app-container">
-    <!-- 顶部工具栏 -->
-    <header class="toolbar">
-      <div class="logo">
+    <!-- 主体内容区域 -->
+    <div class="main-container">
+      <!-- Logo和名称移至主视图左上角 -->
+      <div class="logo-container">
         <img src="../../images/logo-48.png" alt="导航图谱">
         <h1>导航图谱</h1>
       </div>
       
-      <div class="session-controls">
-        <select id="session-selector" aria-label="选择会话">
-          <option value="">正在加载会话...</option>
-        </select>
-        
+      <!-- 中间可视化区域 -->
+      <div class="visualization-container" id="visualization-container">
+        <!-- 这里会渲染SVG -->
+      </div>
+      
+      <!-- 右侧控制区抓手 -->
+      <div class="control-panel-handle" id="control-panel-handle">
+        <div class="handle-icon">⋮</div>
+      </div>
+      
+      <!-- 右侧控制面板 - 默认隐藏 -->
+      <div class="control-panel" id="control-panel">
+        <!-- 视图切换 -->
         <div class="view-mode">
           <button id="tree-view" class="active">树形视图</button>
           <button id="timeline-view">时间线视图</button>
         </div>
-      </div>
-    </header>
-    
-    <!-- 主体内容区域 -->
-    <div class="main-container">
-      <!-- 左侧过滤器面板 -->
-      <aside class="filters-panel">
-        <h2>筛选器</h2>
         
-        <div class="filter-section">
-          <h3>导航类型</h3>
-          <div class="filter-option">
-            <input type="checkbox" id="type-link" checked>
-            <label for="type-link">链接点击</label>
-          </div>
-          <div class="filter-option">
-            <input type="checkbox" id="type-address" checked>
-            <label for="type-address">地址栏输入</label>
-          </div>
-          <div class="filter-option">
-            <input type="checkbox" id="type-form" checked>
-            <label for="type-form">表单提交</label>
-          </div>
-          <div class="filter-option">
-            <input type="checkbox" id="type-js" checked>
-            <label for="type-js">JavaScript/重定向</label>
-          </div>
+        <!-- 会话选择器（暂时保留原始下拉框，后续会替换为日历） -->
+        <div class="session-selector-container">
+          <label for="session-selector">选择会话</label>
+          <select id="session-selector" aria-label="选择会话">
+            <option value="">正在加载会话...</option>
+          </select>
         </div>
         
-        <div class="filter-section">
-          <h3>导航行为</h3>
-          <div class="filter-option">
-            <input type="checkbox" id="filter-reload" checked>
-            <label for="filter-reload">显示页面刷新</label>
+        <!-- 筛选面板 -->
+        <div class="filters-panel">
+          <h2>筛选器</h2>
+          
+          <div class="filter-section">
+            <h3>导航类型</h3>
+            <div class="filter-option">
+              <input type="checkbox" id="type-link" checked>
+              <label for="type-link">链接点击</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="type-address" checked>
+              <label for="type-address">地址栏输入</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="type-form" checked>
+              <label for="type-form">表单提交</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="type-js" checked>
+              <label for="type-js">JavaScript/重定向</label>
+            </div>
           </div>
-          <div class="filter-option">
-            <input type="checkbox" id="filter-history" checked>
-            <label for="filter-history">显示历史导航</label>
+          
+          <div class="filter-section">
+            <h3>导航行为</h3>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-reload" checked>
+              <label for="filter-reload">显示页面刷新</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-history" checked>
+              <label for="filter-history">显示历史导航</label>
+            </div>
+          </div>
+          
+          <div class="filter-section">
+            <h3>页面状态</h3>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-closed">
+              <label for="filter-closed">显示已关闭页面</label>
+            </div>
+            <div class="filter-option">
+              <input type="checkbox" id="filter-tracking">
+              <label for="filter-tracking">
+                显示跟踪页面
+              </label>
+            </div>
           </div>
         </div>
-        
-        <div class="filter-section">
-          <h3>页面状态</h3>
-          <div class="filter-option">
-            <input type="checkbox" id="filter-closed">
-            <label for="filter-closed">显示已关闭页面</label>
-          </div>
-          <div class="filter-option">
-            <input type="checkbox" id="filter-tracking">
-            <label for="filter-tracking">
-              显示跟踪页面
-            </label>
-          </div>
-        </div>
-      </aside>
-      
-      <!-- 中间可视化区域 -->
-      <div class="visualization-container" id="visualization-container">
-        <!-- 这里会渲染SVG -->
       </div>
       
       <!-- 右侧详情面板 -->
@@ -92,6 +101,7 @@
       </div>
     </div>
 
+    <!-- 其余UI组件保持不变 -->
     <!-- 加载和错误提示 -->
     <div id="loading" style="display: none;">
       <div class="spinner"></div>
@@ -151,7 +161,6 @@
   <div id="tooltip" class="tooltip"></div>
   
   <!-- 脚本 -->
-  
   <script type="module" src="index.js"></script>
 </body>
 </html>

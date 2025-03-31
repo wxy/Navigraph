@@ -100,81 +100,257 @@ export class NavigationVisualizer {
   
   /**
    * 初始化导航可视化
+   * 按照明确的层次结构组织初始化过程
    */
   async initialize() {
     try {
       console.log('初始化导航可视化...');
       
-      // 设置消息监听器
-      this.initMessageListener();
+      // 第一阶段：基础配置与消息
+      // 加载配置并设置消息监听，这是其他所有功能的基础
+      await this.initializeBaseConfig();
       
-      // 应用全局配置
-      this.applyGlobalConfig();
+      // 第二阶段：UI组件初始化
+      // 按照主视图、控制面板、状态栏的顺序初始化UI
+      await this.initializeUIComponents();
       
-      // 确保DOM已加载完成
-      if (document.readyState !== 'complete') {
-        console.log('等待DOM加载完成...');
-        await new Promise(resolve => {
-          window.addEventListener('load', resolve);
-        });
-      }
+      // 第三阶段：数据加载与应用
+      // 加载会话数据并应用到视图
+      await this.loadInitialData();
       
-      // 查找visualization-container容器
-      this.container = document.getElementById('visualization-container');
-      
-      // 如果不存在，显示错误
-      if (!this.container) {
-        console.error('可视化容器不存在，无法初始化');
-        throw new Error('可视化容器不存在');
-      }
-      
-      // 查找状态栏
-      this.statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
-      
-      // 调整容器大小
-      this.updateContainerSize();
-      
-      // 初始化SVG
-      this.initializeSvg();
-      
-      // 初始化筛选器 - 使用HTML中已定义的元素
-      this.initializeFilters();
-      
-      // 初始化视图切换器 - 使用HTML中已定义的元素
-      this.initializeViewSwitcher();
-      
-      // 添加窗口大小调整监听器
-      window.addEventListener('resize', () => this.updateContainerSize());
-      
-      // 订阅会话加载事件
-      sessionManager.onSessionLoaded(session => this.handleSessionLoaded(session));
-      sessionManager.onSessionsListLoaded(sessions => this.handleSessionListLoaded(sessions));
-      
-      // 加载会话列表
-      await sessionManager.loadSessions();
-      
-      // 加载当前会话
-      await sessionManager.loadCurrentSession();
-
-      // 在所有初始化完成后，初始化调试工具
-      this.initDebugTools();
+      console.log('NavigationVisualizer 初始化完成');
     } catch (error) {
       console.error('初始化可视化失败:', error);
       this.showNoData('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
     }
+  }
+
+  /**
+   * 初始化基础配置与消息监听
+   */
+  private async initializeBaseConfig(): Promise<void> {
+    // 设置消息监听器
+    this.initMessageListener();
     
-    console.log('NavigationVisualizer 初始化完成，当前配置:', {
-      container: this.container ? '已找到' : '未找到',
-      svg: this.svg ? '已创建' : '未创建',
-      filters: this.filters,
-      currentView: this.currentView,
-      elements: {
-        filterClosed: document.getElementById('filter-closed') ? '已找到' : '未找到',
-        filterTracking: document.getElementById('filter-tracking') ? '已找到' : '未找到',
-        treeView: document.getElementById('tree-view') ? '已找到' : '未找到',
-        timelineView: document.getElementById('timeline-view') ? '已找到' : '未找到'
+    // 应用全局配置
+    this.applyGlobalConfig();
+    
+    // 确保DOM已加载完成
+    if (document.readyState !== 'complete') {
+      console.log('等待DOM加载完成...');
+      await new Promise<void>(resolve => {
+        window.addEventListener('load', () => resolve());
+      });
+    }
+    
+    console.log('基础配置与消息监听初始化完成');
+  }
+
+  /**
+   * 初始化UI组件
+   */
+  private async initializeUIComponents(): Promise<void> {
+    // 找到必要的容器元素
+    this.container = document.getElementById('visualization-container');
+    
+    if (!this.container) {
+      throw new Error('可视化容器不存在，无法初始化UI组件');
+    }
+    
+    // 初始化主视图
+    await this.initializeMainView();
+    
+    // 初始化控制面板
+    await this.initializeControlPanel();
+    
+    // 初始化状态栏
+    await this.initializeStatusBar();
+    
+    // 添加窗口大小调整监听器
+    window.addEventListener('resize', () => this.updateContainerSize());
+    
+    // 初始化调试工具
+    this.initDebugTools();
+    
+    console.log('UI组件初始化完成');
+  }
+
+  /**
+   * 初始化控制面板
+   * 控制面板包含视图切换、筛选器和会话选择（未来为会话日历）等子组件
+   */
+  private async initializeControlPanel(): Promise<void> {
+    try {
+      console.log('初始化控制面板...');
+      
+      // 获取控制面板元素
+      const controlPanel = document.getElementById('control-panel');
+      const handle = document.getElementById('control-panel-handle');
+      
+      if (!controlPanel || !handle) {
+        console.error('控制面板元素不存在');
+        return;
+      }
+      
+      // 初始化控制面板基础交互
+      this.initializeControlPanelInteraction(controlPanel, handle);
+      
+      // 初始化视图切换组件
+      await this.initializeViewSwitcher();
+      
+      // 初始化会话选择器（未来替换为会话日历）
+      await this.initializeSessionSelector();
+      
+      // 初始化筛选器
+      await this.initializeFilters();
+      
+      console.log('控制面板初始化完成');
+    } catch (error) {
+      console.error('初始化控制面板失败:', error);
+    }
+  }
+
+  /**
+   * 初始化控制面板交互
+   */
+  private initializeControlPanelInteraction(controlPanel: HTMLElement, handle: HTMLElement): void {
+    const visualizationContainer = this.container;
+    
+    if (!visualizationContainer) return;
+    
+    // 点击抓手切换控制面板可见性
+    handle.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation();
+      controlPanel.classList.toggle('visible');
+      console.log(`控制面板 ${controlPanel.classList.contains('visible') ? '显示' : '隐藏'}`);
+    });
+    
+    // 点击可视化区域关闭控制面板
+    visualizationContainer.addEventListener('click', () => {
+      if (controlPanel.classList.contains('visible')) {
+        controlPanel.classList.remove('visible');
       }
     });
+    
+    // 防止点击控制面板内部元素时关闭面板
+    controlPanel.addEventListener('click', (e: MouseEvent) => {
+      e.stopPropagation();
+    });
+    
+    // 添加键盘快捷键 (Esc 关闭面板)
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && controlPanel.classList.contains('visible')) {
+        controlPanel.classList.remove('visible');
+      }
+    });
+    
+    console.log('控制面板交互初始化完成');
+  }
+
+  /**
+   * 初始化视图切换组件
+   */
+  private async initializeViewSwitcher(): Promise<void> {
+    console.log('初始化视图切换组件...');
+    
+    // 获取视图切换按钮
+    const treeViewBtn = document.getElementById('tree-view');
+    const timelineViewBtn = document.getElementById('timeline-view');
+    
+    if (!treeViewBtn || !timelineViewBtn) {
+      console.warn('未找到视图切换按钮，跳过初始化');
+      return;
+    }
+    
+    // 更新按钮状态以反映当前视图
+    this.updateViewButtonsState();
+    
+    // 绑定点击事件
+    treeViewBtn.addEventListener('click', () => {
+      if (this.currentView !== 'tree') {
+        this.switchView('tree');
+      }
+    });
+    
+    timelineViewBtn.addEventListener('click', () => {
+      if (this.currentView !== 'timeline') {
+        this.switchView('timeline');
+      }
+    });
+    
+    console.log('视图切换组件初始化完成');
+  }
+
+  /**
+   * 初始化会话选择器
+   * 未来将替换为会话日历
+   */
+  private async initializeSessionSelector(): Promise<void> {
+    console.log('初始化会话选择器...');
+    
+    const sessionSelector = document.getElementById('session-selector');
+    if (!sessionSelector) {
+      console.warn('未找到会话选择器元素');
+      return;
+    }
+    
+    // 添加临时加载选项
+    sessionSelector.innerHTML = '';
+    const loadingOption = document.createElement('option');
+    loadingOption.value = '';
+    loadingOption.textContent = '正在加载会话...';
+    loadingOption.disabled = true;
+    sessionSelector.appendChild(loadingOption);
+    
+    // 会话选择器将通过 handleSessionListLoaded 更新
+    // 这里只设置初始状态
+    
+    console.log('会话选择器初始化完成');
+  }
+
+  /**
+   * 初始化筛选器
+   */
+  private async initializeFilters(): Promise<void> {
+    console.log('初始化筛选器...');
+    
+    // 为每个筛选器配置绑定事件处理
+    this.filterConfigs.forEach(config => {
+      const checkbox = document.getElementById(config.id) as HTMLInputElement;
+      
+      if (checkbox) {
+        // 设置初始状态
+        checkbox.checked = (this.filters as any)[config.property];
+        
+        // 绑定变更事件
+        checkbox.addEventListener('change', () => {
+          this.handleFilterChange(config.id, checkbox.checked);
+        });
+        
+        console.log(`筛选器 ${config.id} 初始化完成，状态: ${checkbox.checked}`);
+      } else {
+        console.warn(`未找到筛选器元素: ${config.id}`);
+      }
+    });
+    
+    console.log('筛选器初始化完成');
+  }
+
+  /**
+   * 加载初始数据
+   */
+  private async loadInitialData(): Promise<void> {
+    // 订阅会话加载事件
+    sessionManager.onSessionLoaded(session => this.handleSessionLoaded(session));
+    sessionManager.onSessionsListLoaded(sessions => this.handleSessionListLoaded(sessions));
+    
+    // 加载会话列表
+    await sessionManager.loadSessions();
+    
+    // 加载当前会话
+    await sessionManager.loadCurrentSession();
+    
+    console.log('初始数据加载完成');
   }
 
   /**
@@ -217,12 +393,33 @@ export class NavigationVisualizer {
     }
   }
   /**
+   * 初始化主视图
+   * 包含主容器和SVG元素
+   */
+  private async initializeMainView(): Promise<void> {
+    try {
+      console.log('初始化主视图...');
+      
+      // 调整容器大小
+      this.updateContainerSize();
+      
+      // 初始化SVG
+      this.initializeSvg();
+      
+      console.log('主视图初始化完成');
+    } catch (error) {
+      console.error('初始化主视图失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 初始化SVG元素
+   * 创建SVG元素及相应的分组
    */
   private initializeSvg(): void {
     if (!this.container) {
-      console.error('无法初始化SVG：容器不存在');
-      return;
+      throw new Error('容器不存在，无法初始化SVG');
     }
     
     console.log('初始化SVG元素...');
@@ -234,30 +431,29 @@ export class NavigationVisualizer {
     }
     
     try {
-      // 创建新的SVG元素
+      // 创建SVG元素
       this.svg = window.d3.select(this.container)
         .append('svg')
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('class', 'visualization-svg')
-        .attr('data-view', this.currentView); // 添加当前视图类型作为属性
+        .attr('data-view', this.currentView);
       
-      // 添加根分组节点 - 所有可视化元素都应该添加到这个组
+      // 添加根分组
       const mainGroup = this.svg.append('g')
         .attr('class', 'main-group');
-        
-      // 在主组中创建两个子组，一个用于边，一个用于节点
-      // 边应该在下方，节点应该在上方
+      
+      // 创建链接组和节点组
       mainGroup.append('g')
         .attr('class', 'links-group');
-        
+      
       mainGroup.append('g')
         .attr('class', 'nodes-group');
       
       console.log('SVG元素初始化成功');
     } catch (error) {
-      console.error('SVG元素初始化失败:', error);
-      this.showNoData('创建可视化图表失败: ' + (error instanceof Error ? error.message : String(error)));
+      console.error('初始化SVG失败:', error);
+      throw error;
     }
   }
   
@@ -604,43 +800,63 @@ export class NavigationVisualizer {
     });
   }
   /**
-   * 处理会话加载事件
+   * 处理单个会话加载
    */
-  handleSessionLoaded(session: SessionDetails | null) {
+  handleSessionLoaded(session: SessionDetails | null): void {
+    console.log('会话已加载，准备更新UI和数据');
+    
     // 移除加载状态
     document.body.classList.remove('loading-session');
     
     if (!session) {
-      this.showNoData('会话加载失败或无会话');
+      this.showNoData('会话加载失败或无可用会话');
       return;
     }
     
-    console.log('会话已加载，准备更新UI');
+    // 保存当前会话
     this.currentSession = session;
     
-    // 更新会话选择器，确保当前会话被选中
-    this.updateSessionSelector();
-    
     // 从节点管理器获取处理好的数据
-    // 保存原始数据 - 这是关键修改
     this.allNodes = [...nodeManager.getNodes()];
     this.allEdges = [...nodeManager.getEdges()];
-    
-    // 设置当前使用的数据
     this.nodes = [...this.allNodes];
     this.edges = [...this.allEdges];
     this.nodeMap = nodeManager.getNodeMap();
     
-    // 显示数据
-    this.hideNoData();
+    // 更新会话相关UI
+    this.updateSessionUI();
     
+    // 应用筛选器
+    this.applyFilters();
+    
+    // 刷新可视化
     this.refreshVisualization(undefined, { restoreTransform: true });
+    
+    // 隐藏无数据提示
+    this.hideNoData();
   }
-  
+  /**
+   * 更新会话相关UI
+   */
+  private updateSessionUI(): void {
+    // 更新会话选择器
+    this.updateSessionSelector();
+    
+    // 更新状态栏
+    this.updateStatusBar();
+    
+    // 隐藏控制面板（如果可见）
+    const controlPanel = document.getElementById('control-panel');
+    if (controlPanel && controlPanel.classList.contains('visible')) {
+      controlPanel.classList.remove('visible');
+    }
+  }
   /**
    * 处理会话列表加载事件
    */
-  handleSessionListLoaded(sessions: any[]) {
+  handleSessionListLoaded(sessions: any[]): void {
+    console.log(`会话列表已加载，共${sessions.length}个会话`);
+    
     // 更新会话选择器
     this.updateSessionSelector(sessions);
   }
@@ -1471,27 +1687,33 @@ export class NavigationVisualizer {
   }
 
   /**
-   * 初始化筛选器
+   * 初始化状态栏
    */
-  private initializeFilters(): void {
-    console.log('初始化筛选器...');
-    // 为每个筛选器绑定事件处理程序
-    this.filterConfigs.forEach(config => {
-      const checkbox = document.getElementById(config.id) as HTMLInputElement;
-      if (checkbox) {
-        // 设置初始值
-        checkbox.checked = (this.filters as any)[config.property];
-        
-        // 添加事件监听器
-        checkbox.addEventListener('change', () => {
-          this.handleFilterChange(config.id, checkbox.checked);
-        });
-        
-        console.log(`已绑定筛选器 ${config.id}, 初始状态: ${checkbox.checked}`);
-      } else {
-        console.warn(`未找到筛选器元素: ${config.id}`);
-      }
-    });
+  private async initializeStatusBar(): Promise<void> {
+    console.log('初始化状态栏...');
+    
+    // 获取状态栏元素
+    this.statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
+    
+    if (!this.statusBar) {
+      console.warn('未找到状态栏元素');
+      return;
+    }
+    
+    // 设置初始状态
+    const initialStatus: Record<string, string> = {
+      'status-date': '会话日期: --',
+      'status-duration': '时长: 0分钟',
+      'status-nodes': '节点: 0',
+      'status-filtered': '已隐藏: 0',
+      'status-view': `视图: ${this.currentView === 'tree' ? '树形图' : '时间线'}`,
+      'status-zoom': '缩放: 1.00x'
+    };
+    
+    // 应用初始状态
+    this.updateStatusElements(initialStatus);
+    
+    console.log('状态栏初始化完成');
   }
 
   /**
@@ -1503,40 +1725,6 @@ export class NavigationVisualizer {
     const url = node.url.toLowerCase();
     
     return this.trackingKeywords.some(keyword => url.includes(keyword));
-  }
-
-  /**
-   * 初始化视图切换器
-   */
-  initializeViewSwitcher(): void {
-    // 获取视图切换按钮
-    const treeViewBtn = document.getElementById('tree-view');
-    const timelineViewBtn = document.getElementById('timeline-view');
-    
-    // 设置默认视图类型
-    if (!this.currentView) {
-      this.currentView = 'tree';
-    }
-    
-    if (treeViewBtn && timelineViewBtn) {
-      // 根据当前视图设置按钮状态
-      this.updateViewButtonsState();
-      
-      // 添加点击事件
-      treeViewBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.switchView('tree');
-      });
-      
-      timelineViewBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.switchView('timeline');
-      });
-      
-      console.log('视图切换器初始化完成');
-    } else {
-      console.warn('未找到视图切换按钮');
-    }
   }
   
   /**

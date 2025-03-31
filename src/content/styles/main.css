@@ -49,16 +49,7 @@ body.loading-session #visualization-container::before {
 
 /* 顶部工具栏 */
 .toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background-color: var(--toolbar-bg, #ffffff);
-  border-bottom: 1px solid var(--toolbar-border, #e0e0e0);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  z-index: 10;
-  flex: 0 0 auto; /* 不伸缩，保持自身高度 */
-  color: var(--toolbar-text, #333333);
+  display: none;
 }
 
 .logo {
@@ -128,10 +119,11 @@ body.loading-session #visualization-container::before {
 
 /* 主体内容区域 */
 .main-container {
-  flex: 1; /* 填充剩余空间 */
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto; /* 默认只有主视图和右侧详情面板 */
+  position: relative;
+  height: 100%;
   overflow: hidden;
-  position: relative; /* 为绝对定位的子元素提供参考 */
   background-color: var(--background-color);
   color: var(--text-color);
 }
@@ -206,8 +198,15 @@ body.loading-session #visualization-container::before {
   margin-bottom: 4px;
 }
 
+/* 原有左侧筛选器面板隐藏 */
+.main-container > .filters-panel {
+  display: none;
+}
+
 /* ========== 可视化区域 ========== */
 .visualization-container {
+  width: 100%;
+  height: 100%;
   flex: 1;
   position: relative;
   overflow: hidden;
@@ -964,4 +963,168 @@ svg .node-label {
 /* 箭头标记 */
 #arrow path {
   fill: #999;
+}
+
+/* 以下是需要添加的新样式 */
+
+/* Logo 容器 */
+.logo-container {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(var(--color-bg-primary-rgb), 0.7);
+  padding: 5px 10px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.logo-container img {
+  width: 28px;
+  height: 28px;
+}
+
+.logo-container h1 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* 控制面板抓手 */
+.control-panel-handle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 80px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 6px 0 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 99;
+  transition: background-color 0.2s ease;
+}
+
+.control-panel-handle:hover {
+  background-color: var(--color-accent);
+}
+
+.handle-icon {
+  font-size: 18px;
+  color: var(--color-text);
+  font-weight: bold;
+}
+
+/* 控制面板 */
+.control-panel {
+  position: absolute;
+  top: 0;
+  right: -320px; /* 默认隐藏 */
+  width: 280px;
+  height: 100%;
+  background-color: var(--color-bg-secondary);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
+  padding: 15px;
+  z-index: 98;
+  overflow-y: auto;
+  transition: right 0.3s ease-in-out;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.control-panel.visible {
+  right: 0;
+}
+
+/* 视图切换样式 */
+.control-panel .view-mode {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.control-panel .view-mode button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.control-panel .view-mode button.active {
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);
+  font-weight: bold;
+}
+
+/* 会话选择器容器 */
+.session-selector-container {
+  margin-bottom: 15px;
+}
+
+.session-selector-container label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.session-selector-container select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+/* 筛选面板调整 */
+.control-panel .filters-panel {
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: 15px;
+}
+
+.control-panel .filters-panel h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+/* 修改选项样式以适应新布局 */
+.control-panel .filter-section {
+  margin-bottom: 15px;
+}
+
+.control-panel .filter-section h3 {
+  font-size: 14px;
+  margin: 10px 0 8px;
+}
+
+.control-panel .filter-option {
+  margin-bottom: 6px;
+}
+
+/* 在小屏幕上调整控制面板 */
+@media (max-width: 768px) {
+  .control-panel {
+    width: 260px;
+  }
+}
+
+/* 在暗黑模式下调整样式 */
+@media (prefers-color-scheme: dark) {
+  .logo-container {
+    background-color: rgba(var(--color-bg-primary-rgb), 0.8);
+  }
 }
