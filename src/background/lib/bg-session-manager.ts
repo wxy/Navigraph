@@ -200,7 +200,7 @@ export class BackgroundSessionManager {
    */
   private async createDailySession(): Promise<BrowsingSession> {
     const now = new Date();
-    const dateStr = now.toLocaleDateString();
+    const dateStr = now.toLocaleString();
     
     return this.createSession({
       title: `${dateStr} 浏览会话`,

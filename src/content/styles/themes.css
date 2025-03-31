@@ -263,6 +263,32 @@
 /* ========== 特定组件样式覆盖 ========== */
 /* 针对深色主题的特定修复 */
 
+[data-theme="dark"] body.loading-session #visualization-container::before {
+  background: rgba(30, 30, 30, 0.8);
+  color: #fff;
+}
+[data-theme="dark"] #no-data {
+  background-color: rgba(210, 215, 220, 0.75);  /* 亮色半透明背景 */
+  color: #333;  /* 深色文本 */
+  border: 1px solid rgba(225, 225, 225, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] #no-data #status-text {
+  color: #333;  /* 确保文本在亮色背景上可读 */
+}
+
+[data-theme="light"] #no-data {
+  background-color: rgba(39, 43, 51, 0.75);  /* 暗色半透明背景 */
+  color: #fff;  /* 亮色文本 */
+  border: 1px solid rgba(75, 80, 92, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] #no-data #status-text {
+  color: #fff;  /* 确保文本在暗色背景上可读 */
+}
+
 /* 筛选面板 */
 [data-theme="dark"] .filters-panel {
   background-color: var(--filter-bg);

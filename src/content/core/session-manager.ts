@@ -66,13 +66,52 @@ export class SessionManager {
    * @returns 当前会话详情
    */
   async loadCurrentSession(): Promise<SessionDetails | null> {
-    if (this.sessions.length === 0) {
-      console.warn('没有可用的会话');
-      return null;
+    try {
+      console.log('加载当前会话或最近会话...');
+      
+      // 如果没有可用会话，先加载会话列表
+      if (this.sessions.length === 0) {
+        try {
+          await this.loadSessions();
+        } catch (err) {
+          console.warn('自动加载会话列表失败:', err);
+        }
+        
+        if (this.sessions.length === 0) {
+          console.warn('没有可用的会话');
+          return null;
+        }
+      }
+      
+      // 尝试从本地存储获取上次选择的会话ID
+      let savedSessionId: string | null = null;
+      try {
+        savedSessionId = localStorage.getItem('navigraph_current_session');
+      } catch (e) {
+        console.warn('从本地存储读取会话ID失败:', e);
+      }
+      
+      // 如果有已保存的会话ID，且该会话在可用会话列表中，优先使用它
+      if (savedSessionId) {
+        console.log(`检查本地存储中的会话ID: ${savedSessionId}`);
+        
+        // 检查此会话是否在会话列表中
+        const sessionExists = this.sessions.some(s => s.id === savedSessionId);
+        if (sessionExists) {
+          console.log(`在会话列表中找到已保存的会话: ${savedSessionId}`);
+          return await this.loadSession(savedSessionId);
+        } else {
+          console.warn(`已保存的会话ID ${savedSessionId} 不在可用列表中`);
+        }
+      }
+      
+      // 如果没有已保存会话或找不到已保存会话，加载最新的会话
+      console.log('使用列表中的第一个会话');
+      return await this.loadSession(this.sessions[0].id);
+    } catch (error) {
+      console.error('加载当前会话失败:', error);
+      throw error;
     }
-    
-    // 加载最新的会话
-    return await this.loadSession(this.sessions[0].id);
   }
 
   /**
@@ -127,6 +166,40 @@ export class SessionManager {
     }
   }
   
+  /**
+   * 切换到指定会话
+   * @param sessionId 要切换到的会话ID
+   * @returns 切换后的会话详情
+   */
+  async switchSession(sessionId: string): Promise<SessionDetails | null> {
+    console.log(`切换到会话: ${sessionId}`);
+    
+    // 如果已经是当前会话，无需重复加载
+    if (this.currentSessionId === sessionId && this.currentSession) {
+      console.log('已经是当前会话，无需切换');
+      return this.currentSession;
+    }
+    
+    try {
+      // 通知后台服务切换当前会话
+      await sendMessage('setCurrentSession', { sessionId });
+      
+      // 保存会话ID到本地存储，以便刷新后保持选择
+      try {
+        localStorage.setItem('navigraph_current_session', sessionId);
+        console.log(`已保存会话ID ${sessionId} 到本地存储`);
+      } catch (e) {
+        console.warn('保存会话ID到本地存储失败:', e);
+      }
+      
+      // 加载会话详情
+      return await this.loadSession(sessionId);
+    } catch (error) {
+      console.error('切换会话失败:', error);
+      throw error;
+    }
+  }
+
   /**
    * 清除所有会话数据
    * 用于调试或重置应用

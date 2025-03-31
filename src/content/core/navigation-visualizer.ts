@@ -607,6 +607,9 @@ export class NavigationVisualizer {
    * 处理会话加载事件
    */
   handleSessionLoaded(session: SessionDetails | null) {
+    // 移除加载状态
+    document.body.classList.remove('loading-session');
+    
     if (!session) {
       this.showNoData('会话加载失败或无会话');
       return;
@@ -692,9 +695,45 @@ export class NavigationVisualizer {
       selector.value = sessions[0].id;
     }
     
+    // 移除旧的事件监听器，避免多次绑定
+    selector.removeEventListener('change', this._sessionSelectorChangeHandler);
+    
+    // 添加会话切换事件处理
+    this._sessionSelectorChangeHandler = async (e: Event) => {
+      const target = e.target as HTMLSelectElement;
+      if (!target.value) return;
+      
+      console.log(`选择了新会话: ${target.value}`);
+      
+      try {
+        // 显示加载状态
+        document.body.classList.add('loading-session');
+        
+        // 切换到新会话
+        await sessionManager.switchSession(target.value);
+        
+        // 加载成功后，loading状态会在handleSessionLoaded中移除
+      } catch (error) {
+        console.error('切换会话失败:', error);
+        document.body.classList.remove('loading-session');
+        alert(`切换会话失败: ${error instanceof Error ? error.message : String(error)}`);
+        
+        // 回滚选择器值到当前会话
+        const currentId = sessionManager.getCurrentSessionId();
+        if (currentId) {
+          selector.value = currentId;
+        }
+      }
+    };
+    
+    selector.addEventListener('change', this._sessionSelectorChangeHandler);
+    
     console.log(`会话选择器已更新，共${sessions.length}个选项`);
   }
-  
+
+  // 添加到类定义中的属性部分
+  private _sessionSelectorChangeHandler: (e: Event) => Promise<void> = async () => {};
+
   /**
    * 切换视图
    */

@@ -19,6 +19,22 @@ body {
   overflow: hidden;
 }
 
+/* 会话加载状态 */
+body.loading-session #visualization-container::before {
+  content: "加载会话数据...";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-size: 16px;
+}
+
 /* ========== 布局组件 ========== */
 /* 主布局容器 */
 .app-container {
@@ -76,6 +92,11 @@ body {
   min-width: 200px;
   background-color: var(--node-bg);
   color: var(--text-color);
+}
+
+/* 更新当前活跃的会话选项样式 */
+#session-selector option[selected] {
+  font-weight: bold;
 }
 
 /* 视图模式切换 */
@@ -237,45 +258,66 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(0,0,0,0.7);
-  color: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
-  z-index: 10;
+  
+  /* 固定宽度和更合理的高度 */
+  width: 280px;
   max-width: 80%;
-  pointer-events: auto; /* 允许交互 */
+  height: auto;
+  
+  /* 适当的内边距，四边均衡 */
+  padding: 20px;
+  
+  /* 确保内容居中 */
+  text-align: center;
+  
+  /* 边框和圆角 */
+  border-radius: 8px;
+  
+  /* 确保是块级元素，内容居中对齐 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  /* 添加过渡效果 */
+  transition: all 0.2s ease-in-out;
+  
+  /* 确保层级正确 */
+  z-index: 100;
+  
+  /* 半透明效果 */
+  opacity: 0.8;
+  
+  /* 平滑淡入效果 */
+  animation: fadeInNoData 0.25s ease-out;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--btn-primary, #4285f4);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+@keyframes fadeInNoData {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-#no-data img {
-  width: 120px;
-  height: 120px;
-  opacity: 0.7;
-}
-
-#no-data h2 {
-  font-size: 18px;
-  font-weight: 500;
-  color: #fff;
-}
-
-#no-data p {
+#status-text {
   font-size: 14px;
-  color: #ddd;
+  font-weight: 500;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+}
+
+/* 媒体查询确保在小屏幕上正确显示 */
+@media (max-width: 480px) {
+  #no-data {
+    width: 240px;
+    padding: 15px;
+  }
 }
 
 /* ========== 详情面板 ========== */
