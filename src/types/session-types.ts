@@ -76,7 +76,8 @@ export interface BrowsingSession {
   nodeCount?: number;         // 节点数量
   tabCount?: number;          // 标签页数量
   metadata?: SessionMetadata; // 会话元数据
-  
+  lastActivity?: number; // 添加最后活动时间字段
+
   // 兼容前端可视化所需的字段
   records?: Record<string, NavNode>;   // 导航节点记录映射 (ID -> 节点)
   edges?: Record<string, NavLink>;     // 导航边记录映射 (ID -> 边)
@@ -142,17 +143,21 @@ export interface SessionUpdateOptions {
   description?: string;       // 更新描述
   isActive?: boolean;         // 更新活跃状态
   metadata?: SessionMetadata; // 使用更明确的类型
+  lastActivity?: number;      // 更新最后活动时间
 }
 
 /**
  * 会话查询选项
  */
 export interface SessionQueryOptions {
-  includeInactive?: boolean;  // 是否包含非活跃会话
-  limit?: number;             // 返回结果数量限制
-  sortBy?: 'startTime' | 'endTime' | 'title'; // 排序字段
-  sortDirection?: 'asc' | 'desc'; // 排序方向
-  filter?: SessionFilter;     // 过滤条件
+  includeInactive?: boolean; // 是否包含非活跃会话
+  limit?: number; // 结果数量限制
+  offset?: number; // 结果偏移量
+  sortBy?: 'startTime' | 'endTime' | 'title' | 'nodeCount' | 'lastActivity'; // 排序字段
+  sortOrder?: 'asc' | 'desc'; // 排序方向
+  fromDate?: number; // 开始日期过滤
+  toDate?: number; // 结束日期过滤
+  search?: string; // 搜索关键词
 }
 
 /**

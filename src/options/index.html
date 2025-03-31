@@ -72,11 +72,11 @@
             <!-- 高级会话设置部分 -->
             <div id="advanced-session-settings" class="setting-nested-group">
               <div class="setting-group">
-                <label for="idle-timeout">空闲结束会话时间 (分钟):</label>
-                <input type="number" id="idle-timeout" name="idle-timeout" min="5" max="240" value="30">
-                <p class="setting-description">
-                  当无活动达到此时间后，当前会话将自动结束
-                </p>
+                <label for="idle-timeout">会话空闲超时时间（小时）</label>
+                <div class="input-group">
+                  <input type="number" id="idle-timeout" min="1" max="24" step="1" value="2">
+                </div>
+                <small class="form-text">空闲多长时间后自动结束当前会话并在下次浏览时创建新会话</small>
               </div>
             </div>
           </div>

@@ -118,12 +118,12 @@ function setupEventListeners(): void {
   const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
   if (idleTimeoutInput) {
     idleTimeoutInput.addEventListener('input', () => {
-      // 确保值在有效范围内
+      // 确保值在有效范围内 (1-24小时)
       const value = parseInt(idleTimeoutInput.value);
-      if (isNaN(value) || value < 5) {
-        idleTimeoutInput.value = '5';
-      } else if (value > 240) {
-        idleTimeoutInput.value = '240';
+      if (isNaN(value) || value < 1) {
+        idleTimeoutInput.value = '1'; // 最小1小时
+      } else if (value > 24) {
+        idleTimeoutInput.value = '24'; // 最大24小时
       }
     });
   }
@@ -227,10 +227,10 @@ function applySettingsToUI(): void {
     }
   }
   
-  // 空闲超时
+  // 空闲超时 - 以小时为单位
   const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
   if (idleTimeoutInput) {
-    idleTimeoutInput.value = String(currentSettings.idleTimeout || 30);
+    idleTimeoutInput.value = String(currentSettings.idleTimeout || 2);
   }
   
   // 数据保留
@@ -257,11 +257,11 @@ function collectSettingsFromUI(): NavigraphSettings {
   const dataRetentionStr = (document.getElementById('data-retention') as HTMLSelectElement)?.value || '30';
   const dataRetention = parseInt(dataRetentionStr) as 7 | 14 | 30 | 90 | 180 | 365 | 0;
   
-  // 空闲超时
+  // 空闲超时 - 输入为小时，存储为小时，内部处理再转分钟
   const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
   const idleTimeout = idleTimeoutInput ? 
-    parseInt(idleTimeoutInput.value) || 30 : 
-    currentSettings.idleTimeout || 30;
+    Math.max(1, Math.min(24, parseInt(idleTimeoutInput.value) || 2)) : 
+    currentSettings.idleTimeout || 2;
   
   return {
     theme,
