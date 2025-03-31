@@ -69,6 +69,35 @@
   /* 节点状态颜色 */
   --status-active: #6f6;
   --status-closed: #f66;
+
+  /* 添加新的变量 */
+  --color-bg-primary: #1a1d21;
+  --color-bg-primary-rgb: 26, 29, 33;
+  --color-bg-secondary: #272b33;
+  --color-bg-tertiary: #333842;
+  --color-bg-panel: #1e2228;
+  --color-bg-panel-dark: #1e2228;
+  --color-text: #e0e0e0;
+  --color-text-emphasis: #ffffff;
+  --color-border: #3a3f48;
+  --color-accent: #4a6ee0;
+  --color-bg-hover: #3e4350;
+  
+  /* 滚动条颜色 */
+  --color-scrollbar: rgba(255, 255, 255, 0.2);
+  --color-scrollbar-hover: rgba(255, 255, 255, 0.3);
+  --color-scrollbar-dark: rgba(255, 255, 255, 0.2);
+  --color-scrollbar-dark-hover: rgba(255, 255, 255, 0.3);
+
+  /* 映射变量 */
+  --svg-background: var(--background-color);
+  --node-bg: var(--color-bg-tertiary);
+  --toolbar-button-hover: var(--color-bg-hover);
+
+  /* 添加Logo容器特定变量 */
+  --logo-bg-color: rgba(26, 29, 33, 0.8);
+  --logo-border: 1px solid rgba(255, 255, 255, 0.1);
+  --logo-text-color: #333;
 }
 
 /* 亮色主题 */
@@ -140,6 +169,105 @@
   /* 节点状态颜色 */
   --status-active: #00aa00;
   --status-closed: #cc0000;
+
+  /* 添加新的变量 */
+  --color-bg-primary: #ffffff;
+  --color-bg-primary-rgb: 255, 255, 255;
+  --color-bg-secondary: #f0f2f5;
+  --color-bg-tertiary: #f8f9fa;
+  --color-bg-panel: #f5f7fa;
+  --color-text: #333333;
+  --color-text-emphasis: #000000;
+  --color-border: #e0e0e0;
+  --color-accent: #4a6ee0;
+  --color-bg-hover: #e9ecef;
+  
+  /* 滚动条颜色 */
+  --color-scrollbar: rgba(0, 0, 0, 0.2);
+  --color-scrollbar-hover: rgba(0, 0, 0, 0.3);
+
+  /* 映射变量 */
+  --svg-background: var(--background-color);
+  --node-bg: var(--color-bg-tertiary);
+  --toolbar-button-hover: var(--color-bg-hover);
+
+  /* 添加Logo容器特定变量 */
+  --logo-bg-color: rgba(255, 255, 255, 0.8);
+  --logo-border: 1px solid rgba(0, 0, 0, 0.1);
+  --logo-text-color: #333;
+}
+
+/* 添加系统默认主题变量，用于未指定主题时的默认值 */
+:root {
+  /* 基础颜色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-primary-rgb: 255, 255, 255;
+  --color-bg-secondary: #f0f2f5;
+  --color-bg-tertiary: #f8f9fa;
+  --color-bg-panel: #f5f7fa;
+  --color-bg-panel-dark: #1e2228;
+  --color-text: #333333;
+  --color-text-emphasis: #000000;
+  --color-border: #e0e0e0;
+  --color-accent: #4a6ee0;
+  --color-bg-hover: #e9ecef;
+  
+  /* 滚动条颜色 */
+  --color-scrollbar: rgba(0, 0, 0, 0.2);
+  --color-scrollbar-hover: rgba(0, 0, 0, 0.3);
+  --color-scrollbar-dark: rgba(255, 255, 255, 0.2);
+  --color-scrollbar-dark-hover: rgba(255, 255, 255, 0.3);
+}
+
+/* 根据系统颜色方案自动选择主题（如果未显式设置主题） */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    /* 亮色主题变量 */
+    --color-bg-primary: #ffffff;
+    --color-bg-primary-rgb: 255, 255, 255;
+    --color-bg-secondary: #f0f2f5;
+    --color-bg-tertiary: #f8f9fa;
+    --color-bg-panel: #f5f7fa;
+    --color-text: #333333;
+    --color-text-emphasis: #000000;
+    --color-border: #e0e0e0;
+    --color-accent: #4a6ee0;
+    --color-bg-hover: #e9ecef;
+    
+    /* 滚动条颜色 */
+    --color-scrollbar: rgba(0, 0, 0, 0.2);
+    --color-scrollbar-hover: rgba(0, 0, 0, 0.3);
+
+    /* 添加Logo容器特定变量 */
+    --logo-bg-color: rgba(255, 255, 255, 0.8);
+    --logo-border: 1px solid rgba(0, 0, 0, 0.1);
+    --logo-text-color: #333;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    /* 暗色主题变量 */
+    --color-bg-primary: #1a1d21;
+    --color-bg-primary-rgb: 26, 29, 33;
+    --color-bg-secondary: #272b33;
+    --color-bg-tertiary: #333842;
+    --color-bg-panel: #1e2228;
+    --color-text: #e0e0e0;
+    --color-text-emphasis: #ffffff;
+    --color-border: #3a3f48;
+    --color-accent: #4a6ee0;
+    --color-bg-hover: #3e4350;
+    
+    /* 滚动条颜色 */
+    --color-scrollbar: rgba(255, 255, 255, 0.2);
+    --color-scrollbar-hover: rgba(255, 255, 255, 0.3);
+
+    /* 添加Logo容器特定变量 */
+    --logo-bg-color: rgba(26, 29, 33, 0.8);
+    --logo-border: 1px solid rgba(255, 255, 255, 0.1);
+    --logo-text-color: #333;
+  }
 }
 
 /* ========== 滚动条样式 ========== */
@@ -159,6 +287,33 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
+}
+
+/* 控制面板滚动条样式 - 按主题分类 */
+[data-theme="light"] .control-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .control-panel::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .control-panel::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .control-panel::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .control-panel::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  :root:not([data-theme]) .control-panel::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
 }
 
 /* ========== 时间线视图主题样式 ========== */
@@ -260,6 +415,7 @@
   background-color: var(--svg-background);
 }
 
+
 /* ========== 特定组件样式覆盖 ========== */
 /* 针对深色主题的特定修复 */
 
@@ -272,6 +428,10 @@
   color: #333;  /* 深色文本 */
   border: 1px solid rgba(225, 225, 225, 0.3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .logo-container {
+  background-color: rgba(var(--color-bg-primary-rgb), 0.8);
 }
 
 [data-theme="dark"] #no-data #status-text {
@@ -287,6 +447,17 @@
 
 [data-theme="light"] #no-data #status-text {
   color: #fff;  /* 确保文本在暗色背景上可读 */
+}
+
+[data-theme="dark"] .control-panel {
+  background-color: var(--color-bg-panel-dark, #1e2228); /* 深色模式下的面板背景色 */
+}
+[data-theme="dark"] .control-panel::-webkit-scrollbar-thumb {
+  background-color: var(--color-scrollbar-dark, rgba(255, 255, 255, 0.2));
+}
+
+[data-theme="dark"] .control-panel::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-scrollbar-dark-hover, rgba(255, 255, 255, 0.3));
 }
 
 /* 筛选面板 */

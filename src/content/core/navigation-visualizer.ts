@@ -218,17 +218,79 @@ export class NavigationVisualizer {
     
     if (!visualizationContainer) return;
     
-    // 点击抓手切换控制面板可见性
+    let hoverTimer: number | null = null;
+    let leaveTimer: number | null = null;
+    
+    // 鼠标悬停在抓手上时，显示面板（延迟200ms，避免意外触发）
+    handle.addEventListener('mouseenter', () => {
+      // 清除任何现有的离开计时器
+      if (leaveTimer) {
+        clearTimeout(leaveTimer);
+        leaveTimer = null;
+      }
+      
+      // 如果面板已显示，不需要再设置计时器
+      if (controlPanel.classList.contains('visible')) {
+        return;
+      }
+      
+      // 设置短暂延迟后显示面板
+      hoverTimer = window.setTimeout(() => {
+        controlPanel.classList.add('visible');
+        handle.classList.add('panel-visible');
+      }, 200);
+    });
+    
+    // 鼠标离开抓手时，如果悬停计时器存在就取消它
+    handle.addEventListener('mouseleave', () => {
+      // 清除悬停计时器
+      if (hoverTimer) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
+      
+      // 面板已显示情况下不自动隐藏，用户需要点击外部或抓手来隐藏
+    });
+
+    // 点击抓手切换控制面板可见性（面板显示时点击将隐藏）
     handle.addEventListener('click', (e: MouseEvent) => {
       e.stopPropagation();
-      controlPanel.classList.toggle('visible');
-      console.log(`控制面板 ${controlPanel.classList.contains('visible') ? '显示' : '隐藏'}`);
+      
+      // 如果面板已显示，则隐藏它；否则就保持显示
+      if (controlPanel.classList.contains('visible')) {
+        controlPanel.classList.remove('visible');
+        handle.classList.remove('panel-visible');
+      }
+    });
+    
+    // 鼠标进入面板时清除任何可能的离开计时器
+    controlPanel.addEventListener('mouseenter', () => {
+      if (leaveTimer) {
+        clearTimeout(leaveTimer);
+        leaveTimer = null;
+      }
+    });
+    
+    // 鼠标离开面板时，设置延迟后自动隐藏（可以通过用户移动到抓手或再次进入面板来取消）
+    controlPanel.addEventListener('mouseleave', (e: MouseEvent) => {
+      // 检查是否是移动到抓手上，如果是，不设置离开计时器
+      const toElement = (e as any).relatedTarget;
+      if (toElement === handle) {
+        return;
+      }
+      
+      // 设置离开计时器，延迟隐藏面板
+      leaveTimer = window.setTimeout(() => {
+        controlPanel.classList.remove('visible');
+        handle.classList.remove('panel-visible');
+      }, 500); // 给用户半秒钟的时间来回到面板
     });
     
     // 点击可视化区域关闭控制面板
     visualizationContainer.addEventListener('click', () => {
       if (controlPanel.classList.contains('visible')) {
         controlPanel.classList.remove('visible');
+        handle.classList.remove('panel-visible');
       }
     });
     
@@ -241,8 +303,14 @@ export class NavigationVisualizer {
     document.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Escape' && controlPanel.classList.contains('visible')) {
         controlPanel.classList.remove('visible');
+        handle.classList.remove('panel-visible');
       }
     });
+    
+    // 记录初始状态
+    if (controlPanel.classList.contains('visible')) {
+      handle.classList.add('panel-visible');
+    }
     
     console.log('控制面板交互初始化完成');
   }

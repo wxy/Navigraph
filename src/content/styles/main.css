@@ -93,15 +93,17 @@ body.loading-session #visualization-container::before {
 /* 视图模式切换 */
 .view-mode {
   display: flex;
-  border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .view-mode button {
   background: var(--toolbar-button, none);
-  border: none;
-  padding: 6px 12px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 8px 12px;
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
@@ -116,7 +118,9 @@ body.loading-session #visualization-container::before {
   background-color: var(--btn-primary, #4285f4);
   color: white;
 }
-
+.view-mode button:hover:not(.active) {
+  background-color: var(--color-bg-hover);
+}
 /* 主体内容区域 */
 .main-container {
   display: grid;
@@ -130,8 +134,8 @@ body.loading-session #visualization-container::before {
 
 /* ========== 筛选面板 ========== */
 .filters-panel {
-  width: 250px;
-  min-width: 250px;
+  width: 270px;
+  min-width: 270px;
   padding: 16px;
   background-color: var(--filter-bg, #fff);
   border-right: 1px solid var(--filter-border, #e0e0e0);
@@ -213,6 +217,16 @@ body.loading-session #visualization-container::before {
   min-height: 500px;
   border: 1px solid var(--border-color, #333);
   background-color: var(--background-color);
+}
+
+.visualization-container svg {
+  position: relative;
+  z-index: 5; /* 确保SVG在正常层级 */
+}
+
+/* 确保控制面板显示在所有SVG元素之上 */
+svg {
+  overflow: visible; /* 确保SVG内容不会被裁剪 */
 }
 
 /* 确保其他元素不会意外挤压可视化容器 */
@@ -965,9 +979,7 @@ svg .node-label {
   fill: #999;
 }
 
-/* 以下是需要添加的新样式 */
-
-/* Logo 容器 */
+/* Logo 容器 - 使用专用变量 */
 .logo-container {
   position: absolute;
   top: 10px;
@@ -976,7 +988,8 @@ svg .node-label {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: rgba(var(--color-bg-primary-rgb), 0.7);
+  background-color: var(--logo-bg-color, rgba(255, 255, 255, 0.8));
+  border: var(--logo-border, 1px solid rgba(0, 0, 0, 0.1));
   padding: 5px 10px;
   border-radius: 6px;
   backdrop-filter: blur(4px);
@@ -991,6 +1004,7 @@ svg .node-label {
   font-size: 16px;
   margin: 0;
   font-weight: 500;
+  color: var(--logo-text-color, inherit);
 }
 
 /* 控制面板抓手 */
@@ -1008,18 +1022,46 @@ svg .node-label {
   justify-content: center;
   cursor: pointer;
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 99;
-  transition: background-color 0.2s ease;
+  z-index: 1001;
+  opacity: 0.7; /* 默认时有点透明 */
+  transition: right 0.3s ease-in-out, background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .control-panel-handle:hover {
   background-color: var(--color-accent);
+  opacity: 1;
+}
+
+/* 面板可见时，抓手更明显 */
+.control-panel-handle.panel-visible {
+  opacity: 0.9;
+}
+
+/* 当面板可见时，抓手位置需要变化 */
+.control-panel.visible + .control-panel-handle,
+.control-panel-handle.panel-visible {
+  right: 300px; /* 与面板宽度相同 */
+}
+
+.control-panel-handle {
+  right: 0; /* 默认位置在右侧边缘 */
+  transition: right 0.3s ease-in-out;
+}
+
+.control-panel.visible ~ .control-panel-handle {
+  right: 300px; /* 当控制面板可见时，抓手也跟着移动 */
 }
 
 .handle-icon {
   font-size: 18px;
   color: var(--color-text);
   font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+/* 面板可见时，箭头方向变化 */
+.control-panel-handle.panel-visible .handle-icon {
+  transform: rotate(180deg); /* 箭头方向反转 */
 }
 
 /* 控制面板 */
@@ -1027,14 +1069,15 @@ svg .node-label {
   position: absolute;
   top: 0;
   right: -320px; /* 默认隐藏 */
-  width: 280px;
+  width: 300px;
   height: 100%;
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-bg-panel, #f5f7fa); /* 定义一个专用颜色变量，默认值为浅灰色 */
+  border-left: 1px solid var(--color-border);
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
-  padding: 15px;
-  z-index: 98;
+  padding: 20px 15px;
+  z-index: 1000; /* 确保高于SVG */
   overflow-y: auto;
-  transition: right 0.3s ease-in-out;
+  transition: right 0.3s ease-in-out, background-color 0.3s ease;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1043,6 +1086,48 @@ svg .node-label {
 
 .control-panel.visible {
   right: 0;
+}
+
+/* 控制面板滚动条美化 - 仅保留基础样式 */
+.control-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 保留滚动条的通用样式，但移除颜色信息 */
+.control-panel::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  /* 颜色在themes.css中定义 */
+}
+
+/* 面板标题 */
+.control-panel h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--color-text-emphasis);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+}
+/* 面板分区 */
+.control-panel-section {
+  margin-bottom: 20px;
+}
+
+/* 会话选择器容器优化 */
+.session-selector-container {
+  margin-bottom: 20px;
+}
+
+.session-selector-container label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
 }
 
 /* 视图切换样式 */
@@ -1091,9 +1176,8 @@ svg .node-label {
 
 /* 筛选面板调整 */
 .control-panel .filters-panel {
-  padding: 0;
+  padding: 15px;
   border-top: 1px solid var(--color-border);
-  padding-top: 15px;
 }
 
 .control-panel .filters-panel h2 {
@@ -1119,12 +1203,5 @@ svg .node-label {
 @media (max-width: 768px) {
   .control-panel {
     width: 260px;
-  }
-}
-
-/* 在暗黑模式下调整样式 */
-@media (prefers-color-scheme: dark) {
-  .logo-container {
-    background-color: rgba(var(--color-bg-primary-rgb), 0.8);
   }
 }
