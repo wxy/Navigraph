@@ -99,6 +99,9 @@ export class BackgroundSessionManager {
       // 设置会话活动监听器
       this.setupActivityListeners();
 
+      // 启动状态一致性检查
+      this.startStateConsistencyChecker();
+
       console.log("会话管理器初始化完成");
     } catch (error) {
       console.error("会话管理器初始化失败:", error);
@@ -108,6 +111,75 @@ export class BackgroundSessionManager {
         }`
       );
     }
+  }
+  
+  /**
+   * 启动状态一致性检查器
+   */
+  private startStateConsistencyChecker(): void {
+    // 每5分钟执行一次检查
+    setInterval(() => {
+      this.checkNodeStateConsistency()
+        .catch(err => console.error('节点状态一致性检查失败:', err));
+    }, 5 * 60 * 1000);
+  }
+  
+  /**
+   * 检查节点状态一致性
+   */
+  private async checkNodeStateConsistency(): Promise<void> {
+    if (!this.currentSessionId) return;
+    
+    try {
+      console.log('执行节点状态一致性检查...');
+      
+      // 1. 获取所有活跃标签页
+      const tabs = await this.getAllActiveTabs();
+      const activeTabIds = new Set(tabs.map(tab => tab.id));
+      
+      // 2. 获取当前会话的所有未关闭节点
+      const navStorage = new NavigationStorage();
+      await navStorage.initialize();
+      // 查询当前会话的节点
+      const sessionNodes = await navStorage.queryNodes({
+        sessionId: this.currentSessionId
+      });
+      
+      // 过滤出活跃(未关闭)节点
+      const activeNodes = sessionNodes.filter(node => !node.isClosed);
+      
+      // 3. 找出标签页已关闭但节点未标记为关闭的节点
+      const orphanedNodes = activeNodes.filter(node => 
+        node.tabId && !activeTabIds.has(node.tabId)
+      );
+      
+      if (orphanedNodes.length > 0) {
+        console.log(`发现 ${orphanedNodes.length} 个孤立节点，标记为已关闭`);
+        
+        // 更新这些节点状态
+        for (const node of orphanedNodes) {
+          await navStorage.updateNode(node.id, {
+            isClosed: true,
+            closeTime: Date.now()
+          });
+        }
+      }
+      
+      console.log('节点状态一致性检查完成');
+    } catch (error) {
+      console.error('节点状态一致性检查出错:', error);
+    }
+  }
+  
+  /**
+   * 获取所有活跃标签页
+   */
+  private async getAllActiveTabs(): Promise<chrome.tabs.Tab[]> {
+    return new Promise((resolve) => {
+      chrome.tabs.query({}, (tabs) => {
+        resolve(tabs);
+      });
+    });
   }
   /**
    * 恢复最后活动时间
@@ -160,6 +232,58 @@ export class BackgroundSessionManager {
         this.markSessionActivity();
       }
     });
+
+    // 添加: 标签页关闭监听
+    chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+      this.handleTabClosed(tabId, removeInfo);
+    });
+  }
+
+  /**
+   * 处理标签页关闭
+   */
+  private async handleTabClosed(tabId: number, removeInfo: chrome.tabs.TabRemoveInfo): Promise<void> {
+    try {
+      if (!this.currentSessionId) return;
+      
+      console.log(`标签页 ${tabId} 已关闭，更新节点状态`);
+      
+      // 获取导航存储实例
+      const navStorage = new NavigationStorage();
+      await navStorage.initialize();
+      
+      // 查找与此标签页相关的活跃节点
+      const activeNodes = await navStorage.queryNodes({
+        tabId: tabId,
+        sessionId: this.currentSessionId,
+        // 可以根据NavDataQueryOptions的定义添加其他查询条件
+      });
+      
+      const nodesToUpdate = activeNodes.filter(node => !node.isClosed);
+    
+      if (nodesToUpdate.length === 0) {
+        console.log(`标签页 ${tabId} 没有需要更新状态的活跃节点`);
+        return;
+      }
+      
+      console.log(`找到 ${activeNodes.length} 个与关闭标签相关的节点，正在更新状态`);
+      
+      // 更新这些节点为已关闭状态
+      for (const node of activeNodes) {
+        // 只更新未标记为关闭的节点
+        if (!node.isClosed) {
+          // 更新节点状态
+          await navStorage.updateNode(node.id, {
+            isClosed: true,
+            closeTime: Date.now()
+          });
+          
+          console.log(`已将节点 ${node.id} 标记为关闭`);
+        }
+      }
+    } catch (error) {
+      console.error('处理标签页关闭失败:', error);
+    }
   }
 
   /**
