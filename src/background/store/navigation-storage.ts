@@ -153,7 +153,7 @@ export class NavigationStorage {
       
       // 保存更新后的节点
       await this.db.put(this.NODE_STORE, updatedNode);
-      console.log(`节点已更新: ${id}`);
+      console.log(`节点已更新: ${id}， 会话 ${updatedNode.sessionId}`);
     } catch (error) {
       console.error(`更新节点失败: ${id}`, error);
       throw new Error(`更新节点失败: ${error instanceof Error ? error.message : String(error)}`);

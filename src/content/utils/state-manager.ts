@@ -419,30 +419,24 @@ export function updateStatusBar(visualizer: Visualizer): void {
   try {
     // 获取当前变换信息
     let transform = null;
-    console.log(visualizer.currentView);
-    console.log(visualizer.svg); 
     // 优先使用visualizer中存储的currentTransform（通过缩放事件更新）
     if (visualizer.currentTransform) {
       transform = visualizer.currentTransform;
     }
     // 如果没有存储的transform，根据当前视图类型获取变换
-    else if (visualizer.currentView === 'tree' && visualizer.svg) {
-      // 从树形图SVG获取变换
+    else if (visualizer.svg) {
       transform = d3.zoomTransform(visualizer.svg.node());
+    } else {
+      console.warn('无法获取当前变换状态');
+      return;
     }
-    else if (visualizer.currentView === 'timeline' && visualizer.svg) {
-      // 从时间线SVG获取变换
-      transform = d3.zoomTransform(visualizer.svg.node());
-      console.log('获取时间线SVG变换' , transform);
-    }
-    
     
     // 计算缩放百分比
     const zoom = transform ? Math.round(transform.k * 100) : 100;
     
     // 获取节点数量
     const nodeElements = document.querySelectorAll('.node');
-    const nodeCount = nodeElements.length;
+    const nodeCount = nodeElements.length - 1; // 减去根节点
     const visibleNodeCount = Array.from(nodeElements).filter(
       node => (node as HTMLElement).style.display !== 'none'
     ).length;

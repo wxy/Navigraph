@@ -883,6 +883,22 @@ svg .node-label {
   stroke-dasharray: 3,2;
 }
 
+/* 为自循环节点添加样式 */
+.node.self-loop circle {
+  stroke: #ff7700;
+  stroke-width: 2px;
+}
+
+.self-loop-indicator {
+  fill: #ff7700;
+}
+
+.self-loop-icon {
+  fill: #ffffff;
+  font-family: 'FontAwesome';
+  font-size: 10px;
+}
+
 /* 会话节点样式 */
 .node.session rect {
   fill: #444;

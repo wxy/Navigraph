@@ -85,18 +85,18 @@ export class BackgroundSessionManager {
       // 注册监听器
       await this.setupListeners();
 
-      // 检查日期转换（是否需要新建今日会话）
+      await this.loadActiveSessions();
+
+      // 先加载活跃会话，确保currentSessionId已设置
+      await this.loadActiveSessions();
+
+      // 恢复lastActivityTime
+      await this.restoreActivityTime();
+      
+      // 修改：仅在加载会话后再检查日期转换
       if (this.sessionMode === 'daily') {
         await this.checkDayTransition();
       }
-      
-      // 加载会话并检查活跃会话
-      if (!this.currentSessionId) {
-        await this.loadActiveSessions();
-      }
-
-      // 记录当前时间为最后活动时间
-      this.lastActivityTime = Date.now();
       
       // 设置会话活动监听器
       this.setupActivityListeners();
@@ -111,7 +111,29 @@ export class BackgroundSessionManager {
       );
     }
   }
-
+  /**
+   * 恢复最后活动时间
+   */
+  private async restoreActivityTime(): Promise<void> {
+    try {
+      // 如果已有当前会话
+      if (this.currentSessionId) {
+        const currentSession = await this.getSessionById(this.currentSessionId);
+        if (currentSession) {
+          // 使用会话的lastActivity或startTime作为最后活动时间
+          this.lastActivityTime = currentSession.lastActivity || currentSession.startTime;
+          console.log(`恢复会话活动时间: ${new Date(this.lastActivityTime).toLocaleString()}`);
+          return;
+        }
+      }
+      
+      // 默认设置为当前时间
+      this.lastActivityTime = Date.now();
+    } catch (error) {
+      console.error("恢复活动时间失败:", error);
+      this.lastActivityTime = Date.now();
+    }
+  }
   /**
    * 设置会话活动监听器
    */
@@ -162,7 +184,7 @@ export class BackgroundSessionManager {
       // 获取当前活跃会话
       const currentSession = await this.getCurrentSession();
       if (!currentSession) {
-        console.log("没有活跃会话，创建新会话");
+        console.log("没有活跃会话，创建新会话A");
         await this.createDailySession();
         return;
       }
@@ -381,44 +403,67 @@ export class BackgroundSessionManager {
     }
   }
 
-  /**
+   /**
    * 加载活跃会话
    */
   private async loadActiveSessions(): Promise<void> {
     try {
-      // 获取活跃会话
-      const sessions = await this.storage.getSessions({
+      // 1. 首先查找活跃会话
+      const activeSessions = await this.storage.getSessions({
         includeInactive: false,
       });
-
-      if (sessions.length > 0) {
+  
+      if (activeSessions.length > 0) {
         // 使用最近的活跃会话作为当前会话
-        const mostRecent = sessions.sort(
+        const mostRecent = activeSessions.sort(
           (a, b) => b.startTime - a.startTime
         )[0];
         this.currentSessionId = mostRecent.id;
         this.sessionCache.set(mostRecent.id, mostRecent);
-
+  
         console.log(`加载了活跃会话: ${mostRecent.id} - ${mostRecent.title}`);
-      } else {
-        console.log("未找到活跃会话，将创建新会话");
-        // 创建新的默认会话
-        await this.createSession({
-          title: `会话 ${new Date().toLocaleString()}`,
-          description: "自动创建的默认会话",
-        }, true);
+        return;  // 找到活跃会话，直接返回
       }
-
-      // 加载其他会话到缓存
-      sessions.forEach((session) => {
-        if (session.id !== this.currentSessionId) {
-          this.sessionCache.set(session.id, session);
-        }
+  
+      // 2. 没有活跃会话，查找最近的已结束会话
+      const recentSessions = await this.storage.getSessions({
+        includeInactive: true,
+        sortBy: 'endTime',
+        sortOrder: 'desc',
+        limit: 1
       });
-
-      console.log(
-        `已加载 ${sessions.length} 个活跃会话，当前会话ID: ${this.currentSessionId}`
-      );
+  
+      if (recentSessions.length > 0) {
+        const mostRecent = recentSessions[0];
+        const lastActivityTime = mostRecent.lastActivity || mostRecent.endTime || mostRecent.startTime;
+        const now = Date.now();
+        const timeSinceLastActivity = now - lastActivityTime;
+        
+        // 如果最后活动时间在合理范围内（默认12小时），重用该会话
+        const maxReusePeriod = 12 * 60 * 60 * 1000;  // 12小时
+        if (timeSinceLastActivity < maxReusePeriod) {
+          console.log(`找到最近会话(${mostRecent.id})，距现在${Math.round(timeSinceLastActivity / (1000 * 60 * 60))}小时，重新激活`);
+          
+          // 重新激活该会话
+          mostRecent.isActive = true;
+          mostRecent.lastActivity = now;
+          await this.storage.saveSession(mostRecent);
+          
+          this.currentSessionId = mostRecent.id;
+          this.sessionCache.set(mostRecent.id, mostRecent);
+          
+          sessionEvents.emitSessionActivated(mostRecent.id);
+          return;
+        }
+      }
+  
+      // 3. 没有找到活跃会话或最近会话已过期，创建新会话
+      console.log("未找到活跃会话或最近会话已过期，创建新会话");
+      await this.createSession({
+        title: `会话 ${new Date().toLocaleString()}`,
+        description: "自动创建的默认会话",
+      }, true);
+  
     } catch (error) {
       console.error("加载活跃会话失败:", error);
       throw new Error(

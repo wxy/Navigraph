@@ -196,6 +196,9 @@ export function renderTreeLayout(
       if (node.parentId === node.id) {
         console.log(`检测到节点 ${node.id} 自循环，标记为刷新节点`);
         extNode.isSelfLoop = true;
+        // 将自循环节点的parentId设为空字符串，使其成为根节点
+        extNode.parentId = '';
+        extNode.isRoot = true;
         selfLoopNodes.push(extNode);
       }
     });
@@ -651,6 +654,10 @@ export function renderTreeLayout(
           classes += ' tracking';
         }
         
+        // 添加自循环节点标记
+        if (d.data.isSelfLoop) {
+          classes += ' self-loop';
+        }
         return classes;
       })
       .attr('transform', (d: D3TreeNode) => `translate(${d.y},${d.x})`);
@@ -717,7 +724,27 @@ export function renderTreeLayout(
       .attr('class', 'filtered-indicator')
       .append('title')
       .text((d: D3TreeNode) => `包含${d.data.filteredChildrenCount || 0}个被过滤的子节点`);
-    
+
+    // 为自循环节点添加特殊标记
+    node.filter((d: D3TreeNode) => d.data.isSelfLoop)
+      .append('circle')
+      .attr('r', 6)
+      .attr('cx', 18)
+      .attr('cy', 18)
+      .attr('class', 'self-loop-indicator')
+      .append('title')
+      .text('该页面具有自循环/自刷新行为');
+
+    // 给自循环节点添加循环箭头图标
+    node.filter((d: D3TreeNode) => d.data.isSelfLoop)
+      .append('text')
+      .attr('class', 'self-loop-icon')
+      .attr('x', 15)
+      .attr('y', 21)
+      .text('\uf021') // 使用FontAwesome的循环图标
+      .append('title')
+      .text('该页面具有自循环/自刷新行为');
+
     // 在渲染树之前，处理重定向节点
     const redirectNodes = nodes.filter(node => node.type === 'redirect');
     if (redirectNodes.length > 0) {
@@ -846,9 +873,21 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
   console.log('检测并打破循环...');
   
   // 创建节点ID映射表
-  const nodeById: Record<string, boolean> = {};
+  const nodeById: Record<string, ExtendedNavNode> = {};
   nodes.forEach(node => {
-    nodeById[node.id] = true;
+    nodeById[node.id] = node;
+  });
+  
+  // 首先过滤掉自循环连接，但保留自循环节点
+  const nonSelfLoopLinks = links.filter(link => {
+    // 检查是否为自循环连接
+    const isSelfLoop = link.source === link.target;
+    
+    if (isSelfLoop) {
+      console.log(`跳过自循环连接: ${link.source} -> ${link.target} (将作为根节点处理)`);
+      return false;
+    }
+    return true;
   });
   
   // 构建图的邻接表表示
@@ -858,7 +897,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
   });
   
   // 填充图 - 直接使用NavLink的source和target
-  links.forEach(link => {
+  nonSelfLoopLinks.forEach(link => {
     if (graph[link.source]) {
       graph[link.source].push(link.target);
     }
@@ -920,8 +959,8 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     }
   }
   
-  // 过滤掉回边，保留所有其他连接
-  const safeLinks = links.filter(link => {
+  // 过滤掉回边，但不过滤掉自循环节点
+  const safeLinks = nonSelfLoopLinks.filter(link => {
     const linkId = `${link.source}->${link.target}`;
     const isSafe = !backEdges.has(linkId);
     
@@ -932,6 +971,5 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     return isSafe;
   });
   
-  console.log(`检测出 ${backEdges.size} 条回边，保留 ${safeLinks.length} 条安全连接`);
   return safeLinks;
 }
