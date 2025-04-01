@@ -1,6 +1,7 @@
 /**
  * 主要的后台脚本，负责初始化和协调各个组件
  */
+import { Logger, LogLevel } from '../lib/utils/logger.js';
 import { NavigationManager } from './navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
@@ -13,6 +14,7 @@ import { getBackgroundSessionManager } from './lib/bg-session-manager.js';
 let settingsService: any;
 let navigationManager: NavigationManager;
 let messageService: ReturnType<typeof getBackgroundMessageService>; // 使用泛型而非具体类型
+const logger = new Logger('background');
 
 // 导出访问器函数，而不是直接导出实例
 export function getNavigationManager(): NavigationManager {
@@ -34,43 +36,43 @@ export function getMessageService() {
  */
 async function initialize(): Promise<void> {
   try {
-    console.log('Navigraph 扩展已启动');
-    console.log('导航图谱后台初始化开始...');
+    logger.log('Navigraph 扩展已启动');
+    logger.log('导航图谱后台初始化开始...');
     
     // 1. 首先创建消息服务实例
-    console.log('初始化消息服务...');
+    logger.log('初始化消息服务...');
     messageService = getBackgroundMessageService();    
     // 2. 注册基础消息处理程序（tab和settings相关）
-    console.log('注册基础消息处理程序...');
+    logger.log('注册基础消息处理程序...');
     registerAllBackgroundHandlers();
     
     // 3. 然后创建设置服务
-    console.log('初始化设置服务...');
+    logger.log('初始化设置服务...');
     settingsService = getSettingsService();
     await settingsService.initialize();
         
     // 4. 创建并初始化导航管理器
-    console.log('初始化导航管理器...');
+    logger.log('初始化导航管理器...');
     navigationManager = new NavigationManager(messageService);    
     // 导航管理器会在自己内部初始化所需的存储
     await navigationManager.initialize();
 
     // 5. 初始化会话管理器
-    console.log('初始化会话管理器...');
+    logger.log('初始化会话管理器...');
     const sessionManager = getBackgroundSessionManager();
     // 会话管理器会在自己内部初始化所需的存储
     await sessionManager.initialize();
     // 6. 注册会话管理器的消息处理程序
-    console.log('注册会话管理器消息处理程序...');
+    logger.log('注册会话管理器消息处理程序...');
     sessionManager.registerMessageHandlers(messageService);
     
     // 7. 设置事件监听器和上下文菜单
     setupEventListeners(navigationManager);
     setupContextMenus(navigationManager);
 
-    console.log('导航图谱后台初始化成功');
+    logger.log('导航图谱后台初始化成功');
   } catch (error) {
-    console.error('导航图谱后台初始化失败:', error);
+    logger.error('导航图谱后台初始化失败:', error);
   }
 }
 
