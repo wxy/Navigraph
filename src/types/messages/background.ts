@@ -276,6 +276,13 @@ export namespace BackgroundMessages {
     target: 'background';
     sessionId: string;
   }
+
+  /**
+   * 活动标记请求
+   */
+  export interface MarkSessionActivityRequest extends BaseMessage {
+    action: 'markSessionActivity';
+  }
 }
 
 // 对应的响应类型（省略实现细节）
@@ -472,6 +479,13 @@ export namespace BackgroundResponses {
     sessionId: string;
     statistics: SessionStatistics;
   }
+
+  /**
+   * 活动标记响应
+   */
+  export interface MarkSessionActivityResponse extends BaseResponse {
+    // 无额外字段
+  }
 }
 
 /**
@@ -607,4 +621,68 @@ export interface BackgroundAPI {
     request: BackgroundMessages.GetSessionStatsRequest;
     response: BackgroundResponses.GetSessionStatsResponse;
   };
+
+  markSessionActivity: {
+    request: BackgroundMessages.MarkSessionActivityRequest;
+    response: BackgroundResponses.MarkSessionActivityResponse;
+  };
 }
+
+// 更新总类型
+export type BackgroundRequest = 
+  | BackgroundMessages.GetSessionsRequest
+  | BackgroundMessages.GetTabIdRequest
+  | BackgroundMessages.GetNodeIdRequest
+  | BackgroundMessages.JsNavigationRequest
+  | BackgroundMessages.LoadSettingsRequest
+  | BackgroundMessages.SaveSettingsRequest
+  | BackgroundMessages.ResetSettingsRequest
+  | BackgroundMessages.GetSettingsRequest
+  | BackgroundMessages.PageLoadedRequest
+  | BackgroundMessages.PageTitleUpdatedRequest
+  | BackgroundMessages.FaviconUpdatedRequest
+  | BackgroundMessages.PageActivityRequest
+  | BackgroundMessages.LinkClickedRequest
+  | BackgroundMessages.FormSubmittedRequest
+  | BackgroundMessages.GetHistoryRequest
+  | BackgroundMessages.GetGraphDataRequest
+  | BackgroundMessages.GetSessionDetailsRequest
+  | BackgroundMessages.GetNavigationTreeRequest
+  | BackgroundMessages.ClearAllRecordsRequest
+  | BackgroundMessages.CreateSessionRequest
+  | BackgroundMessages.UpdateSessionRequest
+  | BackgroundMessages.EndSessionRequest
+  | BackgroundMessages.SetCurrentSessionRequest
+  | BackgroundMessages.GetCurrentSessionRequest
+  | BackgroundMessages.DeleteSessionRequest
+  | BackgroundMessages.GetSessionStatsRequest
+  | BackgroundMessages.MarkSessionActivityRequest;
+
+export type BackgroundResponse =
+  | BackgroundResponses.GetSessionsResponse
+  | BackgroundResponses.GetTabIdResponse
+  | BackgroundResponses.GetNodeIdResponse
+  | BackgroundResponses.JsNavigationResponse
+  | BackgroundResponses.LoadSettingsResponse
+  | BackgroundResponses.SaveSettingsResponse
+  | BackgroundResponses.ResetSettingsResponse
+  | BackgroundResponses.GetSettingsResponse
+  | BackgroundResponses.PageLoadedResponse
+  | BackgroundResponses.PageTitleUpdatedResponse
+  | BackgroundResponses.FaviconUpdatedResponse
+  | BackgroundResponses.PageActivityResponse
+  | BackgroundResponses.LinkClickedResponse
+  | BackgroundResponses.FormSubmittedResponse
+  | BackgroundResponses.GetHistoryResponse
+  | BackgroundResponses.GetGraphDataResponse
+  | BackgroundResponses.GetSessionDetailsResponse
+  | BackgroundResponses.GetNavigationTreeResponse
+  | BackgroundResponses.ClearAllRecordsResponse
+  | BackgroundResponses.CreateSessionResponse
+  | BackgroundResponses.UpdateSessionResponse
+  | BackgroundResponses.EndSessionResponse
+  | BackgroundResponses.SetCurrentSessionResponse
+  | BackgroundResponses.GetCurrentSessionResponse
+  | BackgroundResponses.DeleteSessionResponse
+  | BackgroundResponses.GetSessionStatsResponse
+  | BackgroundResponses.MarkSessionActivityResponse;

@@ -23,7 +23,7 @@ import {
 // 导入状态管理功能
 import { 
   saveViewState, 
-  updateStatusBar
+  getViewState
 } from '../utils/state-manager.js';
 
 const d3 = window.d3;
@@ -41,8 +41,28 @@ export function renderTreeLayout(
   visualizer: Visualizer
 ): void {
   console.log('使用模块化树形图渲染器');
-
+  
   try {
+    // 声明并初始化saveStateTimeout变量
+    let saveStateTimeout: ReturnType<typeof setTimeout> | null = null;
+    // 清除常见错误源
+    if (saveStateTimeout) clearTimeout(saveStateTimeout);
+    
+    // 获取特定视图类型的状态
+    const tabId = visualizer.tabId || '';
+    const savedState = getViewState(tabId, 'tree');
+    let shouldRestoreTransform = false;
+    let transformToRestore = null;
+    
+    if (savedState && savedState.transform) {
+      const { x, y, k } = savedState.transform;
+      if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
+        console.log('检测到保存的树形图状态:', savedState.transform);
+        shouldRestoreTransform = true;
+        transformToRestore = savedState.transform;
+      }
+    }
+
     // 规范化输入的链接数据
     const normalizedInputLinks = normalizeLinks(links);
     
@@ -79,8 +99,6 @@ export function renderTreeLayout(
       console.log('为树形图视图设置缩放行为');
       
       // 先清除旧的缩放事件
-      svg.on('.zoom', null);
-      
       // 获取DOM引用
       const mainGroup = svg.select('.main-group');
       const nodesGroup = mainGroup.select('.nodes-group');
@@ -94,6 +112,34 @@ export function renderTreeLayout(
           nodesGroup.selectAll('text').style('display', 'none');
         } else {
           nodesGroup.selectAll('text').style('display', null);
+        }
+        // 实时更新状态栏显示缩放比例
+        if (visualizer) {
+          // 保存当前变换状态
+          visualizer.currentTransform = event.transform;
+          
+          // 更新状态栏
+          if (typeof visualizer.updateStatusBar === 'function') {
+            visualizer.updateStatusBar();
+          }
+          
+          // 添加防抖保存状态逻辑
+          if (saveStateTimeout) clearTimeout(saveStateTimeout);
+          saveStateTimeout = setTimeout(() => {
+            // 安全检查
+            if (Math.abs(event.transform.x) < width * 2 && 
+                Math.abs(event.transform.y) < height * 2) {
+              // 保存状态，明确指定为树形图视图
+              saveViewState(visualizer.tabId || '', {
+                viewType: 'tree',
+                transform: {
+                  x: event.transform.x,
+                  y: event.transform.y,
+                  k: event.transform.k
+                }
+              });
+            }
+          }, 300); // 延迟300毫秒保存，避免频繁保存
         }
       };
       
@@ -240,57 +286,157 @@ export function renderTreeLayout(
         .text(`⚠️ 已修复 ${removedCount} 个循环连接`);
     }
 
-    // 使用安全链接替换原来的链接列表
-    const safeAllLinks = safeLinks.map(link => ({
-      id: link.id,
-      source: link.source,
-      target: link.target,
-      type: link.type
-    }));
+    // 在应用布局之前对根节点进行分组
+    console.log(`对${rootNodes.length}个根节点进行左右平衡布局`);
 
-    // 声明接收d3处理结果的变量
-    let treeData: any;
-    let descendants: D3TreeNode[];
-    
+    // 按时间戳排序根节点
+    rootNodes.sort((a, b) => a.timestamp - b.timestamp);
+
+    // 将根节点分为左右两组
+    const mid = Math.ceil(rootNodes.length / 2);
+    const leftRootNodes = rootNodes.slice(0, mid);
+    const rightRootNodes = rootNodes.slice(mid);
+
+    console.log(`根节点分配: 左侧 ${leftRootNodes.length} 个, 右侧 ${rightRootNodes.length} 个`);
+
+    // 创建左右会话虚拟根节点
+    const leftSessionNode: ExtendedNavNode = {
+      ...sessionNode,
+      id: 'left-session-root'
+    };
+
+    const rightSessionNode: ExtendedNavNode = {
+      ...sessionNode,
+      id: 'right-session-root'
+    };
+
+    // 为节点添加子树标识
+    leftRootNodes.forEach(root => root.subtreeType = 'left');
+    rightRootNodes.forEach(root => root.subtreeType = 'right');
+
+    // 递归标记所有子节点的子树类型
+    function markSubtreeNodes(node: ExtendedNavNode, subtreeType: string): void {
+      node.subtreeType = subtreeType;
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(child => markSubtreeNodes(child, subtreeType));
+      }
+    }
+
+    // 标记左右子树的所有节点
+    leftRootNodes.forEach(root => markSubtreeNodes(root, 'left'));
+    rightRootNodes.forEach(root => markSubtreeNodes(root, 'right'));
+
+    // 声明树布局结果变量
+    let leftTreeData: any = null;
+    let rightTreeData: any = null;
+    let descendants: D3TreeNode[] = [];
+
     try {
-      // 创建层次化树形布局
+      // 创建树形布局生成器
       const treeLayout = d3.tree()
         .nodeSize([30, 140])
-        .separation((a: D3TreeNode, b: D3TreeNode) => {
-          // 更细致的间距控制
+        .separation((a: any, b: any) => {
           const depthFactor = Math.min(1.3, (a.depth + b.depth) * 0.08 + 1);
           return (a.parent === b.parent ? 3 : 4.5) * depthFactor;
         });
       
-      // 创建层次结构
-      const hierarchy = d3.stratify()
-        .id((d: any) => d.id)
-        .parentId((d: any) => {
-          // 如果是会话根节点，则没有父节点
-          if (d.id === 'session-root') return null;
-          
-          // 如果有父ID并且父节点存在，使用此父ID
-          if (d.parentId && nodeById[d.parentId]) {
-            // 检查此父子关系是否在安全链接列表中
-            const parentLinkExists = safeLinks.some(link => 
-              link.source === d.parentId && link.target === d.id);
-              
-            if (parentLinkExists) {
-              return d.parentId;
-            }
+      // 辅助函数：从根节点获取所有后代节点
+      function getDescendants(root: ExtendedNavNode): ExtendedNavNode[] {
+        const result: ExtendedNavNode[] = [];
+        
+        function collect(node: ExtendedNavNode) {
+          if (node.children && node.children.length > 0) {
+            node.children.forEach(child => {
+              const fullChild = nodeById[child.id];
+              if (fullChild) {
+                result.push(fullChild);
+                collect(fullChild);
+              }
+            });
           }
-          
-          // 默认情况：连接到会话根节点
-          return 'session-root';
-        })
-        (allNodes);
+        }
+        
+        collect(root);
+        return result;
+      }
       
-      // 应用布局
-      treeData = treeLayout(hierarchy);
+      // 处理左侧子树
+      if (leftRootNodes.length > 0) {
+        // 准备左侧树节点数据
+        const leftTreeNodes = [
+          leftSessionNode,
+          ...leftRootNodes,
+          ...leftRootNodes.flatMap(root => getDescendants(root))
+        ];
+        
+        // 创建左侧层次结构
+        const leftHierarchy = d3.stratify()
+          .id((d: any) => d.id)
+          .parentId((d: any) => {
+            if (d.id === 'left-session-root') return null;
+            if (leftRootNodes.some(root => root.id === d.id)) return 'left-session-root';
+            return d.parentId || 'left-session-root';
+          })
+          (leftTreeNodes);
+        
+        // 应用布局
+        leftTreeData = treeLayout(leftHierarchy);
+        
+        // 水平镜像左侧子树坐标
+        leftTreeData.descendants().forEach((d: any) => {
+          d.y = -d.y; // 翻转Y坐标(在D3中，y是水平方向)
+        });
+      }
       
-      // 获取所有节点
-      descendants = treeData.descendants() as D3TreeNode[];
+      // 处理右侧子树
+      if (rightRootNodes.length > 0) {
+        // 准备右侧树节点数据
+        const rightTreeNodes = [
+          rightSessionNode,
+          ...rightRootNodes,
+          ...rightRootNodes.flatMap(root => getDescendants(root))
+        ];
+        
+        // 创建右侧层次结构
+        const rightHierarchy = d3.stratify()
+          .id((d: any) => d.id)
+          .parentId((d: any) => {
+            if (d.id === 'right-session-root') return null;
+            if (rightRootNodes.some(root => root.id === d.id)) return 'right-session-root';
+            return d.parentId || 'right-session-root';
+          })
+          (rightTreeNodes);
+        
+        // 应用布局
+        rightTreeData = treeLayout(rightHierarchy);
+      }
       
+      // 创建实际的中心会话节点
+      const sessionD3Node = {
+        data: sessionNode,
+        depth: 0,
+        height: 1,
+        parent: null,
+        x: 0,
+        y: 0,
+        children: []
+      } as D3TreeNode;
+      
+      // 合并所有节点
+      descendants = [sessionD3Node];
+      
+      // 添加左侧树节点(排除左虚拟根节点)
+      if (leftTreeData) {
+        const leftNodes = leftTreeData.descendants().filter((d: any) => d.data.id !== 'left-session-root');
+        descendants = descendants.concat(leftNodes);
+      }
+      
+      // 添加右侧树节点(排除右虚拟根节点)
+      if (rightTreeData) {
+        const rightNodes = rightTreeData.descendants().filter((d: any) => d.data.id !== 'right-session-root');
+        descendants = descendants.concat(rightNodes);
+      }
+
     } catch (err) {
       console.error('树布局计算失败:', err);
       
@@ -315,14 +461,14 @@ export function renderTreeLayout(
           .text('请尝试使用时间线视图或筛选节点以解决问题');
           
         // 如果visualizer可用，建议切换视图
-        if (visualizer && typeof visualizer.switchToTimelineView === 'function') {
+        if (visualizer && typeof visualizer.switchView === 'function') {
           svg.append('text')
             .attr('x', width / 2)
             .attr('y', height / 2 + 30)
             .attr('class', 'error-action')
             .text('点击此处切换到时间线视图')
             .on('click', () => {
-              visualizer.switchView('tree');
+              visualizer.switchView('timeline');
             });
         }
       } else {
@@ -332,10 +478,10 @@ export function renderTreeLayout(
       throw new Error(errorMessage);
     }
     
-    // 立即计算树的边界
+    // 计算树的边界
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
-    
+
     descendants.forEach((d: any) => {
       minX = Math.min(minX, d.y);
       maxX = Math.max(maxX, d.y);
@@ -343,61 +489,143 @@ export function renderTreeLayout(
       maxY = Math.max(maxY, d.x);
     });
 
-    // 计算树的边界框和尺寸
+    // 计算树的尺寸
     const treeWidth = maxX - minX;
     const treeHeight = (maxY - minY) <= 0 ? 60 : (maxY - minY);
 
-    // 1. 调整水平方向，保持左侧对齐但留出足够边距
-    const leftMargin = 100; // 增加会话节点左侧边距
-    const xOffset = leftMargin - minX;
+    // 水平和垂直中心化布局
+    const centerX = width / 2;
+    const centerY = height / 2;
 
-    // 2. 调整垂直居中计算，确保垂直居中
-    const topMargin = 40; // 顶部保留的固定空间
-    const yOffset = (height - treeHeight) / 2 - minY;
+    // 对所有节点进行位置调整
+    descendants.forEach((d: any) => {
+      if (d.data.id === 'session-root') {
+        // 会话节点居中
+        d.x = centerY;
+        d.y = centerX;
+      } else {
+        // 其他节点保持相对位置，但整体居中
+        d.x = d.x + centerY - (maxY + minY) / 2;
+        d.y = d.y + centerX;
+      }
+    });
 
-    // 打印布局信息
-    console.log('树布局信息(修正的垂直居中):', {
-        viewport: { width, height },
-        tree: { 
-          width: treeWidth, 
-          height: treeHeight, 
-          bounds: { minX, maxX, minY, maxY }
-        },
-        margins: { leftMargin, topMargin },
-        offset: { x: xOffset, y: yOffset }
-      });
+    // 创建连接数据
+    const treeLinks: D3TreeLink[] = [];
 
-    // 创建箭头标记
-    svg.append('defs').append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 20)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5');
-    
+    // 添加从会话节点到左侧根节点的链接
+    leftRootNodes.forEach(root => {
+      const target = descendants.find(d => d.data.id === root.id);
+      if (target) {
+        treeLinks.push({ 
+          source: descendants[0], // 中心会话节点
+          target 
+        } as D3TreeLink);
+      }
+    });
+
+    // 添加从会话节点到右侧根节点的链接
+    rightRootNodes.forEach(root => {
+      const target = descendants.find(d => d.data.id === root.id);
+      if (target) {
+        treeLinks.push({ 
+          source: descendants[0], // 中心会话节点
+          target 
+        } as D3TreeLink);
+      }
+    });
+
+    // 创建节点ID到descendants索引的映射以提高查找效率
+    const nodeIdToDescendant = new Map<string, D3TreeNode>();
+    descendants.forEach(node => {
+      nodeIdToDescendant.set(node.data.id, node);
+    });
+
+    // 添加左侧子树内部链接
+    if (leftTreeData) {
+      let missingLinks = 0;
+      leftTreeData.links()
+        .filter((link: any) => link.source.data.id !== 'left-session-root')
+        .forEach((link: any) => {
+          const sourceId = link.source.data.id;
+          const targetId = link.target.data.id;
+          const source = nodeIdToDescendant.get(sourceId);
+          const target = nodeIdToDescendant.get(targetId);
+          
+          if (source && target) {
+            treeLinks.push({ source, target } as D3TreeLink);
+          } else {
+            missingLinks++;
+            console.log(`左侧子树找不到链接: ${sourceId} -> ${targetId}`);
+          }
+        });
+      
+      if (missingLinks > 0) {
+        console.warn(`左侧子树中有${missingLinks}条链接无法创建`);
+      }
+    }
+
+    // 添加右侧子树内部链接
+    if (rightTreeData) {
+      let missingLinks = 0;
+      rightTreeData.links()
+        .filter((link: any) => link.source.data.id !== 'right-session-root')
+        .forEach((link: any) => {
+          const sourceId = link.source.data.id;
+          const targetId = link.target.data.id;
+          const source = nodeIdToDescendant.get(sourceId);
+          const target = nodeIdToDescendant.get(targetId);
+          
+          if (source && target) {
+            treeLinks.push({ source, target } as D3TreeLink);
+          } else {
+            missingLinks++;
+            console.log(`右侧子树找不到链接: ${sourceId} -> ${targetId}`);
+          }
+        });
+      
+      if (missingLinks > 0) {
+        console.warn(`右侧子树中有${missingLinks}条链接无法创建`);
+      }
+    }
+
     // 获取节点和链接分组
     const linksGroup = svg.select('.main-group .links-group');
     const nodesGroup = svg.select('.main-group .nodes-group');
     
     // 绘制连接线 - 使用曲线路径
     linksGroup.selectAll('path')
-      .data(treeData.links())
+      .data(treeLinks)
       .join('path')
       .attr('class', (d: D3TreeLink) => `link ${d.target.data.type || ''}`)
       .attr('d', (d: D3TreeLink) => {
-        // 创建平滑曲线
-        const linkHorizontal = d3.linkHorizontal()
-          .x((node: any) => node.y)
-          .y((node: any) => node.x);
-          
-        return linkHorizontal({
-          source: d.source,
-          target: d.target
-        });
+        // 提取并验证坐标
+        const sourceX = d.source.y || 0;
+        const sourceY = d.source.x || 0;
+        const targetX = d.target.y || 0;
+        const targetY = d.target.x || 0;
+        
+        // 检查坐标是否有效
+        if (isNaN(sourceX) || isNaN(sourceY) || isNaN(targetX) || isNaN(targetY)) {
+          console.warn('检测到无效的连接线坐标:', {
+            source: d.source.data.id,
+            target: d.target.data.id,
+            coords: {sourceX, sourceY, targetX, targetY}
+          });
+          return 'M0,0L0,0'; // 返回一个不可见的线段作为回退
+        }
+        
+        // 如果连接涉及会话节点，使用特殊曲线
+        if (d.source.data.id === 'session-root' || d.target.data.id === 'session-root') {
+          const midX = (sourceX + targetX) / 2;
+          return `M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`;
+        } else {
+          // 修复: 正确使用D3的linkHorizontal函数
+          return d3.linkHorizontal()({
+            source: [sourceX, sourceY],
+            target: [targetX, targetY]
+          });
+        }
       });
     
     // 绘制节点
@@ -534,30 +762,45 @@ export function renderTreeLayout(
     );
 
     // 使用更保守的缩放值
-    const finalScaleFactor = Math.max(0.65, Math.min(0.85, scaleFactor));
+    const finalScaleFactor = Math.max(0.6, Math.min(0.8, scaleFactor));
 
-    // 创建初始变换
+    // 创建初始变换 - 中心对齐，不需要额外偏移
     const initialTransform = d3.zoomIdentity
-      .translate(xOffset, yOffset)
+      .translate(
+        width * (1 - finalScaleFactor) / 2, 
+        height * (1 - finalScaleFactor) / 2
+      )
       .scale(finalScaleFactor);
-      
+
     // 5. 确保在所有渲染完成后才应用变换
     if (visualizer.zoom) {
       // 确保清除任何旧的变换
       svg.selectAll('.main-group').attr('transform', null);
+      
+      // 尝试应用保存的变换
+      if (shouldRestoreTransform && transformToRestore) {
+        console.log('恢复树形图状态:', transformToRestore);
         
-      // 应用新变换
+        const transform = d3.zoomIdentity
+          .translate(transformToRestore.x, transformToRestore.y)
+          .scale(transformToRestore.k);
+        
+        svg.call(visualizer.zoom.transform, transform);
+        return; // 跳过应用默认初始变换
+      }
+      
+      // 否则应用默认初始变换
       console.log('应用树形图变换:', {
-        translate: [xOffset, yOffset],
+        translate: [centerX - treeWidth / 2, centerY - treeHeight / 2],
         scale: finalScaleFactor
       });
       svg.call(visualizer.zoom.transform, initialTransform);
     }
     // 6. 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateStatusBar();
     
     // 7. 添加调试信息
-    console.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeData.links().length);
+    console.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeLinks.length);
     // 验证变换是否被正确应用
     setTimeout(() => {
       try {
@@ -690,6 +933,5 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
   });
   
   console.log(`检测出 ${backEdges.size} 条回边，保留 ${safeLinks.length} 条安全连接`);
-  
   return safeLinks;
 }

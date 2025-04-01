@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Navigraph 设置</title>
-  <link rel="stylesheet" href="options.css">
+  <link rel="stylesheet" href="styles/options.css">
 </head>
 <body>
   <div class="container">
@@ -54,34 +54,31 @@
       <div id="session-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2>会话创建</h2>
+            <h2>会话管理</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="session-mode">会话创建模式：</label>
+              <label for="session-mode">会话模式：</label>
               <select id="session-mode">
-                <option value="daily">每日工作模式</option>
-                <option value="activity">活动感知模式</option>
-                <option value="smart">混合智能模式（推荐）</option>
+                <option value="daily">工作日模式 (推荐)</option>
                 <option value="manual">手动模式</option>
               </select>
               <div class="description">
-                <p><strong>每日工作模式</strong>: 每个工作日自动创建一个会话</p>
-                <p><strong>活动感知模式</strong>: 基于浏览活动自动检测会话</p>
-                <p><strong>混合智能模式</strong>: 智能结合工作日和浏览习惯</p>
-                <p><strong>手动模式</strong>: 由您手动控制会话的创建和结束</p>
+                <p><strong>工作日模式</strong>：每天自动创建新会话，并在空闲一段时间后结束当前会话</p>
+                <p><strong>手动模式</strong>：需要手动创建和结束会话</p>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div id="advanced-session-settings" class="card">
-          <div class="card-header">
-            <h2>高级会话设置</h2>
-            <div class="coming-soon-badge">即将推出</div>
-          </div>
-          <div class="card-body">
-            <p class="placeholder-text">高级会话管理选项将在后续更新中添加</p>
+            
+            <!-- 高级会话设置部分 -->
+            <div id="advanced-session-settings" class="setting-nested-group">
+              <div class="setting-group">
+                <label for="idle-timeout">会话空闲超时时间（小时）</label>
+                <div class="input-group">
+                  <input type="number" id="idle-timeout" min="1" max="24" step="1" value="2">
+                </div>
+                <small class="form-text">空闲多长时间后自动结束当前会话并在下次浏览时创建新会话</small>
+              </div>
+            </div>
           </div>
         </div>
       </div>

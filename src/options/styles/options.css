@@ -156,11 +156,29 @@ main {
 }
 
 .setting-group {
-  margin-bottom: 24px;
+  margin-bottom: 15px;
 }
 
 .setting-group:last-child {
   margin-bottom: 0;
+}
+
+.setting-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.setting-description {
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
+
+.setting-nested-group {
+  margin-left: 20px;
+  padding: 10px;
+  border-left: 2px solid #e0e0e0;
 }
 
 label {
@@ -171,9 +189,9 @@ label {
 
 select, input[type="text"], input[type="number"] {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   font-size: 14px;
   background-color: var(--card-bg);
   color: var(--text-color);
@@ -183,6 +201,10 @@ select, input[type="text"], input[type="number"] {
 select:focus, input:focus {
   outline: none;
   border-color: var(--primary-color);
+}
+
+input[type="number"] {
+  width: 80px;
 }
 
 .description {
@@ -349,48 +371,39 @@ footer {
   background-color: #e53935;
 }
 
+/* 通知样式 */
 .notification {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
-  padding: 12px 16px;
-  background-color: #4caf50;
-  color: white;
+  padding: 12px 20px;
   border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  z-index: 1000;
-  transition: opacity 0.3s, transform 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 80%;
+  background-color: #4CAF50;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+  display: block;
+  opacity: 1;
 }
 
 .notification.hidden {
   opacity: 0;
-  transform: translateY(-20px);
-  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
 .notification.error {
-  background-color: #f44336;
+  background-color: #F44336;
 }
-
 
 .notification-action {
-  background: rgba(255,255,255,0.2);
-  border: none;
-  color: white;
+  margin-left: 10px;
   padding: 4px 8px;
-  border-radius: 4px;
+  background: white;
+  border: none;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 12px;
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.notification-action:hover {
-  background: rgba(255,255,255,0.3);
+  font-weight: bold;
 }
 
 /* 响应式调整 */
@@ -514,4 +527,14 @@ footer {
     transform: translate(-50%, 0);
     opacity: 1;
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }

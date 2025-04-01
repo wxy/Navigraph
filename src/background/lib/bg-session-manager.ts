@@ -21,6 +21,8 @@ import {
   BackgroundMessages,
   BackgroundResponses,
 } from "../../types/messages/background.js";
+import { getSettingsService } from '../../lib/settings/service.js';
+import { NavigraphSettings } from '../../lib/settings/types.js';
 
 /**
  * 后台会话管理器类
@@ -38,6 +40,18 @@ export class BackgroundSessionManager {
 
   // 初始化状态
   private initialized = false;
+
+  // 空闲计时器
+  private idleTimerId: number | null = null;
+  
+  // 空闲超时设置（分钟）
+  private idleTimeoutMinutes: number = 30;
+  
+  // 最后活动时间
+  private lastActivityTime: number = 0;
+  
+  // 会话模式
+  private sessionMode: 'auto' | 'manual' | 'smart' | 'daily' | 'activity' = 'daily';
 
   /**
    * 创建后台会话管理器实例
@@ -64,9 +78,28 @@ export class BackgroundSessionManager {
 
       // 初始化存储
       await this.storage.initialize();
+      
+      // 加载设置
+      await this.loadSettings();
 
+      // 注册监听器
+      await this.setupListeners();
+
+      // 检查日期转换（是否需要新建今日会话）
+      if (this.sessionMode === 'daily') {
+        await this.checkDayTransition();
+      }
+      
       // 加载会话并检查活跃会话
-      await this.loadActiveSessions();
+      if (!this.currentSessionId) {
+        await this.loadActiveSessions();
+      }
+
+      // 记录当前时间为最后活动时间
+      this.lastActivityTime = Date.now();
+      
+      // 设置会话活动监听器
+      this.setupActivityListeners();
 
       console.log("会话管理器初始化完成");
     } catch (error) {
@@ -80,11 +113,271 @@ export class BackgroundSessionManager {
   }
 
   /**
+   * 设置会话活动监听器
+   */
+  private setupActivityListeners(): void {
+    console.log('设置会话活动监听器');
+    
+    // 浏览器启动时
+    chrome.runtime.onStartup.addListener(() => {
+      console.log('浏览器启动');
+      this.checkDayTransition();
+    });
+    
+    // 标签页激活时
+    chrome.tabs.onActivated.addListener(() => {
+      this.markSessionActivity();
+    });
+    
+    // 导航完成时
+    chrome.webNavigation.onCompleted.addListener(() => {
+      this.markSessionActivity();
+    });
+    
+    // 标签页更新时
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+      if (changeInfo.status === 'complete') {
+        this.markSessionActivity();
+      }
+    });
+  }
+
+  /**
    * 确保已初始化
    */
   private async ensureInitialized(): Promise<void> {
     if (!this.initialized) {
       await this.initialize();
+    }
+  }
+
+  /**
+   * 检查会话切换
+   * 改进版：综合考虑工作日和空闲时长
+   */
+  public async checkSessionTransition(): Promise<void> {
+    try {
+      await this.ensureInitialized();
+      
+      // 获取当前活跃会话
+      const currentSession = await this.getCurrentSession();
+      if (!currentSession) {
+        console.log("没有活跃会话，创建新会话");
+        await this.createDailySession();
+        return;
+      }
+      
+      // 检查是否超过最大空闲时长
+      const idleTimeout = this.getIdleTimeout();
+      const now = Date.now();
+      const idleTime = now - this.lastActivityTime;
+      
+      if (idleTime > idleTimeout) {
+        console.log(`空闲时间(${Math.round(idleTime / (60 * 1000)) / 60}小时)已超过阈值(${this.idleTimeoutMinutes / 60}小时)，创建新会话`);
+
+        await this.endSession(currentSession.id);
+        await this.createDailySession();
+        return;
+      }
+      
+      // 检查工作日变更 - 只有在有足够空闲时间时才创建新会话
+      // 这样即使跨越了午夜，只要用户持续活跃，仍然使用原会话
+      try {
+        // 获取会话的日期和当前日期
+        const sessionDate = new Date(currentSession.startTime);
+        const nowDate = new Date();
+        
+        // 计算会话日期和当前日期的工作日
+        const sessionWorkDay = this.getWorkDayIdentifier(sessionDate);
+        const currentWorkDay = this.getWorkDayIdentifier(nowDate);
+        
+        // 获取最小空闲时间阈值（例如2小时 = 7,200,000 ms）
+        const minIdleForNewDay = 2 * 60 * 60 * 1000; 
+        
+        // 如果工作日发生变化且空闲时间超过阈值
+        if (sessionWorkDay !== currentWorkDay && idleTime > minIdleForNewDay) {
+          console.log(`检测到新工作日且空闲足够长(${idleTime}ms)，创建新会话`);
+          await this.endSession(currentSession.id);
+          await this.createDailySession();
+        }
+      } catch (error) {
+        console.error("工作日检查失败:", error);
+      }
+    } catch (error) {
+      console.error("会话切换检查失败:", error);
+    }
+  }
+
+  /**
+   * 获取工作日标识符
+   * 以标准年月日格式作为工作日标识
+   */
+  private getWorkDayIdentifier(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * 修改后的日期转换检查
+   * 只在应用启动时检查，而不是每次活动时
+   */
+  public async checkDayTransition(): Promise<void> {
+    try {
+      await this.ensureInitialized();
+      
+      // 获取当前活跃会话
+      const currentSession = await this.getCurrentSession();
+      if (!currentSession) {
+        console.log("没有活跃会话，创建新会话");
+        await this.createDailySession();
+        return;
+      }
+      
+      // 获取会话的日期和当前日期
+      const sessionDate = new Date(currentSession.startTime);
+      const nowDate = new Date();
+      
+      // 计算会话日期和当前日期的工作日
+      const sessionWorkDay = this.getWorkDayIdentifier(sessionDate);
+      const currentWorkDay = this.getWorkDayIdentifier(nowDate);
+      
+      // 获取最后活动时间
+      const lastActivityTime = this.lastActivityTime || (currentSession.lastActivity ?? currentSession.startTime);
+      const now = Date.now();
+      const idleTime = now - lastActivityTime;
+      
+      // 最短需要空闲8小时才在日期变化时创建新会话
+      const minIdleForNewDay = 8 * 60 * 60 * 1000; // 8小时
+      
+      // 如果工作日不同且有足够的空闲时间，创建新会话
+      if (sessionWorkDay !== currentWorkDay && idleTime > minIdleForNewDay) {
+        console.log(`检测到新工作日且长时间未活动(${Math.round(idleTime / (60 * 60 * 1000))}小时)，创建新会话`);
+        await this.endSession(currentSession.id);
+        await this.createDailySession();
+      }
+    } catch (error) {
+      console.error("日期转换检查失败:", error);
+    }
+  }
+  /**
+   * 获取空闲超时时间
+   * @returns 空闲超时时间，以毫秒为单位
+   */
+  private getIdleTimeout(): number {
+    // 将分钟转换为毫秒
+    return this.idleTimeoutMinutes * 60 * 1000;
+  }
+
+  /**
+   * 创建每日会话
+   * @returns 创建的每日会话
+   */
+  private async createDailySession(): Promise<BrowsingSession> {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    
+    console.log(`创建新的每日会话: ${dateStr}`);
+    
+    return await this.createSession({
+      title: `${dateStr} 浏览会话`,
+      description: `自动创建的 ${dateStr} ${timeStr} 会话`,
+      metadata: {
+        type: "daily",
+        date: now.getTime()
+      }
+    }, true);
+  }
+
+  /**
+   * 获取最新活跃会话
+   * 与getCurrentSession不同，此方法总是返回时间最新的活跃会话
+   */
+  public async getLatestActiveSession(): Promise<BrowsingSession | null> {
+    await this.ensureInitialized();
+    
+    try {
+      // 获取所有活跃会话
+      const sessions = await this.getSessions({
+        includeInactive: false,
+        sortBy: 'startTime',
+        sortOrder: 'desc',
+        limit: 1
+      });
+      
+      if (sessions.length === 0) {
+        return null;
+      }
+      
+      // 返回最新的会话
+      return sessions[0];
+    } catch (error) {
+      console.error('获取最新活跃会话失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 标记会话活动
+   */
+  public async markSessionActivity(): Promise<void> {
+    // 更新最后活动时间
+    this.lastActivityTime = Date.now();
+    
+    // 重置空闲计时器
+    this.resetIdleTimer();
+    
+    // 如果没有当前会话，检查是否需要创建新会话
+    const currentSession = await this.getCurrentSession();
+    if (!currentSession) {
+      await this.createDailySession();
+      return;
+    }
+    
+    // 更新会话的最后活动时间
+    await this.storage.updateSession(currentSession.id, { 
+      lastActivity: this.lastActivityTime 
+    });
+  }
+
+  /**
+   * 重置空闲计时器
+   */
+  private resetIdleTimer(): void {
+    // 清除现有计时器
+    if (this.idleTimerId) {
+      clearTimeout(this.idleTimerId);
+      this.idleTimerId = null;
+    }
+    
+    // 如果不是每日模式或空闲超时为0，不设置计时器
+    if (this.sessionMode !== 'daily' || this.idleTimeoutMinutes <= 0) {
+      return;
+    }
+    
+    // 设置新的计时器
+    const timeoutMs = this.idleTimeoutMinutes * 60 * 1000;
+    this.idleTimerId = setTimeout(() => {
+      this.handleUserIdle();
+    }, timeoutMs) as unknown as number; // 类型转换以符合属性类型
+  }
+  
+  /**
+   * 处理用户空闲
+   */
+  private async handleUserIdle(): Promise<void> {
+    // 如果没有当前会话，不需要处理
+    if (!this.currentSessionId) return;
+    
+    console.log(`检测到用户空闲超过${this.idleTimeoutMinutes / 60}小时，自动结束当前会话`);
+    
+    try {
+      // 结束当前会话
+      await this.endSession(this.currentSessionId);
+    } catch (error) {
+      console.error("自动结束会话失败:", error);
     }
   }
 
@@ -137,6 +430,82 @@ export class BackgroundSessionManager {
   }
 
   /**
+   * 加载设置并设置监听器
+   */
+  private async loadSettings(): Promise<void> {
+    const settingsService = getSettingsService();
+    
+    // 确保设置服务已初始化
+    if (!settingsService.isInitialized()) {
+      await settingsService.initialize();
+    }
+    
+    // 获取当前设置
+    const settings = settingsService.getSettings();
+    
+    // 应用设置
+    this.applySettings(settings);
+
+    console.log(`已加载会话设置: 模式=${this.sessionMode}, 空闲超时=${this.idleTimeoutMinutes / 60}小时`);
+  }
+
+  /**
+   * 加载设置并设置监听器
+   */
+  private async setupListeners(): Promise<void> {
+    const settingsService = getSettingsService();
+
+    // 添加设置变更监听器
+    settingsService.addChangeListener(this.handleSettingsChange.bind(this));
+  }
+  /**
+   * 应用设置到会话管理器
+   */
+  private applySettings(settings: NavigraphSettings): void {
+    const oldMode = this.sessionMode;
+    const oldTimeout = this.idleTimeoutMinutes;
+    
+    // 更新设置值
+    this.sessionMode = settings.sessionMode;
+    // 将小时转换为分钟
+    this.idleTimeoutMinutes = settings.idleTimeout * 60;  
+    
+    // 处理模式更改
+    if (this.initialized && oldMode !== this.sessionMode) {
+      this.handleSessionModeChange(oldMode).catch(err => {
+        console.error('处理会话模式变更失败:', err);
+      });
+    }
+    
+    // 处理超时更改
+    if (this.initialized && oldTimeout !== this.idleTimeoutMinutes) {
+      this.resetIdleTimer();  // 用新的超时值重设计时器
+    }
+  }
+  
+  /**
+   * 处理设置变更
+   */
+  private handleSettingsChange(settings: NavigraphSettings): void {
+    console.log('检测到设置变更，更新会话管理器配置');
+    this.applySettings(settings);
+  }
+  
+  /**
+   * 处理会话模式变更
+   */
+  private async handleSessionModeChange(oldMode: string): Promise<void> {
+    console.log(`会话模式从 ${oldMode} 变更为 ${this.sessionMode}`);
+    
+    // 如果切换到每日模式，检查是否需要创建新会话
+    if (this.sessionMode === 'daily' && oldMode !== 'daily') {
+      await this.checkDayTransition();
+    }
+    
+    // 其他模式切换逻辑...
+  }
+
+  /**
    * 创建新会话
    * @param options 会话创建选项
    * @returns 新创建的会话对象
@@ -163,6 +532,7 @@ export class BackgroundSessionManager {
         isActive: true,
         nodeCount: 0,
         tabCount: 0,
+        lastActivity: Date.now(), // 初始化为创建时间
         metadata: options?.metadata || {},
         records: {},
         edges: {},
@@ -1012,6 +1382,30 @@ export class BackgroundSessionManager {
           });
     
         return true;
+      }
+    );
+
+    // 添加会话活动更新处理程序
+    messageService.registerHandler(
+      "markSessionActivity",
+      (
+        message: BackgroundMessages.MarkSessionActivityRequest,
+        sender: chrome.runtime.MessageSender,
+        sendResponse: (
+          response: BackgroundResponses.MarkSessionActivityResponse
+        ) => void
+      ) => {
+        const ctx = messageService.createMessageContext(message, sender, sendResponse);
+        
+        this.markSessionActivity()
+          .then(() => {
+            ctx.success({});
+          })
+          .catch((error) => {
+            ctx.error(`标记会话活动失败: ${error.message}`);
+          });
+        
+        return false; // 同步响应
       }
     );
   }

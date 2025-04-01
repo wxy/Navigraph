@@ -76,7 +76,8 @@ export interface BrowsingSession {
   nodeCount?: number;         // 节点数量
   tabCount?: number;          // 标签页数量
   metadata?: SessionMetadata; // 会话元数据
-  
+  lastActivity?: number; // 添加最后活动时间字段
+
   // 兼容前端可视化所需的字段
   records?: Record<string, NavNode>;   // 导航节点记录映射 (ID -> 节点)
   edges?: Record<string, NavLink>;     // 导航边记录映射 (ID -> 边)
@@ -108,6 +109,18 @@ export interface SessionMetadata {
   customFields?: Record<string, any>; // 自定义字段
   createdBy?: string;         // 创建者
   lastModified?: number;      // 最后修改时间
+
+  // 会话类型
+  type?: string;              // 'daily', 'manual', 'project', 或其他类型
+  
+  // 日期信息（时间戳）
+  date?: number;
+  
+  // 最后活动时间
+  lastActivityTime?: number;
+  
+  // 扩展属性，允许添加其他未来可能需要的元数据
+  [key: string]: any;
 }
 
 // ============ 会话操作选项 ============
@@ -118,7 +131,7 @@ export interface SessionMetadata {
 export interface SessionCreationOptions {
   title?: string;             // 会话标题
   description?: string;       // 会话描述
-  metadata?: SessionMetadata; // 会话元数据
+  metadata?: SessionMetadata; // 使用更明确的类型
   makeActive?: boolean;       // 是否设为活跃会话(默认:true)
 }
 
@@ -129,18 +142,22 @@ export interface SessionUpdateOptions {
   title?: string;             // 更新标题
   description?: string;       // 更新描述
   isActive?: boolean;         // 更新活跃状态
-  metadata?: Partial<SessionMetadata>; // 更新元数据
+  metadata?: SessionMetadata; // 使用更明确的类型
+  lastActivity?: number;      // 更新最后活动时间
 }
 
 /**
  * 会话查询选项
  */
 export interface SessionQueryOptions {
-  includeInactive?: boolean;  // 是否包含非活跃会话
-  limit?: number;             // 返回结果数量限制
-  sortBy?: 'startTime' | 'endTime' | 'title'; // 排序字段
-  sortDirection?: 'asc' | 'desc'; // 排序方向
-  filter?: SessionFilter;     // 过滤条件
+  includeInactive?: boolean; // 是否包含非活跃会话
+  limit?: number; // 结果数量限制
+  offset?: number; // 结果偏移量
+  sortBy?: 'startTime' | 'endTime' | 'title' | 'nodeCount' | 'lastActivity'; // 排序字段
+  sortOrder?: 'asc' | 'desc'; // 排序方向
+  fromDate?: number; // 开始日期过滤
+  toDate?: number; // 结束日期过滤
+  search?: string; // 搜索关键词
 }
 
 /**

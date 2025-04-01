@@ -19,6 +19,22 @@ body {
   overflow: hidden;
 }
 
+/* 会话加载状态 */
+body.loading-session #visualization-container::before {
+  content: "加载会话数据...";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-size: 16px;
+}
+
 /* ========== 布局组件 ========== */
 /* 主布局容器 */
 .app-container {
@@ -33,16 +49,7 @@ body {
 
 /* 顶部工具栏 */
 .toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background-color: var(--toolbar-bg, #ffffff);
-  border-bottom: 1px solid var(--toolbar-border, #e0e0e0);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  z-index: 10;
-  flex: 0 0 auto; /* 不伸缩，保持自身高度 */
-  color: var(--toolbar-text, #333333);
+  display: none;
 }
 
 .logo {
@@ -78,18 +85,25 @@ body {
   color: var(--text-color);
 }
 
+/* 更新当前活跃的会话选项样式 */
+#session-selector option[selected] {
+  font-weight: bold;
+}
+
 /* 视图模式切换 */
 .view-mode {
   display: flex;
-  border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .view-mode button {
   background: var(--toolbar-button, none);
-  border: none;
-  padding: 6px 12px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 8px 12px;
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
@@ -104,21 +118,24 @@ body {
   background-color: var(--btn-primary, #4285f4);
   color: white;
 }
-
+.view-mode button:hover:not(.active) {
+  background-color: var(--color-bg-hover);
+}
 /* 主体内容区域 */
 .main-container {
-  flex: 1; /* 填充剩余空间 */
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto; /* 默认只有主视图和右侧详情面板 */
+  position: relative;
+  height: 100%;
   overflow: hidden;
-  position: relative; /* 为绝对定位的子元素提供参考 */
   background-color: var(--background-color);
   color: var(--text-color);
 }
 
 /* ========== 筛选面板 ========== */
 .filters-panel {
-  width: 250px;
-  min-width: 250px;
+  width: 270px;
+  min-width: 270px;
   padding: 16px;
   background-color: var(--filter-bg, #fff);
   border-right: 1px solid var(--filter-border, #e0e0e0);
@@ -185,14 +202,31 @@ body {
   margin-bottom: 4px;
 }
 
+/* 原有左侧筛选器面板隐藏 */
+.main-container > .filters-panel {
+  display: none;
+}
+
 /* ========== 可视化区域 ========== */
 .visualization-container {
+  width: 100%;
+  height: 100%;
   flex: 1;
   position: relative;
   overflow: hidden;
   min-height: 500px;
   border: 1px solid var(--border-color, #333);
   background-color: var(--background-color);
+}
+
+.visualization-container svg {
+  position: relative;
+  z-index: 5; /* 确保SVG在正常层级 */
+}
+
+/* 确保控制面板显示在所有SVG元素之上 */
+svg {
+  overflow: visible; /* 确保SVG内容不会被裁剪 */
 }
 
 /* 确保其他元素不会意外挤压可视化容器 */
@@ -237,45 +271,66 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(0,0,0,0.7);
-  color: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
-  z-index: 10;
+  
+  /* 固定宽度和更合理的高度 */
+  width: 280px;
   max-width: 80%;
-  pointer-events: auto; /* 允许交互 */
+  height: auto;
+  
+  /* 适当的内边距，四边均衡 */
+  padding: 20px;
+  
+  /* 确保内容居中 */
+  text-align: center;
+  
+  /* 边框和圆角 */
+  border-radius: 8px;
+  
+  /* 确保是块级元素，内容居中对齐 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  /* 添加过渡效果 */
+  transition: all 0.2s ease-in-out;
+  
+  /* 确保层级正确 */
+  z-index: 100;
+  
+  /* 半透明效果 */
+  opacity: 0.8;
+  
+  /* 平滑淡入效果 */
+  animation: fadeInNoData 0.25s ease-out;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--btn-primary, #4285f4);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+@keyframes fadeInNoData {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-#no-data img {
-  width: 120px;
-  height: 120px;
-  opacity: 0.7;
-}
-
-#no-data h2 {
-  font-size: 18px;
-  font-weight: 500;
-  color: #fff;
-}
-
-#no-data p {
+#status-text {
   font-size: 14px;
-  color: #ddd;
+  font-weight: 500;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+}
+
+/* 媒体查询确保在小屏幕上正确显示 */
+@media (max-width: 480px) {
+  #no-data {
+    width: 240px;
+    padding: 15px;
+  }
 }
 
 /* ========== 详情面板 ========== */
@@ -922,4 +977,231 @@ svg .node-label {
 /* 箭头标记 */
 #arrow path {
   fill: #999;
+}
+
+/* Logo 容器 - 使用专用变量 */
+.logo-container {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--logo-bg-color, rgba(255, 255, 255, 0.8));
+  border: var(--logo-border, 1px solid rgba(0, 0, 0, 0.1));
+  padding: 5px 10px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.logo-container img {
+  width: 28px;
+  height: 28px;
+}
+
+.logo-container h1 {
+  font-size: 16px;
+  margin: 0;
+  font-weight: 500;
+  color: var(--logo-text-color, inherit);
+}
+
+/* 控制面板抓手 */
+.control-panel-handle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 80px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 6px 0 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  opacity: 0.7; /* 默认时有点透明 */
+  transition: right 0.3s ease-in-out, background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.control-panel-handle:hover {
+  background-color: var(--color-accent);
+  opacity: 1;
+}
+
+/* 面板可见时，抓手更明显 */
+.control-panel-handle.panel-visible {
+  opacity: 0.9;
+}
+
+/* 当面板可见时，抓手位置需要变化 */
+.control-panel.visible + .control-panel-handle,
+.control-panel-handle.panel-visible {
+  right: 300px; /* 与面板宽度相同 */
+}
+
+.control-panel-handle {
+  right: 0; /* 默认位置在右侧边缘 */
+  transition: right 0.3s ease-in-out;
+}
+
+.control-panel.visible ~ .control-panel-handle {
+  right: 300px; /* 当控制面板可见时，抓手也跟着移动 */
+}
+
+.handle-icon {
+  font-size: 18px;
+  color: var(--color-text);
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+/* 面板可见时，箭头方向变化 */
+.control-panel-handle.panel-visible .handle-icon {
+  transform: rotate(180deg); /* 箭头方向反转 */
+}
+
+/* 控制面板 */
+.control-panel {
+  position: absolute;
+  top: 0;
+  right: -320px; /* 默认隐藏 */
+  width: 300px;
+  height: 100%;
+  background-color: var(--color-bg-panel, #f5f7fa); /* 定义一个专用颜色变量，默认值为浅灰色 */
+  border-left: 1px solid var(--color-border);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
+  padding: 20px 15px;
+  z-index: 1000; /* 确保高于SVG */
+  overflow-y: auto;
+  transition: right 0.3s ease-in-out, background-color 0.3s ease;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.control-panel.visible {
+  right: 0;
+}
+
+/* 控制面板滚动条美化 - 仅保留基础样式 */
+.control-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 保留滚动条的通用样式，但移除颜色信息 */
+.control-panel::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  /* 颜色在themes.css中定义 */
+}
+
+/* 面板标题 */
+.control-panel h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--color-text-emphasis);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+}
+/* 面板分区 */
+.control-panel-section {
+  margin-bottom: 20px;
+}
+
+/* 会话选择器容器优化 */
+.session-selector-container {
+  margin-bottom: 20px;
+}
+
+.session-selector-container label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* 视图切换样式 */
+.control-panel .view-mode {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.control-panel .view-mode button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.control-panel .view-mode button.active {
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);
+  font-weight: bold;
+}
+
+/* 会话选择器容器 */
+.session-selector-container {
+  margin-bottom: 15px;
+}
+
+.session-selector-container label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.session-selector-container select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+/* 筛选面板调整 */
+.control-panel .filters-panel {
+  padding: 15px;
+  border-top: 1px solid var(--color-border);
+}
+
+.control-panel .filters-panel h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+/* 修改选项样式以适应新布局 */
+.control-panel .filter-section {
+  margin-bottom: 15px;
+}
+
+.control-panel .filter-section h3 {
+  font-size: 14px;
+  margin: 10px 0 8px;
+}
+
+.control-panel .filter-option {
+  margin-bottom: 6px;
+}
+
+/* 在小屏幕上调整控制面板 */
+@media (max-width: 768px) {
+  .control-panel {
+    width: 260px;
+  }
 }

@@ -57,19 +57,33 @@ export interface D3TreeLink {
   target: D3TreeNode;  // 目标节点对象
 }
 
-// 定义可视化器接口
+/**
+ * 导航可视化器接口
+ */
 export interface Visualizer {
-  nodeMap?: Map<string, NavNode>;
-  svg?: any; 
-  zoom?: any;
-  showNodeDetails?: (node: NavNode) => void;
-  isTrackingPage?: (node: NavNode) => boolean;
-  _isRestoringTransform?: boolean;
-  container?: HTMLElement | any;
-  tabId?: string;
+  // 原有的基本属性和方法
+  
+  // 状态栏相关
+  statusBar?: HTMLElement;
+  
+  // 视图相关
   currentView?: string;
-  currentSession?: any;
-  _savedTransform?: {x: number, y: number, k: number};
-  switchToTimelineView?: () => void;
-  [key: string]: any; // 允许其他属性
+  currentTransform?: {x: number, y: number, k: number};
+  svg?: any;
+  zoom?: any;
+  container?: HTMLElement | any;
+
+  // 会话相关
+  currentSession?: {startTime: number};
+  
+  // 其他必要属性
+  tabId?: string;
+  width?: number;
+  height?: number;
+  
+  // 常用方法
+  renderVisualization(): void;
+  showNodeDetails(data: any): void;
+  switchView(viewName: string): void;
+  updateStatusBar(): void;
 }

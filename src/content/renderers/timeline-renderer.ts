@@ -15,9 +15,7 @@ import {
 // 合并导入，避免重复
 import { 
   saveViewState, 
-  getViewState, 
-  setupZoomHandling, 
-  updateStatusBar 
+  getViewState
 } from '../utils/state-manager.js';
 
 // 扩展NavNode类型以包含渲染坐标
@@ -282,16 +280,20 @@ export function renderTimelineLayout(
   console.log('使用模块化时间线渲染器');
   
   try {
-    // 先尝试恢复保存的缩放状态
+    // 获取特定视图类型的状态 - 不再使用临时标志
     const tabId = visualizer.tabId || '';
-    const savedState = getViewState(tabId);
+    const savedState = getViewState(tabId, 'timeline');
+    let shouldRestoreTransform = false;
+    let transformToRestore = null;
     
-    if (savedState && savedState.transform && !visualizer._isRestoringTransform) {
-      console.log('检测到保存的变换状态:', savedState.transform);
-      visualizer._isRestoringTransform = true;
-      
-      // 将状态保存到可视化器，在渲染后应用
-      visualizer._savedTransform = savedState.transform;
+    // 检查保存的状态是否有效 - 不再设置_isRestoringTransform标志
+    if (savedState && savedState.transform) {
+      const { x, y, k } = savedState.transform;
+      if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
+        console.log('检测到保存的时间线状态:', savedState.transform);
+        shouldRestoreTransform = true;
+        transformToRestore = savedState.transform;
+      }
     }
     
     // 清除现有内容
@@ -589,6 +591,8 @@ export function renderTimelineLayout(
       const timeRangeInfo = { minTime, maxTime };
       const dimensionsInfo = { width, height };
       
+      let saveStateTimeout: NodeJS.Timeout;
+      
       // 创建缩放处理函数
       const zoomHandler = function(event: d3.D3ZoomEvent<SVGElement, unknown>) {
         if (!event || !event.transform) return;
@@ -620,24 +624,26 @@ export function renderTimelineLayout(
         } else {
           mainGroup.selectAll('text').style('display', null);
         }
-        
-        // 5. 保存当前变换状态
-        if (visualizer && !visualizer._isRestoringTransform) {
-          // 在保存前进行安全检查
-          const safeTransform = {
-            x: Math.max(-width * 2, Math.min(event.transform.x, width * 2)),
-            y: Math.max(-height * 2, Math.min(event.transform.y, height * 2)),
-            k: Math.max(0.1, Math.min(event.transform.k, 8))
-          };
-          
-          // 只在变换合理时保存
-          if (Math.abs(safeTransform.x) < width * 2 && 
-              Math.abs(safeTransform.y) < height * 2) {
-            saveViewState(visualizer.tabId || '', { transform: safeTransform });
-          } else {
-            console.warn('变换超出合理范围，跳过保存');
+        // 保存变换状态并更新状态栏
+        visualizer.currentTransform = event.transform;
+        visualizer.updateStatusBar();
+
+        // 5. 使用视图特定的方式保存状态 - 添加防抖处理
+        clearTimeout(saveStateTimeout);
+        saveStateTimeout = setTimeout(() => {
+          // 安全检查
+          if (Math.abs(event.transform.x) < width * 2 && 
+              Math.abs(event.transform.y) < height * 2) {
+            saveViewState(visualizer.tabId || '', {
+              viewType: 'timeline',
+              transform: {
+                x: event.transform.x,
+                y: event.transform.y,
+                k: event.transform.k
+              }
+            });
           }
-        }
+        }, 300); // 延迟300毫秒保存
       };
     
       // 创建缩放行为
@@ -654,7 +660,7 @@ export function renderTimelineLayout(
     } catch (error) {
       console.error('设置时间线缩放失败:', error);
     }    
-    // 恢复保存的变换状态或应用默认缩放
+    // 修改变换恢复/应用逻辑
     setTimeout(() => {
       try {
         // 获取DOM引用
@@ -664,20 +670,12 @@ export function renderTimelineLayout(
         const timeRangeInfo = { minTime, maxTime };
         const dimensionsInfo = { width, height };
             
-        // 如果有保存的变换状态，应用它
-        if (visualizer._isRestoringTransform && visualizer._savedTransform) {
-          const { x, y, k } = visualizer._savedTransform;
-          // 检查变换的每个组成部分是否有效
-          if (!isFinite(x) || !isFinite(y) || !isFinite(k)) {
-            console.warn('保存的变换包含无效值，使用默认变换');
-            visualizer._isRestoringTransform = false;
-            return; // 跳过应用无效变换，改用默认变换
-          }
+        // 如果有有效的保存状态，应用它 - 不再使用临时标志
+        if (shouldRestoreTransform && transformToRestore) {
+          const { x, y, k } = transformToRestore;
           
-          // 限制缩放范围
+          // 限制缩放和平移范围
           const validK = Math.max(0.1, Math.min(k, 8));
-          
-          // 限制平移范围
           const validX = Math.max(-width * 2, Math.min(x, width * 2));
           const validY = Math.max(-height * 2, Math.min(y, height * 2));
           
@@ -686,13 +684,14 @@ export function renderTimelineLayout(
             .scale(validK);
           
           if (visualizer.zoom) {
-            console.log('恢复保存的变换状态:', visualizer._savedTransform);
+            console.log('恢复时间线保存的变换状态:', transformToRestore);
             svg.call(visualizer.zoom.transform, transform);
             // 立即触发时间轴更新
             updateTimeAxis(transform, timeAxisGroup, mainGroup, timeRangeInfo, dimensionsInfo);
             
-            // 清除标记
-            visualizer._isRestoringTransform = false;
+            // 更新状态栏
+            visualizer.currentTransform = transform;
+            visualizer.updateStatusBar();
             
             return; // 跳过自动居中
           }
@@ -740,8 +739,8 @@ export function renderTimelineLayout(
     }, 100);
     
     // 为缩放状态同步准备变量
-    visualizer.timeScale = timeScale;
-    visualizer.timeAxisGroup = timeAxisGroup;
+    //visualizer.timeScale = timeScale;
+    //visualizer.timeAxisGroup = timeAxisGroup;
     
   } catch (err) {
     console.error('时间线渲染过程中出错:', err);

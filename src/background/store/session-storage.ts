@@ -109,51 +109,38 @@ export class SessionStorage {
           sessions = sessions.filter(session => session.isActive);
         }
         
-        // 应用其他过滤条件
-        if (options.filter) {
-          const filter = options.filter;
-          
-          if (filter.startAfter !== undefined) {
-            sessions = sessions.filter(s => s.startTime >= (filter.startAfter || 0));
-          }
-          
-          if (filter.startBefore !== undefined) {
-            sessions = sessions.filter(s => s.startTime <= (filter.startBefore || Date.now()));
-          }
-          
-          if (filter.endAfter !== undefined) {
-            sessions = sessions.filter(s => !s.endTime || s.endTime >= (filter.endAfter || 0));
-          }
-          
-          if (filter.endBefore !== undefined) {
-            sessions = sessions.filter(s => s.endTime && s.endTime <= (filter.endBefore || Date.now()));
-          }
-          
-          if (filter.title) {
-            const titleLower = filter.title.toLowerCase();
-            sessions = sessions.filter(s => s.title.toLowerCase().includes(titleLower));
-          }
-          
-          if (filter.tags && filter.tags.length > 0) {
-            sessions = sessions.filter(s => {
-              const sessionTags = s.metadata?.tags || [];
-              return filter.tags!.some(tag => sessionTags.includes(tag));
-            });
-          }
-          
-          if (filter.category) {
-            sessions = sessions.filter(s => s.metadata?.category === filter.category);
-          }
+        // 日期范围过滤
+        if (options.fromDate !== undefined) {
+          sessions = sessions.filter(s => s.startTime >= options.fromDate!);
+        }
+        
+        if (options.toDate !== undefined) {
+          sessions = sessions.filter(s => s.startTime <= options.toDate!);
+        }
+        
+        // 搜索过滤
+        if (options.search) {
+          const searchLower = options.search.toLowerCase();
+          sessions = sessions.filter(s => 
+            s.title.toLowerCase().includes(searchLower) || 
+            s.description?.toLowerCase().includes(searchLower)
+          );
         }
         
         // 应用排序
         if (options.sortBy) {
           const sortField = options.sortBy;
-          const direction = options.sortDirection === 'desc' ? -1 : 1;
+          const direction = options.sortOrder === 'desc' ? -1 : 1;
           
           sessions.sort((a, b) => {
-            const aValue = a[sortField];
-            const bValue = b[sortField];
+            let aValue = a[sortField as keyof BrowsingSession];
+            let bValue = b[sortField as keyof BrowsingSession];
+            
+            // 特别处理日期字段，确保是数值
+            if (sortField === 'startTime' || sortField === 'endTime' || sortField === 'lastActivity') {
+              aValue = typeof aValue === 'number' ? aValue : 0;
+              bValue = typeof bValue === 'number' ? bValue : 0;
+            }
             
             // 处理可能的undefined值
             if (aValue === undefined && bValue === undefined) return 0;
@@ -169,8 +156,13 @@ export class SessionStorage {
           sessions.sort((a, b) => b.startTime - a.startTime);
         }
         
+        // 应用分页
+        if (options.offset !== undefined && options.offset > 0) {
+          sessions = sessions.slice(options.offset);
+        }
+        
         // 应用限制
-        if (options.limit && options.limit > 0) {
+        if (options.limit !== undefined && options.limit > 0) {
           sessions = sessions.slice(0, options.limit);
         }
       }
@@ -500,10 +492,17 @@ export class SessionStorage {
       }
       
       // 应用更新
-      Object.assign(session, updates);
+
+      const updateSession = {
+        ...session,
+        ...updates,
+        // 如果提供了lastActivity，使用它
+        lastActivity: updates.lastActivity !== undefined ? 
+          updates.lastActivity : (session.lastActivity || session.startTime)
+      };
       
       // 保存会话
-      await this.saveSession(session);
+      await this.saveSession(updateSession);
       
       console.log(`已更新会话 ${sessionId} 的属性`);
       return session;
