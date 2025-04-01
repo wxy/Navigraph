@@ -95,6 +95,13 @@ export function renderTreeLayout(
         } else {
           nodesGroup.selectAll('text').style('display', null);
         }
+        // 实时更新状态栏显示缩放比例
+        if (visualizer) {
+          // 保存当前变换状态
+          //visualizer.currentTransform = event.transform;
+          // 更新状态栏
+          updateStatusBar(visualizer);
+        }
       };
       
       // 创建新的缩放行为
@@ -415,14 +422,14 @@ export function renderTreeLayout(
           .text('请尝试使用时间线视图或筛选节点以解决问题');
           
         // 如果visualizer可用，建议切换视图
-        if (visualizer && typeof visualizer.switchToTimelineView === 'function') {
+        if (visualizer && typeof visualizer.switchView === 'function') {
           svg.append('text')
             .attr('x', width / 2)
             .attr('y', height / 2 + 30)
             .attr('class', 'error-action')
             .text('点击此处切换到时间线视图')
             .on('click', () => {
-              visualizer.switchView('tree');
+              visualizer.switchView('timeline');
             });
         }
       } else {

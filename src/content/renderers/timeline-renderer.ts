@@ -620,7 +620,12 @@ export function renderTimelineLayout(
         } else {
           mainGroup.selectAll('text').style('display', null);
         }
-        
+        // 保存变换状态并更新状态栏
+        if (visualizer) {
+          // 保存当前变换到visualizer对象
+          // visualizer.currentTransform = event.transform;
+          updateStatusBar(visualizer);
+        }
         // 5. 保存当前变换状态
         if (visualizer && !visualizer._isRestoringTransform) {
           // 在保存前进行安全检查
@@ -740,8 +745,8 @@ export function renderTimelineLayout(
     }, 100);
     
     // 为缩放状态同步准备变量
-    visualizer.timeScale = timeScale;
-    visualizer.timeAxisGroup = timeAxisGroup;
+    //visualizer.timeScale = timeScale;
+    //visualizer.timeAxisGroup = timeAxisGroup;
     
   } catch (err) {
     console.error('时间线渲染过程中出错:', err);

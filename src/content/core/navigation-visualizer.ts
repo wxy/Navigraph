@@ -1,19 +1,18 @@
 /**
  * 导航图谱可视化器核心类
- * 替代 index-old.js 中的 NavigationVisualizer 类
  */
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
 import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
-import type { NavNode, NavLink } from '../types/navigation.js';
+import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
 import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
 import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
+import { initStatusBar, updateStatusBar } from '../utils/state-manager.js';
 
-
-export class NavigationVisualizer {
+export class NavigationVisualizer implements Visualizer {
   // 可视化容器
   container: HTMLElement | null = null;
   
@@ -54,10 +53,9 @@ export class NavigationVisualizer {
   // 其他属性
   width: number = 0;
   height: number = 0;
-  currentSession: SessionDetails | null = null;
+  currentSession?: SessionDetails = undefined; // 修改为可选属性，与Visualizer接口匹配
   noData: HTMLElement | null = null;
-  statusBar: HTMLElement | null = null;
-  timelineSvg: any = null;
+  statusBar?: HTMLElement; // 修改为可选属性，与Visualizer接口匹配
   
   private trackingKeywords = [
     '/track/', '/pixel/', '/analytics/', '/beacon/', '/telemetry/', 
@@ -164,7 +162,7 @@ export class NavigationVisualizer {
     await this.initializeControlPanel();
     
     // 初始化状态栏
-    await this.initializeStatusBar();
+    initStatusBar(this);
     
     // 添加窗口大小调整监听器
     window.addEventListener('resize', () => this.updateContainerSize());
@@ -762,7 +760,7 @@ export class NavigationVisualizer {
       this.updateUrl();
 
       // 更新状态栏
-      this.updateStatusBar();
+      updateStatusBar(this);
       
       console.log('可视化刷新完成');
     } catch (error) {
@@ -911,7 +909,7 @@ export class NavigationVisualizer {
     this.updateSessionSelector();
     
     // 更新状态栏
-    this.updateStatusBar();
+    updateStatusBar(this);
     
     // 隐藏控制面板（如果可见）
     const controlPanel = document.getElementById('control-panel');
@@ -1319,91 +1317,6 @@ export class NavigationVisualizer {
   }
   
   /**
-   * 更新状态栏
-   */
-  updateStatusBar() {
-    if (!this.statusBar || !this.currentSession) return;
-    
-    try {
-      // 计算关键统计数据
-      const totalNodes = this.nodes.length;
-      
-      // 过滤的节点数量
-      const filteredCount = this.allNodes ? this.allNodes.length - this.nodes.length : 0;
-      
-      // 计算会话时长
-      let sessionDuration = 0;
-      if (this.currentSession.startTime) {
-        const endTime = this.currentSession.endTime || Date.now();
-        sessionDuration = Math.floor((endTime - this.currentSession.startTime) / 60000); // 分钟
-      }
-      
-      // 获取当前视图类型的显示名称
-      const viewName = this.currentView === 'tree' ? '树形图' : '时间线';
-  
-      // 获取当前缩放比例
-      let zoomLevel = 1.0;
-      if (this.zoom) {
-        if (this._savedTransform && this._savedTransform.k) {
-          zoomLevel = this._savedTransform.k;
-        } else if (this.svg) {
-          const transform = window.d3.zoomTransform(this.svg.node());
-          if (transform) {
-            zoomLevel = transform.k;
-          }
-        }
-      }
-      
-      // 格式化缩放级别，保留两位小数
-      const formattedZoom = zoomLevel.toFixed(2);
-      
-      // 格式化会话日期
-      const sessionDate = this.currentSession.startTime ? 
-        new Date(this.currentSession.startTime).toLocaleDateString() : '未知';
-  
-      // 定义简化后的状态项
-      const statusUpdates = {
-        'status-date': `会话日期: ${sessionDate}`,
-        'status-duration': `时长: ${sessionDuration}分钟`,
-        'status-nodes': `节点: ${totalNodes}`,
-        'status-filtered': `已隐藏: ${filteredCount}`,
-        'status-view': `视图: ${viewName}`,
-        'status-zoom': `缩放: ${formattedZoom}x`
-      };
-      
-      // 批量更新状态栏
-      this.updateStatusElements(statusUpdates);
-      
-    } catch (error) {
-      console.error('更新状态栏失败:', error);
-      // 简化错误信息
-      this.updateStatusElement('status-view', '状态更新失败');
-    }
-  }
-
-  /**
-   * 批量更新状态元素
-   * @param updates 要更新的元素ID和文本内容的键值对
-   */
-  private updateStatusElements(updates: Record<string, string>): void {
-    for (const [id, text] of Object.entries(updates)) {
-      this.updateStatusElement(id, text);
-    }
-  }
-
-  /**
-   * 更新单个状态元素
-   * @param id 元素ID
-   * @param text 要设置的文本内容
-   */
-  private updateStatusElement(id: string, text: string): void {
-    const element = document.getElementById(id);
-    if (element) {
-      element.textContent = text;
-    }
-  }
-  
-  /**
    * 显示无数据状态
    */
   showNoData(message: string = '暂无数据') {
@@ -1752,36 +1665,6 @@ export class NavigationVisualizer {
     if (title) {
       handle.addEventListener('mousedown', onDragStart);
     }
-  }
-
-  /**
-   * 初始化状态栏
-   */
-  private async initializeStatusBar(): Promise<void> {
-    console.log('初始化状态栏...');
-    
-    // 获取状态栏元素
-    this.statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
-    
-    if (!this.statusBar) {
-      console.warn('未找到状态栏元素');
-      return;
-    }
-    
-    // 设置初始状态
-    const initialStatus: Record<string, string> = {
-      'status-date': '会话日期: --',
-      'status-duration': '时长: 0分钟',
-      'status-nodes': '节点: 0',
-      'status-filtered': '已隐藏: 0',
-      'status-view': `视图: ${this.currentView === 'tree' ? '树形图' : '时间线'}`,
-      'status-zoom': '缩放: 1.00x'
-    };
-    
-    // 应用初始状态
-    this.updateStatusElements(initialStatus);
-    
-    console.log('状态栏初始化完成');
   }
 
   /**
