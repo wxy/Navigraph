@@ -85,8 +85,6 @@ export class BackgroundSessionManager {
       // 注册监听器
       await this.setupListeners();
 
-      await this.loadActiveSessions();
-
       // 先加载活跃会话，确保currentSessionId已设置
       await this.loadActiveSessions();
 
@@ -174,63 +172,6 @@ export class BackgroundSessionManager {
   }
 
   /**
-   * 检查会话切换
-   * 改进版：综合考虑工作日和空闲时长
-   */
-  public async checkSessionTransition(): Promise<void> {
-    try {
-      await this.ensureInitialized();
-      
-      // 获取当前活跃会话
-      const currentSession = await this.getCurrentSession();
-      if (!currentSession) {
-        console.log("没有活跃会话，创建新会话A");
-        await this.createDailySession();
-        return;
-      }
-      
-      // 检查是否超过最大空闲时长
-      const idleTimeout = this.getIdleTimeout();
-      const now = Date.now();
-      const idleTime = now - this.lastActivityTime;
-      
-      if (idleTime > idleTimeout) {
-        console.log(`空闲时间(${Math.round(idleTime / (60 * 1000)) / 60}小时)已超过阈值(${this.idleTimeoutMinutes / 60}小时)，创建新会话`);
-
-        await this.endSession(currentSession.id);
-        await this.createDailySession();
-        return;
-      }
-      
-      // 检查工作日变更 - 只有在有足够空闲时间时才创建新会话
-      // 这样即使跨越了午夜，只要用户持续活跃，仍然使用原会话
-      try {
-        // 获取会话的日期和当前日期
-        const sessionDate = new Date(currentSession.startTime);
-        const nowDate = new Date();
-        
-        // 计算会话日期和当前日期的工作日
-        const sessionWorkDay = this.getWorkDayIdentifier(sessionDate);
-        const currentWorkDay = this.getWorkDayIdentifier(nowDate);
-        
-        // 获取最小空闲时间阈值（例如2小时 = 7,200,000 ms）
-        const minIdleForNewDay = 2 * 60 * 60 * 1000; 
-        
-        // 如果工作日发生变化且空闲时间超过阈值
-        if (sessionWorkDay !== currentWorkDay && idleTime > minIdleForNewDay) {
-          console.log(`检测到新工作日且空闲足够长(${idleTime}ms)，创建新会话`);
-          await this.endSession(currentSession.id);
-          await this.createDailySession();
-        }
-      } catch (error) {
-        console.error("工作日检查失败:", error);
-      }
-    } catch (error) {
-      console.error("会话切换检查失败:", error);
-    }
-  }
-
-  /**
    * 获取工作日标识符
    * 以标准年月日格式作为工作日标识
    */
@@ -283,14 +224,6 @@ export class BackgroundSessionManager {
       console.error("日期转换检查失败:", error);
     }
   }
-  /**
-   * 获取空闲超时时间
-   * @returns 空闲超时时间，以毫秒为单位
-   */
-  private getIdleTimeout(): number {
-    // 将分钟转换为毫秒
-    return this.idleTimeoutMinutes * 60 * 1000;
-  }
 
   /**
    * 创建每日会话
@@ -311,34 +244,6 @@ export class BackgroundSessionManager {
         date: now.getTime()
       }
     }, true);
-  }
-
-  /**
-   * 获取最新活跃会话
-   * 与getCurrentSession不同，此方法总是返回时间最新的活跃会话
-   */
-  public async getLatestActiveSession(): Promise<BrowsingSession | null> {
-    await this.ensureInitialized();
-    
-    try {
-      // 获取所有活跃会话
-      const sessions = await this.getSessions({
-        includeInactive: false,
-        sortBy: 'startTime',
-        sortOrder: 'desc',
-        limit: 1
-      });
-      
-      if (sessions.length === 0) {
-        return null;
-      }
-      
-      // 返回最新的会话
-      return sessions[0];
-    } catch (error) {
-      console.error('获取最新活跃会话失败:', error);
-      return null;
-    }
   }
 
   /**
