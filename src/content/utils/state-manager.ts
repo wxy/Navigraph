@@ -10,7 +10,7 @@ import { Visualizer } from '../types/navigation.js';
 
 // 状态类型定义
 export interface ViewState {
-  viewType?: string;
+  viewType: string;  // 'tree' | 'timeline'
   transform?: {
     x: number;
     y: number;
@@ -19,41 +19,66 @@ export interface ViewState {
   lastUpdated?: number;
 }
 
-// 存储缩放与视图类型状态
+/**
+ * 保存视图状态
+ * @param tabId 标签页ID
+ * @param state 视图状态
+ */
 export function saveViewState(tabId: string, state: ViewState): void {
   try {
     const key = `nav_view_state_${tabId}`;
-    const currentState = getViewState(tabId) || {};
+    const allStates = getAllViewStates(tabId) || {};
     
-    // 合并新状态
-    const newState = {
-      ...currentState,
+    // 获取视图类型，默认为'tree'
+    const viewType = state.viewType || 'tree';
+    
+    // 更新特定视图类型的状态
+    allStates[viewType] = {
+      ...allStates[viewType],
       ...state,
       lastUpdated: Date.now()
     };
     
-    // 保存到本地存储
-    localStorage.setItem(key, JSON.stringify(newState));
-    //console.log('保存当前变换状态:', newState);
+    // 保存所有视图状态
+    localStorage.setItem(key, JSON.stringify(allStates));
+    console.log(`已保存${viewType}视图状态:`, state);
   } catch (err) {
     console.warn('保存视图状态失败:', err);
   }
 }
 
-// 获取保存的视图状态
-export function getViewState(tabId: string): ViewState | null {
+/**
+ * 获取特定视图类型的状态
+ */
+export function getViewState(tabId: string, viewType: string = 'tree'): ViewState | null {
+  try {
+    const states = getAllViewStates(tabId);
+    if (states && states[viewType]) {
+      return states[viewType];
+    }
+    return null;
+  } catch (err) {
+    console.warn(`获取${viewType}视图状态失败:`, err);
+    return null;
+  }
+}
+
+/**
+ * 获取所有视图状态
+ */
+export function getAllViewStates(tabId: string): Record<string, ViewState> | null {
   try {
     const key = `nav_view_state_${tabId}`;
-    const savedState = localStorage.getItem(key);
+    const stateJson = localStorage.getItem(key);
     
-    if (savedState) {
-      return JSON.parse(savedState);
+    if (stateJson) {
+      return JSON.parse(stateJson);
     }
+    return null;
   } catch (err) {
-    console.warn('获取视图状态失败:', err);
+    console.warn('获取所有视图状态失败:', err);
+    return null;
   }
-  
-  return null;
 }
 
 // 清除保存的视图状态
@@ -68,7 +93,6 @@ export function clearViewState(tabId: string): void {
 
 /**
  * 设置缩放处理并添加状态保存
- * 可同时用于树形图和时间线渲染器
  */
 export function setupZoomHandling(
   visualizer: Visualizer, 
@@ -96,14 +120,13 @@ export function setupZoomHandling(
     
     // 尝试恢复保存的缩放状态
     const tabId = visualizer.tabId || '';
-    const savedState = getViewState(tabId);
+    const savedState = getViewState(tabId, visualizer.currentView || 'tree');
     
-    if (savedState && savedState.transform && !visualizer._isRestoringTransform) {
+    if (savedState && savedState.transform) {
       console.log('检测到保存的变换状态:', savedState.transform);
-      visualizer._isRestoringTransform = true;
       
-      // 将状态保存到可视化器，延迟应用
-      visualizer._savedTransform = savedState.transform;
+      // 改为使用简单的本地标记，不依赖visualizer属性
+      const isRestoringTransform = true;
       
       // 延迟应用保存的变换，确保DOM已完全渲染
       setTimeout(() => {
@@ -170,28 +193,21 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     console.log('应用保存的变换状态:', transform);
     visualizer.svg.call(visualizer.zoom.transform, d3Transform);
     
-    // 清除标记和临时状态
-    delete visualizer._isRestoringTransform;
-    delete visualizer._savedTransform;
+    // 不再需要清除临时标记
+    // delete visualizer._isRestoringTransform;
+    // delete visualizer._savedTransform;
     
     // 更新状态栏
     updateStatusBar(visualizer);
     
   } catch (err) {
     console.error('应用变换状态失败:', err);
-    // 清除错误状态
-    if (visualizer) {
-      delete visualizer._isRestoringTransform;
-      delete visualizer._savedTransform;
-    }
   }
 }
 
 // 防抖函数：避免频繁保存状态
 let saveStateTimeout: ReturnType<typeof setTimeout> | null = null;
 function debounceSaveState(transform: any, visualizer: Visualizer): void {
-  if (visualizer._isRestoringTransform) return; // 恢复过程中不保存
-  
   if (saveStateTimeout) {
     clearTimeout(saveStateTimeout);
     saveStateTimeout = null;
@@ -200,9 +216,8 @@ function debounceSaveState(transform: any, visualizer: Visualizer): void {
   saveStateTimeout = setTimeout(() => {
     const tabId = visualizer.tabId || '';
     
-    // 保存当前变换状态
     saveViewState(tabId, {
-      viewType: visualizer.currentView,
+      viewType: visualizer.currentView || 'tree',
       transform: {
         x: transform.x,
         y: transform.y,
@@ -634,12 +649,20 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
     initStatusBar(visualizer);
     
     // 恢复上次使用的视图类型
-    const savedState = getViewState(visualizer.tabId || '');
+    const savedState = getViewState(visualizer.tabId || '', visualizer.currentView || 'tree');
     if (savedState && savedState.viewType) {
-      switchViewType(visualizer, savedState.viewType);
+      if (typeof visualizer.switchView === 'function') {
+        visualizer.switchView(savedState.viewType);
+      } else {
+        switchViewType(visualizer, savedState.viewType);
+      }
     } else {
       // 默认使用树形图视图
-      switchViewType(visualizer, 'tree');
+      if (typeof visualizer.switchView === 'function') {
+        visualizer.switchView('tree');
+      } else {
+        switchViewType(visualizer, 'tree');
+      }
     }
   } catch (err) {
     console.error('初始化视图工具栏失败:', err);

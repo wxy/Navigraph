@@ -162,7 +162,7 @@ export class NavigationVisualizer implements Visualizer {
     await this.initializeControlPanel();
     
     // 初始化状态栏
-    initStatusBar(this);
+    this.initStatusBar();
     
     // 添加窗口大小调整监听器
     window.addEventListener('resize', () => this.updateContainerSize());
@@ -171,6 +171,15 @@ export class NavigationVisualizer implements Visualizer {
     this.initDebugTools();
     
     console.log('UI组件初始化完成');
+  }
+
+  // 初始化状态栏
+  public initStatusBar(): void {
+    initStatusBar(this);
+  }
+  // 更新状态栏
+  public updateStatusBar(): void {
+    updateStatusBar(this);
   }
 
   /**
@@ -760,7 +769,7 @@ export class NavigationVisualizer implements Visualizer {
       this.updateUrl();
 
       // 更新状态栏
-      updateStatusBar(this);
+      this.updateStatusBar();
       
       console.log('可视化刷新完成');
     } catch (error) {
@@ -909,7 +918,7 @@ export class NavigationVisualizer implements Visualizer {
     this.updateSessionSelector();
     
     // 更新状态栏
-    updateStatusBar(this);
+    this.updateStatusBar();
     
     // 隐藏控制面板（如果可见）
     const controlPanel = document.getElementById('control-panel');

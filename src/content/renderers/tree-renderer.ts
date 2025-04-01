@@ -23,7 +23,7 @@ import {
 // 导入状态管理功能
 import { 
   saveViewState, 
-  updateStatusBar
+  getViewState
 } from '../utils/state-manager.js';
 
 const d3 = window.d3;
@@ -41,8 +41,28 @@ export function renderTreeLayout(
   visualizer: Visualizer
 ): void {
   console.log('使用模块化树形图渲染器');
-
+  
   try {
+    // 声明并初始化saveStateTimeout变量
+    let saveStateTimeout: ReturnType<typeof setTimeout> | null = null;
+    // 清除常见错误源
+    if (saveStateTimeout) clearTimeout(saveStateTimeout);
+    
+    // 获取特定视图类型的状态
+    const tabId = visualizer.tabId || '';
+    const savedState = getViewState(tabId, 'tree');
+    let shouldRestoreTransform = false;
+    let transformToRestore = null;
+    
+    if (savedState && savedState.transform) {
+      const { x, y, k } = savedState.transform;
+      if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
+        console.log('检测到保存的树形图状态:', savedState.transform);
+        shouldRestoreTransform = true;
+        transformToRestore = savedState.transform;
+      }
+    }
+
     // 规范化输入的链接数据
     const normalizedInputLinks = normalizeLinks(links);
     
@@ -79,8 +99,6 @@ export function renderTreeLayout(
       console.log('为树形图视图设置缩放行为');
       
       // 先清除旧的缩放事件
-      svg.on('.zoom', null);
-      
       // 获取DOM引用
       const mainGroup = svg.select('.main-group');
       const nodesGroup = mainGroup.select('.nodes-group');
@@ -98,9 +116,30 @@ export function renderTreeLayout(
         // 实时更新状态栏显示缩放比例
         if (visualizer) {
           // 保存当前变换状态
-          //visualizer.currentTransform = event.transform;
+          visualizer.currentTransform = event.transform;
+          
           // 更新状态栏
-          updateStatusBar(visualizer);
+          if (typeof visualizer.updateStatusBar === 'function') {
+            visualizer.updateStatusBar();
+          }
+          
+          // 添加防抖保存状态逻辑
+          if (saveStateTimeout) clearTimeout(saveStateTimeout);
+          saveStateTimeout = setTimeout(() => {
+            // 安全检查
+            if (Math.abs(event.transform.x) < width * 2 && 
+                Math.abs(event.transform.y) < height * 2) {
+              // 保存状态，明确指定为树形图视图
+              saveViewState(visualizer.tabId || '', {
+                viewType: 'tree',
+                transform: {
+                  x: event.transform.x,
+                  y: event.transform.y,
+                  k: event.transform.k
+                }
+              });
+            }
+          }, 300); // 延迟300毫秒保存，避免频繁保存
         }
       };
       
@@ -737,8 +776,20 @@ export function renderTreeLayout(
     if (visualizer.zoom) {
       // 确保清除任何旧的变换
       svg.selectAll('.main-group').attr('transform', null);
+      
+      // 尝试应用保存的变换
+      if (shouldRestoreTransform && transformToRestore) {
+        console.log('恢复树形图状态:', transformToRestore);
         
-      // 应用新变换
+        const transform = d3.zoomIdentity
+          .translate(transformToRestore.x, transformToRestore.y)
+          .scale(transformToRestore.k);
+        
+        svg.call(visualizer.zoom.transform, transform);
+        return; // 跳过应用默认初始变换
+      }
+      
+      // 否则应用默认初始变换
       console.log('应用树形图变换:', {
         translate: [centerX - treeWidth / 2, centerY - treeHeight / 2],
         scale: finalScaleFactor
@@ -746,7 +797,7 @@ export function renderTreeLayout(
       svg.call(visualizer.zoom.transform, initialTransform);
     }
     // 6. 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateStatusBar();
     
     // 7. 添加调试信息
     console.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeLinks.length);

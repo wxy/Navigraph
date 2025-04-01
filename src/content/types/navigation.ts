@@ -73,10 +73,6 @@ export interface Visualizer {
   zoom?: any;
   container?: HTMLElement | any;
 
-  _isRestoringTransform?: boolean;
-  _savedTransform?: {x: number, y: number, k: number};
-  _saveStateTimeout?: number;
-
   // 会话相关
   currentSession?: {startTime: number};
   
@@ -89,4 +85,5 @@ export interface Visualizer {
   renderVisualization(): void;
   showNodeDetails(data: any): void;
   switchView(viewName: string): void;
+  updateStatusBar(): void;
 }
