@@ -2,6 +2,8 @@
  * 导航图谱公共类型定义
  */
 
+import { SessionDetails } from './session.js';
+
 // 定义节点接口
 export interface NavNode {
   id: string;
@@ -74,12 +76,17 @@ export interface Visualizer {
   container?: HTMLElement | any;
 
   // 会话相关
-  currentSession?: {startTime: number};
+  currentSession?: SessionDetails
   
+  // 节点和边数据
+  nodes?: NavNode[];
+  edges?: NavLink[];
+
   // 其他必要属性
   tabId?: string;
   width?: number;
   height?: number;
+  filters?: any;
   
   // 常用方法
   renderVisualization(): void;

@@ -1,7 +1,7 @@
 /**
  * 主要的后台脚本，负责初始化和协调各个组件
  */
-import { Logger, LogLevel } from '../lib/utils/logger.js';
+import { Logger } from '../lib/utils/logger.js';
 import { NavigationManager } from './navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';

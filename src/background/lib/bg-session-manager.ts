@@ -1182,7 +1182,7 @@ export class BackgroundSessionManager {
   public registerMessageHandlers(
     messageService: BackgroundMessageService
   ): void {
-    logger.log("注册会话相关消息处理程序");
+    logger.groupCollapsed("注册会话相关消息处理程序");
 
     // 获取会话列表
     messageService.registerHandler(
@@ -1484,6 +1484,7 @@ export class BackgroundSessionManager {
         return false; // 同步响应
       }
     );
+    logger.groupEnd();
   }
 }
 

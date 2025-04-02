@@ -393,7 +393,7 @@ export class NavigationVisualizer implements Visualizer {
    * 初始化筛选器
    */
   private async initializeFilters(): Promise<void> {
-    logger.log('初始化筛选器...');
+    logger.groupCollapsed('初始化筛选器...');
     
     // 为每个筛选器配置绑定事件处理
     this.filterConfigs.forEach(config => {
@@ -414,7 +414,7 @@ export class NavigationVisualizer implements Visualizer {
       }
     });
     
-    logger.log('筛选器初始化完成');
+    logger.groupEnd();
   }
 
   /**
@@ -542,7 +542,7 @@ export class NavigationVisualizer implements Visualizer {
    * 初始化消息监听
    */
   private initMessageListener(): void {
-    logger.log('初始化可视化器消息监听...');
+    logger.groupCollapsed('初始化可视化器消息监听...');
     
     // 使用已导入的 registerHandler 函数
     // 避免每次都动态导入
@@ -686,29 +686,32 @@ export class NavigationVisualizer implements Visualizer {
       return false;
     });
     
-    logger.log('消息监听器初始化完成');
+    logger.groupEnd();
   }
   /**
    * 清理资源
    * 在可视化器销毁或者组件卸载时调用
    */
   cleanup(): void {
-    logger.log('清理可视化器资源...');
+    logger.groupCollapsed('清理可视化器资源...');
     
     // 取消注册消息处理函数
-    unregisterHandler('refreshVisualization');
-    unregisterHandler('debug');
+    unregisterHandler('getNodeId');
+    unregisterHandler('pageLoaded');
+    unregisterHandler('pageTitleUpdated');
+    unregisterHandler('faviconUpdated');
     unregisterHandler('pageActivity');
     unregisterHandler('linkClicked');
-    unregisterHandler('getNodeId');
-    unregisterHandler('faviconUpdated');
-    unregisterHandler('pageLoaded');
+    unregisterHandler('formSubmitted');
+    unregisterHandler('jsNavigation');
+    unregisterHandler('getNavigationTree');
+    unregisterHandler('clearAllRecords');
   
     // 移除事件监听器
     window.removeEventListener('resize', () => this.updateContainerSize());
     
     // 清理其他资源...
-    logger.log('可视化器资源清理完成');
+    logger.groupEnd;
   }
   /**
    * 触发刷新操作
