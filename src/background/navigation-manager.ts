@@ -88,10 +88,10 @@ export class NavigationManager {
     this.setupEventListeners();
 
     // 注册消息处理程序
-    logger.groupCollapsed('注册消息处理程序');
+    logger.groupCollapsed('注册导航相关消息处理程序');
     this.registerMessageHandlers(messageService);
     logger.groupEnd();
-    
+
     logger.log("导航管理器已初始化");
   }
   /**
@@ -2251,80 +2251,6 @@ export class NavigationManager {
         logger.error('处理JS导航失败:', error);
         return ctx.error(`处理JS导航失败: ${error instanceof Error ? error.message : String(error)}`);
       }
-    });
-    
-    // 获取会话列表请求
-    service.registerHandler('getSessions', (
-      message: BackgroundMessages.GetSessionsRequest,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: BackgroundResponses.GetSessionsResponse) => void
-    ) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
-      
-      this.sessionStorage.getSessions()
-        .then(sessions => {
-          // 创建简化的会话摘要
-          const sessionSummaries = Array.isArray(sessions) ? sessions.map(session => ({
-            id: session.id,
-            title: session.title || session.id,
-            startTime: session.startTime,
-            endTime: session.endTime || 0,
-            recordCount: session.records ? Object.keys(session.records).length : 0
-          })) : [];
-          
-          return ctx.success({ sessions: sessionSummaries });
-        })
-        .catch(error => {
-          logger.error('获取会话列表失败:', error);
-          return ctx.error(String(error));
-        });
-      
-      return true; // 异步响应
-    });
-    
-    // 获取会话详情请求
-    service.registerHandler('getSessionDetails', (
-      message: BackgroundMessages.GetSessionDetailsRequest,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: BackgroundResponses.GetSessionDetailsResponse) => void
-    ) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
-      
-      if (!message.sessionId) {
-        return ctx.error('缺少会话ID参数');
-      }
-      
-      this.sessionStorage.getSession(message.sessionId)
-        .then(async session => {
-          if (!session) {
-            return ctx.error(`未找到会话: ${message.sessionId}`);
-          }
-          
-          // 获取导航图谱数据
-          try {
-            const graphData = await this.navigationStorage.getSessionGraph(message.sessionId);
-            
-            // 构造完整响应
-            const completeSession = {
-              ...session,              
-              // 添加完整节点和边数据
-              records: graphData.nodes,
-              edges: graphData.edges
-            };
-            
-            return ctx.success({ session: completeSession });
-          } catch (error) {
-            logger.error(`获取会话 ${message.sessionId} 的节点和边数据失败:`, error);
-            // 如果图谱数据获取失败，仍然返回基本会话信息
-            return ctx.success({ session });
-          }
-        })
-        .catch(error => {
-          logger.error('获取会话详情失败:', error);
-          return ctx.error(String(error));
-        });
-      
-      return true; // 异步响应
     });
     
     // 获取导航树请求
