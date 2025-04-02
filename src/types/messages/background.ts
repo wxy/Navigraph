@@ -194,26 +194,6 @@ export namespace BackgroundMessages {
   }
 
   /**
-   * 获取导航树请求
-   */
-  export interface GetNavigationTreeRequest extends BaseMessage {
-    action: 'getNavigationTree';
-    target: 'background';
-    options?: {
-      lastUpdate?: string;
-      [key: string]: any;
-    };
-  }
-
-  /**
-   * 清除所有记录请求
-   */
-  export interface ClearAllRecordsRequest extends BaseMessage {
-    action: 'clearAllRecords';
-    target: 'background';
-  }
-
-  /**
    * 创建会话请求
    */
   export interface CreateSessionRequest extends BaseMessage {
@@ -409,25 +389,6 @@ export namespace BackgroundResponses {
   }
 
   /**
-   * 获取导航树响应
-   */
-  export interface GetNavigationTreeResponse extends BaseResponse {
-    data: {
-      nodes: any[];
-      edges: any[];
-    };
-    sessionId: string;
-    timestamp: number;
-  }
-
-  /**
-   * 清除所有记录响应
-   */
-  export interface ClearAllRecordsResponse extends BaseResponse {
-    // 基本的成功/失败信息已包含在BaseResponse中
-  }
-
-  /**
    * 创建会话响应
    */
   export interface CreateSessionResponse extends BaseResponse {
@@ -577,16 +538,6 @@ export interface BackgroundAPI {
     response: BackgroundResponses.GetSessionDetailsResponse;
   };
 
-  getNavigationTree: {
-    request: BackgroundMessages.GetNavigationTreeRequest;
-    response: BackgroundResponses.GetNavigationTreeResponse;
-  };
-
-  clearAllRecords: {
-    request: BackgroundMessages.ClearAllRecordsRequest;
-    response: BackgroundResponses.ClearAllRecordsResponse;
-  };
-
   createSession: {
     request: BackgroundMessages.CreateSessionRequest;
     response: BackgroundResponses.CreateSessionResponse;
@@ -640,15 +591,12 @@ export type BackgroundRequest =
   | BackgroundMessages.GetSettingsRequest
   | BackgroundMessages.PageLoadedRequest
   | BackgroundMessages.PageTitleUpdatedRequest
-  | BackgroundMessages.FaviconUpdatedRequest
   | BackgroundMessages.PageActivityRequest
   | BackgroundMessages.LinkClickedRequest
   | BackgroundMessages.FormSubmittedRequest
   | BackgroundMessages.GetHistoryRequest
   | BackgroundMessages.GetGraphDataRequest
   | BackgroundMessages.GetSessionDetailsRequest
-  | BackgroundMessages.GetNavigationTreeRequest
-  | BackgroundMessages.ClearAllRecordsRequest
   | BackgroundMessages.CreateSessionRequest
   | BackgroundMessages.UpdateSessionRequest
   | BackgroundMessages.EndSessionRequest
@@ -669,15 +617,12 @@ export type BackgroundResponse =
   | BackgroundResponses.GetSettingsResponse
   | BackgroundResponses.PageLoadedResponse
   | BackgroundResponses.PageTitleUpdatedResponse
-  | BackgroundResponses.FaviconUpdatedResponse
   | BackgroundResponses.PageActivityResponse
   | BackgroundResponses.LinkClickedResponse
   | BackgroundResponses.FormSubmittedResponse
   | BackgroundResponses.GetHistoryResponse
   | BackgroundResponses.GetGraphDataResponse
   | BackgroundResponses.GetSessionDetailsResponse
-  | BackgroundResponses.GetNavigationTreeResponse
-  | BackgroundResponses.ClearAllRecordsResponse
   | BackgroundResponses.CreateSessionResponse
   | BackgroundResponses.UpdateSessionResponse
   | BackgroundResponses.EndSessionResponse

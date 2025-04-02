@@ -704,8 +704,6 @@ export class NavigationVisualizer implements Visualizer {
     unregisterHandler('linkClicked');
     unregisterHandler('formSubmitted');
     unregisterHandler('jsNavigation');
-    unregisterHandler('getNavigationTree');
-    unregisterHandler('clearAllRecords');
   
     // 移除事件监听器
     window.removeEventListener('resize', () => this.updateContainerSize());
