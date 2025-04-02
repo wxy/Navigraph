@@ -88,8 +88,10 @@ export class NavigationManager {
     this.setupEventListeners();
 
     // 注册消息处理程序
+    logger.groupCollapsed('注册消息处理程序');
     this.registerMessageHandlers(messageService);
-
+    logger.groupEnd();
+    
     logger.log("导航管理器已初始化");
   }
   /**

@@ -2,7 +2,7 @@
  * 节点管理模块
  * 负责处理节点和边的数据转换与关系管理
  */
-// 使用全局类型定义，替代前端特定类型
+import { Logger } from '../../lib/utils/logger.js';
 import type { BrowsingSession, NavNode, NavLink } from '../../types/session-types.js';
 
 // 为方便代码迁移，定义类型别名
@@ -11,6 +11,7 @@ type SessionDetails = BrowsingSession;
 type NodeRecord = NavNode;
 type EdgeRecord = NavLink;
 
+const logger = new Logger('NodeManager');
 export class NodeManager {
   private nodes: NavNode[] = [];
   private edges: NavLink[] = [];
@@ -49,14 +50,14 @@ export class NodeManager {
   processSessionData(session: SessionDetails): void {
     if (!session) return;
     
-    console.log('开始处理会话数据...');
+    logger.log('开始处理会话数据...');
     
     try {
       // 记录存储
       const records = session.records || {};
       const recordIds = Object.keys(records);
       
-      console.log(`处理${recordIds.length}条记录`);
+      logger.log(`处理${recordIds.length}条记录`);
       
       // 转换为节点数组
       this.nodes = recordIds.map(id => this.processNavNode(records[id]));
@@ -71,7 +72,7 @@ export class NodeManager {
       const edgeMap = session.edges || {};
       const edgeIds = Object.keys(edgeMap);
       
-      console.log(`处理${edgeIds.length}条边`);
+      logger.log(`处理${edgeIds.length}条边`);
       
       // 转换为边数组
       this.edges = edgeIds.map(id => ({
@@ -86,11 +87,11 @@ export class NodeManager {
       // 添加基于重构的父子关系创建附加边
       this.enhanceEdgesFromParentChildRelationships();
       
-      console.log('会话数据处理完成');
-      console.log('节点:', this.nodes.length);
-      console.log('边:', this.edges.length);
+      logger.log('会话数据处理完成');
+      logger.log('节点:', this.nodes.length);
+      logger.log('边:', this.edges.length);
     } catch (error) {
-      console.error('处理会话数据失败:', error);
+      logger.error('处理会话数据失败:', error);
       this.nodes = [];
       this.edges = [];
       this.nodeMap.clear();
@@ -107,14 +108,14 @@ export class NodeManager {
         this.nodeMap.set(node.id, node);
       });
     }
-    console.log(`已建立${this.nodeMap.size}个节点的索引`);
+    logger.log(`已建立${this.nodeMap.size}个节点的索引`);
   }
 
   /**
    * 重建父子关系
    */
   private reconstructParentChildRelationships(): void {
-    console.log('开始重建父子关系...');
+    logger.log('开始重建父子关系...');
     
     // 创建节点ID映射，便于快速查找
     const nodesById: {[key: string]: NavNode} = {};
@@ -158,7 +159,7 @@ export class NodeManager {
       
       // 自循环检测 - 将自引用修正为根节点
       if (node.parentId === node.id) {
-        console.log(`节点 ${node.id} 是自循环，修正为根节点`);
+        logger.log(`节点 ${node.id} 是自循环，修正为根节点`);
         node.parentId = '';
         return;
       }
@@ -263,7 +264,7 @@ export class NodeManager {
       }
     });
     
-    console.log(`父子关系重建完成: ${assignedCount}/${this.nodes.length} 节点有父节点`);
+    logger.log(`父子关系重建完成: ${assignedCount}/${this.nodes.length} 节点有父节点`);
   }
   
   /**
@@ -275,7 +276,7 @@ export class NodeManager {
       const rootNodes = this.nodes.filter(node => !node.parentId);
       
       if (rootNodes.length === 0) {
-        console.warn('没有找到根节点，设置所有节点深度为0');
+        logger.warn('没有找到根节点，设置所有节点深度为0');
         this.nodes.forEach(node => {
           // 直接设置depth字段
           node.depth = 0;
@@ -290,7 +291,7 @@ export class NodeManager {
         this.calculateChildDepths(rootNode, 1);
       });
     } catch (error) {
-      console.error('计算节点深度失败:', error);
+      logger.error('计算节点深度失败:', error);
       // 出错时确保所有节点至少有深度值
       this.nodes.forEach(node => {
         if (typeof node.depth === 'undefined') {
@@ -360,7 +361,7 @@ export class NodeManager {
     });
     
     if (newEdges.length > 0) {
-      console.log(`添加了${newEdges.length}条生成的边`);
+      logger.log(`添加了${newEdges.length}条生成的边`);
       this.edges = [...this.edges, ...newEdges];
     }
   }
@@ -426,7 +427,7 @@ export class NodeManager {
         return hostname;
       }
     } catch (error) {
-      console.error('提取标题失败:', error);
+      logger.error('提取标题失败:', error);
       return url.substring(0, 30) || '未知页面';
     }
   }

@@ -14,7 +14,7 @@ import { getBackgroundSessionManager } from './lib/bg-session-manager.js';
 let settingsService: any;
 let navigationManager: NavigationManager;
 let messageService: ReturnType<typeof getBackgroundMessageService>; // 使用泛型而非具体类型
-const logger = new Logger('background');
+const logger = new Logger('Background');
 
 // 导出访问器函数，而不是直接导出实例
 export function getNavigationManager(): NavigationManager {

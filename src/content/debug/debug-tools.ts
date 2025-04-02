@@ -2,11 +2,12 @@
  * 导航图谱调试工具
  * 为开发者提供便捷的调试功能
  */
-
+import { Logger } from '../../lib/utils/logger.js';
 import type { Visualizer } from '../types/navigation.js';
 import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
 import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
 
+const logger = new Logger('DebugTools');
 
 /**
  * 调试工具类
@@ -25,7 +26,7 @@ export class DebugTools {
     // 检查URL调试参数
     this.checkUrlDebugParams();
     
-    console.log('调试工具已初始化');
+    logger.log('调试工具已初始化');
   }
   
   /**
@@ -34,7 +35,7 @@ export class DebugTools {
   private setupMessageListener(): void {
     // 使用新的处理程序注册方法
     registerHandler<BaseMessage, BaseResponse>('debug', (message: any, sender, sendResponse) => {
-      console.log('收到调试命令:', message.command);
+      logger.log('收到调试命令:', message.command);
       
       // 处理调试命令
       if (message.command) {
@@ -65,7 +66,7 @@ export class DebugTools {
         this.clearData();
         break;
       default:
-        console.warn('未知的调试命令:', command);
+        logger.warn('未知的调试命令:', command);
     }
   }
   
@@ -79,7 +80,7 @@ export class DebugTools {
       const debugCommand = urlParams.get('debug');
       
       if (debugCommand) {
-        console.log('检测到URL中的调试参数:', debugCommand);
+        logger.log('检测到URL中的调试参数:', debugCommand);
         
         // 延迟执行，确保页面已完全加载
         setTimeout(() => {
@@ -93,7 +94,7 @@ export class DebugTools {
         }, 800); // 稍微延长延迟，确保页面完全加载和可视化器初始化
       }
     } catch (error) {
-      console.error('处理URL调试参数失败:', error);
+      logger.error('处理URL调试参数失败:', error);
     }
   }
   
@@ -101,36 +102,36 @@ export class DebugTools {
    * 检查数据状态
    */
   public checkData(): void {
-    console.group('📊 数据状态检查');
+    logger.group('📊 数据状态检查');
     
     // 检查会话数据
-    console.log('当前会话:', this.visualizer.currentSession);
+    logger.log('当前会话:', this.visualizer.currentSession);
     if (this.visualizer.currentSession) {
-      console.log('会话ID:', this.visualizer.currentSession.id);
-      console.log('会话开始时间:', new Date(this.visualizer.currentSession.startTime).toLocaleString());
-      console.log('会话结束时间:', this.visualizer.currentSession.endTime ? 
+      logger.log('会话ID:', this.visualizer.currentSession.id);
+      logger.log('会话开始时间:', new Date(this.visualizer.currentSession.startTime).toLocaleString());
+      logger.log('会话结束时间:', this.visualizer.currentSession.endTime ? 
                  new Date(this.visualizer.currentSession.endTime).toLocaleString() : '活跃中');
     }
     
     // 检查节点和边
     const nodes = this.visualizer.nodes || [];
     const edges = this.visualizer.edges || [];
-    console.log('节点数量:', nodes.length);
-    console.log('边数量:', edges.length);
+    logger.log('节点数量:', nodes.length);
+    logger.log('边数量:', edges.length);
     
     // 样本数据
     if (nodes.length > 0) {
-      console.log('节点样本:', nodes.slice(0, 3));
+      logger.log('节点样本:', nodes.slice(0, 3));
     }
     
     if (edges.length > 0) {
-      console.log('边样本:', edges.slice(0, 3));
+      logger.log('边样本:', edges.slice(0, 3));
     }
     
     // 检查过滤器状态
-    console.log('过滤器状态:', this.visualizer.filters);
+    logger.log('过滤器状态:', this.visualizer.filters);
     
-    console.groupEnd();
+    logger.groupEnd();
     
     // 显示弹窗反馈
     const message = `
@@ -149,7 +150,7 @@ export class DebugTools {
    * 检查DOM状态
    */
   public checkDOM(): void {
-    console.group('🔍 DOM状态检查');
+    logger.group('🔍 DOM状态检查');
     
     // 检查关键元素
     const elements = [
@@ -163,33 +164,33 @@ export class DebugTools {
     
     elements.forEach(id => {
       const el = document.getElementById(id);
-      console.log(`${id}: ${el ? '✅ 找到' : '❌ 未找到'}`);
+      logger.log(`${id}: ${el ? '✅ 找到' : '❌ 未找到'}`);
       
       if (el) {
-        console.log(`- 可见性: ${getComputedStyle(el).display}`);
-        console.log(`- 尺寸: ${el.clientWidth}x${el.clientHeight}`);
+        logger.log(`- 可见性: ${getComputedStyle(el).display}`);
+        logger.log(`- 尺寸: ${el.clientWidth}x${el.clientHeight}`);
       }
     });
     
     // 检查可视化容器尺寸
     const container = document.getElementById('visualization-container');
     if (container) {
-      console.log('可视化容器样式:');
-      console.log('- width:', getComputedStyle(container).width);
-      console.log('- height:', getComputedStyle(container).height);
-      console.log('- position:', getComputedStyle(container).position);
-      console.log('- display:', getComputedStyle(container).display);
+      logger.log('可视化容器样式:');
+      logger.log('- width:', getComputedStyle(container).width);
+      logger.log('- height:', getComputedStyle(container).height);
+      logger.log('- position:', getComputedStyle(container).position);
+      logger.log('- display:', getComputedStyle(container).display);
     }
     
     // 检查SVG是否存在
     const svg = container?.querySelector('svg');
-    console.log('SVG元素:', svg ? '✅ 存在' : '❌ 不存在');
+    logger.log('SVG元素:', svg ? '✅ 存在' : '❌ 不存在');
     if (svg) {
-      console.log('- SVG尺寸:', svg.clientWidth, 'x', svg.clientHeight);
-      console.log('- SVG子元素数:', svg.childNodes.length);
+      logger.log('- SVG尺寸:', svg.clientWidth, 'x', svg.clientHeight);
+      logger.log('- SVG子元素数:', svg.childNodes.length);
     }
     
-    console.groupEnd();
+    logger.groupEnd();
     
     // 显示弹窗反馈
     const container_status = container ? 
@@ -236,7 +237,7 @@ export class DebugTools {
           throw new Error(response.error || '清除数据时发生未知错误');
         }
       } catch (error) {
-        console.error('发送清除数据消息失败:', error);
+        logger.error('发送清除数据消息失败:', error);
         throw error;
       }
       
@@ -247,7 +248,7 @@ export class DebugTools {
       
       alert('已成功清除所有数据，页面将重新加载...');
     } catch (error) {
-      console.error('清除数据失败:', error);
+      logger.error('清除数据失败:', error);
       alert('清除数据失败: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       // 隐藏加载状态

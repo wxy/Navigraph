@@ -1,6 +1,9 @@
 /**
  * 统一的ID生成器
  */
+import { Logger } from '../../lib/utils/logger.js';
+const logger = new Logger('IdGenerator');
+
 export class IdGenerator {
   /**
    * 生成标准化的节点ID

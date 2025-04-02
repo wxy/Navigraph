@@ -1,5 +1,7 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { BaseMessageService } from '../../lib/messaging/base-service.js';
 
+const logger = new Logger('BackgroundMessageService');
 /**
  * 后台消息服务类
  * 处理发送给后台的消息
@@ -30,7 +32,7 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
   protected initialize(): void {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
-    console.log('后台消息服务已初始化');
+    logger.log('后台消息服务已初始化');
   }
 }
 

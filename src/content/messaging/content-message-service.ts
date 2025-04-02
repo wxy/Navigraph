@@ -1,8 +1,11 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { BaseMessageService } from '../../lib/messaging/base-service.js';
 import { sendToBackground } from '../../lib/messaging/sender.js';
 import { createMessageContext } from '../../lib/messaging/handlers.js';
 // 导入现有的类型定义
 import { MessageHandler, BaseMessage, BaseResponse } from '../../types/messages/common.js';
+
+const logger = new Logger('ContentMessageService');
 
 /**
  * 内容脚本消息服务类
@@ -34,7 +37,7 @@ export class ContentMessageService extends BaseMessageService<"content"> {
   protected initialize(): void {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
-    console.log("内容脚本消息服务已初始化");
+    logger.log("内容脚本消息服务已初始化");
   }
 
   /**
@@ -75,7 +78,7 @@ export function getContentMessageService(): ContentMessageService {
  */
 export function setupMessageService(): ContentMessageService {
   const instance = getContentMessageService();
-  console.log('内容脚本消息服务已设置');
+  logger.log('内容脚本消息服务已设置');
   return instance;
 }
 

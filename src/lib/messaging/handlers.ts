@@ -1,5 +1,7 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { BaseResponse } from '../../types/messages/common.js';
 
+const logger = new Logger('MessageHandlers');
 /**
  * 创建成功响应
  * @param action 消息动作

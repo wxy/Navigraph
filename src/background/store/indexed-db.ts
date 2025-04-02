@@ -2,9 +2,9 @@
  * IndexedDB数据库访问封装
  * 提供对IndexedDB的低级封装，增强类型安全
  */
-
+import { Logger } from '../../lib/utils/logger.js';
 import { DatabaseSchema, StoreDefinition } from '../../types/storage-types.js';
-
+const logger = new Logger('IndexedDBStorage');
 /**
  * IndexedDB存储类
  * 提供对IndexedDB的低级访问
@@ -35,12 +35,12 @@ export class IndexedDBStorage {
         const request = indexedDB.open(this.schema.name, this.schema.version);
         
         request.onerror = (event) => {
-          console.error('打开数据库失败:', event);
+          logger.error('打开数据库失败:', event);
           reject(new Error('打开数据库失败'));
         };
         
         request.onupgradeneeded = (event) => {
-          console.log(`数据库升级: ${(event.oldVersion || 0)} -> ${this.schema.version}`);
+          logger.log(`数据库升级: ${(event.oldVersion || 0)} -> ${this.schema.version}`);
           const db = (event.target as IDBOpenDBRequest).result;
           
           // 升级数据库结构
@@ -49,16 +49,16 @@ export class IndexedDBStorage {
         
         request.onsuccess = (event) => {
           this.db = (event.target as IDBOpenDBRequest).result;
-          console.log(`数据库 ${this.schema.name} v${this.schema.version} 已打开`);
+          logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已打开`);
           
           this.db.onerror = (event) => {
-            console.error('数据库错误:', event);
+            logger.error('数据库错误:', event);
           };
           
           resolve(this.db);
         };
       } catch (error) {
-        console.error('初始化数据库失败:', error);
+        logger.error('初始化数据库失败:', error);
         reject(error);
       }
     });
@@ -71,7 +71,7 @@ export class IndexedDBStorage {
     if (this.db) {
       this.db.close();
       this.db = null;
-      console.log('数据库连接已关闭');
+      logger.log('数据库连接已关闭');
     }
   }
   
@@ -86,7 +86,7 @@ export class IndexedDBStorage {
       this.createStore(db, store);
     }
     
-    console.log('数据库结构升级完成');
+    logger.log('数据库结构升级完成');
   }
   
   /**
@@ -98,7 +98,7 @@ export class IndexedDBStorage {
     // 如果存储已存在，先删除
     if (db.objectStoreNames.contains(storeDefinition.name)) {
       db.deleteObjectStore(storeDefinition.name);
-      console.log(`删除已存在的存储: ${storeDefinition.name}`);
+      logger.log(`删除已存在的存储: ${storeDefinition.name}`);
     }
     
     // 创建存储
@@ -107,7 +107,7 @@ export class IndexedDBStorage {
       autoIncrement: storeDefinition.autoIncrement
     });
     
-    console.log(`创建存储: ${storeDefinition.name}`);
+    logger.log(`创建存储: ${storeDefinition.name}`);
     
     // 创建索引
     if (storeDefinition.indices) {
@@ -117,7 +117,7 @@ export class IndexedDBStorage {
           multiEntry: index.multiEntry || false
         });
         
-        console.log(`  创建索引: ${index.name}`);
+        logger.log(`  创建索引: ${index.name}`);
       }
     }
   }

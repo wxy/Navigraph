@@ -1,5 +1,7 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { sendToBackground } from '../../lib/messaging/sender.js';
 
+const logger = new Logger('ContentMessaging');
 /**
  * 向后台发送链接点击信息
  */

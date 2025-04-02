@@ -1,4 +1,7 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { NavigationManager } from '../navigation-manager.js';
+
+const logger = new Logger('ContextMenus');
 
 /**
  * 设置上下文菜单
@@ -48,7 +51,7 @@ function setupDebugContextMenu(): void {
       contexts: ['action']
     });
 
-    console.log('创建调试上下文菜单完成');
+    logger.log('创建调试上下文菜单完成');
   });
 }
 
@@ -85,7 +88,7 @@ function handleDebugMenuAction(command: string): void {
           },
           (response) => {
             if (chrome.runtime.lastError) {
-              console.warn('发送到已打开页面失败，打开新标签页:', chrome.runtime.lastError);
+              logger.warn('发送到已打开页面失败，打开新标签页:', chrome.runtime.lastError);
               // 新开一个标签页
               chrome.tabs.create({
                 url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${command}`
@@ -93,13 +96,13 @@ function handleDebugMenuAction(command: string): void {
               return;
             }
 
-            console.log('调试命令已发送到现有标签页:', response);
+            logger.log('调试命令已发送到现有标签页:', response);
             // 激活该标签页
             chrome.tabs.update(existingTabs[0].id!, { active: true });
           }
         );
       } catch (err) {
-        console.error('发送消息时出错:', err);
+        logger.error('发送消息时出错:', err);
         // 出错时创建新标签
         chrome.tabs.create({
           url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${command}`

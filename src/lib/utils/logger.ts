@@ -23,7 +23,8 @@ const config = {
   colorfulModules: true, // 为模块使用不同颜色
   useCompletion: true,   // 使用完成emoji
   showModulePath: false,  // 是否显示简短模块路径
-  maxPathSegments: 1     // 路径段数，如background/services/xxx.ts中的1段
+  maxPathSegments: 1,     // 路径段数，如background/services/xxx.ts中的1段
+  fileInfoPosition: 'end' as 'start' | 'end', // 文件信息位置：开始或结尾
 };
 
 // 更艳丽的调色板
@@ -66,20 +67,56 @@ function getModuleColor(moduleName: string): string {
 function addCompletionEmoji(message: string): string {
   if (!config.useCompletion) return message;
   
-  // 完成相关关键词
-  const completionKeywords = [
-    '完成', '成功', '结束', '已初始化', '已加载', '已创建', '已设置',
-    '成功加载', '初始化成功', '已注册', '已启动', '已准备'
-  ];
+  // 关键词到表情符的固定映射
+  const completionEmojiMap: Record<string, string> = {
+    // 基础状态
+    '完成': '✅',
+    '成功': '🎉',
+    '结束': '🏁',
+    '失败': '❌',
+    '错误': '⚠️',
+    '警告': '⚠️',
+    
+    // 初始化相关
+    '已初始化': '🚀',
+    '初始化完成': '🚀',
+    '初始化成功': '🚀',
+    '启动完成': '🚀',
+    
+    // 数据相关
+    '已加载': '📦',
+    '加载完成': '📦',
+    '已保存': '💾',
+    '保存成功': '💾',
+    '已下载': '⬇️',
+    '已上传': '⬆️',
+    
+    // 注册与创建
+    '已创建': '🆕',
+    '已注册': '📝',
+    '已添加': '➕',
+    '已删除': '🗑️',
+    
+    // 设置与配置
+    '已设置': '⚙️',
+    '已配置': '⚙️',
+    '设置完成': '⚙️',
+    
+    // 运行状态
+    '已启动': '▶️',
+    '已停止': '⏹️',
+    '已暂停': '⏸️',
+    '已恢复': '⏯️',
+    '已就绪': '👌',
+    '已准备': '👍'
+    };
   
-  // emoji列表
-  const completionEmojis = ['✅', '🎉', '🚀', '👍', '✨'];
-  
-  for (const keyword of completionKeywords) {
-    if (typeof message === 'string' && message.includes(keyword)) {
-      const hash = message.length + message.charCodeAt(0) + message.charCodeAt(message.length - 1);
-      const emoji = completionEmojis[hash % completionEmojis.length];
-      return `${message} ${emoji}`;
+  // 检查消息中是否包含关键词
+  if (typeof message === 'string') {
+    for (const keyword in completionEmojiMap) {
+      if (message.includes(keyword)) {
+        return `${completionEmojiMap[keyword]} ${message}`;
+      }
     }
   }
   
@@ -215,33 +252,60 @@ export class Logger {
 
     const timestamp = getSimpleTimestamp();
     const fileInfo = getCallerInfo();
-
-    // 构建前缀，使用浅灰色
-    const prefix = timestamp ? `[${timestamp}] ` : "";
-    const filePart =
-      fileInfo !== "unknown" && fileInfo !== "error" ? `[${fileInfo}] ` : "";
+    
+    // 构建时间戳前缀
+    const timePrefix = timestamp ? `[${timestamp}] ` : "";
+    const fileInfoFormatted = fileInfo !== "unknown" && fileInfo !== "error" ? 
+      ` [${fileInfo}]` : ""; // 注意这里在前面加了空格
 
     // 处理第一个参数，添加前缀和可能的完成emoji
     if (typeof args[0] === "string") {
       const enhancedMessage = addCompletionEmoji(args[0]);
 
       if (config.colorfulModules) {
-        // 使用两段颜色：灰色时间戳和彩色消息
-        return [
-          `%c${prefix}${filePart}%c${enhancedMessage}`,
-          "color: #888", // 时间戳和文件信息颜色
-          `color: ${this.moduleColor}; font-weight: 500`, // 消息颜色
-          ...args.slice(1),
-        ];
+        // 根据配置决定文件信息位置
+        if (config.fileInfoPosition === "end") {
+          // 文件信息放在消息后
+          return [
+            `%c${timePrefix}%c${enhancedMessage}%c ${fileInfoFormatted}`,
+            "color: #888", // 时间戳颜色
+            `color: ${this.moduleColor}; font-weight: 500`, // 消息颜色
+            "color: #888; font-size: 0.9em", // 文件信息颜色和大小
+            ...args.slice(1),
+          ];
+        } else {
+          // 文件信息放在消息前（原来的方式）
+          return [
+            `%c${timePrefix}${
+              fileInfo ? `[${fileInfo}] ` : ""
+            }%c${enhancedMessage}`,
+            "color: #888",
+            `color: ${this.moduleColor}; font-weight: 500`,
+            ...args.slice(1),
+          ];
+        }
       } else {
-        return [`${prefix}${filePart}${enhancedMessage}`, ...args.slice(1)];
+        // 不使用颜色时
+        if (config.fileInfoPosition === "end") {
+          return [
+            `${timePrefix}${enhancedMessage}${fileInfoFormatted}`,
+            ...args.slice(1),
+          ];
+        } else {
+          return [
+            `${timePrefix}${
+              fileInfo ? `[${fileInfo}] ` : ""
+            }${enhancedMessage}`,
+            ...args.slice(1),
+          ];
+        }
       }
     } else {
       // 非字符串参数处理
       if (config.colorfulModules) {
-        return [`%c${prefix}${filePart}`, "color: #888", ...args];
+        return [`%c${timePrefix}${fileInfo}`, "color: #888", ...args];
       } else {
-        return [`${prefix}${filePart}`, ...args];
+        return [`${timePrefix}${fileInfo}`, ...args];
       }
     }
   }
@@ -293,6 +357,60 @@ export class Logger {
   }
 
   /**
+   * 创建一个新的日志分组
+   * 等同于console.group
+   */
+  group(...args: any[]): void {
+    if (!this.shouldLog(LogLevel.INFO)) return;
+    
+    const formattedArgs = this.format(args);
+    console.group(...formattedArgs);
+  }
+  
+  /**
+   * 创建一个新的折叠日志分组
+   * 等同于console.groupCollapsed
+   */
+  groupCollapsed(...args: any[]): void {
+    if (!this.shouldLog(LogLevel.INFO)) return;
+    
+    const formattedArgs = this.format(args);
+    console.groupCollapsed(...formattedArgs);
+  }
+  
+  /**
+   * 结束当前日志分组
+   * 等同于console.groupEnd
+   */
+  groupEnd(): void {
+    if (!this.shouldLog(LogLevel.INFO)) return;
+    
+    console.groupEnd();
+  }
+  
+  /**
+   * 创建带有计时的折叠分组，适合用于性能监控
+   * @param groupName 分组名称
+   * @returns 包含end方法的对象，调用end方法会结束分组并显示耗时
+   */
+  timedGroup(groupName: string): { end: () => void } {
+    if (!this.shouldLog(LogLevel.INFO)) {
+      return { end: () => {} };
+    }
+    
+    const startTime = performance.now();
+    this.groupCollapsed(`${groupName}`);
+    
+    return {
+      end: () => {
+        const duration = performance.now() - startTime;
+        this.log(`总耗时: ${duration.toFixed(2)}ms`);
+        this.groupEnd();
+      }
+    };
+  }
+
+  /**
    * 配置日志系统
    */
   static configure(options: {
@@ -304,6 +422,7 @@ export class Logger {
     useCompletion?: boolean;
     showModulePath?: boolean;
     maxPathSegments?: number;
+    fileInfoPosition?: 'start' | 'end';
   }): void {
     Object.assign(config, options);
   }

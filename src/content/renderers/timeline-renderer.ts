@@ -4,7 +4,7 @@
  */
 
 const d3 = window.d3;
-
+import { Logger } from '../../lib/utils/logger.js';
 import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import { 
   getNodeColor, 
@@ -23,6 +23,8 @@ interface RenderableNode extends NavNode {
   renderX?: number;
   renderY?: number;
 }
+
+const logger = new Logger('TimelineRenderer');
 
 /**
  * 更新时间轴和网格线
@@ -277,7 +279,7 @@ export function renderTimelineLayout(
   height: number, 
   visualizer: Visualizer
 ): void {
-  console.log('使用模块化时间线渲染器');
+  logger.log('使用模块化时间线渲染器');
   
   try {
     // 获取特定视图类型的状态 - 不再使用临时标志
@@ -290,7 +292,7 @@ export function renderTimelineLayout(
     if (savedState && savedState.transform) {
       const { x, y, k } = savedState.transform;
       if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
-        console.log('检测到保存的时间线状态:', savedState.transform);
+        logger.log('检测到保存的时间线状态:', savedState.transform);
         shouldRestoreTransform = true;
         transformToRestore = savedState.transform;
       }
@@ -582,7 +584,7 @@ export function renderTimelineLayout(
     
     // 设置缩放行为，关键是让时间轴与内容同步缩放和移动
     try {
-      console.log('为时间线视图设置缩放行为');
+      logger.log('为时间线视图设置缩放行为');
       
       // 获取DOM引用
       const mainGroup = svg.select('.main-group');
@@ -601,7 +603,7 @@ export function renderTimelineLayout(
         if (!isFinite(x) || !isFinite(y) || !isFinite(k) ||
             Math.abs(x) > width * 2 || Math.abs(y) > height * 2 || 
             k < 0.01 || k > 100) {
-          console.warn('检测到无效变换:', event.transform, '，恢复到安全状态');
+          logger.warn('检测到无效变换:', event.transform, '，恢复到安全状态');
           // 重置到安全变换
           const safeTransform = d3.zoomIdentity.translate(0, 0).scale(0.8);
           if (visualizer.zoom) {
@@ -656,9 +658,9 @@ export function renderTimelineLayout(
       svg.call(zoom)
         .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动
     
-      console.log('已设置时间线缩放行为');
+      logger.log('已设置时间线缩放行为');
     } catch (error) {
-      console.error('设置时间线缩放失败:', error);
+      logger.error('设置时间线缩放失败:', error);
     }    
     // 修改变换恢复/应用逻辑
     setTimeout(() => {
@@ -684,7 +686,7 @@ export function renderTimelineLayout(
             .scale(validK);
           
           if (visualizer.zoom) {
-            console.log('恢复时间线保存的变换状态:', transformToRestore);
+            logger.log('恢复时间线保存的变换状态:', transformToRestore);
             svg.call(visualizer.zoom.transform, transform);
             // 立即触发时间轴更新
             updateTimeAxis(transform, timeAxisGroup, mainGroup, timeRangeInfo, dimensionsInfo);
@@ -734,7 +736,7 @@ export function renderTimelineLayout(
           }
         }
       } catch (err) {
-        console.error('应用变换失败:', err);
+        logger.error('应用变换失败:', err);
       }
     }, 100);
     
@@ -743,7 +745,7 @@ export function renderTimelineLayout(
     //visualizer.timeAxisGroup = timeAxisGroup;
     
   } catch (err) {
-    console.error('时间线渲染过程中出错:', err);
+    logger.error('时间线渲染过程中出错:', err);
     
     // 渲染错误信息
     svg.append('text')

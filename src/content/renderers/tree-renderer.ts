@@ -2,7 +2,7 @@
  * 树形图视图渲染模块
  * 负责绘制层次化的导航树结构
  */
-
+import { Logger } from '../../lib/utils/logger.js';
 // 导入类型定义
 import { 
   NavNode, 
@@ -27,7 +27,7 @@ import {
 } from '../utils/state-manager.js';
 
 const d3 = window.d3;
-
+const logger = new Logger('TreeRenderer');
 /**
  * 渲染树形图布局
  */
@@ -40,7 +40,7 @@ export function renderTreeLayout(
   height: number, 
   visualizer: Visualizer
 ): void {
-  console.log('使用模块化树形图渲染器');
+  logger.log('使用模块化树形图渲染器');
   
   try {
     // 声明并初始化saveStateTimeout变量
@@ -57,7 +57,7 @@ export function renderTreeLayout(
     if (savedState && savedState.transform) {
       const { x, y, k } = savedState.transform;
       if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
-        console.log('检测到保存的树形图状态:', savedState.transform);
+        logger.log('检测到保存的树形图状态:', savedState.transform);
         shouldRestoreTransform = true;
         transformToRestore = savedState.transform;
       }
@@ -72,12 +72,12 @@ export function renderTreeLayout(
     );
     
     if (needsNormalization) {
-      console.warn('检测到链接数据包含对象引用格式，已规范化为字符串ID');
+      logger.warn('检测到链接数据包含对象引用格式，已规范化为字符串ID');
     }
     
     // 1. 确保基本DOM结构存在
     if (!svg.select('.main-group').node()) {
-      console.log('创建主视图组');
+      logger.log('创建主视图组');
       svg.append('g').attr('class', 'main-group');
     }
     
@@ -96,7 +96,7 @@ export function renderTreeLayout(
     // 2. 首先配置和应用缩放行为
     // 始终创建新的缩放行为，确保每次渲染后缩放都能正常工作
     try {
-      console.log('为树形图视图设置缩放行为');
+      logger.log('为树形图视图设置缩放行为');
       
       // 先清除旧的缩放事件
       // 获取DOM引用
@@ -153,9 +153,9 @@ export function renderTreeLayout(
       svg.call(zoom)
         .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动;
       
-      console.log('已设置树形图缩放行为');
+      logger.log('已设置树形图缩放行为');
     } catch (error) {
-      console.error('设置树形图缩放失败:', error);
+      logger.error('设置树形图缩放失败:', error);
     }
     
     // 3. 然后清除现有节点和链接，但保留基本结构
@@ -194,7 +194,7 @@ export function renderTreeLayout(
     nodes.forEach(node => {
       const extNode = nodeById[node.id];
       if (node.parentId === node.id) {
-        console.log(`检测到节点 ${node.id} 自循环，标记为刷新节点`);
+        logger.log(`检测到节点 ${node.id} 自循环，标记为刷新节点`);
         extNode.isSelfLoop = true;
         // 将自循环节点的parentId设为空字符串，使其成为根节点
         extNode.parentId = '';
@@ -225,7 +225,7 @@ export function renderTreeLayout(
       }
     });
     
-    console.log(`找到${rootNodes.length}个根节点，${selfLoopNodes.length}个自循环节点`);
+    logger.log(`找到${rootNodes.length}个根节点，${selfLoopNodes.length}个自循环节点`);
     
     // 计算层级
     function assignLevels(node: ExtendedNavNode, level: number): void {
@@ -238,7 +238,7 @@ export function renderTreeLayout(
     if (rootNodes.length > 0) {
       rootNodes.forEach(root => assignLevels(root, 1));
     } else {
-      console.warn('没有找到根节点，可能导致树形视图不完整');
+      logger.warn('没有找到根节点，可能导致树形视图不完整');
       // 创建一个虚拟根节点连接所有孤立节点
       nodes.forEach(node => {
         if (!node.parentId) {
@@ -279,7 +279,7 @@ export function renderTreeLayout(
     // 如果移除了链接，显示警告
     if (safeLinks.length < allLinks.length) {
       const removedCount = allLinks.length - safeLinks.length;
-      console.log(`已移除 ${removedCount} 条导致循环的连接以确保树形图可以正常渲染`);
+      logger.log(`已移除 ${removedCount} 条导致循环的连接以确保树形图可以正常渲染`);
       
       // 添加视觉警告提示
       svg.append('text')
@@ -290,7 +290,7 @@ export function renderTreeLayout(
     }
 
     // 在应用布局之前对根节点进行分组
-    console.log(`对${rootNodes.length}个根节点进行左右平衡布局`);
+    logger.log(`对${rootNodes.length}个根节点进行左右平衡布局`);
 
     // 按时间戳排序根节点
     rootNodes.sort((a, b) => a.timestamp - b.timestamp);
@@ -300,7 +300,7 @@ export function renderTreeLayout(
     const leftRootNodes = rootNodes.slice(0, mid);
     const rightRootNodes = rootNodes.slice(mid);
 
-    console.log(`根节点分配: 左侧 ${leftRootNodes.length} 个, 右侧 ${rightRootNodes.length} 个`);
+    logger.log(`根节点分配: 左侧 ${leftRootNodes.length} 个, 右侧 ${rightRootNodes.length} 个`);
 
     // 创建左右会话虚拟根节点
     const leftSessionNode: ExtendedNavNode = {
@@ -441,7 +441,7 @@ export function renderTreeLayout(
       }
 
     } catch (err) {
-      console.error('树布局计算失败:', err);
+      logger.error('树布局计算失败:', err);
       
       // 更简洁的错误处理
       let errorMessage = '树布局计算失败';
@@ -559,12 +559,12 @@ export function renderTreeLayout(
             treeLinks.push({ source, target } as D3TreeLink);
           } else {
             missingLinks++;
-            console.log(`左侧子树找不到链接: ${sourceId} -> ${targetId}`);
+            logger.log(`左侧子树找不到链接: ${sourceId} -> ${targetId}`);
           }
         });
       
       if (missingLinks > 0) {
-        console.warn(`左侧子树中有${missingLinks}条链接无法创建`);
+        logger.warn(`左侧子树中有${missingLinks}条链接无法创建`);
       }
     }
 
@@ -583,12 +583,12 @@ export function renderTreeLayout(
             treeLinks.push({ source, target } as D3TreeLink);
           } else {
             missingLinks++;
-            console.log(`右侧子树找不到链接: ${sourceId} -> ${targetId}`);
+            logger.log(`右侧子树找不到链接: ${sourceId} -> ${targetId}`);
           }
         });
       
       if (missingLinks > 0) {
-        console.warn(`右侧子树中有${missingLinks}条链接无法创建`);
+        logger.warn(`右侧子树中有${missingLinks}条链接无法创建`);
       }
     }
 
@@ -610,7 +610,7 @@ export function renderTreeLayout(
         
         // 检查坐标是否有效
         if (isNaN(sourceX) || isNaN(sourceY) || isNaN(targetX) || isNaN(targetY)) {
-          console.warn('检测到无效的连接线坐标:', {
+          logger.warn('检测到无效的连接线坐标:', {
             source: d.source.data.id,
             target: d.target.data.id,
             coords: {sourceX, sourceY, targetX, targetY}
@@ -748,7 +748,7 @@ export function renderTreeLayout(
     // 在渲染树之前，处理重定向节点
     const redirectNodes = nodes.filter(node => node.type === 'redirect');
     if (redirectNodes.length > 0) {
-      console.log(`检测到 ${redirectNodes.length} 个重定向节点`);
+      logger.log(`检测到 ${redirectNodes.length} 个重定向节点`);
       
       // 为重定向节点添加特殊样式
       redirectNodes.forEach(node => {
@@ -806,7 +806,7 @@ export function renderTreeLayout(
       
       // 尝试应用保存的变换
       if (shouldRestoreTransform && transformToRestore) {
-        console.log('恢复树形图状态:', transformToRestore);
+        logger.log('恢复树形图状态:', transformToRestore);
         
         const transform = d3.zoomIdentity
           .translate(transformToRestore.x, transformToRestore.y)
@@ -817,7 +817,7 @@ export function renderTreeLayout(
       }
       
       // 否则应用默认初始变换
-      console.log('应用树形图变换:', {
+      logger.log('应用树形图变换:', {
         translate: [centerX - treeWidth / 2, centerY - treeHeight / 2],
         scale: finalScaleFactor
       });
@@ -827,17 +827,17 @@ export function renderTreeLayout(
     visualizer.updateStatusBar();
     
     // 7. 添加调试信息
-    console.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeLinks.length);
+    logger.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeLinks.length);
     // 验证变换是否被正确应用
     setTimeout(() => {
       try {
         const currentTransform = d3.zoomTransform(svg.node());
         } catch (e) {
-        console.error('获取变换信息失败:', e);
+        logger.error('获取变换信息失败:', e);
         }
     }, 10);
   } catch (err) {
-    console.error('树形图渲染过程中出错:', err);
+    logger.error('树形图渲染过程中出错:', err);
     
     // 添加错误信息显示
     svg.append('text')
@@ -870,7 +870,7 @@ function normalizeLinks(links: any[]): NavLink[] {
  * @returns 安全连接列表（仅移除回边）
  */
 function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLink[] {
-  console.log('检测并打破循环...');
+  logger.log('检测并打破循环...');
   
   // 创建节点ID映射表
   const nodeById: Record<string, ExtendedNavNode> = {};
@@ -884,7 +884,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     const isSelfLoop = link.source === link.target;
     
     if (isSelfLoop) {
-      console.log(`跳过自循环连接: ${link.source} -> ${link.target} (将作为根节点处理)`);
+      logger.log(`跳过自循环连接: ${link.source} -> ${link.target} (将作为根节点处理)`);
       return false;
     }
     return true;
@@ -910,7 +910,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
   function detectCycle(nodeId: string, visited: Set<string>, path: Set<string>, pathList: string[]): boolean {
     // 当前节点已在路径中 -> 发现循环!
     if (path.has(nodeId)) {
-      console.log('检测到循环:', [...pathList, nodeId].join(' -> '));
+      logger.log('检测到循环:', [...pathList, nodeId].join(' -> '));
       
       // 标记循环中的回边（最后一条边）
       const cycleStart = pathList.indexOf(nodeId);
@@ -922,7 +922,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
         const backEdgeId = `${lastNodeInCycle}->${nodeId}`;
         
         backEdges.add(backEdgeId);
-        console.log(`标记回边: ${lastNodeInCycle} -> ${nodeId}`);
+        logger.log(`标记回边: ${lastNodeInCycle} -> ${nodeId}`);
       }
       
       return true;
@@ -965,7 +965,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     const isSafe = !backEdges.has(linkId);
     
     if (!isSafe) {
-      console.log(`移除回边: ${link.source} -> ${link.target}`);
+      logger.log(`移除回边: ${link.source} -> ${link.target}`);
     }
     
     return isSafe;

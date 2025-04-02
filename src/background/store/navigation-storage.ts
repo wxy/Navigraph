@@ -2,10 +2,11 @@
  * 导航存储类
  * 替代旧版storage.ts的实现，使用新的IndexedDBStorage
  */
-
+import { Logger } from '../../lib/utils/logger.js';
 import { IndexedDBStorage } from './indexed-db.js';
 import { StorageSchema } from './storage-schema.js';
 import { NavNode, NavLink, NavDataQueryOptions } from '../../types/session-types.js';
+const logger = new Logger('NavigationStorage');
 
 /**
  * 导航存储类
@@ -41,9 +42,9 @@ export class NavigationStorage {
       // 初始化新数据库
       await this.db.initialize();
       this.initialized = true;
-      console.log('导航存储已初始化');
+      logger.log('导航存储已初始化');
     } catch (error) {
-      console.error('初始化导航存储失败:', error);
+      logger.error('初始化导航存储失败:', error);
       throw new Error(`初始化导航存储失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -65,9 +66,9 @@ export class NavigationStorage {
     
     try {
       await this.db.put(this.NODE_STORE, node);
-      console.log(`节点已保存: ${node.id}`);
+      logger.log(`节点已保存: ${node.id}`);
     } catch (error) {
-      console.error('保存节点失败:', error);
+      logger.error('保存节点失败:', error);
       throw new Error(`保存节点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -112,7 +113,7 @@ export class NavigationStorage {
       
       return nodes;
     } catch (error) {
-      console.error('查询节点失败:', error);
+      logger.error('查询节点失败:', error);
       throw new Error(`查询节点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -128,7 +129,7 @@ export class NavigationStorage {
       const node = await this.db.get<NavNode>(this.NODE_STORE, id);
       return node || null;
     } catch (error) {
-      console.error(`获取节点失败: ${id}`, error);
+      logger.error(`获取节点失败: ${id}`, error);
       throw new Error(`获取节点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -153,9 +154,9 @@ export class NavigationStorage {
       
       // 保存更新后的节点
       await this.db.put(this.NODE_STORE, updatedNode);
-      console.log(`节点已更新: ${id}， 会话 ${updatedNode.sessionId}`);
+      logger.log(`节点已更新: ${id}， 会话 ${updatedNode.sessionId}`);
     } catch (error) {
-      console.error(`更新节点失败: ${id}`, error);
+      logger.error(`更新节点失败: ${id}`, error);
       throw new Error(`更新节点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -169,10 +170,10 @@ export class NavigationStorage {
     
     try {
       await this.db.delete(this.NODE_STORE, id);
-      console.log(`节点已删除: ${id}`);
+      logger.log(`节点已删除: ${id}`);
       return true;
     } catch (error) {
-      console.error(`删除节点失败: ${id}`, error);
+      logger.error(`删除节点失败: ${id}`, error);
       return false;
     }
   }
@@ -186,9 +187,9 @@ export class NavigationStorage {
     
     try {
       await this.db.put(this.EDGE_STORE, edge);
-      console.log(`边已保存: ${edge.id} (${edge.source} -> ${edge.target})`);
+      logger.log(`边已保存: ${edge.id} (${edge.source} -> ${edge.target})`);
     } catch (error) {
-      console.error('保存边失败:', error);
+      logger.error('保存边失败:', error);
       throw new Error(`保存边失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -233,7 +234,7 @@ export class NavigationStorage {
       
       return edges;
     } catch (error) {
-      console.error('查询边失败:', error);
+      logger.error('查询边失败:', error);
       throw new Error(`查询边失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -249,7 +250,7 @@ export class NavigationStorage {
       const edge = await this.db.get<NavLink>(this.EDGE_STORE, id);
       return edge || null;
     } catch (error) {
-      console.error(`获取边失败: ${id}`, error);
+      logger.error(`获取边失败: ${id}`, error);
       throw new Error(`获取边失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -265,9 +266,9 @@ export class NavigationStorage {
       for (const node of nodes) {
         await this.db.put(this.NODE_STORE, node);
       }
-      console.log(`批量保存了 ${nodes.length} 个节点`);
+      logger.log(`批量保存了 ${nodes.length} 个节点`);
     } catch (error) {
-      console.error('批量保存节点失败:', error);
+      logger.error('批量保存节点失败:', error);
       throw new Error(`批量保存节点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -283,9 +284,9 @@ export class NavigationStorage {
       for (const edge of edges) {
         await this.db.put(this.EDGE_STORE, edge);
       }
-      console.log(`批量保存了 ${edges.length} 条边`);
+      logger.log(`批量保存了 ${edges.length} 条边`);
     } catch (error) {
-      console.error('批量保存边失败:', error);
+      logger.error('批量保存边失败:', error);
       throw new Error(`批量保存边失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -324,14 +325,14 @@ export class NavigationStorage {
         }
       }
       
-      console.log(`已获取会话 ${sessionId} 的导航图谱: ${nodes.length} 个节点, ${edges.length} 条边`);
+      logger.log(`已获取会话 ${sessionId} 的导航图谱: ${nodes.length} 个节点, ${edges.length} 条边`);
       
       return { 
         nodes,
         edges 
       };
     } catch (error) {
-      console.error(`获取会话 ${sessionId} 的导航图谱失败:`, error);
+      logger.error(`获取会话 ${sessionId} 的导航图谱失败:`, error);
       throw new Error(`获取会话图谱失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }

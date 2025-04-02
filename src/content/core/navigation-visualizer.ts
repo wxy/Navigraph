@@ -1,6 +1,7 @@
 /**
  * 导航图谱可视化器核心类
  */
+import { Logger } from '../../lib/utils/logger.js';
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
 import { renderTreeLayout } from '../renderers/tree-renderer.js';
@@ -12,6 +13,11 @@ import { sendMessage, registerHandler, unregisterHandler } from '../messaging/co
 import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
 import { initStatusBar, updateStatusBar } from '../utils/state-manager.js';
 
+const logger = new Logger('NavigationVisualizer');
+/**
+ * 导航可视化器类
+ * 负责可视化导航数据
+ */ 
 export class NavigationVisualizer implements Visualizer {
   // 可视化容器
   container: HTMLElement | null = null;
@@ -82,13 +88,13 @@ export class NavigationVisualizer implements Visualizer {
    * 构造函数
    */
   constructor() {
-    console.log('初始化NavigationVisualizer...');
+    logger.log('初始化NavigationVisualizer...');
     // 检查d3是否已加载
     if (typeof window.d3 === 'undefined') {
-        console.error('d3 库未加载，可视化功能将不可用');
+        logger.error('d3 库未加载，可视化功能将不可用');
         alert('d3 库未加载，可视化功能将不可用。请确保已包含d3.js库。');
     } else {
-        console.log('d3 库已加载:', window.d3.version);
+        logger.log('d3 库已加载:', window.d3.version);
     }
     this.noData = document.getElementById('no-data');
     
@@ -102,7 +108,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async initialize() {
     try {
-      console.log('初始化导航可视化...');
+      logger.log('初始化导航可视化...');
       
       // 第一阶段：基础配置与消息
       // 加载配置并设置消息监听，这是其他所有功能的基础
@@ -116,9 +122,9 @@ export class NavigationVisualizer implements Visualizer {
       // 加载会话数据并应用到视图
       await this.loadInitialData();
       
-      console.log('NavigationVisualizer 初始化完成');
+      logger.log('NavigationVisualizer 初始化完成');
     } catch (error) {
-      console.error('初始化可视化失败:', error);
+      logger.error('初始化可视化失败:', error);
       this.showNoData('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
@@ -135,13 +141,13 @@ export class NavigationVisualizer implements Visualizer {
     
     // 确保DOM已加载完成
     if (document.readyState !== 'complete') {
-      console.log('等待DOM加载完成...');
+      logger.log('等待DOM加载完成...');
       await new Promise<void>(resolve => {
         window.addEventListener('load', () => resolve());
       });
     }
     
-    console.log('基础配置与消息监听初始化完成');
+    logger.log('基础配置与消息监听初始化完成');
   }
 
   /**
@@ -170,7 +176,7 @@ export class NavigationVisualizer implements Visualizer {
     // 初始化调试工具
     this.initDebugTools();
     
-    console.log('UI组件初始化完成');
+    logger.log('UI组件初始化完成');
   }
 
   // 初始化状态栏
@@ -188,14 +194,14 @@ export class NavigationVisualizer implements Visualizer {
    */
   private async initializeControlPanel(): Promise<void> {
     try {
-      console.log('初始化控制面板...');
+      logger.log('初始化控制面板...');
       
       // 获取控制面板元素
       const controlPanel = document.getElementById('control-panel');
       const handle = document.getElementById('control-panel-handle');
       
       if (!controlPanel || !handle) {
-        console.error('控制面板元素不存在');
+        logger.error('控制面板元素不存在');
         return;
       }
       
@@ -211,9 +217,9 @@ export class NavigationVisualizer implements Visualizer {
       // 初始化筛选器
       await this.initializeFilters();
       
-      console.log('控制面板初始化完成');
+      logger.log('控制面板初始化完成');
     } catch (error) {
-      console.error('初始化控制面板失败:', error);
+      logger.error('初始化控制面板失败:', error);
     }
   }
 
@@ -319,21 +325,21 @@ export class NavigationVisualizer implements Visualizer {
       handle.classList.add('panel-visible');
     }
     
-    console.log('控制面板交互初始化完成');
+    logger.log('控制面板交互初始化完成');
   }
 
   /**
    * 初始化视图切换组件
    */
   private async initializeViewSwitcher(): Promise<void> {
-    console.log('初始化视图切换组件...');
+    logger.log('初始化视图切换组件...');
     
     // 获取视图切换按钮
     const treeViewBtn = document.getElementById('tree-view');
     const timelineViewBtn = document.getElementById('timeline-view');
     
     if (!treeViewBtn || !timelineViewBtn) {
-      console.warn('未找到视图切换按钮，跳过初始化');
+      logger.warn('未找到视图切换按钮，跳过初始化');
       return;
     }
     
@@ -353,7 +359,7 @@ export class NavigationVisualizer implements Visualizer {
       }
     });
     
-    console.log('视图切换组件初始化完成');
+    logger.log('视图切换组件初始化完成');
   }
 
   /**
@@ -361,11 +367,11 @@ export class NavigationVisualizer implements Visualizer {
    * 未来将替换为会话日历
    */
   private async initializeSessionSelector(): Promise<void> {
-    console.log('初始化会话选择器...');
+    logger.log('初始化会话选择器...');
     
     const sessionSelector = document.getElementById('session-selector');
     if (!sessionSelector) {
-      console.warn('未找到会话选择器元素');
+      logger.warn('未找到会话选择器元素');
       return;
     }
     
@@ -380,14 +386,14 @@ export class NavigationVisualizer implements Visualizer {
     // 会话选择器将通过 handleSessionListLoaded 更新
     // 这里只设置初始状态
     
-    console.log('会话选择器初始化完成');
+    logger.log('会话选择器初始化完成');
   }
 
   /**
    * 初始化筛选器
    */
   private async initializeFilters(): Promise<void> {
-    console.log('初始化筛选器...');
+    logger.log('初始化筛选器...');
     
     // 为每个筛选器配置绑定事件处理
     this.filterConfigs.forEach(config => {
@@ -402,13 +408,13 @@ export class NavigationVisualizer implements Visualizer {
           this.handleFilterChange(config.id, checkbox.checked);
         });
         
-        console.log(`筛选器 ${config.id} 初始化完成，状态: ${checkbox.checked}`);
+        logger.log(`筛选器 ${config.id} 初始化完成，状态: ${checkbox.checked}`);
       } else {
-        console.warn(`未找到筛选器元素: ${config.id}`);
+        logger.warn(`未找到筛选器元素: ${config.id}`);
       }
     });
     
-    console.log('筛选器初始化完成');
+    logger.log('筛选器初始化完成');
   }
 
   /**
@@ -425,7 +431,7 @@ export class NavigationVisualizer implements Visualizer {
     // 加载当前会话
     await sessionManager.loadCurrentSession();
     
-    console.log('初始数据加载完成');
+    logger.log('初始数据加载完成');
   }
 
   /**
@@ -433,7 +439,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   applyGlobalConfig() {
     if (!window.navigraphSettings) {
-      console.log('全局配置不可用，使用默认设置');
+      logger.log('全局配置不可用，使用默认设置');
       return;
     }
     
@@ -442,14 +448,14 @@ export class NavigationVisualizer implements Visualizer {
       
       // 应用默认视图
       if (config.defaultView) {
-        console.log('应用默认视图:', config.defaultView);
+        logger.log('应用默认视图:', config.defaultView);
         this.currentView = config.defaultView;
       }
             
       // 其他配置项应用...
       
     } catch (error) {
-      console.warn('应用全局配置出错:', error);
+      logger.warn('应用全局配置出错:', error);
     }
   }
 
@@ -460,11 +466,11 @@ export class NavigationVisualizer implements Visualizer {
     try {
       // 确保调试工具只初始化一次
       if (!this.debugTools) {
-        console.log('初始化调试工具...');
+        logger.log('初始化调试工具...');
         this.debugTools = new DebugTools(this);
       }
     } catch (error) {
-      console.error('初始化调试工具失败:', error);
+      logger.error('初始化调试工具失败:', error);
     }
   }
   /**
@@ -473,7 +479,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   private async initializeMainView(): Promise<void> {
     try {
-      console.log('初始化主视图...');
+      logger.log('初始化主视图...');
       
       // 调整容器大小
       this.updateContainerSize();
@@ -481,9 +487,9 @@ export class NavigationVisualizer implements Visualizer {
       // 初始化SVG
       this.initializeSvg();
       
-      console.log('主视图初始化完成');
+      logger.log('主视图初始化完成');
     } catch (error) {
-      console.error('初始化主视图失败:', error);
+      logger.error('初始化主视图失败:', error);
       throw error;
     }
   }
@@ -497,7 +503,7 @@ export class NavigationVisualizer implements Visualizer {
       throw new Error('容器不存在，无法初始化SVG');
     }
     
-    console.log('初始化SVG元素...');
+    logger.log('初始化SVG元素...');
     
     // 如果已有SVG元素，先移除
     const existingSvg = this.container.querySelector('svg');
@@ -525,9 +531,9 @@ export class NavigationVisualizer implements Visualizer {
       mainGroup.append('g')
         .attr('class', 'nodes-group');
       
-      console.log('SVG元素初始化成功');
+      logger.log('SVG元素初始化成功');
     } catch (error) {
-      console.error('初始化SVG失败:', error);
+      logger.error('初始化SVG失败:', error);
       throw error;
     }
   }
@@ -536,14 +542,14 @@ export class NavigationVisualizer implements Visualizer {
    * 初始化消息监听
    */
   private initMessageListener(): void {
-    console.log('初始化可视化器消息监听...');
+    logger.log('初始化可视化器消息监听...');
     
     // 使用已导入的 registerHandler 函数
     // 避免每次都动态导入
     
     // 注册刷新可视化消息处理函数
     registerHandler<BaseMessage, BaseResponse>('refreshVisualization', (message: any, sender, sendResponse) => {
-      console.log('收到可视化刷新请求');
+      logger.log('收到可视化刷新请求');
       
       // 如果需要回复，发送响应
       if (message.requestId) {
@@ -553,13 +559,13 @@ export class NavigationVisualizer implements Visualizer {
       // 延迟执行刷新操作
       setTimeout(async () => {
         try {
-          console.log('🔄 开始执行刷新操作...');
+          logger.log('🔄 开始执行刷新操作...');
           await sessionManager.loadSessions();
           await sessionManager.loadCurrentSession();
           this.refreshVisualization();
-          console.log('✅ 刷新操作完成');
+          logger.log('✅ 刷新操作完成');
         } catch (err) {
-          console.error('❌ 自动刷新可视化失败:', err);
+          logger.error('❌ 自动刷新可视化失败:', err);
         }
       }, 50);
       
@@ -569,7 +575,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 注册页面活动消息处理函数
     registerHandler<BaseMessage, BaseResponse>('pageActivity', (message: any) => {
-      console.log('收到页面活动事件，触发刷新', message.source);
+      logger.log('收到页面活动事件，触发刷新', message.source);
       
       // 触发刷新操作
       this.triggerRefresh();
@@ -580,7 +586,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 链接点击消息处理
     registerHandler<BaseMessage, BaseResponse>('linkClicked', (message: any, sender, sendResponse) => {
-      console.log('收到链接点击消息:', message.linkInfo);
+      logger.log('收到链接点击消息:', message.linkInfo);
       
       // 确认收到
       if (message.requestId) {
@@ -593,9 +599,9 @@ export class NavigationVisualizer implements Visualizer {
           await sessionManager.loadSessions();
           await sessionManager.loadCurrentSession();
           this.refreshVisualization();
-          console.log('基于链接点击刷新可视化完成');
+          logger.log('基于链接点击刷新可视化完成');
         } catch (err) {
-          console.error('链接点击后刷新可视化失败:', err);
+          logger.error('链接点击后刷新可视化失败:', err);
         }
       }, 100);
       
@@ -604,7 +610,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 表单提交消息处理
     registerHandler<BaseMessage, BaseResponse>('formSubmitted', (message: any, sender, sendResponse) => {
-      console.log('收到表单提交消息:', message.formInfo);
+      logger.log('收到表单提交消息:', message.formInfo);
       
       // 确认收到
       if (message.requestId) {
@@ -617,9 +623,9 @@ export class NavigationVisualizer implements Visualizer {
           await sessionManager.loadSessions();
           await sessionManager.loadCurrentSession();
           this.refreshVisualization();
-          console.log('基于表单提交刷新可视化完成');
+          logger.log('基于表单提交刷新可视化完成');
         } catch (err) {
-          console.error('表单提交后刷新可视化失败:', err);
+          logger.error('表单提交后刷新可视化失败:', err);
         }
       }, 150);
       
@@ -628,7 +634,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 节点ID获取消息处理
     registerHandler<BaseMessage, BaseResponse>('getNodeId', (message: any, sender, sendResponse) => {
-      console.log('收到获取节点ID请求:', message.url);
+      logger.log('收到获取节点ID请求:', message.url);
       
       // 从当前数据中查找URL对应的节点ID
       let nodeId: string | undefined = undefined;
@@ -645,7 +651,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // favicon更新消息处理
     registerHandler<BaseMessage, BaseResponse>('faviconUpdated', (message: any, sender, sendResponse) => {
-      console.log('收到favicon更新消息:', message.url, message.favicon);
+      logger.log('收到favicon更新消息:', message.url, message.favicon);
       
       // 确认收到
       if (message.requestId) {
@@ -657,7 +663,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 页面加载完成消息处理
     registerHandler<BaseMessage, BaseResponse>('pageLoaded', (message: any, sender, sendResponse) => {
-      console.log('收到页面加载完成消息:', message.pageInfo?.url);
+      logger.log('收到页面加载完成消息:', message.pageInfo?.url);
       
       // 确认收到
       if (message.requestId) {
@@ -670,9 +676,9 @@ export class NavigationVisualizer implements Visualizer {
           await sessionManager.loadSessions();
           await sessionManager.loadCurrentSession();
           this.refreshVisualization();
-          console.log('页面加载后刷新可视化完成');
+          logger.log('页面加载后刷新可视化完成');
         } catch (err) {
-          console.error('页面加载后刷新可视化失败:', err);
+          logger.error('页面加载后刷新可视化失败:', err);
         }
       }, 200);
       
@@ -680,14 +686,14 @@ export class NavigationVisualizer implements Visualizer {
       return false;
     });
     
-    console.log('消息监听器初始化完成');
+    logger.log('消息监听器初始化完成');
   }
   /**
    * 清理资源
    * 在可视化器销毁或者组件卸载时调用
    */
   cleanup(): void {
-    console.log('清理可视化器资源...');
+    logger.log('清理可视化器资源...');
     
     // 取消注册消息处理函数
     unregisterHandler('refreshVisualization');
@@ -702,7 +708,7 @@ export class NavigationVisualizer implements Visualizer {
     window.removeEventListener('resize', () => this.updateContainerSize());
     
     // 清理其他资源...
-    console.log('可视化器资源清理完成');
+    logger.log('可视化器资源清理完成');
   }
   /**
    * 触发刷新操作
@@ -714,12 +720,12 @@ export class NavigationVisualizer implements Visualizer {
   triggerRefresh(): void {
     const now = Date.now();
     if (now - this.lastRefreshTime < this.REFRESH_MIN_INTERVAL) {
-      console.log('最近已经刷新过，跳过此次刷新');
+      logger.log('最近已经刷新过，跳过此次刷新');
       return;
     }
     
     this.lastRefreshTime = now;
-    console.log('触发可视化刷新...');
+    logger.log('触发可视化刷新...');
     
     // 执行刷新操作
     setTimeout(async () => {
@@ -727,9 +733,9 @@ export class NavigationVisualizer implements Visualizer {
         await sessionManager.loadSessions();
         await sessionManager.loadCurrentSession();
         this.refreshVisualization();
-        console.log('页面活动触发的刷新完成');
+        logger.log('页面活动触发的刷新完成');
       } catch (err) {
-        console.error('触发刷新失败:', err);
+        logger.error('触发刷新失败:', err);
       }
     }, 100);
   }
@@ -739,7 +745,7 @@ export class NavigationVisualizer implements Visualizer {
    * 处理外部请求刷新可视化的消息
    */
   refreshVisualization(data?: any, options: { restoreTransform?: boolean } = {}): void {
-    console.log('执行刷新可视化...', data ? '使用提供的数据' : '使用现有数据');
+    logger.log('执行刷新可视化...', data ? '使用提供的数据' : '使用现有数据');
     
     try {
       // 如果提供了新数据，则更新数据
@@ -771,9 +777,9 @@ export class NavigationVisualizer implements Visualizer {
       // 更新状态栏
       this.updateStatusBar();
       
-      console.log('可视化刷新完成');
+      logger.log('可视化刷新完成');
     } catch (error) {
-      console.error('刷新可视化失败:', error);
+      logger.error('刷新可视化失败:', error);
       this.showNoData('刷新失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
@@ -784,14 +790,14 @@ export class NavigationVisualizer implements Visualizer {
     // 查找对应的筛选器配置
     const config = this.filterConfigs.find(f => f.id === filterId);
     if (!config) {
-      console.warn(`未知筛选器ID: ${filterId}`);
+      logger.warn(`未知筛选器ID: ${filterId}`);
       return;
     }
     
     // 更新筛选器状态
     (this.filters as any)[config.property] = checked;
     
-    console.log(`筛选器 ${filterId} (${config.property}) 已更改为 ${checked}`);
+    logger.log(`筛选器 ${filterId} (${config.property}) 已更改为 ${checked}`);
     
     // 使用完整的刷新流程
     this.refreshVisualization(undefined, { restoreTransform: true });
@@ -878,7 +884,7 @@ export class NavigationVisualizer implements Visualizer {
    * 处理单个会话加载
    */
   handleSessionLoaded(session: SessionDetails | null): void {
-    console.log('会话已加载，准备更新UI和数据');
+    logger.log('会话已加载，准备更新UI和数据');
     
     // 移除加载状态
     document.body.classList.remove('loading-session');
@@ -930,7 +936,7 @@ export class NavigationVisualizer implements Visualizer {
    * 处理会话列表加载事件
    */
   handleSessionListLoaded(sessions: any[]): void {
-    console.log(`会话列表已加载，共${sessions.length}个会话`);
+    logger.log(`会话列表已加载，共${sessions.length}个会话`);
     
     // 更新会话选择器
     this.updateSessionSelector(sessions);
@@ -942,7 +948,7 @@ export class NavigationVisualizer implements Visualizer {
   updateSessionSelector(sessions: any[] = []) {
     const selector = document.getElementById('session-selector') as HTMLSelectElement;
     if (!selector) {
-      console.warn('找不到会话选择器元素');
+      logger.warn('找不到会话选择器元素');
       return;
     }
     
@@ -994,7 +1000,7 @@ export class NavigationVisualizer implements Visualizer {
       const target = e.target as HTMLSelectElement;
       if (!target.value) return;
       
-      console.log(`选择了新会话: ${target.value}`);
+      logger.log(`选择了新会话: ${target.value}`);
       
       try {
         // 显示加载状态
@@ -1005,7 +1011,7 @@ export class NavigationVisualizer implements Visualizer {
         
         // 加载成功后，loading状态会在handleSessionLoaded中移除
       } catch (error) {
-        console.error('切换会话失败:', error);
+        logger.error('切换会话失败:', error);
         document.body.classList.remove('loading-session');
         alert(`切换会话失败: ${error instanceof Error ? error.message : String(error)}`);
         
@@ -1019,7 +1025,7 @@ export class NavigationVisualizer implements Visualizer {
     
     selector.addEventListener('change', this._sessionSelectorChangeHandler);
     
-    console.log(`会话选择器已更新，共${sessions.length}个选项`);
+    logger.log(`会话选择器已更新，共${sessions.length}个选项`);
   }
 
   // 添加到类定义中的属性部分
@@ -1032,7 +1038,7 @@ export class NavigationVisualizer implements Visualizer {
     if (this.currentView === view) return;
     
     const previousView = this.currentView;
-    console.log(`切换视图: ${previousView} -> ${view}`);
+    logger.log(`切换视图: ${previousView} -> ${view}`);
     
     try {
       // 更新当前视图
@@ -1056,7 +1062,7 @@ export class NavigationVisualizer implements Visualizer {
       this.refreshVisualization(undefined, { restoreTransform: true });
       
     } catch (error) {
-      console.error('切换视图失败:', error);
+      logger.error('切换视图失败:', error);
       
       // 恢复到先前的视图
       this.currentView = previousView;
@@ -1070,7 +1076,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   renderVisualization(options: { restoreTransform?: boolean } = {}): void {
     if (!this.container || !this.svg) {
-      console.error('无法渲染可视化：容器或SVG不存在');
+      logger.error('无法渲染可视化：容器或SVG不存在');
       return;
     }
     
@@ -1083,7 +1089,7 @@ export class NavigationVisualizer implements Visualizer {
       this.width = width;
       this.height = height;
       
-      console.log(`开始渲染${this.currentView}视图, 节点数: ${this.nodes.length}, 边数: ${this.edges.length}, 尺寸: ${width}x${height}`);
+      logger.log(`开始渲染${this.currentView}视图, 节点数: ${this.nodes.length}, 边数: ${this.edges.length}, 尺寸: ${width}x${height}`);
       
       // 清除现有可视化
       this.svg.selectAll('*').remove();
@@ -1096,14 +1102,14 @@ export class NavigationVisualizer implements Visualizer {
       
       // 根据当前视图类型渲染 - 直接调用导入的渲染函数
       if (this.currentView === 'timeline') {
-        console.log('准备渲染时间线视图');
+        logger.log('准备渲染时间线视图');
         // 尝试恢复之前保存的时间线缩放
         if (this._timelineZoom) {
-          console.log('使用保存的时间线缩放');
+          logger.log('使用保存的时间线缩放');
           this.zoom = this._timelineZoom;
         } else {
           // 未保存过时间线缩放时使用默认值 1.0
-          console.log('时间线视图没有保存的缩放，使用默认值 1.0');
+          logger.log('时间线视图没有保存的缩放，使用默认值 1.0');
           this.zoom = 1.0;
           // 首次应用后立即保存，使其成为该视图的"记忆值"
           this._timelineZoom = 1.0;
@@ -1120,14 +1126,14 @@ export class NavigationVisualizer implements Visualizer {
           this
         );
       } else {
-        console.log('准备渲染树形视图');
+        logger.log('准备渲染树形视图');
         // 尝试恢复之前保存的树形视图缩放
         if (this._treeZoom) {
-          console.log('使用保存的树形视图缩放');
+          logger.log('使用保存的树形视图缩放');
           this.zoom = this._treeZoom;
         } else {
           // 未保存过树形视图缩放时使用默认值 1.0
-          console.log('树形视图没有保存的缩放，使用默认值 1.0');
+          logger.log('树形视图没有保存的缩放，使用默认值 1.0');
           this.zoom = 1.0;
           // 首次应用后立即保存，使其成为该视图的"记忆值"
           this._treeZoom = 1.0;
@@ -1145,13 +1151,13 @@ export class NavigationVisualizer implements Visualizer {
         );
       }
       
-      console.log('可视化渲染完成', {
+      logger.log('可视化渲染完成', {
         view: this.currentView,
         zoom: this.zoom ? '已设置' : '未设置'
       });
       
     } catch (error) {
-      console.error('可视化渲染失败:', error);
+      logger.error('可视化渲染失败:', error);
       this.showNoData('渲染失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
@@ -1185,7 +1191,7 @@ export class NavigationVisualizer implements Visualizer {
     // 只有当尺寸变化超过一定阈值时才更新
     const threshold = 5; // 5像素的阈值
     if (Math.abs(width - oldWidth) > threshold || Math.abs(height - oldHeight) > threshold) {
-        console.log(`更新容器大小: ${width}x${height}`);
+        logger.log(`更新容器大小: ${width}x${height}`);
         
         // 应用尺寸
         this.container.style.width = `${width}px`;
@@ -1196,7 +1202,7 @@ export class NavigationVisualizer implements Visualizer {
         this.renderVisualization({ restoreTransform: true });
         }
     } else {
-        console.log('容器大小变化不显著，跳过更新');
+        logger.log('容器大小变化不显著，跳过更新');
     }
   }
   
@@ -1206,7 +1212,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   applyFilters(): void {
     
-    console.log('应用筛选器:', this.filters);
+    logger.log('应用筛选器:', this.filters);
     
     // 筛选后重置缩放状态，确保缩放被重新创建
     this.zoom = null;
@@ -1221,11 +1227,11 @@ export class NavigationVisualizer implements Visualizer {
   private filterNodes(): void {
     // 确保有原始数据可供筛选
     if (!this.allNodes || !this.allEdges) {
-      console.warn('没有原始数据可供筛选');
+      logger.warn('没有原始数据可供筛选');
       return;
     }
     
-    console.log('开始根据筛选条件过滤节点...');
+    logger.log('开始根据筛选条件过滤节点...');
     
     // 从所有节点开始
     let filteredNodes = [...this.allNodes];
@@ -1246,7 +1252,7 @@ export class NavigationVisualizer implements Visualizer {
           (node.type === 'form_submit' && !this.filters.typeForm) ||
           (node.type === 'javascript' && !this.filters.typeJs)
         ) {
-          console.log(`过滤掉节点：${nodeDesc} - 类型被禁用`);
+          logger.log(`过滤掉节点：${nodeDesc} - 类型被禁用`);
           return false;
         }
       }
@@ -1275,7 +1281,7 @@ export class NavigationVisualizer implements Visualizer {
       return true;
     });
     
-    console.log(`筛选结果: 从${this.allNodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
+    logger.log(`筛选结果: 从${this.allNodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
     
     // 获取所有符合条件的节点ID集合，用于边过滤
     const nodeIds = new Set(filteredNodes.map(node => node.id));
@@ -1319,9 +1325,9 @@ export class NavigationVisualizer implements Visualizer {
       // 不触发页面刷新的情况下更新URL
       window.history.replaceState(null, '', url);
       
-      console.log('已更新URL以反映当前视图和筛选状态');
+      logger.log('已更新URL以反映当前视图和筛选状态');
     } catch (error) {
-      console.warn('更新URL失败:', error);
+      logger.warn('更新URL失败:', error);
     }
   }
   
@@ -1336,7 +1342,7 @@ export class NavigationVisualizer implements Visualizer {
         statusText.textContent = message;
       }
     } else {
-      console.warn('no-data元素不存在');
+      logger.warn('no-data元素不存在');
     }
   }
   
@@ -1354,7 +1360,7 @@ export class NavigationVisualizer implements Visualizer {
    * @param node 节点数据
    */
   showNodeDetails(node: NavNode): void {
-    console.log('显示节点详情:', node);
+    logger.log('显示节点详情:', node);
     
     // 如果已有详情面板，移除它
     document.querySelectorAll('.node-details-panel').forEach(el => el.remove());
@@ -1691,14 +1697,14 @@ export class NavigationVisualizer implements Visualizer {
    * 更新视图按钮状态
    */
   updateViewButtonsState(): void {    
-    console.log('更新视图按钮状态，当前视图:', this.currentView);
+    logger.log('更新视图按钮状态，当前视图:', this.currentView);
     
     // 直接获取视图按钮，而不是依赖未定义的 this.viewButtons
     const treeViewBtn = document.getElementById('tree-view');
     const timelineViewBtn = document.getElementById('timeline-view');
     
     if (!treeViewBtn || !timelineViewBtn) {
-      console.warn('未找到视图切换按钮，无法更新状态');
+      logger.warn('未找到视图切换按钮，无法更新状态');
       return;
     }
     
@@ -1713,7 +1719,7 @@ export class NavigationVisualizer implements Visualizer {
       timelineViewBtn.classList.add('active');
     }
     
-   console.log('已更新按钮状态为:', this.currentView);
+   logger.log('已更新按钮状态为:', this.currentView);
  }
 
   /**
@@ -1730,7 +1736,7 @@ export class NavigationVisualizer implements Visualizer {
         this._isRestoringTransform = false;
       }, 100);
     } catch (e) {
-      console.warn('无法应用变换状态', e);
+      logger.warn('无法应用变换状态', e);
       this._isRestoringTransform = false;
     }
   }

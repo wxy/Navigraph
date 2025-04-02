@@ -1,6 +1,8 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { NavigraphSettings, SettingsChangeListener } from './types.js';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SETTINGS_CACHE_KEY } from './constants.js';
 
+const logger = new Logger('SettingsService');
 /**
  * 设置服务类 - 单例模式
  * 管理 Navigraph 扩展的设置
@@ -42,9 +44,9 @@ export class SettingsService {
       // 设置初始化完成
       this.initialized = true;
       
-      console.log('设置服务初始化完成');
+      logger.log('设置服务初始化完成');
     } catch (error) {
-      console.error('设置服务初始化失败:', error);
+      logger.error('设置服务初始化失败:', error);
     }
   }
   
@@ -61,7 +63,7 @@ export class SettingsService {
         this.updateSettingsInternal(settings);
       }
     } catch (error) {
-      console.warn('从缓存加载设置失败:', error);
+      logger.warn('从缓存加载设置失败:', error);
     }
   }
   
@@ -77,9 +79,9 @@ export class SettingsService {
         this.updateSettingsInternal(settings);
         // 更新本地缓存
         this.updateCache(settings);
-        console.log('已从存储加载设置:', settings);
+        logger.log('已从存储加载设置:', settings);
       } else {
-        console.log('存储中没有找到设置，使用默认值');
+        logger.log('存储中没有找到设置，使用默认值');
         // 如果存储中没有设置，保存默认设置
         if (this.initialized) {
           // 如果已经初始化，只更新内部状态，不保存到存储
@@ -91,7 +93,7 @@ export class SettingsService {
         }
       }
     } catch (error) {
-      console.error('从存储加载设置失败:', error);
+      logger.error('从存储加载设置失败:', error);
       throw error;
     }
   }
@@ -107,7 +109,7 @@ export class SettingsService {
       // 同时更新本地缓存
       this.updateCache(settings);
     } catch (error) {
-      console.error('保存设置到存储失败:', error);
+      logger.error('保存设置到存储失败:', error);
       throw error;
     }
   }
@@ -126,7 +128,7 @@ export class SettingsService {
       };
       localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(cacheData));
     } catch (error) {
-      console.warn('更新设置缓存失败:', error);
+      logger.warn('更新设置缓存失败:', error);
     }
   }
   
@@ -193,7 +195,7 @@ export class SettingsService {
       
       // 不再广播设置变更，改为显示用户提示
     } catch (error) {
-      console.error('更新设置失败:', error);
+      logger.error('更新设置失败:', error);
       throw error;
     }
   }
@@ -211,7 +213,7 @@ export class SettingsService {
       
       // 不再广播设置变更，改为显示用户提示
     } catch (error) {
-      console.error('重置设置失败:', error);
+      logger.error('重置设置失败:', error);
       throw error;
     }
   }
@@ -228,7 +230,7 @@ export class SettingsService {
       // 返回最新的设置
       return this.getSettings();
     } catch (error) {
-      console.error('刷新设置失败:', error);
+      logger.error('刷新设置失败:', error);
       return this.getSettings(); // 即使出错也返回当前设置
     }
   }
@@ -244,7 +246,7 @@ export class SettingsService {
       try {
         listener(this.getSettings());
       } catch (error) {
-        console.error('调用设置监听器失败:', error);
+        logger.error('调用设置监听器失败:', error);
       }
     }
     
@@ -271,7 +273,7 @@ export class SettingsService {
       try {
         listener(settings);
       } catch (error) {
-        console.error('通知设置监听器时出错:', error);
+        logger.error('通知设置监听器时出错:', error);
       }
     }
   }

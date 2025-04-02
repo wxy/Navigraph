@@ -4,10 +4,11 @@
  */
 
 const d3 = window.d3;
-
+import { Logger } from '../../lib/utils/logger.js';
 // 扩展 Visualizer 类型，增加模块中使用的属性
 import { Visualizer } from '../types/navigation.js';
 
+const logger = new Logger('StateManager');
 // 状态类型定义
 export interface ViewState {
   viewType: string;  // 'tree' | 'timeline'
@@ -41,9 +42,9 @@ export function saveViewState(tabId: string, state: ViewState): void {
     
     // 保存所有视图状态
     localStorage.setItem(key, JSON.stringify(allStates));
-    console.log(`已保存${viewType}视图状态:`, state);
+    logger.log(`已保存${viewType}视图状态:`, state);
   } catch (err) {
-    console.warn('保存视图状态失败:', err);
+    logger.warn('保存视图状态失败:', err);
   }
 }
 
@@ -58,7 +59,7 @@ export function getViewState(tabId: string, viewType: string = 'tree'): ViewStat
     }
     return null;
   } catch (err) {
-    console.warn(`获取${viewType}视图状态失败:`, err);
+    logger.warn(`获取${viewType}视图状态失败:`, err);
     return null;
   }
 }
@@ -76,7 +77,7 @@ export function getAllViewStates(tabId: string): Record<string, ViewState> | nul
     }
     return null;
   } catch (err) {
-    console.warn('获取所有视图状态失败:', err);
+    logger.warn('获取所有视图状态失败:', err);
     return null;
   }
 }
@@ -87,7 +88,7 @@ export function clearViewState(tabId: string): void {
     const key = `nav_view_state_${tabId}`;
     localStorage.removeItem(key);
   } catch (err) {
-    console.warn('清除视图状态失败:', err);
+    logger.warn('清除视图状态失败:', err);
   }
 }
 
@@ -102,7 +103,7 @@ export function setupZoomHandling(
   height: number
 ): any {
   if (!visualizer || !svg || !container) {
-    console.warn('设置缩放处理失败：缺少必要参数');
+    logger.warn('设置缩放处理失败：缺少必要参数');
     return null;
   }
   
@@ -123,7 +124,7 @@ export function setupZoomHandling(
     const savedState = getViewState(tabId, visualizer.currentView || 'tree');
     
     if (savedState && savedState.transform) {
-      console.log('检测到保存的变换状态:', savedState.transform);
+      logger.log('检测到保存的变换状态:', savedState.transform);
       
       // 改为使用简单的本地标记，不依赖visualizer属性
       const isRestoringTransform = true;
@@ -158,7 +159,7 @@ export function setupZoomHandling(
               timeAxisGroup.attr('transform', `translate(${event.transform.x}, 0) scale(${event.transform.k}, 1)`);
             }
           } catch (timelineError) {
-            console.warn('同步时间线视图出错:', timelineError);
+            logger.warn('同步时间线视图出错:', timelineError);
           }
         }
         
@@ -171,11 +172,11 @@ export function setupZoomHandling(
         // 更新当前变换信息
         visualizer.currentTransform = event.transform;
       } catch (zoomError) {
-        console.error('处理缩放事件出错:', zoomError);
+        logger.error('处理缩放事件出错:', zoomError);
       }
     }
   } catch (err) {
-    console.error('设置缩放处理失败:', err);
+    logger.error('设置缩放处理失败:', err);
     return null;
   }
 }
@@ -190,7 +191,7 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     const { x, y, k } = transform;
     const d3Transform = d3.zoomIdentity.translate(x, y).scale(k);
     
-    console.log('应用保存的变换状态:', transform);
+    logger.log('应用保存的变换状态:', transform);
     visualizer.svg.call(visualizer.zoom.transform, d3Transform);
     
     // 不再需要清除临时标记
@@ -201,7 +202,7 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     updateStatusBar(visualizer);
     
   } catch (err) {
-    console.error('应用变换状态失败:', err);
+    logger.error('应用变换状态失败:', err);
   }
 }
 
@@ -257,10 +258,10 @@ function handleDynamicFiltering(transform: any, visualizer: Visualizer): void {
       // 容器是DOM节点
       handleDOMFiltering(container, zoomLevel, transform, visualizer);
     } else {
-      console.warn('容器类型不支持动态过滤');
+      logger.warn('容器类型不支持动态过滤');
     }
   } catch (err) {
-    console.warn('处理动态过滤时出错:', err);
+    logger.warn('处理动态过滤时出错:', err);
   }
 }
 
@@ -336,7 +337,7 @@ function handleDOMFiltering(
       hideFilteringIndicator(visualizer);
     }
   } catch (err) {
-    console.warn('DOM过滤操作失败:', err);
+    logger.warn('DOM过滤操作失败:', err);
   }
 }
 
@@ -345,13 +346,13 @@ function handleDOMFiltering(
  * @param visualizer 可视化器实例
  */
 export function initStatusBar(visualizer: Visualizer): void {
-  console.log('初始化状态栏...');
+  logger.log('初始化状态栏...');
   
   // 获取状态栏元素
   const statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
   
   if (!statusBar) {
-    console.log('创建新的状态栏元素');
+    logger.log('创建新的状态栏元素');
     const newStatusBar = document.createElement('div');
     newStatusBar.className = 'windows-status-bar';
     
@@ -387,7 +388,7 @@ export function initStatusBar(visualizer: Visualizer): void {
   // 设置初始状态
   updateStatusBar(visualizer);
   
-  console.log('状态栏初始化完成');
+  logger.log('状态栏初始化完成');
 }
 
 /**
@@ -412,7 +413,7 @@ export function updateStatusElements(visualizer: Visualizer, status: Record<stri
  */
 export function updateStatusBar(visualizer: Visualizer): void {
   if (!visualizer.statusBar) {
-    console.warn('状态栏元素不存在');
+    logger.warn('状态栏元素不存在');
     return;
   }
   
@@ -427,7 +428,7 @@ export function updateStatusBar(visualizer: Visualizer): void {
     else if (visualizer.svg) {
       transform = d3.zoomTransform(visualizer.svg.node());
     } else {
-      console.warn('无法获取当前变换状态');
+      logger.warn('无法获取当前变换状态');
       return;
     }
     
@@ -474,7 +475,7 @@ export function updateStatusBar(visualizer: Visualizer): void {
     updateStatusElements(visualizer, status);
     
   } catch (err) {
-    console.warn('更新状态栏失败:', err);
+    logger.warn('更新状态栏失败:', err);
   }
 }
 
@@ -501,7 +502,7 @@ export function showFilteringIndicator(visualizer: Visualizer, hiddenCount: numb
     // 显示指示器
     indicator.style.display = 'block';
   } catch (err) {
-    console.warn('显示过滤指示器失败:', err);
+    logger.warn('显示过滤指示器失败:', err);
   }
 }
 
@@ -519,7 +520,7 @@ export function hideFilteringIndicator(visualizer: Visualizer): void {
       indicator.style.display = 'none';
     }
   } catch (err) {
-    console.warn('隐藏过滤指示器失败:', err);
+    logger.warn('隐藏过滤指示器失败:', err);
   }
 }
 
@@ -566,7 +567,7 @@ export function switchViewType(visualizer: Visualizer, viewType: string): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    console.error('切换视图类型失败:', err);
+    logger.error('切换视图类型失败:', err);
   }
 }
 
@@ -596,9 +597,9 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       if (container) {
         // 更新visualizer的container引用
         visualizer.container = container;
-        console.log('已找到并设置可视化容器:', container.id);
+        logger.log('已找到并设置可视化容器:', container.id);
       } else {
-        console.error('找不到可视化容器元素');
+        logger.error('找不到可视化容器元素');
         return;
       }
     }
@@ -659,7 +660,7 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       }
     }
   } catch (err) {
-    console.error('初始化视图工具栏失败:', err);
+    logger.error('初始化视图工具栏失败:', err);
   }
 }
 
@@ -685,7 +686,7 @@ function resetView(visualizer: Visualizer): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    console.error('重置视图失败:', err);
+    logger.error('重置视图失败:', err);
   }
 }
 
@@ -710,7 +711,7 @@ function showAllNodes(visualizer: Visualizer): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    console.error('显示所有节点失败:', err);
+    logger.error('显示所有节点失败:', err);
   }
 }
 
@@ -741,7 +742,7 @@ function getNodeImportance(node: Element): number {
     const childCount = node.querySelectorAll('.node').length;
     score += Math.min(childCount * 5, 25); // 最多加25分
   } catch (err) {
-    console.warn('计算节点重要性时出错:', err);
+    logger.warn('计算节点重要性时出错:', err);
   }
   
   return score;
@@ -810,7 +811,7 @@ function getConnectedNodes(edge: Element, container: Element): Element[] {
     
     // 4. 如果仍无法获取ID，则放弃并返回空数组
     if (!sourceId || !targetId) {
-      console.debug('无法从边数据中提取源和目标ID:', edge);
+      logger.debug('无法从边数据中提取源和目标ID:', edge);
       return [];
     }
     
@@ -846,7 +847,7 @@ function getConnectedNodes(edge: Element, container: Element): Element[] {
     // 返回找到的节点，过滤掉null值
     return [sourceNode, targetNode].filter((node): node is Element => node !== null);
   } catch (err) {
-    console.warn('获取连接节点时出错:', err);
+    logger.warn('获取连接节点时出错:', err);
     return [];
   }
 }

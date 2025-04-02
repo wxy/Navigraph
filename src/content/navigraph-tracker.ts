@@ -1,4 +1,6 @@
 (async function() {
+  const loggerModule = await import('../lib/utils/logger.js');
+  const logger = new loggerModule.Logger('ContentScript');
   try {
     // 内联实现sendToBackground函数
     async function sendToBackground(action: string, data?: any): Promise<any> {
@@ -57,7 +59,7 @@
      */
     async function requestNodeId(): Promise<void> {
       if (!isExtensionContextValid() || !isExtensionActive) {
-        console.warn('扩展不活跃或上下文无效，无法请求节点ID');
+        logger.warn('扩展不活跃或上下文无效，无法请求节点ID');
         return;
       }
       
@@ -65,7 +67,7 @@
       
       // 限制频率
       if (now - lastRequestTime < 5000) {
-        console.debug('请求节点ID间隔过短，跳过');
+        logger.debug('请求节点ID间隔过短，跳过');
         return;
       }
       
@@ -81,7 +83,7 @@
         // 获取标签页ID
         const tabIdResponse = await sendToBackground('getTabId', {});
         
-        console.log('收到标签页ID响应:', tabIdResponse);
+        logger.log('收到标签页ID响应:', tabIdResponse);
         
         if (tabIdResponse.tabId !== undefined) {
           // 请求节点ID
@@ -92,21 +94,21 @@
             timestamp: Date.now()
           });
           
-          console.log('收到节点ID响应:', nodeIdResponse);
+          logger.log('收到节点ID响应:', nodeIdResponse);
           
           if (nodeIdResponse.nodeId) {
             if (standardNodeId !== nodeIdResponse.nodeId) {
-              console.log(`更新节点ID: ${standardNodeId || 'null'} -> ${nodeIdResponse.nodeId}`);
+              logger.log(`更新节点ID: ${standardNodeId || 'null'} -> ${nodeIdResponse.nodeId}`);
               standardNodeId = nodeIdResponse.nodeId;
             }
           } else {
-            console.warn('无法获取节点ID');
+            logger.warn('无法获取节点ID');
           }
         } else {
-          console.warn('无法获取标签页ID');
+          logger.warn('无法获取标签页ID');
         }
       } catch (error) {
-        console.error('获取节点ID失败:', error);
+        logger.error('获取节点ID失败:', error);
       }
     }
     
@@ -114,11 +116,11 @@
      * 初始化函数
      */
     async function init(): Promise<void> {
-      console.log('Navigraph: 导航追踪器初始化开始');
+      logger.log('Navigraph: 导航追踪器初始化开始');
       
       try {
         // 等待后台脚本初始化
-        console.log('等待后台脚本初始化...');
+        logger.log('等待后台脚本初始化...');
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // 请求当前页面的节点ID
@@ -126,13 +128,13 @@
         
         // 注册历史记录状态变化监听
         window.addEventListener('popstate', () => {
-          console.log('检测到历史记录状态变化');
+          logger.log('检测到历史记录状态变化');
           requestNodeId();
         });
         
-        console.log('Navigraph: 导航追踪器初始化完成');
+        logger.log('Navigraph: 导航追踪器初始化完成');
       } catch (error) {
-        console.error('导航追踪器初始化失败:', error);
+        logger.error('导航追踪器初始化失败:', error);
       }
     }
     
@@ -140,6 +142,6 @@
     await init();
     
   } catch (error) {
-    console.error('导航追踪器加载失败:', error);
+    logger.error('导航追踪器加载失败:', error);
   }
 })();

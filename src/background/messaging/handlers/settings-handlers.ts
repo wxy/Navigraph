@@ -1,6 +1,8 @@
+import { Logger } from '../../../lib/utils/logger.js';
 import { BackgroundMessageService } from '../bg-message-service.js';
 import { BackgroundMessages, BackgroundResponses } from '../../../types/messages/background.js';
 
+const logger = new Logger('SettingsHandlers');
 /**
  * 注册设置相关的消息处理程序
  */
@@ -23,11 +25,11 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success({ settings: settings || {} });
         })
         .catch((error: Error) => {
-          console.error('获取设置时出错:', error);
+          logger.error('获取设置时出错:', error);
           ctx.error(`获取设置失败: ${error.message}`);
         });
     } catch (error) {
-      console.error('处理getSettings请求时出错:', error);
+      logger.error('处理getSettings请求时出错:', error);
       ctx.error(`处理请求失败: ${error instanceof Error ? error.message : String(error)}`);
     }
     
@@ -57,11 +59,11 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success();
         })
         .catch((error: Error) => {
-          console.error('保存设置时出错:', error);
+          logger.error('保存设置时出错:', error);
           ctx.error(`保存设置失败: ${error.message}`);
         });
     } catch (error) {
-      console.error('处理saveSettings请求时出错:', error);
+      logger.error('处理saveSettings请求时出错:', error);
       ctx.error(`处理请求失败: ${error instanceof Error ? error.message : String(error)}`);
     }
     
@@ -85,16 +87,16 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success();
         })
         .catch((error: Error) => {
-          console.error('重置设置时出错:', error);
+          logger.error('重置设置时出错:', error);
           ctx.error(`重置设置失败: ${error.message}`);
         });
     } catch (error) {
-      console.error('处理resetSettings请求时出错:', error);
+      logger.error('处理resetSettings请求时出错:', error);
       ctx.error(`处理请求失败: ${error instanceof Error ? error.message : String(error)}`);
     }
     
     return true; // 需要异步响应
   });
   
-  console.log('设置相关消息处理程序已注册');
+  logger.log('设置相关消息处理程序已注册');
 }
