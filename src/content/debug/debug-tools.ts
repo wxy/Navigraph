@@ -15,18 +15,55 @@ const logger = new Logger('DebugTools');
  */
 export class DebugTools {
   private visualizer: Visualizer;
-  private messageHandler: ((message: any, sender: chrome.runtime.MessageSender, sendResponse: (response: any) => void) => boolean) | null = null;
+  private lastDebugTimestamp: number = 0;
   
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
     
-    // 设置消息监听器
-    this.setupMessageListener();
-    
-    // 检查URL调试参数
+    // 检查URL调试参数（保留用于直接通过URL启动调试）
     this.checkUrlDebugParams();
     
+    // 设置存储监听器
+    this.setupStorageListener();
+    
     logger.log('调试工具已初始化');
+  }
+  
+  /**
+   * 设置存储变化监听器
+   * 用于接收调试命令而不刷新页面
+   */
+  private setupStorageListener(): void {
+    // 监听存储变化
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== 'local') return;
+      
+      if (changes.navigraph_debug_command && changes.navigraph_debug_timestamp) {
+        const command = changes.navigraph_debug_command.newValue;
+        const timestamp = changes.navigraph_debug_timestamp.newValue;
+        
+        // 防止重复处理同一个命令
+        if (timestamp > this.lastDebugTimestamp) {
+          this.lastDebugTimestamp = timestamp;
+          
+          logger.log('通过存储API收到调试命令:', command);
+          this.handleDebugCommand(command);
+        }
+      }
+    });
+    
+    // 初始检查是否有未处理的命令
+    chrome.storage.local.get(['navigraph_debug_command', 'navigraph_debug_timestamp'], (result) => {
+      if (result.navigraph_debug_command && result.navigraph_debug_timestamp) {
+        // 如果命令时间戳比当前记录的更新，则执行
+        if (result.navigraph_debug_timestamp > this.lastDebugTimestamp) {
+          this.lastDebugTimestamp = result.navigraph_debug_timestamp;
+          
+          logger.log('检测到未处理的调试命令:', result.navigraph_debug_command);
+          this.handleDebugCommand(result.navigraph_debug_command);
+        }
+      }
+    });
   }
   
   /**
@@ -73,9 +110,8 @@ export class DebugTools {
   /**
    * 检查URL参数中的调试指令
    */
-  private checkUrlDebugParams(): void {
+  public checkUrlDebugParams(): void {
     try {
-      // 获取URL中的调试参数
       const urlParams = new URLSearchParams(window.location.search);
       const debugCommand = urlParams.get('debug');
       
@@ -86,12 +122,12 @@ export class DebugTools {
         setTimeout(() => {
           this.handleDebugCommand(debugCommand);
           
-          // 执行完后，删除URL中的参数，保持浏览器历史记录整洁
-          if (window.history && window.history.replaceState) {
+          // 执行完后，清除URL参数
+          if (typeof window.history?.replaceState === 'function') {
             const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
+            history.replaceState({}, document.title, newUrl);
           }
-        }, 800); // 稍微延长延迟，确保页面完全加载和可视化器初始化
+        }, 800);
       }
     } catch (error) {
       logger.error('处理URL调试参数失败:', error);
