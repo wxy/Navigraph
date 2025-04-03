@@ -462,10 +462,15 @@ export function updateStatusBar(visualizer: Visualizer): void {
     // 如果当前会话存在，显示会话信息
     if (visualizer.currentSession) {
       const startDate = new Date(visualizer.currentSession.startTime);
-      const duration = (Date.now() - visualizer.currentSession.startTime) / (1000 * 60);
+      const durationMinutes = (Date.now() - visualizer.currentSession.startTime) / (1000 * 60);
+      
+      // 将分钟数转换为小时:分钟格式
+      const hours = Math.floor(durationMinutes / 60);
+      const minutes = Math.floor(durationMinutes % 60);
+      const formattedDuration = `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
       
       status['status-date'] = `会话日期: ${startDate.toLocaleDateString()}`;
-      status['status-duration'] = `时长: ${Math.round(duration)}分钟`;
+      status['status-duration'] = `时长: ${formattedDuration}`;
     }
     
     // 添加消息

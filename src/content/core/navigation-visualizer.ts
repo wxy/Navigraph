@@ -41,6 +41,8 @@ export class NavigationVisualizer implements Visualizer {
   svg: any = null;
   zoom: any = null;
   
+  currentTransform?: { x: number; y: number; k: number; } | undefined;
+  
   // 状态跟踪
   _isRestoringTransform: boolean = false;
   _savedTransform?: {x: number, y: number, k: number};
@@ -60,7 +62,6 @@ export class NavigationVisualizer implements Visualizer {
   width: number = 0;
   height: number = 0;
   currentSession?: SessionDetails = undefined; // 修改为可选属性，与Visualizer接口匹配
-  noData: HTMLElement | null = null;
   statusBar?: HTMLElement; // 修改为可选属性，与Visualizer接口匹配
   
   private trackingKeywords = [
@@ -96,7 +97,6 @@ export class NavigationVisualizer implements Visualizer {
     } else {
         logger.log('d3 库已加载:', window.d3.version);
     }
-    this.noData = document.getElementById('no-data');
     
     // 不要在构造函数里面初始化，而应该外部初始化
     //this.initialize();
@@ -124,8 +124,7 @@ export class NavigationVisualizer implements Visualizer {
       
       logger.log('NavigationVisualizer 初始化完成');
     } catch (error) {
-      logger.error('初始化可视化失败:', error);
-      this.showNoData('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
+      this.showError('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -780,8 +779,7 @@ export class NavigationVisualizer implements Visualizer {
       
       logger.log('可视化刷新完成');
     } catch (error) {
-      logger.error('刷新可视化失败:', error);
-      this.showNoData('刷新失败: ' + (error instanceof Error ? error.message : String(error)));
+      this.showError('刷新失败: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
   /**
@@ -891,7 +889,7 @@ export class NavigationVisualizer implements Visualizer {
     document.body.classList.remove('loading-session');
     
     if (!session) {
-      this.showNoData('会话加载失败或无可用会话');
+      this.showError('会话加载失败或无可用会话');
       return;
     }
     
@@ -913,9 +911,6 @@ export class NavigationVisualizer implements Visualizer {
     
     // 刷新可视化
     this.refreshVisualization(undefined, { restoreTransform: true });
-    
-    // 隐藏无数据提示
-    this.hideNoData();
   }
   /**
    * 更新会话相关UI
@@ -1090,77 +1085,167 @@ export class NavigationVisualizer implements Visualizer {
       this.width = width;
       this.height = height;
       
-      logger.log(`开始渲染${this.currentView}视图, 节点数: ${this.nodes.length}, 边数: ${this.edges.length}, 尺寸: ${width}x${height}`);
-      
       // 清除现有可视化
       this.svg.selectAll('*').remove();
       
+      // 创建基本SVG结构
+      const mainGroup = this.svg.append('g')
+        .attr('class', 'main-group');
+        
+      mainGroup.append('g')
+        .attr('class', 'links-group');
+        
+      const nodesGroup = mainGroup.append('g')
+        .attr('class', 'nodes-group');
+      
       // 检查是否有数据可渲染
-      if (!this.nodes || this.nodes.length === 0) {
-        this.showNoData('没有符合筛选条件的数据可显示');
-        return;
+      const hasData = this.nodes && this.nodes.length > 0;
+      
+      logger.log(`开始渲染${this.currentView}视图, 节点数: ${hasData ? this.nodes.length : 0}, 边数: ${hasData ? this.edges.length : 0}, 尺寸: ${width}x${height}`);
+      
+      // 如果没有数据，创建一个会话节点
+      if (!hasData) {
+        // 创建一个会话节点
+        const sessionNode = nodesGroup.append('g')
+          .attr('class', 'node session-node empty-session')
+          .attr('transform', `translate(${width / 2}, ${height / 2})`);
+        
+        // 添加节点外圈
+        sessionNode.append('circle')
+          .attr('r', 40)
+          .attr('class', 'node-circle empty-node-circle');
+        
+        // 添加会话图标
+        sessionNode.append('text')
+          .attr('class', 'node-icon empty-node-icon')
+          .attr('text-anchor', 'middle')
+          .text('📋');
+        
+        // 添加提示文字
+        const sessionTitle = this.currentSession?.title || '当前会话';
+        sessionNode.append('text')
+          .attr('class', 'node-label empty-node-label')
+          .attr('dy', 70)
+          .attr('text-anchor', 'middle')
+          .text(sessionTitle);
+        
+        // 添加无数据提示
+        sessionNode.append('text')
+          .attr('class', 'empty-data-message')
+          .attr('dy', 90)
+          .attr('text-anchor', 'middle')
+          .text('暂无浏览记录');
+        
+        // 为空会话节点添加闪烁动画
+        this.addEmptySessionAnimation(sessionNode);
+        
+        // 为会话节点添加点击事件，显示创建新会话选项
+        sessionNode.on('click', () => {
+          // 显示会话选项
+          const sessionSelector = document.getElementById('session-selector');
+          if (sessionSelector) {
+            sessionSelector.click();
+          }
+        });
+        
+        // 添加简单的缩放功能
+        this.setupBasicZoom();
+        
+      } else {
+        // 根据当前视图类型渲染
+        if (this.currentView === 'timeline') {
+          if (this._timelineZoom) {
+            this.zoom = this._timelineZoom;
+          } else {
+            this.zoom = 1.0;
+            this._timelineZoom = 1.0;
+          }
+          
+          renderTimelineLayout(
+            this.container,
+            this.svg,
+            this.nodes,
+            this.edges,
+            width,
+            height,
+            this
+          );
+        } else {
+          if (this._treeZoom) {
+            this.zoom = this._treeZoom;
+          } else {
+            this.zoom = 1.0;
+            this._treeZoom = 1.0;
+          }
+          
+          renderTreeLayout(
+            this.container,
+            this.svg,
+            this.nodes,
+            this.edges,
+            width,
+            height,
+            this
+          );
+        }
       }
       
-      // 根据当前视图类型渲染 - 直接调用导入的渲染函数
-      if (this.currentView === 'timeline') {
-        logger.log('准备渲染时间线视图');
-        // 尝试恢复之前保存的时间线缩放
-        if (this._timelineZoom) {
-          logger.log('使用保存的时间线缩放');
-          this.zoom = this._timelineZoom;
-        } else {
-          // 未保存过时间线缩放时使用默认值 1.0
-          logger.log('时间线视图没有保存的缩放，使用默认值 1.0');
-          this.zoom = 1.0;
-          // 首次应用后立即保存，使其成为该视图的"记忆值"
-          this._timelineZoom = 1.0;
-        }
-        
-        // 直接调用导入的时间线渲染函数
-        renderTimelineLayout(
-          this.container,
-          this.svg,
-          this.nodes,
-          this.edges,
-          width,
-          height,
-          this
-        );
-      } else {
-        logger.log('准备渲染树形视图');
-        // 尝试恢复之前保存的树形视图缩放
-        if (this._treeZoom) {
-          logger.log('使用保存的树形视图缩放');
-          this.zoom = this._treeZoom;
-        } else {
-          // 未保存过树形视图缩放时使用默认值 1.0
-          logger.log('树形视图没有保存的缩放，使用默认值 1.0');
-          this.zoom = 1.0;
-          // 首次应用后立即保存，使其成为该视图的"记忆值"
-          this._treeZoom = 1.0;
-        }
-        
-        // 直接调用导入的树形渲染函数
-        renderTreeLayout(
-          this.container,
-          this.svg,
-          this.nodes,
-          this.edges,
-          width,
-          height,
-          this
-        );
-      }
+      // 更新状态栏
+      this.updateStatusBar();
       
       logger.log('可视化渲染完成', {
         view: this.currentView,
-        zoom: this.zoom ? '已设置' : '未设置'
+        zoom: this.zoom ? '已设置' : '未设置',
+        hasData
       });
       
     } catch (error) {
-      logger.error('可视化渲染失败:', error);
-      this.showNoData('渲染失败: ' + (error instanceof Error ? error.message : String(error)));
+      this.showError('渲染失败: ' + (error instanceof Error ? error.message : String(error)));
     }
+  }
+
+  /**
+   * 为空会话节点添加闪烁动画
+   */
+  private addEmptySessionAnimation(sessionNode: any): void {
+    // 添加脉冲动画
+    sessionNode.select('.node-circle')
+      .append('animate')
+      .attr('attributeName', 'r')
+      .attr('values', '40;43;40')
+      .attr('dur', '2s')
+      .attr('repeatCount', 'indefinite');
+      
+    // 添加透明度变化
+    sessionNode.select('.node-circle')
+      .append('animate')
+      .attr('attributeName', 'opacity')
+      .attr('values', '0.5;0.8;0.5')
+      .attr('dur', '2s')
+      .attr('repeatCount', 'indefinite');
+  }
+
+  /**
+   * 设置基本缩放功能
+   */
+  private setupBasicZoom(): void {
+    if (!this.svg) return;
+    
+    const zoom = d3.zoom()
+      .scaleExtent([0.5, 2])
+      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        this.svg.select('.main-group')
+          .attr('transform', event.transform);
+          
+        // 保存当前变换
+        this.currentTransform = event.transform;
+        
+        // 更新状态栏
+        this.updateStatusBar();
+      });
+      
+    this.svg.call(zoom);
+    this.zoom = zoom;
   }
   
   /**
@@ -1333,29 +1418,32 @@ export class NavigationVisualizer implements Visualizer {
   }
   
   /**
-   * 显示无数据状态
+   * 显示错误
    */
-  showNoData(message: string = '暂无数据') {
-    if (this.noData) {
-      this.noData.style.display = 'flex';
-      const statusText = document.getElementById('status-text');
-      if (statusText) {
-        statusText.textContent = message;
-      }
-    } else {
-      logger.warn('no-data元素不存在');
+  showError(message: string = '操作失败') {
+    logger.error(message);
+
+    // 显示错误通知而非空状态
+    const notificationContainer = document.querySelector('.notification-container') || document.createElement('div');
+    if (!notificationContainer.classList.contains('notification-container')) {
+      notificationContainer.className = 'notification-container';
+      document.body.appendChild(notificationContainer);
     }
+    
+    const notification = document.createElement('div');
+    notification.className = 'notification error';
+    notification.textContent = message;
+    
+    // 添加关闭按钮
+    const closeBtn = document.createElement('span');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.onclick = () => notification.remove();
+    notification.appendChild(closeBtn);
+    
+    notificationContainer.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
   }
   
-  /**
-   * 隐藏无数据状态
-   */
-  hideNoData() {
-    if (this.noData) {
-      this.noData.style.display = 'none';
-    }
-  }
-
   /**
    * 显示节点详情
    * @param node 节点数据

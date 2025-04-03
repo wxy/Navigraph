@@ -333,6 +333,68 @@ svg {
   }
 }
 
+/* ========== 通知样式 ========== */
+.notification-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  width: 300px;
+}
+
+.notification {
+  background: #fff;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-left: 4px solid #4caf50;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.notification.error {
+  border-left-color: #f44336;
+}
+
+.notification-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* ========== 无数据会话节点样式 ========== */
+.empty-session .node-circle {
+  fill: #f5f5f5;
+  stroke: #ddd;
+  stroke-width: 2;
+  stroke-dasharray: 5,3;
+  opacity: 0.7;
+}
+
+.empty-session:hover .node-circle {
+  fill: #e8e8e8;
+  stroke: #aaa;
+  cursor: pointer;
+}
+
+.empty-node-icon {
+  font-size: 20px;
+  opacity: 0.6;
+}
+
+.empty-node-label {
+  font-size: 14px;
+  fill: #666;
+  font-weight: bold;
+}
+
+.empty-data-message {
+  font-size: 12px;
+  fill: #999;
+  font-style: italic;
+}
+
 /* ========== 详情面板 ========== */
 .details-container {
   width: 300px;
