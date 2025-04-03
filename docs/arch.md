@@ -43,27 +43,27 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 | 内容脚本层 (Content)      |        | 后台脚本层 (Background)    |
 |---------------------------|        |----------------------------|
 |                           |        |                            |
-| ContentMessageService     |<------>| BackgroundMessageRouter    |
-|   - sendMessage()         |        |   - handleMessage()        |
-|   - registerHandler()     |        |   - routeMessage()         |
+| ContentMessageService     |<------>| BackgroundMessageService   |
+|   - sendMessage()         |        |   - registerHandler()      |
+|   - registerHandler()     |        |   - createMessageContext() |
 |                           |        |                            |
 |                           |        |                            |
 | NavigationVisualizer      |        | NavigationManager          |
-|   - initialize()          |        |   - getNodeIdForTab()      |
-|   - renderGraph()         |        |   - updatePageMetadata()   |
+|   - initialize()          |        |   - handleNavigationCommitted() |
+|   - renderVisualization() |        |   - handleRegularNavigation()  |
+|   - updateStatusBar()     |        |   - handleFormSubmitted()      |
+|                           |        |   - handleLinkClicked()        |
 |                           |        |                            |
-|                           |        |                            |
-| SessionManager (Content)  |        | SessionManager (Background)|
+| SessionManager (Content)  |        | BackgroundSessionManager   |
 |   - createNewSession()    |------->|   - createSession()        |
-|   - loadSession()         |        |   - endSession()           |
-|   - manageSessionsBySettings()     |   - setCurrentSession()    |
+|   - loadSession()         |        |   - getSessionDetails()    |
+|   - manageSessionsBySettings()     |   - updateSession()        |
 |                           |        |                            |
 |                           |        |                            |
-| NodeManager               |        | NavigationStorage          |
-|   - processSessionData()  |        |   - getSessions()          |
-|   - buildTree()           |        |   - getSession()           |
-|   - convertToNode()       |        |   - saveSession()          |
-|                           |        |   - getNavigationTree()    |
+| ContentTracking           |        | NavigationStorage          |
+|   - setupFormTracking()   |        |   - saveNode()             |
+|   - trackLinkClicks()     |        |   - saveEdge()             |
+|   - sendFormSubmit()      |        |   - getSessionGraph()      |
 +---------------------------+        +----------------------------+
                                               |
                                               v
@@ -84,20 +84,19 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 **职责**：后台脚本中的消息路由组件，负责接收来自内容脚本的消息，并将其分发到相应的处理程序。
 
 **主要接口**：
+
+- `registerHandler(action, handler)`: 注册消息处理函数
+- `createMessageContext(message, sender, sendResponse)`: 创建消息上下文
 - `handleMessage(message, sender, sendResponse)`: 处理收到的消息
-- `routeMessage(ctx, message)`: 根据消息类型路由消息
-- `routeSessionMessage(ctx, message)`: 处理会话相关消息
-- `routeNavigationMessage(ctx, message)`: 处理导航相关消息
 
 #### 3.1.2 ContentMessageService
 
 **职责**：内容脚本中的消息服务，负责与后台脚本通信。
 
 **主要接口**：
+
 - `sendMessage(action, data)`: 向后台发送消息
 - `registerHandler(action, handler)`: 注册消息处理函数
-- `setupMessageListener()`: 设置消息监听器
-- `setupPageActivityListeners()`: 设置页面活动监听
 
 ### 3.2 会话管理系统
 
@@ -106,23 +105,23 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 **职责**：在后台脚本中管理会话的创建、结束和管理。
 
 **主要接口**：
+
 - `createSession(title?)`: 创建新会话
+- `updateSession(sessionId, updates): 更新会话信息`
 - `endSession(sessionId)`: 结束会话
 - `setCurrentSession(sessionId)`: 设置当前会话
-- `handlePageActivity()`: 处理页面活动事件
-- `manageSessionByMode(mode)`: 根据模式管理会话
+- `getSessionDetails(sessionId): 获取会话详细信息，包括节点和边`
+- `getSessionNavigationData(sessionId): 获取会话导航数据`
 
 #### 3.2.2 SessionManager (Content)
 
 **职责**：在内容脚本中提供会话管理功能。
 
 **主要接口**：
+
 - `createNewSession(title?)`: 创建新会话
 - `loadSession(sessionId)`: 加载会话详情
 - `manageSessionsBySettings()`: 根据设置管理会话
-- `manageDailySession()`: 管理每日工作模式会话
-- `manageActivitySession()`: 管理活动感知模式会话
-- `manageSmartSession()`: 管理智能模式会话
 
 ### 3.3 导航管理系统
 
@@ -131,21 +130,25 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 **职责**：管理导航记录和页面元数据。
 
 **主要接口**：
-- `getNodeIdForTab(tabId, url)`: 获取标签页对应的节点ID
-- `updatePageMetadata(tabId, metadata)`: 更新页面元数据
-- `handleLinkClicked(tabId, linkInfo)`: 处理链接点击事件
+
+- `handleNavigationCommitted(tabId, url)`: 处理导航提交事件
+- `handleRegularNavigation(tabId, url)`: 处理常规导航事件
 - `handleFormSubmitted(tabId, formInfo)`: 处理表单提交事件
+- `handleLinkClicked(tabId, linkInfo)`: 处理链接点击事件
 - `handleJsNavigation(tabId, data)`: 处理JavaScript导航事件
+- `updatePageMetadata(tabId, metadata)`: 更新页面元数据 
 
-#### 3.3.2 NodeManager
+#### 3.3.2 NavigationVisualizer
 
-**职责**：处理导航节点数据。
+职责：负责导航数据的可视化展示。
 
-**主要接口**：
-- `processSessionData(session)`: 处理会话数据
-- `buildTree(nodes, edges)`: 构建导航树
-- `convertToNavNode(record)`: 将数据记录转换为导航节点
-- `convertToNavLink(edge)`: 将数据记录转换为导航连接
+主要接口：
+
+- `initialize()`: 初始化可视化器
+- `loadSession(sessionId)`: 加载并显示会话
+- `renderVisualization(options?)`: 渲染可视化图形
+- `updateStatusBar()`: 更新状态栏显示
+- `applyFilters(filters)`: 应用过滤器
 
 ### 3.4 存储系统
 
@@ -154,25 +157,26 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 **职责**：提供数据持久化功能。
 
 **主要接口**：
-- `getSessions()`: 获取所有会话
-- `getSession(sessionId)`: 获取特定会话
-- `saveSession(session)`: 保存会话
-- `getCurrentSessionId()`: 获取当前会话ID
-- `setCurrentSession(sessionId)`: 设置当前会话
-- `getNavigationTree()`: 获取导航树数据
-- `clearAllRecords()`: 清除所有记录
 
-### 3.5 可视化系统
+- `saveNode(node)`: 保存导航节点
+- `getNode(nodeId)`: 获取导航节点
+- `updateNode(nodeId, updates)`: 更新节点信息
+- `saveEdge(edge)`: 保存导航边
+- `getSessionGraph(sessionId)`: 获取会话的完整导航图谱
+- `queryNodes(conditions)`: 根据条件查询节点
+- `queryEdges(conditions)`: 根据条件查询边
 
-#### 3.5.1 NavigationVisualizer
+#### 3.4.2 SessionStorage
 
-**职责**：负责导航数据的可视化展示。
+**职责**：提供会话数据存储和访问功能。
 
 **主要接口**：
-- `initialize()`: 初始化可视化器
-- `renderGraph(data)`: 渲染图形
-- `updateLayout()`: 更新布局
-- `applyFilters(filters)`: 应用过滤器
+
+- `createSession(session)`: 创建新会话
+- `getSession(sessionId)`: 获取特定会话
+- `updateSession(sessionId, updates)`: 更新会话信息
+- `getCurrentSession()`: 获取当前会话
+- `setCurrentSession(sessionId)`: 设置当前会话
 
 ## 4. 数据流和关键流程
 
@@ -235,13 +239,47 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 
 ### 4.3 导航记录流程
 
-1. 用户在页面间导航（点击链接、提交表单、JS导航等）
-2. 内容脚本捕获导航事件，发送消息到后台
-3. 后台脚本接收消息，创建导航记录
-4. 记录存储在当前会话中
-5. 更新导航树数据
-6. 内容脚本请求最新的导航树
-7. 更新可视化展示
+```
++------------------+     +--------------------+     +------------------+
+| 用户交互事件     |     | 导航数据处理        |     | 数据存储和管理    |
++------------------+     +--------------------+     +------------------+
+| - 链接点击       |     | - 创建导航节点      |     | - 保存节点       |
+| - 表单提交       |---->| - 确定导航类型      |---->| - 创建关系边     |
+| - 地址栏输入     |     | - 处理导航关系      |     | - 更新会话数据   |
+| - JS导航         |     | - 收集元数据        |     | - 缓存管理       |
+| - 历史导航       |     | - 处理父子关系      |     | - 数据组织       |
++------------------+     +--------------------+     +------------------+
+                                                            |
+                                                            v
+                              +--------------------------------------------------+
+                              | 可视化处理                                       |
+                              +--------------------------------------------------+
+                              | - 构建节点和边可视化对象                          |
+                              | - 应用布局算法                                   |
+                              | - 添加交互行为                                   |
+                              | - 应用过滤规则                                   |
+                              | - 更新视图和状态                                 |
+                              +--------------------------------------------------+
+```
+
+详细流程说明：
+
+1. 链接点击流程：
+  - 内容脚本通过事件监听器检测到链接点击
+  - 调用 `sendLinkClick()` 发送链接信息到后台
+  - 后台的 `handleLinkClicked()` 方法处理信息，创建待处理导航记录
+  - 当导航提交时，与待处理记录匹配并创建节点和边
+2. 表单提交流程：
+  - 内容脚本通过 `sendFormSubmit()` 发送表单信息到后台
+  - 后台的 `handleFormSubmitted()` 方法处理表单信息
+  - 创建待处理导航记录并等待导航提交
+  - 导航提交后创建节点和边，建立关系
+3. 导航提交流程：
+  浏览器API触发导航提交事件
+  `handleNavigationCommitted()` 处理事件
+  根据过渡类型和限定词确定导航类型和打开目标
+  调用 `handleRegularNavigation()` 处理实际导航
+  创建或更新节点，建立导航关系
 
 ## 5. 关键对象模型
 
@@ -271,47 +309,74 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 
 ### 5.2 关键数据模型
 
-#### 5.2.1 Session
+#### 5.2.1 BrowsingSession
 
 ```typescript
-interface Session {
+interface BrowsingSession {
   id: string;                  // 会话唯一标识符
   title: string;               // 会话标题
   startTime: number;           // 开始时间戳
-  endTime: number;             // 结束时间戳(0表示未结束)
-  records: Record<string, any>; // 会话中的记录
-  lastActivity?: number;       // 最后活动时间戳
+  endTime: number | null;      // 结束时间戳(null表示未结束)
+  lastActivity: number;        // 最后活动时间
+  nodeCount: number;           // 节点数量
+  tabCount: number;            // 标签页数量
+  records?: Record<string, NavNode>; // 会话中的节点记录
+  edges?: Record<string, NavLink>;   // 会话中的边记录
+  rootIds?: string[];          // 根节点ID列表
+  createdAt: number;           // 创建时间
+  updatedAt: number;           // 更新时间
 }
 ```
-#### 5.2.2 NavigationNode
+
+#### 5.2.2 NavNode
 
 ```typescript
-interface NavigationNode {
+interface NavNode {
   id: string;           // 节点唯一标识符
+  sessionId: string;    // 所属会话ID
   url: string;          // 页面URL
   title: string;        // 页面标题
   favicon: string;      // 页面图标
   timestamp: number;    // 创建时间戳
-  type: string;         // 节点类型
-  tabId?: number;       // 关联的标签页ID
+  type: NavigationType; // 节点类型
+  tabId: number;        // 关联的标签页ID
   parentId?: string;    // 父节点ID
   referrer?: string;    // 引用页URL
-  isClosed?: boolean;   // 是否已关闭
-  children: NavigationNode[]; // 子节点
-  depth: number;        // 在树中的深度
+  isClosed: boolean;    // 是否已关闭
+  loadTime?: number;    // 页面加载时间
+  metadata?: {          // 元数据
+    description?: string; // 页面描述
+    keywords?: string;    // 页面关键词
+    openGraph?: any;      // OpenGraph数据
+  };
 }
 ```
 
-#### 5.2.3 NavigationLink
+#### 5.2.3 NavLink
 
 ```typescript
-interface NavigationLink {
-  id: string;        // 连接唯一标识符
-  source: string;    // 源节点ID
-  target: string;    // 目标节点ID
-  type: string;      // 连接类型
-  timestamp: number; // 创建时间戳
-  action: string;    // 导航动作类型
+interface NavLink {
+  id: string;            // 连接唯一标识符
+  sessionId: string;     // 所属会话ID
+  source: string;        // 源节点ID
+  target: string;        // 目标节点ID
+  type: NavigationType;  // 连接类型
+  timestamp: number;     // 创建时间戳
+}
+```
+
+#### 5.2.4 PendingNavigation 
+
+```typescript
+interface PendingNavigation {
+  type: "link_click" | "form_submit" | "js_navigation"; // 待处理导航类型
+  sourceNodeId: string;  // 源节点ID
+  sourceTabId: number;   // 源标签页ID
+  sourceUrl: string;     // 源URL
+  targetUrl: string;     // 目标URL
+  data: any;             // 相关数据
+  timestamp: number;     // 创建时间戳
+  expiresAt: number;     // 过期时间戳
 }
 ```
 
@@ -362,6 +427,6 @@ interface NavigationLink {
 
 ## 8. 总结
 
-Navigraph 系统架构采用了分层设计，将系统分为内容脚本层和后台脚本层，通过消息通信进行交互。系统遵循关注点分离、单一职责和依赖注入等设计原则，使代码结构清晰、可维护性强。
+Navigraph 系统架构采用了分层设计，通过内容脚本和后台脚本的协作，实现了完整的浏览导航记录与可视化功能。系统能够捕获各种导航事件（包括链接点击、表单提交、JS导航等），并通过消息通信机制在内容脚本和后台脚本间传递数据。
 
-核心功能包括会话管理、导航记录、数据存储和可视化展示，这些功能通过不同的组件协同工作，为用户提供完整的浏览历史可视化体验。系统的设计考虑了未来扩展的可能性，为添加新功能提供了灵活的架构基础。
+核心功能包括会话管理、导航记录、导航关系构建、数据存储和可视化展示，这些功能通过不同的组件协同工作，为用户提供完整的浏览历史可视化体验。系统的设计遵循关注点分离、单一职责和依赖注入等设计原则，使代码结构清晰、可维护性强，并为未来的功能扩展提供了灵活的基础架构。

@@ -1116,10 +1116,13 @@ export class NavigationVisualizer implements Visualizer {
           .attr('class', 'node-circle empty-node-circle');
         
         // 添加会话图标
-        sessionNode.append('text')
-          .attr('class', 'node-icon empty-node-icon')
-          .attr('text-anchor', 'middle')
-          .text('📋');
+        sessionNode.append('image')
+          .attr('class', 'empty-node-icon')
+          .attr('x', -16) // 图标宽度的一半的负值，使其居中
+          .attr('y', -16) // 图标高度的一半的负值，使其居中
+          .attr('width', 32)
+          .attr('height', 32)
+          .attr('href', chrome.runtime.getURL('images/logo-48.png'));
         
         // 添加提示文字
         const sessionTitle = this.currentSession?.title || '当前会话';
@@ -1134,7 +1137,7 @@ export class NavigationVisualizer implements Visualizer {
           .attr('class', 'empty-data-message')
           .attr('dy', 90)
           .attr('text-anchor', 'middle')
-          .text('暂无浏览记录');
+          .text('没有打开的浏览记录');
         
         // 为空会话节点添加闪烁动画
         this.addEmptySessionAnimation(sessionNode);

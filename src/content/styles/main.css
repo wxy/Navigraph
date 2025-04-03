@@ -379,8 +379,12 @@ svg {
 }
 
 .empty-node-icon {
-  font-size: 20px;
-  opacity: 0.6;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.empty-session:hover .empty-node-icon {
+  opacity: 1;
 }
 
 .empty-node-label {
