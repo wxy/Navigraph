@@ -3,7 +3,7 @@
  * 负责创建、管理和维护浏览会话
  */
 import { Logger } from '../../lib/utils/logger.js';
-import { IdGenerator } from "./id-generator.js";
+import { IdGenerator } from "../lib/id-generator.js";
 import { SessionStorage } from "../store/session-storage.js";
 import { NavigationStorage } from "../store/navigation-storage.js";
 import { sessionEvents } from "./session-event-emitter.js";
@@ -36,9 +36,6 @@ export class BackgroundSessionManager {
 
   // 当前激活的会话ID
   private currentSessionId: string | null = null;
-
-  // 会话缓存 - 提高性能
-  private sessionCache: Map<string, BrowsingSession> = new Map();
 
   // 初始化状态
   private initialized = false;
@@ -190,7 +187,7 @@ export class BackgroundSessionManager {
     try {
       // 如果已有当前会话
       if (this.currentSessionId) {
-        const currentSession = await this.getSessionById(this.currentSessionId);
+        const currentSession = await this.getSessionDetails(this.currentSessionId);
         if (currentSession) {
           // 使用会话的lastActivity或startTime作为最后活动时间
           this.lastActivityTime = currentSession.lastActivity || currentSession.startTime;
@@ -450,7 +447,6 @@ export class BackgroundSessionManager {
           (a, b) => b.startTime - a.startTime
         )[0];
         this.currentSessionId = mostRecent.id;
-        this.sessionCache.set(mostRecent.id, mostRecent);
   
         logger.log(`加载了活跃会话: ${mostRecent.id} - ${mostRecent.title}`);
         return;  // 找到活跃会话，直接返回
@@ -481,7 +477,6 @@ export class BackgroundSessionManager {
           await this.storage.saveSession(mostRecent);
           
           this.currentSessionId = mostRecent.id;
-          this.sessionCache.set(mostRecent.id, mostRecent);
           
           sessionEvents.emitSessionActivated(mostRecent.id);
           return;
@@ -628,7 +623,6 @@ export class BackgroundSessionManager {
 
       // 保存到存储和缓存
       await this.storage.saveSession(newSession);
-      this.sessionCache.set(sessionId, newSession);
 
       logger.log(`已创建新会话: ${sessionId} - ${newSession.title}`);
 
@@ -679,11 +673,11 @@ export class BackgroundSessionManager {
       // 如果会话ID与当前会话相同，无需操作
       if (sessionId === this.currentSessionId) {
         logger.log(`会话 ${sessionId} 已经是当前活跃会话`);
-        return this.getSessionById(sessionId);
+        return this.getSessionDetails(sessionId);
       }
 
       // 检查会话是否存在
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -697,7 +691,6 @@ export class BackgroundSessionManager {
       // 更新会话为活跃状态
       session.isActive = true;
       await this.storage.saveSession(session);
-      this.sessionCache.set(sessionId, session);
 
       logger.log(`已将会话 ${sessionId} 设置为当前活跃会话`);
 
@@ -727,7 +720,7 @@ export class BackgroundSessionManager {
     }
 
     try {
-      return await this.getSessionById(this.currentSessionId);
+      return await this.getSessionDetails(this.currentSessionId);
     } catch (error) {
       logger.error("获取当前会话失败:", error);
       throw new Error(
@@ -751,26 +744,17 @@ export class BackgroundSessionManager {
    * @param sessionId 会话ID
    * @returns 会话对象，如果不存在则返回null
    */
-  public async getSessionById(
+  public async getSessionDetails(
     sessionId: string
   ): Promise<BrowsingSession | null> {
     await this.ensureInitialized();
-
     try {
-      // 先尝试从缓存获取
-      if (this.sessionCache.has(sessionId)) {
-        const cachedSession = this.sessionCache.get(sessionId);
-        // 如果缓存中已有完整数据（包含records和edges），直接返回
-        if (cachedSession && cachedSession.records) {
-          return cachedSession;
-        }
-      }
-
       // 从存储获取基本会话信息
       const session = await this.storage.getSession(sessionId);
-
+      
       // 如果会话不存在，返回null
       if (!session) {
+        logger.error(`会话 ${sessionId} 不存在`);
         return null;
       }
 
@@ -784,9 +768,6 @@ export class BackgroundSessionManager {
         edges: navData.edges,
         rootIds: navData.rootIds,
       };
-
-      // 更新缓存
-      this.sessionCache.set(sessionId, fullSession);
 
       return fullSession;
     } catch (error) {
@@ -812,7 +793,7 @@ export class BackgroundSessionManager {
     // 创建导航存储实例
     const navStorage = new NavigationStorage();
     await navStorage.initialize();
-    
+
     try {
       // 获取会话的所有节点和边
       const { nodes, edges } = await navStorage.getSessionGraph(sessionId);
@@ -891,7 +872,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取原会话
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -935,7 +916,6 @@ export class BackgroundSessionManager {
 
       // 保存更新
       await this.storage.saveSession(session);
-      this.sessionCache.set(sessionId, session);
 
       logger.log(`已更新会话 ${sessionId}`);
 
@@ -963,7 +943,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取会话
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -979,7 +959,6 @@ export class BackgroundSessionManager {
 
       // 保存更新
       await this.storage.saveSession(session);
-      this.sessionCache.set(sessionId, session);
 
       logger.log(`已结束会话 ${sessionId}`);
 
@@ -1013,9 +992,6 @@ export class BackgroundSessionManager {
         this.currentSessionId = null;
       }
 
-      // 从缓存移除
-      this.sessionCache.delete(sessionId);
-
       // 从存储删除
       const result = await this.storage.deleteSession(sessionId);
 
@@ -1047,7 +1023,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取会话
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -1090,7 +1066,7 @@ export class BackgroundSessionManager {
     await this.ensureInitialized();
 
     try {
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         logger.warn(`更新节点计数失败: 会话 ${sessionId} 不存在`);
         return;
@@ -1102,8 +1078,7 @@ export class BackgroundSessionManager {
         session.nodeCount = (session.nodeCount || 0) + 1;
       }
 
-      // 更新缓存和存储
-      this.sessionCache.set(sessionId, session);
+      // 更新存储
       await this.storage.saveSession(session);
     } catch (error) {
       logger.error(`更新会话 ${sessionId} 节点计数失败:`, error);
@@ -1122,7 +1097,7 @@ export class BackgroundSessionManager {
     await this.ensureInitialized();
 
     try {
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         logger.warn(`更新标签页计数失败: 会话 ${sessionId} 不存在`);
         return;
@@ -1134,8 +1109,7 @@ export class BackgroundSessionManager {
         session.tabCount = (session.tabCount || 0) + 1;
       }
 
-      // 更新缓存和存储
-      this.sessionCache.set(sessionId, session);
+      // 更新存储
       await this.storage.saveSession(session);
     } catch (error) {
       logger.error(`更新会话 ${sessionId} 标签页计数失败:`, error);
@@ -1152,7 +1126,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取当前会话
-      const session = await this.getSessionById(this.currentSessionId);
+      const session = await this.getSessionDetails(this.currentSessionId);
       if (!session) {
         // 当前会话不存在，直接清空当前会话ID
         this.currentSessionId = null;
@@ -1164,7 +1138,6 @@ export class BackgroundSessionManager {
 
       // 保存更新
       await this.storage.saveSession(session);
-      this.sessionCache.set(session.id, session);
 
       logger.log(`将会话 ${session.id} 设置为非活跃状态`);
 
@@ -1174,7 +1147,7 @@ export class BackgroundSessionManager {
       logger.error("设置当前会话为非活跃状态失败:", error);
     }
   }
-
+ 
   /**
    * 注册消息处理程序
    * @param messageService 消息服务实例
@@ -1234,7 +1207,7 @@ export class BackgroundSessionManager {
         const ctx = messageService.createMessageContext(message, sender, sendResponse);
         const { sessionId } = message;
 
-        this.getSessionById(sessionId)
+        this.getSessionDetails(sessionId)
           .then((session) => {
             if (!session) {
               ctx.error(`会话 ${sessionId} 不存在`);

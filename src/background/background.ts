@@ -6,9 +6,8 @@ import { NavigationManager } from './navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
 import { setupContextMenus } from './lib/context-menus.js';
-import { getBackgroundMessageService } from './messaging/bg-message-service.js';
-import { registerAllBackgroundHandlers } from './messaging/index.js';
-import { getBackgroundSessionManager } from './lib/bg-session-manager.js';
+import { getBackgroundMessageService, registerAllBackgroundHandlers } from './messaging/bg-message-service.js';
+import { getBackgroundSessionManager } from './session/bg-session-manager.js';
 
 // 声明但不立即初始化（模块级别变量）
 let settingsService: any;
@@ -67,8 +66,8 @@ async function initialize(): Promise<void> {
     sessionManager.registerMessageHandlers(messageService);
     
     // 7. 设置事件监听器和上下文菜单
-    setupEventListeners(navigationManager);
-    setupContextMenus(navigationManager);
+    setupEventListeners();
+    setupContextMenus();
 
     logger.log('导航图谱后台初始化成功');
   } catch (error) {

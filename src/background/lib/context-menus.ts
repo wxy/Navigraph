@@ -6,7 +6,7 @@ const logger = new Logger('ContextMenus');
 /**
  * 设置上下文菜单
  */
-export function setupContextMenus(navigationManager: NavigationManager): void {
+export function setupContextMenus(): void {
   // 添加调试上下文菜单
   setupDebugContextMenu();
   

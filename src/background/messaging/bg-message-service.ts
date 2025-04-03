@@ -1,7 +1,9 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { BaseMessageService } from '../../lib/messaging/base-service.js';
+import { registerTabHandlers, registerSettingsHandlers } from './handlers/index.js';
 
 const logger = new Logger('BackgroundMessageService');
+
 /**
  * 后台消息服务类
  * 处理发送给后台的消息
@@ -40,3 +42,18 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
 export const getBackgroundMessageService = (): BackgroundMessageService => {
   return BackgroundMessageService.getInstance();
 };
+
+/**
+ * 注册所有后台消息处理程序
+ */
+export const registerAllBackgroundHandlers = (): void => {
+  const messageService = getBackgroundMessageService();
+  
+  logger.groupCollapsed('正在注册后台消息处理程序...');
+  
+  // 仅注册实际需要的处理程序
+  registerTabHandlers(messageService);
+  registerSettingsHandlers(messageService);
+  
+  logger.groupEnd();
+}

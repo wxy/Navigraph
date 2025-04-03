@@ -6,7 +6,7 @@ const logger = new Logger('EventListeners');
 /**
  * 设置扩展事件监听器
  */
-export function setupEventListeners(navigationManager: NavigationManager): void {
+export function setupEventListeners(): void {
   // 处理扩展安装或更新
   chrome.runtime.onInstalled.addListener((details) => {
     handleExtensionInstalled(details);

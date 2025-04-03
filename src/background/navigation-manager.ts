@@ -1,4 +1,4 @@
-import { Logger, LogLevel } from '../lib/utils/logger.js';
+import { Logger } from '../lib/utils/logger.js';
 import { NavigationStorage } from './store/navigation-storage.js';
 import { SessionStorage } from './store/session-storage.js';
 import { IdGenerator } from './lib/id-generator.js';
@@ -28,6 +28,8 @@ const logger = new Logger('NavigationManager');
  * 4. 提供导航数据查询和更新接口
  */
 export class NavigationManager {
+  // 消息服务实例
+  private messageService: BackgroundMessageService;
   // 存储引用
   private navigationStorage: NavigationStorage;
   private sessionStorage: SessionStorage;
@@ -76,23 +78,10 @@ export class NavigationManager {
     navigationStorage?: NavigationStorage,
     sessionStorage?: SessionStorage
   ) {
+    this.messageService = messageService;
     // 创建存储实例
     this.navigationStorage = navigationStorage || new NavigationStorage();
     this.sessionStorage = sessionStorage || new SessionStorage();
-
-    // 设置定期清理任务
-    setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
-    setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
-
-    // 初始化事件侦听器
-    this.setupEventListeners();
-
-    // 注册消息处理程序
-    logger.groupCollapsed('注册导航相关消息处理程序');
-    this.registerMessageHandlers(messageService);
-    logger.groupEnd();
-
-    logger.log("导航管理器已初始化");
   }
   /**
    * 初始化导航管理器
@@ -103,7 +92,6 @@ export class NavigationManager {
       
       // 初始化导航存储
       await this.navigationStorage.initialize();
-      
       // 初始化会话存储
       await this.sessionStorage.initialize();
   
@@ -120,8 +108,18 @@ export class NavigationManager {
         this.currentSessionId = currentSession.id;
       }
 
-      logger.log(`导航管理器使用会话ID: ${this.currentSessionId}`);
-    
+      // 设置定期清理任务
+      setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
+      setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
+
+      // 注册消息处理程序
+      logger.groupCollapsed('注册导航相关消息处理程序');
+      this.registerMessageHandlers(this.messageService);
+      logger.groupEnd();
+
+      // 初始化事件侦听器
+      this.setupEventListeners();
+            
       logger.log("导航管理器初始化完成");
     } catch (error) {
       logger.error("导航管理器初始化失败:", error);
