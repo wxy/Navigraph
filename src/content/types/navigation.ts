@@ -69,7 +69,7 @@ export interface Visualizer {
   statusBar?: HTMLElement;
   
   // 视图相关
-  currentView?: string;
+  currentView: string;
   currentTransform?: {x: number, y: number, k: number};
   svg?: any;
   zoom?: any;
@@ -79,8 +79,8 @@ export interface Visualizer {
   currentSession?: SessionDetails
   
   // 节点和边数据
-  nodes?: NavNode[];
-  edges?: NavLink[];
+  nodes: NavNode[];
+  edges: NavLink[];
 
   // 其他必要属性
   tabId?: string;
@@ -89,8 +89,15 @@ export interface Visualizer {
   filters?: any;
   
   // 常用方法
+  refreshVisualization(): void;
   renderVisualization(): void;
   showNodeDetails(data: any): void;
   switchView(viewName: string): void;
   updateStatusBar(): void;
+  isTrackingPage(node: NavNode): boolean;
+
+  // 添加筛选器相关方法
+  updateFilter(filterId: string, value: boolean): void;
+  applyFilters(): void;
+  getFilters(): any;
 }

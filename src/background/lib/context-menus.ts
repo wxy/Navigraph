@@ -1,5 +1,4 @@
 import { Logger } from '../../lib/utils/logger.js';
-import { NavigationManager } from '../navigation-manager.js';
 
 const logger = new Logger('ContextMenus');
 
@@ -78,40 +77,37 @@ function handleDebugMenuAction(command: string): void {
   // 检查是否已经打开了扩展页面
   chrome.tabs.query({ url: chrome.runtime.getURL('dist/content/index.html') + '*' }, (existingTabs) => {
     if (existingTabs && existingTabs.length > 0) {
-      // 如果扩展页面已打开，尝试发送消息
-      try {
-        chrome.tabs.sendMessage(
-          existingTabs[0].id!, // 使用非空断言，因为我们已经检查了数组长度
-          {
-            action: 'debug',
-            command: command
-          },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              logger.warn('发送到已打开页面失败，打开新标签页:', chrome.runtime.lastError);
-              // 新开一个标签页
-              chrome.tabs.create({
-                url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${command}`
-              });
-              return;
-            }
-
-            logger.log('调试命令已发送到现有标签页:', response);
-            // 激活该标签页
-            chrome.tabs.update(existingTabs[0].id!, { active: true });
+      // 找到现有标签页
+      const tab = existingTabs[0];
+      logger.log(`找到现有扩展页面: ${tab.id}`);
+      
+      // 激活标签页
+      chrome.tabs.update(tab.id!, { active: true }, () => {
+        // 使用Chrome存储API传递调试命令
+        chrome.storage.local.set({
+          'navigraph_debug_command': command,
+          'navigraph_debug_timestamp': Date.now()
+        }, () => {
+          if (chrome.runtime.lastError) {
+            logger.error('设置调试命令失败:', chrome.runtime.lastError);
+            return;
           }
-        );
-      } catch (err) {
-        logger.error('发送消息时出错:', err);
-        // 出错时创建新标签
-        chrome.tabs.create({
-          url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${command}`
+          
+          logger.log(`已向存储API发送调试命令: ${command}`);
         });
-      }
+      });
     } else {
-      // 如果扩展页面未打开，创建新标签
-      chrome.tabs.create({
-        url: chrome.runtime.getURL('dist/content/index.html') + `?debug=${command}`
+      // 如果没有找到扩展页面，创建新标签页
+      logger.log('未找到扩展页面，创建新标签页');
+      
+      // 先设置调试命令，然后创建页面
+      chrome.storage.local.set({
+        'navigraph_debug_command': command,
+        'navigraph_debug_timestamp': Date.now()
+      }, () => {
+        chrome.tabs.create({
+          url: chrome.runtime.getURL('dist/content/index.html')
+        });
       });
     }
   });
