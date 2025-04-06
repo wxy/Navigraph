@@ -89,10 +89,15 @@ export interface Visualizer {
   filters?: any;
   
   // 常用方法
+  refreshVisualization(): void;
   renderVisualization(): void;
   showNodeDetails(data: any): void;
   switchView(viewName: string): void;
   updateStatusBar(): void;
   isTrackingPage(node: NavNode): boolean;
 
+  // 添加筛选器相关方法
+  updateFilter(filterId: string, value: boolean): void;
+  applyFilters(): void;
+  getFilters(): any;
 }
