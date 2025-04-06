@@ -13,6 +13,8 @@ import { sendMessage, registerHandler, unregisterHandler } from '../messaging/co
 import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
 import { initStatusBar, updateStatusBar } from '../utils/state-manager.js';
 
+import { DataProcessor } from '../visualizer/DataProcessor.js';
+
 const logger = new Logger('NavigationVisualizer');
 /**
  * 导航可视化器类
@@ -64,6 +66,8 @@ export class NavigationVisualizer implements Visualizer {
   currentSession?: SessionDetails = undefined; // 修改为可选属性，与Visualizer接口匹配
   statusBar?: HTMLElement; // 修改为可选属性，与Visualizer接口匹配
   
+  private dataProcessor: DataProcessor = new DataProcessor();
+
   private trackingKeywords = [
     '/track/', '/pixel/', '/analytics/', '/beacon/', '/telemetry/', 
     '/stats/', '/log/', '/metrics/', '/collect/', '/monitor/', 
@@ -1300,92 +1304,17 @@ export class NavigationVisualizer implements Visualizer {
    * 可以选择传入新的筛选器，或使用当前类中的筛选器
    */
   applyFilters(): void {
-    
     logger.log('应用筛选器:', this.filters);
     
-    // 筛选后重置缩放状态，确保缩放被重新创建
+    // 使用 DataProcessor 进行筛选
+    const result = this.dataProcessor.applyFilters(this.allNodes, this.allEdges, this.filters);
+    
+    // 更新当前节点和边
+    this.nodes = result.nodes;
+    this.edges = result.edges;
+    
+    // 筛选后重置缩放状态
     this.zoom = null;
-    
-    // 从所有节点中筛选出符合条件的节点
-    this.filterNodes();
-  }
-  
-  /**
-   * 根据筛选条件过滤节点
-   */
-  private filterNodes(): void {
-    // 确保有原始数据可供筛选
-    if (!this.allNodes || !this.allEdges) {
-      logger.warn('没有原始数据可供筛选');
-      return;
-    }
-    
-    logger.log('开始根据筛选条件过滤节点...');
-    
-    // 从所有节点开始
-    let filteredNodes = [...this.allNodes];
-    let filteredEdges = [...this.allEdges];
-    
-    // 修改类型筛选逻辑 - 使用白名单方式，但不过滤未知类型
-    // 并确保指定的类型能正确通过
-    filteredNodes = filteredNodes.filter(node => {
-      // 创建一个节点描述，方便调试
-      const nodeDesc = `${node.id} (${node.title || 'Untitled'}, 类型=${node.type || 'unknown'})`;
-      
-      // 类型筛选 - 只过滤明确禁用的已知类型
-      if (node.type) {
-        // 特定类型使用对应的过滤配置
-        if (
-          (node.type === 'link_click' && !this.filters.typeLink) ||
-          (node.type === 'address_bar' && !this.filters.typeAddress) ||
-          (node.type === 'form_submit' && !this.filters.typeForm) ||
-          (node.type === 'javascript' && !this.filters.typeJs)
-        ) {
-          logger.log(`过滤掉节点：${nodeDesc} - 类型被禁用`);
-          return false;
-        }
-      }
-      
-      // 刷新筛选
-      if (!this.filters.reload && node.type === 'reload') {
-        return false;
-      }
-      
-      // 历史筛选
-      if (!this.filters.history && (node.type === 'history_back' || node.type === 'history_forward')) {
-        return false;
-      }
-      
-      // 关闭页面筛选
-      if (!this.filters.closed && node.isClosed) {
-        return false;
-      }
-      
-      // 跟踪页面筛选
-      if (!this.filters.showTracking && this.isTrackingPage(node)) {
-        return false;
-      }
-      
-      // 通过其他类型，包括 redirect 类型
-      return true;
-    });
-    
-    logger.log(`筛选结果: 从${this.allNodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
-    
-    // 获取所有符合条件的节点ID集合，用于边过滤
-    const nodeIds = new Set(filteredNodes.map(node => node.id));
-    
-    // 过滤连接，只保留两端都在筛选后节点中的连接
-    filteredEdges = filteredEdges.filter(edge => {
-      const sourceId = edge.source;
-      const targetId = edge.target;
-      
-      return nodeIds.has(sourceId) && nodeIds.has(targetId);
-    });
-    
-    // 更新当前使用的节点和边
-    this.nodes = filteredNodes;
-    this.edges = filteredEdges;
   }
   
   /**
@@ -1777,14 +1706,18 @@ export class NavigationVisualizer implements Visualizer {
   /**
    * 判断页面是否为跟踪页面
    */
-  isTrackingPage(node: any): boolean {
-    if (!node || !node.url) return false;
-    
-    const url = node.url.toLowerCase();
-    
-    return this.trackingKeywords.some(keyword => url.includes(keyword));
+  isTrackingPage(node: NavNode): boolean {
+    return this.dataProcessor.isTrackingPage(node);
   }
-  
+  // 添加构建节点映射的方法
+  buildNodeMap(nodes: NavNode[]): Map<string, NavNode> {
+    return this.dataProcessor.buildNodeMap(nodes);
+  }
+
+  // 使用 dataProcessor 的 identifyRootNodes 方法
+  identifyRootNodes(nodes: NavNode[]): string[] {
+    return this.dataProcessor.identifyRootNodes(nodes);
+  }
   /**
    * 更新视图按钮状态
    */
