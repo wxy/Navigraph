@@ -565,8 +565,8 @@ export function switchViewType(visualizer: Visualizer, viewType: string): void {
     });
     
     // 重新渲染当前视图
-    if (typeof visualizer.renderVisualization === 'function') {
-      visualizer.renderVisualization();
+    if (typeof visualizer.refreshVisualization === 'function') {
+      visualizer.refreshVisualization();
     }
     
     // 更新状态栏

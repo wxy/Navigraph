@@ -14,6 +14,7 @@ import { SessionViewController } from '../visualizer/state/SessionViewController
 import { NavigationMessageHandler } from '../messaging/handlers/navigation-message-handler.js';
 import { FilterManager } from '../visualizer/state/FilterManager.js';
 import type { FilterStates } from '../visualizer/ui/FilterConfig.js';
+import { RenderingManager } from '../visualizer/renderers/RenderingManager.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -57,6 +58,9 @@ export class NavigationVisualizer implements Visualizer {
   // 添加 FilterManager 属性
   private filterManager: FilterManager;
 
+  // 添加渲染管理器属性
+  private renderingManager: RenderingManager;
+
   // 修改 filters getter 以使用 FilterManager
   get filters(): FilterStates {
     return this.filterManager.filters;
@@ -82,6 +86,9 @@ export class NavigationVisualizer implements Visualizer {
     
     // 初始化筛选器管理器 - 新增
     this.filterManager = new FilterManager(this, this.dataProcessor, this.uiManager);
+    
+    // 初始化渲染管理器
+    this.renderingManager = new RenderingManager(this, this.viewStateManager, this.uiManager);
     
     // 设置缩放变化回调
     this.viewStateManager.setOnZoomChangeCallback(
@@ -180,16 +187,24 @@ export class NavigationVisualizer implements Visualizer {
     logger.log("基础配置与消息监听初始化完成");
   }
 
+  /**
+   * 初始化UI - 修改使用渲染管理器
+   */
   private async initializeUI(): Promise<void> {
     // 委托UI管理器处理所有UI相关任务，并获取SVG元素
     const { container, svg } = this.uiManager.initialize();
     this.container = container;
 
-    // 添加窗口大小变化监听
-    window.addEventListener("resize", () => this.updateContainerSize());
+    // 初始化渲染管理器
+    this.renderingManager.initialize(container);
+
+    // 添加窗口大小变化监听 - 委托给渲染管理器
+    window.addEventListener("resize", () => this.renderingManager.handleResize());
+    
     // 使用返回的SVG元素
     if (svg) {
-      this.setupSvg(svg); // 配置SVG，添加所需的事件监听等
+      // 使用渲染管理器配置SVG
+      this.renderingManager.setupSvg(svg);
     } else {
       throw new Error("初始化失败：无法创建SVG元素");
     }
@@ -240,45 +255,6 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 配置SVG元素，添加D3所需结构
-   * @param svgElement 由UIManager创建的原生SVG元素
-   */
-  private setupSvg(svgElement: SVGElement): void {
-    logger.log("配置SVG元素...");
-
-    try {
-      // 确保有效的SVG元素
-      if (!svgElement) {
-        throw new Error("SVG元素为空");
-      }
-      
-      // 将原生SVG元素转换为D3选择集
-      const svg = d3
-        .select(svgElement)
-        .attr("class", "visualization-svg")
-        .attr("data-view", this.currentView);
-      
-      // 设置SVG到视图状态管理器
-      this.viewStateManager.svg = svg;
-
-      // 添加根分组
-      const mainGroup = svg.append("g").attr("class", "main-group");
-
-      // 创建链接组和节点组
-      mainGroup.append("g").attr("class", "links-group");
-      mainGroup.append("g").attr("class", "nodes-group");
-
-      // 使用视图状态管理器设置缩放行为
-      this.viewStateManager.setupBasicZoom();
-
-      logger.log("SVG配置成功");
-    } catch (error) {
-      logger.error("配置SVG元素失败:", error);
-      throw error;
-    }
-  }
-
-  /**
    * 清理资源
    * 在可视化器销毁或者组件卸载时调用
    */
@@ -290,62 +266,22 @@ export class NavigationVisualizer implements Visualizer {
 
     // 清理筛选器管理器
     this.filterManager.cleanup();
+    
+    // 清理渲染管理器
+    this.renderingManager.cleanup();
 
     // 移除事件监听器
-    window.removeEventListener("resize", () => this.updateContainerSize());
+    window.removeEventListener("resize", () => this.renderingManager.handleResize());
 
     // 清理其他资源...
     logger.groupEnd();
   }
 
   /**
-   * 更新容器大小并重新渲染
+   * 更新容器大小 - 委托给渲染管理器
    */
   updateContainerSize(): void {
-    if (!this.container) return;
-
-    // 获取主容器尺寸
-    const mainContainer = this.container.closest(".main-container");
-
-    let width, height;
-
-    if (mainContainer) {
-      // 使用父容器的尺寸
-      const rect = mainContainer.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-    } else {
-      // 回退到窗口尺寸，但不完全占满（留出一些边距）
-      width = window.innerWidth - 40;
-      height = window.innerHeight - 100;
-    }
-
-    // 检查尺寸是否真的变化了
-    const oldWidth = parseFloat(this.container.style.width) || 0;
-    const oldHeight = parseFloat(this.container.style.height) || 0;
-
-    // 只有当尺寸变化超过一定阈值时才更新
-    const threshold = 5; // 5像素的阈值
-    if (
-      Math.abs(width - oldWidth) > threshold ||
-      Math.abs(height - oldHeight) > threshold
-    ) {
-      logger.log(`更新容器大小: ${width}x${height}`);
-
-      // 应用尺寸
-      this.container.style.width = `${width}px`;
-      this.container.style.height = `${height}px`;
-
-      // 通知 UI 管理器容器大小变化
-      this.uiManager.handleResize(width, height);
-
-      // 如果已有可视化，重新渲染
-      if (this.nodes.length > 0) {
-        this.renderVisualization({ restoreTransform: true });
-      }
-    } else {
-      logger.log("容器大小变化不显著，跳过更新");
-    }
+    this.renderingManager.updateContainerSize();
   }
   /**
    * 节流更新状态栏
@@ -393,51 +329,13 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 刷新可视化
-   * 处理外部请求刷新可视化的消息
+   * 刷新可视化 - 委托给渲染管理器
    */
   refreshVisualization(
     data?: any,
     options: { restoreTransform?: boolean } = {}
   ): void {
-    logger.log("执行刷新可视化...", data ? "使用提供的数据" : "使用现有数据");
-
-    try {
-      // 如果提供了新数据，则更新数据
-      if (data) {
-        if (data.nodes) {
-          this.nodes = data.nodes;
-        }
-
-        if (data.edges) {
-          this.edges = data.edges;
-        }
-
-        if (data.session) {
-          this.currentSession = data.session;
-        }
-      }
-
-      // 重新应用过滤器
-      this.applyFilters();
-
-      // 重新渲染可视化
-      this.renderVisualization({
-        restoreTransform: options.restoreTransform === true,
-      });
-
-      // 更新URL
-      this.updateUrl();
-
-      // 更新状态栏
-      this.updateStatusBar();
-
-      logger.log("可视化刷新完成");
-    } catch (error) {
-      this.showError(
-        "刷新失败: " + (error instanceof Error ? error.message : String(error))
-      );
-    }
+    this.renderingManager.refreshVisualization(data, options);
   }
   /**
    * 处理筛选器变化
@@ -448,7 +346,7 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 切换视图
+   * 切换视图 - 修改使用渲染管理器
    */
   switchView(view: "tree" | "timeline"): void {
     // 使用视图状态管理器切换视图
@@ -461,177 +359,18 @@ export class NavigationVisualizer implements Visualizer {
       // 重新初始化 SVG 结构
       const svg = this.uiManager.createSvgElement();
       if (svg) {
-        // 配置SVG元素，添加D3需要的结构
-        this.setupSvg(svg);
+        // 使用渲染管理器配置SVG
+        this.renderingManager.setupSvg(svg);
       } else {
         throw new Error("无法创建SVG元素");
       }
 
-      // 重新渲染
+      // 使用渲染管理器重新渲染
       this.refreshVisualization(undefined, { restoreTransform: true });
     } catch (error) {
       logger.error("重新初始化视图失败:", error);
       this.showError("切换视图失败: " + (error instanceof Error ? error.message : String(error)));
     }
-  }
-
-  /**
-   * 渲染可视化
-   */
-  renderVisualization(options: { restoreTransform?: boolean } = {}): void {
-    if (!this.container || !this.svg) {
-      logger.error("无法渲染可视化：容器或SVG不存在");
-      return;
-    }
-
-    try {
-      // 获取容器大小
-      const width = this.container.clientWidth || 800;
-      const height = this.container.clientHeight || 600;
-
-      // 保存尺寸
-      this.width = width;
-      this.height = height;
-
-      // 清除现有可视化
-      this.svg.selectAll("*").remove();
-
-      // 创建基本SVG结构
-      const mainGroup = this.svg.append("g").attr("class", "main-group");
-
-      mainGroup.append("g").attr("class", "links-group");
-
-      const nodesGroup = mainGroup.append("g").attr("class", "nodes-group");
-
-      // 检查是否有数据可渲染
-      const hasData = this.nodes && this.nodes.length > 0;
-
-      logger.log(
-        `开始渲染${this.currentView}视图, 节点数: ${
-          hasData ? this.nodes.length : 0
-        }, 边数: ${hasData ? this.edges.length : 0}, 尺寸: ${width}x${height}`
-      );
-
-      // 如果没有数据，创建一个会话节点
-      if (!hasData) {
-        // 创建一个会话节点
-        const sessionNode = nodesGroup
-          .append("g")
-          .attr("class", "node session-node empty-session")
-          .attr("transform", `translate(${width / 2}, ${height / 2})`);
-
-        // 添加节点外圈
-        sessionNode
-          .append("circle")
-          .attr("r", 40)
-          .attr("class", "node-circle empty-node-circle");
-
-        // 添加会话图标
-        sessionNode
-          .append("image")
-          .attr("class", "empty-node-icon")
-          .attr("x", -16) // 图标宽度的一半的负值，使其居中
-          .attr("y", -16) // 图标高度的一半的负值，使其居中
-          .attr("width", 32)
-          .attr("height", 32)
-          .attr("href", chrome.runtime.getURL("images/logo-48.png"));
-
-        // 添加提示文字
-        const sessionTitle = this.currentSession?.title || "当前会话";
-        sessionNode
-          .append("text")
-          .attr("class", "node-label empty-node-label")
-          .attr("dy", 70)
-          .attr("text-anchor", "middle")
-          .text(sessionTitle);
-
-        // 添加无数据提示
-        sessionNode
-          .append("text")
-          .attr("class", "empty-data-message")
-          .attr("dy", 90)
-          .attr("text-anchor", "middle")
-          .text("没有打开的浏览记录");
-
-        // 为空会话节点添加闪烁动画
-        this.addEmptySessionAnimation(sessionNode);
-
-        // 为会话节点添加点击事件，显示创建新会话选项
-        sessionNode.on("click", () => {
-          // 显示会话选项
-          const sessionSelector = document.getElementById("session-selector");
-          if (sessionSelector) {
-            sessionSelector.click();
-          }
-        });
-
-        // 添加简单的缩放功能
-        this.viewStateManager.setupBasicZoom();
-      } else {
-        // 使用渲染器工厂创建相应的渲染器
-        const renderer = RendererFactory.createRenderer(
-          this.currentView as 'tree' | 'timeline',
-          this
-        );
-        
-        // 初始化渲染器
-        renderer.initialize(
-          this.svg,
-          this.container,
-          width,
-          height
-        );
-        
-        // 渲染视图
-        renderer.render(this.nodes, this.edges, {
-          restoreTransform: options.restoreTransform
-        });
-      }
-
-      // 在可视化渲染后，尝试恢复视图状态
-      if (options.restoreTransform) {
-        // 尝试恢复视图缩放状态
-        setTimeout(() => {
-          this.viewStateManager.restoreViewState();
-        }, 50);
-      }
-
-      // 更新状态栏
-      this.updateStatusBar();
-
-      logger.log("可视化渲染完成", {
-        view: this.currentView,
-        zoom: this.zoom ? "已设置" : "未设置",
-        hasData,
-      });
-    } catch (error) {
-      this.showError(
-        "渲染失败: " + (error instanceof Error ? error.message : String(error))
-      );
-    }
-  }
-
-  /**
-   * 为空会话节点添加闪烁动画
-   */
-  private addEmptySessionAnimation(sessionNode: any): void {
-    // 添加脉冲动画
-    sessionNode
-      .select(".node-circle")
-      .append("animate")
-      .attr("attributeName", "r")
-      .attr("values", "40;43;40")
-      .attr("dur", "2s")
-      .attr("repeatCount", "indefinite");
-
-    // 添加透明度变化
-    sessionNode
-      .select(".node-circle")
-      .append("animate")
-      .attr("attributeName", "opacity")
-      .attr("values", "0.5;0.8;0.5")
-      .attr("dur", "2s")
-      .attr("repeatCount", "indefinite");
   }
 
   /**
@@ -653,26 +392,10 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 更新URL以反映当前视图和筛选状态
-   * 修改为使用FilterManager获取筛选器URL参数
+   * 更新节点视觉效果 - 委托给渲染管理器
    */
-  private updateUrl(): void {
-    try {
-      const url = new URL(window.location.href);
-
-      // 更新视图参数
-      url.searchParams.set("view", this.currentView);
-
-      // 更新筛选器参数 - 使用FilterManager
-      url.searchParams.set("filter", this.filterManager.getFilterUrlParam());
-
-      // 不触发页面刷新的情况下更新URL
-      window.history.replaceState(null, "", url);
-
-      logger.log("已更新URL以反映当前视图和筛选状态");
-    } catch (error) {
-      logger.warn("更新URL失败:", error);
-    }
+  private updateNodeVisual(nodeId: string): void {
+    this.renderingManager.updateNodeVisual(nodeId, this.nodeMap);
   }
 
   /**
@@ -887,31 +610,6 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 更新节点视觉效果
-   * @param nodeId 节点ID
-   */
-  private updateNodeVisual(nodeId: string): void {
-    if (!this.svg) return;
-    
-    // 尝试更新节点文本
-    const textElement = this.svg.select(`.node-text[data-node-id="${nodeId}"]`);
-    if (textElement && !textElement.empty()) {
-      const node = this.nodeMap.get(nodeId);
-      if (node) {
-        textElement.text(node.title || node.url || nodeId);
-      }
-    }
-    
-    // 尝试更新节点图标
-    const iconElement = this.svg.select(`.node-icon[data-node-id="${nodeId}"]`);
-    if (iconElement && !iconElement.empty()) {
-      const node = this.nodeMap.get(nodeId);
-      if (node && node.favicon) {
-        iconElement.attr("href", node.favicon);
-      }
-    }
-  }
-  /**
    * 获取或创建节点ID
    * @param url 页面URL
    * @returns 节点ID
@@ -1023,5 +721,29 @@ export class NavigationVisualizer implements Visualizer {
       logger.error("刷新数据失败:", error);
       throw error;
     }
+  }
+
+  /**
+   * 实现 Visualizer.updateData 方法
+   */
+  updateData(data: any): void {
+    if (data.nodes) {
+      this.nodes = data.nodes;
+    }
+
+    if (data.edges) {
+      this.edges = data.edges;
+    }
+
+    if (data.session) {
+      this.currentSession = data.session;
+    }
+  }
+  
+  /**
+   * 实现 Visualizer.getFilterUrlParam 方法
+   */
+  getFilterUrlParam(): string {
+    return this.filterManager.getFilterUrlParam();
   }
 }
