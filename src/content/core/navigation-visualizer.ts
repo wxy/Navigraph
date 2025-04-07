@@ -14,6 +14,8 @@ import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
 import { FilterConfig, FilterStates, getInitialFilters, extractFilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
+import { ViewStateManager } from '../visualizer/state/ViewStateManager.js';
+
 const logger = new Logger('NavigationVisualizer');
 /**
  * 导航可视化器类
@@ -23,27 +25,12 @@ export class NavigationVisualizer implements Visualizer {
   // 可视化容器
   container: HTMLElement | null = null;
 
-  // 当前视图类型 ('tree' | 'timeline')
-  currentView: string = "tree";
-
   // 替换原有的筛选器相关属性
   private filterConfigs: FilterConfig[] = getInitialFilters();
   
   get filters(): FilterStates {
     return extractFilterStates(this.filterConfigs);
   }
-
-  // D3相关
-  svg: any = null;
-  zoom: any = null;
-
-  currentTransform?: { x: number; y: number; k: number } | undefined;
-
-  // 状态跟踪
-  _isRestoringTransform: boolean = false;
-  _savedTransform?: { x: number; y: number; k: number };
-  _treeZoom: any = null; // 树形视图的缩放状态
-  _timelineZoom: any = null; // 时间线视图的缩放状态
 
   // 数据存储
   nodes: NavNode[] = [];
@@ -66,11 +53,23 @@ export class NavigationVisualizer implements Visualizer {
   // 添加调试工具属性
   private debugTools: DebugTools | null = null;
 
+  // 添加ViewStateManager
+  private viewStateManager: ViewStateManager;
+
   /**
    * 构造函数
    */
   constructor() {
     logger.log("初始化NavigationVisualizer...");
+    
+    // 初始化视图状态管理器
+    this.viewStateManager = new ViewStateManager(this);
+
+    // 设置缩放变化回调
+    this.viewStateManager.setOnZoomChangeCallback(
+      // 使用NavigationVisualizer中的节流函数
+      () => this.updateStatusBarThrottled()
+    );
     // 检查d3是否已加载
     if (typeof window.d3 === "undefined") {
       logger.error("d3 库未加载，可视化功能将不可用");
@@ -78,9 +77,39 @@ export class NavigationVisualizer implements Visualizer {
     } else {
       logger.log("d3 库已加载:", window.d3.version);
     }
+  }
 
-    // 不要在构造函数里面初始化，而应该外部初始化
-    //this.initialize();
+  // 代理属性，保持向后兼容性
+  get currentView(): string {
+    return this.viewStateManager.currentView;
+  }
+  
+  set currentView(view: string) {
+    this.viewStateManager.currentView = view;
+  }
+  
+  get svg(): any {
+    return this.viewStateManager.svg;
+  }
+  
+  set svg(value: any) {
+    this.viewStateManager.svg = value;
+  }
+  
+  get zoom(): any {
+    return this.viewStateManager.zoom;
+  }
+  
+  set zoom(value: any) {
+    this.viewStateManager.zoom = value;
+  }
+  
+  get currentTransform(): any {
+    return this.viewStateManager.currentTransform;
+  }
+  
+  set currentTransform(value: any) {
+    this.viewStateManager.currentTransform = value;
   }
 
   /**
@@ -137,6 +166,8 @@ export class NavigationVisualizer implements Visualizer {
     const { container, svg } = this.uiManager.initialize();
     this.container = container;
 
+    // 添加窗口大小变化监听
+    window.addEventListener("resize", () => this.updateContainerSize());
     // 使用返回的SVG元素
     if (svg) {
       this.setupSvg(svg); // 配置SVG，添加所需的事件监听等
@@ -211,47 +242,6 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 初始化SVG元素
-   * 创建SVG元素及相应的分组
-   */
-  private initializeSvg(): void {
-    if (!this.container) {
-      throw new Error("容器不存在，无法初始化SVG");
-    }
-
-    logger.log("初始化SVG元素...");
-
-    // 如果已有SVG元素，先移除
-    const existingSvg = this.container.querySelector("svg");
-    if (existingSvg) {
-      existingSvg.remove();
-    }
-
-    try {
-      // 创建SVG元素
-      this.svg = window.d3
-        .select(this.container)
-        .append("svg")
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .attr("class", "visualization-svg")
-        .attr("data-view", this.currentView);
-
-      // 添加根分组
-      const mainGroup = this.svg.append("g").attr("class", "main-group");
-
-      // 创建链接组和节点组
-      mainGroup.append("g").attr("class", "links-group");
-
-      mainGroup.append("g").attr("class", "nodes-group");
-
-      logger.log("SVG元素初始化成功");
-    } catch (error) {
-      logger.error("初始化SVG失败:", error);
-      throw error;
-    }
-  }
-  /**
    * 配置SVG元素，添加D3所需结构
    * @param svgElement 由UIManager创建的原生SVG元素
    */
@@ -263,22 +253,25 @@ export class NavigationVisualizer implements Visualizer {
       if (!svgElement) {
         throw new Error("SVG元素为空");
       }
+      
       // 将原生SVG元素转换为D3选择集
-      this.svg = d3
+      const svg = d3
         .select(svgElement)
         .attr("class", "visualization-svg")
         .attr("data-view", this.currentView);
+      
+      // 设置SVG到视图状态管理器
+      this.viewStateManager.svg = svg;
 
       // 添加根分组
-      const mainGroup = this.svg.append("g").attr("class", "main-group");
+      const mainGroup = svg.append("g").attr("class", "main-group");
 
       // 创建链接组和节点组
       mainGroup.append("g").attr("class", "links-group");
-
       mainGroup.append("g").attr("class", "nodes-group");
 
-      // 设置缩放行为
-      this.setupBasicZoom();
+      // 使用视图状态管理器设置缩放行为
+      this.viewStateManager.setupBasicZoom();
 
       logger.log("SVG配置成功");
     } catch (error) {
@@ -286,6 +279,7 @@ export class NavigationVisualizer implements Visualizer {
       throw error;
     }
   }
+
   /**
    * 初始化消息监听
    */
@@ -499,6 +493,71 @@ export class NavigationVisualizer implements Visualizer {
     // 清理其他资源...
     logger.groupEnd;
   }
+
+  /**
+   * 更新容器大小并重新渲染
+   */
+  updateContainerSize(): void {
+    if (!this.container) return;
+
+    // 获取主容器尺寸
+    const mainContainer = this.container.closest(".main-container");
+
+    let width, height;
+
+    if (mainContainer) {
+      // 使用父容器的尺寸
+      const rect = mainContainer.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+    } else {
+      // 回退到窗口尺寸，但不完全占满（留出一些边距）
+      width = window.innerWidth - 40;
+      height = window.innerHeight - 100;
+    }
+
+    // 检查尺寸是否真的变化了
+    const oldWidth = parseFloat(this.container.style.width) || 0;
+    const oldHeight = parseFloat(this.container.style.height) || 0;
+
+    // 只有当尺寸变化超过一定阈值时才更新
+    const threshold = 5; // 5像素的阈值
+    if (
+      Math.abs(width - oldWidth) > threshold ||
+      Math.abs(height - oldHeight) > threshold
+    ) {
+      logger.log(`更新容器大小: ${width}x${height}`);
+
+      // 应用尺寸
+      this.container.style.width = `${width}px`;
+      this.container.style.height = `${height}px`;
+
+      // 通知 UI 管理器容器大小变化
+      this.uiManager.handleResize(width, height);
+
+      // 如果已有可视化，重新渲染
+      if (this.nodes.length > 0) {
+        this.renderVisualization({ restoreTransform: true });
+      }
+    } else {
+      logger.log("容器大小变化不显著，跳过更新");
+    }
+  }
+  /**
+   * 节流更新状态栏
+   */
+  private updateStatusBarThrottled = (() => {
+    let ticking = false;
+    return () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          this.updateStatusBar();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+  })();
   /**
    * 触发刷新操作
    * 包含节流控制逻辑
@@ -687,26 +746,13 @@ export class NavigationVisualizer implements Visualizer {
    * 切换视图
    */
   switchView(view: "tree" | "timeline"): void {
-    if (this.currentView === view) return;
+    // 使用视图状态管理器切换视图
+    this.viewStateManager.switchView(view);
 
-    const previousView = this.currentView;
-    logger.log(`切换视图: ${previousView} -> ${view}`);
+    // 更新按钮状态
+    this.updateViewButtonsState();
 
     try {
-      // 更新当前视图
-      this.currentView = view;
-
-      // 立即更新按钮状态
-      this.updateViewButtonsState();
-
-      // 重要：重置缩放状态
-      this.zoom = null;
-
-      // 清除 SVG 内容
-      if (this.svg) {
-        this.svg.selectAll("*").remove();
-      }
-
       // 重新初始化 SVG 结构
       const svg = this.uiManager.createSvgElement();
       if (svg) {
@@ -719,12 +765,8 @@ export class NavigationVisualizer implements Visualizer {
       // 重新渲染
       this.refreshVisualization(undefined, { restoreTransform: true });
     } catch (error) {
-      logger.error("切换视图失败:", error);
-
-      // 恢复到先前的视图
-      this.currentView = previousView;
-      this.updateViewButtonsState();
-      this.refreshVisualization(undefined, { restoreTransform: true });
+      logger.error("重新初始化视图失败:", error);
+      this.showError("切换视图失败: " + (error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -819,7 +861,7 @@ export class NavigationVisualizer implements Visualizer {
         });
 
         // 添加简单的缩放功能
-        this.setupBasicZoom();
+        this.viewStateManager.setupBasicZoom();
       } else {
         // 使用渲染器工厂创建相应的渲染器
         const renderer = RendererFactory.createRenderer(
@@ -839,6 +881,14 @@ export class NavigationVisualizer implements Visualizer {
         renderer.render(this.nodes, this.edges, {
           restoreTransform: options.restoreTransform
         });
+      }
+
+      // 在可视化渲染后，尝试恢复视图状态
+      if (options.restoreTransform) {
+        // 尝试恢复视图缩放状态
+        setTimeout(() => {
+          this.viewStateManager.restoreViewState();
+        }, 50);
       }
 
       // 更新状态栏
@@ -877,91 +927,6 @@ export class NavigationVisualizer implements Visualizer {
       .attr("values", "0.5;0.8;0.5")
       .attr("dur", "2s")
       .attr("repeatCount", "indefinite");
-  }
-
-  /**
-   * 设置基本缩放功能
-   */
-  private setupBasicZoom(): void {
-    if (!this.svg) return;
-
-    const zoom = d3
-      .zoom()
-      .scaleExtent([0.5, 2])
-      .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        this.svg.select(".main-group").attr("transform", event.transform);
-
-        // 保存当前变换
-        this.currentTransform = event.transform;
-
-        // 更新状态栏
-        this.updateStatusBarThrottled();
-      });
-
-    this.svg.call(zoom);
-    this.zoom = zoom;
-  }
-  
-  private updateStatusBarThrottled = (() => {
-    let ticking = false;
-    return () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          this.updateStatusBar();
-          ticking = false;
-        });
-      }
-    };
-  })();
-
-  /**
-   * 更新容器大小
-   */
-  updateContainerSize(): void {
-    if (!this.container) return;
-
-    // 获取主容器尺寸
-    const mainContainer = this.container.closest(".main-container");
-
-    let width, height;
-
-    if (mainContainer) {
-      // 使用父容器的尺寸
-      const rect = mainContainer.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-    } else {
-      // 回退到窗口尺寸，但不完全占满（留出一些边距）
-      width = window.innerWidth - 40;
-      height = window.innerHeight - 100;
-    }
-
-    // 检查尺寸是否真的变化了
-    const oldWidth = parseFloat(this.container.style.width) || 0;
-    const oldHeight = parseFloat(this.container.style.height) || 0;
-
-    // 只有当尺寸变化超过一定阈值时才更新
-    const threshold = 5; // 5像素的阈值
-    if (
-      Math.abs(width - oldWidth) > threshold ||
-      Math.abs(height - oldHeight) > threshold
-    ) {
-      logger.log(`更新容器大小: ${width}x${height}`);
-
-      // 应用尺寸
-      this.container.style.width = `${width}px`;
-      this.container.style.height = `${height}px`;
-
-      // 通知 UI 管理器容器大小变化
-      this.uiManager.handleResize(width, height);
-
-      // 如果已有可视化，重新渲染
-      if (this.nodes.length > 0) {
-        this.renderVisualization({ restoreTransform: true });
-      }
-    } else {
-      logger.log("容器大小变化不显著，跳过更新");
-    }
   }
 
   /**
@@ -1203,24 +1168,5 @@ export class NavigationVisualizer implements Visualizer {
    */
   private updateViewButtonsState(): void {
     this.uiManager.updateViewButtonsState(this.currentView);
-  }
-
-  /**
-   * 应用变换状态
-   */
-  private applyTransform(transform: any): void {
-    if (!transform || !this.svg || !this.zoom) return;
-
-    this._isRestoringTransform = true;
-
-    try {
-      this.svg.call(this.zoom.transform, transform);
-      setTimeout(() => {
-        this._isRestoringTransform = false;
-      }, 100);
-    } catch (e) {
-      logger.warn("无法应用变换状态", e);
-      this._isRestoringTransform = false;
-    }
   }
 }
