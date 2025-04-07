@@ -214,7 +214,7 @@ private attachEventListenersToExistingFilters(): void {
    */
   private getFilterValue(filterId: string, defaultValue: boolean): boolean {
     // 尝试从可视化器获取当前值
-    const currentFilters = this.visualizer.getFilters();
+    const currentFilters = this.visualizer.filters;
     if (currentFilters && filterId in currentFilters) {
       return (currentFilters as any)[filterId];
     }
@@ -225,33 +225,20 @@ private attachEventListenersToExistingFilters(): void {
   /**
    * 重置所有筛选器为默认值
    */
-  public resetFilters(): void {
-    logger.log('重置所有筛选器为默认值');
-    
-    // 映射筛选器ID
-    const idMappings: Record<string, string> = {
-      'type-link': 'typeLink',
-      'type-address': 'typeAddress',
-      'type-form': 'typeForm',
-      'type-js': 'typeJs',
-      'filter-reload': 'reload',
-      'filter-history': 'history',
-      'filter-closed': 'closed',
-      'filter-tracking': 'showTracking'
-    };
-    
-    // 重置每个筛选器
-    Object.entries(idMappings).forEach(([htmlId, filterId]) => {
-      const checkbox = document.getElementById(htmlId) as HTMLInputElement;
+  resetFilters(): void {
+    this.filterDefinitions.forEach(filter => {
+      const checkbox = document.getElementById(filter.id) as HTMLInputElement;
       if (checkbox) {
-        const defaultValue = this.getDefaultValueForFilter(filterId);
-        checkbox.checked = defaultValue;
-        this.handleFilterChange(filterId, defaultValue);
-        logger.debug(`筛选器 ${htmlId} 已重置为默认值: ${defaultValue}`);
+        // 使用默认值设置复选框状态
+        checkbox.checked = filter.defaultValue;
+        
+        // 向可视化器通知筛选器变化
+        this.handleFilterChange(filter.id, filter.defaultValue);
       }
     });
     
-    logger.log('所有筛选器已重置');
+    // 更新UI状态
+    this.updateUI(this.visualizer.filters); // 替换 getFilters() 为 filters
   }
   
   /**

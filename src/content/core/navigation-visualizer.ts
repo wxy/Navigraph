@@ -12,8 +12,8 @@ import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
 
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
+import { FilterConfig, FilterStates, getInitialFilters, extractFilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
-
 const logger = new Logger('NavigationVisualizer');
 /**
  * 导航可视化器类
@@ -26,17 +26,12 @@ export class NavigationVisualizer implements Visualizer {
   // 当前视图类型 ('tree' | 'timeline')
   currentView: string = "tree";
 
-  // 过滤器设置
-  filters = {
-    reload: true,
-    history: true,
-    closed: false, // 默认不显示已关闭页面
-    typeLink: true,
-    typeAddress: true,
-    typeForm: true,
-    typeJs: true,
-    showTracking: false, // 默认不显示跟踪页面
-  };
+  // 替换原有的筛选器相关属性
+  private filterConfigs: FilterConfig[] = getInitialFilters();
+  
+  get filters(): FilterStates {
+    return extractFilterStates(this.filterConfigs);
+  }
 
   // D3相关
   svg: any = null;
@@ -67,77 +62,10 @@ export class NavigationVisualizer implements Visualizer {
 
   private dataProcessor: DataProcessor = new DataProcessor();
   private uiManager: UIManager = new UIManager(this);
-
-  private trackingKeywords = [
-    "/track/",
-    "/pixel/",
-    "/analytics/",
-    "/beacon/",
-    "/telemetry/",
-    "/stats/",
-    "/log/",
-    "/metrics/",
-    "/collect/",
-    "/monitor/",
-    "piwik.",
-    "matomo.",
-    "ga.js",
-    "gtm.js",
-    "fbevents",
-    "insight.",
-    "/counter/",
-    "www.google-analytics.com",
-  ];
+  
   // 添加调试工具属性
   private debugTools: DebugTools | null = null;
-  /**
-   * 筛选器配置定义
-   */
-  private readonly filterConfigs = [
-    {
-      id: "filter-reload",
-      text: "显示刷新",
-      property: "reload",
-      defaultValue: true,
-    },
-    {
-      id: "filter-history",
-      text: "显示历史",
-      property: "history",
-      defaultValue: true,
-    },
-    {
-      id: "filter-closed",
-      text: "显示已关闭",
-      property: "closed",
-      defaultValue: false,
-    },
-    {
-      id: "filter-tracking",
-      text: "显示跟踪页面",
-      property: "showTracking",
-      defaultValue: false,
-    },
-    {
-      id: "type-link",
-      text: "链接点击",
-      property: "typeLink",
-      defaultValue: true,
-    },
-    {
-      id: "type-address",
-      text: "地址栏输入",
-      property: "typeAddress",
-      defaultValue: true,
-    },
-    {
-      id: "type-form",
-      text: "表单提交",
-      property: "typeForm",
-      defaultValue: true,
-    },
-    { id: "type-js", text: "JS导航", property: "typeJs", defaultValue: true },
-  ];
+
   /**
    * 构造函数
    */
@@ -660,7 +588,7 @@ export class NavigationVisualizer implements Visualizer {
     }
 
     // 更新筛选器状态
-    (this.filters as any)[config.property] = checked;
+    config.enabled = checked;
 
     // 通知 UI 管理器更新筛选器 UI
     this.uiManager.updateFilters(this.filters);
@@ -1040,56 +968,47 @@ export class NavigationVisualizer implements Visualizer {
    * 应用筛选器并刷新（实现Visualizer接口）
    */
   public applyFilters(): void {
-    logger.log("应用筛选器:", this.filters);
-
-    if (!this.filters || !this.allNodes || !this.allEdges) {
-      logger.warn("无法应用筛选器：筛选器配置或节点数据不完整");
-      return;
-    }
-
+    // 使用简化的状态对象，与原有方法兼容
+    const filterStates = this.filters;
+    
+    logger.log("应用筛选器:", filterStates);
+    
     // 使用 DataProcessor 进行筛选
     const result = this.dataProcessor.applyFilters(
       this.allNodes,
       this.allEdges,
-      this.filters
+      filterStates
     );
-
-    // 更新当前节点和边
+    
+    // 更新节点和边
     this.nodes = result.nodes;
     this.edges = result.edges;
-
-    // 添加日志记录，显示筛选前后的节点数量
+    
     logger.log(
       `筛选后数据：节点 ${this.nodes.length}/${this.allNodes.length}，边 ${this.edges.length}/${this.allEdges.length}`
     );
-
-    // 使用完整的刷新流程来更新视图
-    //this.refreshVisualization(undefined, { restoreTransform: true });
   }
+
   /**
    * 更新筛选器配置（实现Visualizer接口）
    */
   public updateFilter(filterId: string, value: boolean): void {
     logger.log(`更新筛选器: ${filterId} = ${value}`);
-
+    
     // 查找对应的筛选器配置
-    const config = this.filterConfigs.find((f) => f.id === filterId);
-    if (!config) {
+    const filter = this.filterConfigs.find(f => f.id === filterId);
+    if (!filter) {
       logger.warn(`未知筛选器ID: ${filterId}`);
       return;
     }
-
-    // 更新筛选器状态
-    (this.filters as any)[config.property] = value;
-
+    
+    // 直接更新筛选器状态
+    filter.enabled = value;
+    
     // 通知 UI 管理器更新筛选器 UI
     this.uiManager.updateFilters(this.filters);
   }
 
-  // 添加 getFilters 方法
-  getFilters(): any {
-    return this.filters;
-  }
   /**
    * 更新URL以反映当前视图和筛选状态
    * 实现原本可能缺失的 updateUrl 方法
