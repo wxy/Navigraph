@@ -7,14 +7,16 @@ import { nodeManager } from './node-manager.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
-import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
+
+
 
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
 import { FilterConfig, FilterStates, getInitialFilters, extractFilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
 import { ViewStateManager } from '../visualizer/state/ViewStateManager.js';
+import { SessionHandler } from '../visualizer/state/SessionHandler.js';
+import { NavigationMessageHandler } from '../messaging/handlers/navigation-message-handler.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -56,6 +58,12 @@ export class NavigationVisualizer implements Visualizer {
   // 添加ViewStateManager
   private viewStateManager: ViewStateManager;
 
+  // 添加消息处理器属性
+  private messageHandler: NavigationMessageHandler;
+
+  // 添加会话处理器属性
+  private sessionHandler: SessionHandler;
+
   /**
    * 构造函数
    */
@@ -64,7 +72,16 @@ export class NavigationVisualizer implements Visualizer {
     
     // 初始化视图状态管理器
     this.viewStateManager = new ViewStateManager(this);
-
+    
+    // 初始化消息处理器
+    this.messageHandler = new NavigationMessageHandler(this);
+    
+    // 初始化UI管理器
+    this.uiManager = new UIManager(this);
+    
+    // 初始化会话处理器
+    this.sessionHandler = new SessionHandler(this, this.uiManager);
+    
     // 设置缩放变化回调
     this.viewStateManager.setOnZoomChangeCallback(
       // 使用NavigationVisualizer中的节流函数
@@ -121,15 +138,13 @@ export class NavigationVisualizer implements Visualizer {
       logger.log("初始化导航可视化...");
 
       // 第一阶段：基础配置与消息
-      // 加载配置并设置消息监听，这是其他所有功能的基础
       await this.initializeBaseConfig();
 
       // 第二阶段：委托UI管理器处理所有UI初始化
       await this.initializeUI();
 
-      // 第三阶段：数据加载与应用
-      // 加载会话数据并应用到视图
-      await this.loadInitialData();
+      // 第三阶段：数据加载与应用 - 使用会话处理器
+      await this.sessionHandler.initialize();
 
       logger.log("NavigationVisualizer 初始化完成");
     } catch (error) {
@@ -144,8 +159,8 @@ export class NavigationVisualizer implements Visualizer {
    * 初始化基础配置与消息监听
    */
   private async initializeBaseConfig(): Promise<void> {
-    // 设置消息监听器
-    this.initMessageListener();
+    // 初始化消息处理器 - 替换原来的 initMessageListener
+    this.messageHandler.initialize();
 
     // 应用全局配置
     this.applyGlobalConfig();
@@ -179,27 +194,6 @@ export class NavigationVisualizer implements Visualizer {
   // 更新状态栏
   public updateStatusBar(): void {
     this.uiManager.updateStatusBar();
-  }
-
-  /**
-   * 加载初始数据
-   */
-  private async loadInitialData(): Promise<void> {
-    // 订阅会话加载事件
-    sessionManager.onSessionLoaded((session) =>
-      this.handleSessionLoaded(session)
-    );
-    sessionManager.onSessionsListLoaded((sessions) =>
-      this.handleSessionListLoaded(sessions)
-    );
-
-    // 加载会话列表
-    await sessionManager.loadSessions();
-
-    // 加载当前会话
-    await sessionManager.loadCurrentSession();
-
-    logger.log("初始数据加载完成");
   }
 
   /**
@@ -281,211 +275,14 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 初始化消息监听
-   */
-  private initMessageListener(): void {
-    logger.groupCollapsed("初始化可视化器消息监听...");
-
-    // 使用已导入的 registerHandler 函数
-    // 避免每次都动态导入
-
-    // 注册刷新可视化消息处理函数
-    registerHandler<BaseMessage, BaseResponse>(
-      "refreshVisualization",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到可视化刷新请求");
-
-        // 如果需要回复，发送响应
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟执行刷新操作
-        setTimeout(async () => {
-          try {
-            logger.log("🔄 开始执行刷新操作...");
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("✅ 刷新操作完成");
-          } catch (err) {
-            logger.error("❌ 自动刷新可视化失败:", err);
-          }
-        }, 50);
-
-        // 返回false表示已同步处理了响应
-        return false;
-      }
-    );
-
-    // 注册页面活动消息处理函数
-    registerHandler<BaseMessage, BaseResponse>(
-      "pageActivity",
-      (message: any) => {
-        logger.log("收到页面活动事件，触发刷新", message.source);
-
-        // 触发刷新操作
-        this.triggerRefresh();
-
-        // 不需要回复
-        return false;
-      }
-    );
-
-    // 链接点击消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "linkClicked",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到链接点击消息:", message.linkInfo);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟刷新可视化图表
-        setTimeout(async () => {
-          try {
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("基于链接点击刷新可视化完成");
-          } catch (err) {
-            logger.error("链接点击后刷新可视化失败:", err);
-          }
-        }, 100);
-
-        return false;
-      }
-    );
-
-    // 表单提交消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "formSubmitted",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到表单提交消息:", message.formInfo);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟刷新可视化图表
-        setTimeout(async () => {
-          try {
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("基于表单提交刷新可视化完成");
-          } catch (err) {
-            logger.error("表单提交后刷新可视化失败:", err);
-          }
-        }, 150);
-
-        return false;
-      }
-    );
-
-    // 节点ID获取消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "getNodeId",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到获取节点ID请求:", message.url);
-
-        // 从当前数据中查找URL对应的节点ID
-        let nodeId: string | undefined = undefined;
-        if (this.nodes && message.url) {
-          const node = this.nodes.find((n) => n.url === message.url);
-          nodeId = node?.id;
-        }
-
-        // 返回找到的节点ID
-        sendResponse({
-          success: true,
-          nodeId,
-          requestId: message.requestId,
-        } as BaseResponse);
-
-        return false; // 同步处理
-      }
-    );
-
-    // favicon更新消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "faviconUpdated",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到favicon更新消息:", message.url, message.favicon);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        return false; // 同步处理
-      }
-    );
-
-    // 页面加载完成消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "pageLoaded",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到页面加载完成消息:", message.pageInfo?.url);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟刷新视图
-        setTimeout(async () => {
-          try {
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("页面加载后刷新可视化完成");
-          } catch (err) {
-            logger.error("页面加载后刷新可视化失败:", err);
-          }
-        }, 200);
-
-        // 返回false表示已同步处理响应
-        return false;
-      }
-    );
-
-    logger.groupEnd();
-  }
-  /**
    * 清理资源
    * 在可视化器销毁或者组件卸载时调用
    */
   cleanup(): void {
     logger.groupCollapsed("清理可视化器资源...");
 
-    // 取消注册消息处理函数
-    unregisterHandler("getNodeId");
-    unregisterHandler("pageLoaded");
-    unregisterHandler("pageTitleUpdated");
-    unregisterHandler("faviconUpdated");
-    unregisterHandler("pageActivity");
-    unregisterHandler("linkClicked");
-    unregisterHandler("formSubmitted");
-    unregisterHandler("jsNavigation");
+    // 清理消息处理器
+    this.messageHandler.cleanup();
 
     // 移除事件监听器
     window.removeEventListener("resize", () => this.updateContainerSize());
@@ -656,90 +453,6 @@ export class NavigationVisualizer implements Visualizer {
 
     // 使用完整的刷新流程
     this.refreshVisualization(undefined, { restoreTransform: true });
-  }
-
-  /**
-   * 处理单个会话加载
-   */
-  handleSessionLoaded(session: SessionDetails | null): void {
-    logger.log("会话已加载，准备更新UI和数据");
-
-    // 移除加载状态
-    document.body.classList.remove("loading-session");
-
-    if (!session) {
-      this.showError("会话加载失败或无可用会话");
-      return;
-    }
-
-    // 保存当前会话
-    this.currentSession = session;
-
-    // 从节点管理器获取处理好的数据
-    this.allNodes = [...nodeManager.getNodes()];
-    this.allEdges = [...nodeManager.getEdges()];
-    this.nodes = [...this.allNodes];
-    this.edges = [...this.allEdges];
-    this.nodeMap = nodeManager.getNodeMap();
-
-    // 更新会话相关UI
-    this.updateSessionUI();
-
-    // 应用筛选器
-    this.applyFilters();
-
-    // 刷新可视化
-    this.refreshVisualization(undefined, { restoreTransform: true });
-  }
-  /**
-   * 更新会话相关UI
-   */
-  private updateSessionUI(): void {
-    // 更新会话选择器
-    this.updateSessionSelector();
-
-    // 更新状态栏
-    this.updateStatusBar();
-
-    // 使用 UIManager 隐藏控制面板
-    this.uiManager.hideControlPanel();
-  }
-  /**
-   * 处理会话列表加载事件
-   */
-  handleSessionListLoaded(sessions: any[]): void {
-    logger.log(`会话列表已加载，共${sessions.length}个会话`);
-
-    // 更新会话选择器
-    this.updateSessionSelector(sessions);
-  }
-
-  /**
-   * 更新会话选择器
-   */
-  private updateSessionSelector(sessions?: any[]): void {
-    // 如果提供了会话列表，直接使用
-    if (sessions) {
-      // 获取当前会话ID
-      const currentSession = sessionManager.getCurrentSession();
-      const currentSessionId = currentSession ? currentSession.id : undefined;
-
-      this.uiManager.updateSessionSelector(sessions, currentSessionId);
-      return;
-    }
-
-    // 否则从会话管理器同步获取 (正确处理同步方法)
-    try {
-      const sessions = sessionManager.getSessions();
-
-      // 获取当前会话ID
-      const currentSession = sessionManager.getCurrentSession();
-      const currentSessionId = currentSession ? currentSession.id : undefined;
-
-      this.uiManager.updateSessionSelector(sessions, currentSessionId);
-    } catch (error) {
-      logger.error("获取会话列表失败", error);
-    }
   }
 
   /**
@@ -1168,5 +881,194 @@ export class NavigationVisualizer implements Visualizer {
    */
   private updateViewButtonsState(): void {
     this.uiManager.updateViewButtonsState(this.currentView);
+  }
+  /**
+   * 更新节点元信息
+   * @param nodeId 节点ID
+   * @param metadata 元数据对象，可以包含title和favicon等
+   */
+  updateNodeMetadata(nodeId: string, metadata: {[key: string]: string}): void {
+    if (!nodeId || !metadata) return;
+    
+    logger.debug(`更新节点元信息: ${nodeId}`, metadata);
+    
+    // 找到对应节点
+    let node: NavNode | undefined;
+    
+    // 先在节点映射中查找
+    if (this.nodeMap && this.nodeMap.has(nodeId)) {
+      node = this.nodeMap.get(nodeId);
+    } 
+    
+    // 如果节点映射中没有，在所有节点中查找
+    if (!node) {
+      node = this.allNodes.find(n => n.id === nodeId);
+    }
+    
+    // 如果找到了节点，更新元信息
+    if (node) {
+      // 更新节点的元信息
+      let needVisualUpdate = false;
+      
+      // 更新标题
+      if ('title' in metadata && metadata.title) {
+        node.title = metadata.title;
+        needVisualUpdate = true;
+      }
+      
+      // 更新图标
+      if ('favicon' in metadata && metadata.favicon) {
+        node.favicon = metadata.favicon;
+        needVisualUpdate = true;
+      }
+      
+      // 如果需要更新视觉效果，尝试更新节点外观
+      if (needVisualUpdate) {
+        this.updateNodeVisual(nodeId);
+      }
+      
+      logger.debug(`节点${nodeId}元信息已更新`);
+    } else {
+      logger.warn(`未找到节点: ${nodeId}`);
+    }
+  }
+
+  /**
+   * 更新节点视觉效果
+   * @param nodeId 节点ID
+   */
+  private updateNodeVisual(nodeId: string): void {
+    if (!this.svg) return;
+    
+    // 尝试更新节点文本
+    const textElement = this.svg.select(`.node-text[data-node-id="${nodeId}"]`);
+    if (textElement && !textElement.empty()) {
+      const node = this.nodeMap.get(nodeId);
+      if (node) {
+        textElement.text(node.title || node.url || nodeId);
+      }
+    }
+    
+    // 尝试更新节点图标
+    const iconElement = this.svg.select(`.node-icon[data-node-id="${nodeId}"]`);
+    if (iconElement && !iconElement.empty()) {
+      const node = this.nodeMap.get(nodeId);
+      if (node && node.favicon) {
+        iconElement.attr("href", node.favicon);
+      }
+    }
+  }
+  /**
+   * 获取或创建节点ID
+   * @param url 页面URL
+   * @returns 节点ID
+   */
+  getOrCreateNodeId(url: string): string {
+    // 从当前数据中查找URL对应的节点ID
+    let nodeId: string | undefined = undefined;
+    if (this.nodes) {
+      const node = this.nodes.find((n) => n.url === url);
+      nodeId = node?.id;
+    }
+    
+    // 如果没找到，则生成新ID
+    if (!nodeId) {
+      nodeId = `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      logger.debug(`为URL创建新节点ID: ${url} -> ${nodeId}`);
+    }
+    
+    return nodeId;
+  }
+  
+  /**
+   * 设置原始数据
+   * 为会话处理器提供接口
+   */
+  setRawData(nodes: NavNode[], edges: NavLink[], nodeMap?: Map<string, NavNode>): void {
+    // 保存原始数据
+    this.allNodes = [...nodes];
+    this.allEdges = [...edges];
+    this.nodes = [...nodes];
+    this.edges = [...edges];
+    
+    // 如果提供了节点映射，使用它
+    if (nodeMap) {
+      this.nodeMap = nodeMap;
+    } else {
+      this.nodeMap = this.buildNodeMap(nodes);
+    }
+    
+    // 应用筛选器
+    this.applyFilters();
+  }
+  
+  /**
+   * 处理页面加载消息 - 委托给会话处理器
+   */
+  async handlePageLoaded(message: any): Promise<void> {
+    try {
+      await this.sessionHandler.refreshData();
+      this.refreshVisualization();
+      logger.log("页面加载后刷新可视化完成");
+    } catch (error) {
+      logger.error("页面加载后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 处理链接点击消息 - 委托给会话处理器
+   */
+  async handleLinkClicked(message: any): Promise<void> {
+    try {
+      await this.sessionHandler.refreshData();
+      this.refreshVisualization();
+      logger.log("基于链接点击刷新可视化完成");
+    } catch (error) {
+      logger.error("链接点击后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 处理表单提交消息 - 委托给会话处理器
+   */
+  async handleFormSubmitted(message: any): Promise<void> {
+    try {
+      await this.sessionHandler.refreshData();
+      this.refreshVisualization();
+      logger.log("基于表单提交刷新可视化完成");
+    } catch (error) {
+      logger.error("表单提交后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 处理JS导航消息 - 委托给会话处理器
+   */
+  async handleJsNavigation(message: any): Promise<void> {
+    try {
+      await this.sessionHandler.refreshData();
+      this.refreshVisualization();
+      logger.log("基于JS导航刷新可视化完成");
+    } catch (error) {
+      logger.error("JS导航后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 刷新数据 - 委托给会话处理器
+   */
+  async refreshData(): Promise<void> {
+    try {
+      await this.sessionHandler.refreshData();
+      this.refreshVisualization();
+      logger.log("刷新数据完成");
+    } catch (error) {
+      logger.error("刷新数据失败:", error);
+      throw error;
+    }
   }
 }
