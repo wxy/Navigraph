@@ -12,10 +12,21 @@ type SessionDetails = BrowsingSession;
 const logger = new Logger('NodeManager');
 
 export class NodeManager {
+  private static instance: NodeManager | null = null;
   // ===== 数据存储 =====
   private nodes: NavNode[] = [];
   private edges: NavLink[] = [];
   private nodeMap: Map<string, NavNode> = new Map();
+
+  private constructor() {
+    // 私有构造函数，防止外部实例化
+  }
+  public static getInstance(): NodeManager {
+    if (!NodeManager.instance) {
+      NodeManager.instance = new NodeManager();
+    }
+    return NodeManager.instance;
+  }
 
   // ===== 数据处理方法 =====
   
@@ -653,6 +664,10 @@ export class NodeManager {
     return this.nodeMap.get(id);
   }
 }
-
-// 导出默认实例
-export const nodeManager = new NodeManager();
+/**
+ * 提供单例访问方式
+ * @returns NodeManager实例
+ */
+// 通过单例模式确保只有一个NodeManager实例
+// 适用于全局访问和数据共享
+export const nodeManager = NodeManager.getInstance();

@@ -14,12 +14,29 @@ const logger = new Logger('SessionServiceClient');
  * 会话管理器类
  */
 export class SessionServiceClient {
+  private static instance: SessionServiceClient | null = null;
+  // 会话列表和当前会话
+  // 使用私有变量存储会话列表和当前会话
   private sessions: Session[] = [];
   private currentSession: SessionDetails | null = null;
   private currentSessionId: string | null = null;
   private sessionLoadListeners: SessionEventCallback[] = [];
   private sessionsListLoadedListeners: ((sessions: Session[]) => void)[] = [];
 
+  // 私有构造函数
+  private constructor() {
+    // 初始化代码
+  }
+  
+  /**
+   * 获取SessionServiceClient实例
+   */
+  public static getInstance(): SessionServiceClient {
+    if (!SessionServiceClient.instance) {
+      SessionServiceClient.instance = new SessionServiceClient();
+    }
+    return SessionServiceClient.instance;
+  }
   // 添加监听器方法
   onSessionLoaded(callback: SessionEventCallback): void {
     this.sessionLoadListeners.push(callback);
@@ -249,5 +266,5 @@ export class SessionServiceClient {
   }
 }
 
-// 导出默认实例
-export const sessionServiceClient = new SessionServiceClient();
+// 导出全局实例
+export const sessionServiceClient = SessionServiceClient.getInstance();
