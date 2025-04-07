@@ -8,11 +8,12 @@ import type { SessionDetails } from '../types/session.js';
 
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
-import { FilterConfig, FilterStates, getInitialFilters, extractFilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
 import { ViewStateManager } from '../visualizer/state/ViewStateManager.js';
 import { SessionViewController } from '../visualizer/state/SessionViewController.js';
 import { NavigationMessageHandler } from '../messaging/handlers/navigation-message-handler.js';
+import { FilterManager } from '../visualizer/state/FilterManager.js';
+import type { FilterStates } from '../visualizer/ui/FilterConfig.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -22,13 +23,6 @@ const logger = new Logger('NavigationVisualizer');
 export class NavigationVisualizer implements Visualizer {
   // 可视化容器
   container: HTMLElement | null = null;
-
-  // 替换原有的筛选器相关属性
-  private filterConfigs: FilterConfig[] = getInitialFilters();
-  
-  get filters(): FilterStates {
-    return extractFilterStates(this.filterConfigs);
-  }
 
   // 数据存储
   nodes: NavNode[] = [];
@@ -60,6 +54,14 @@ export class NavigationVisualizer implements Visualizer {
   // 添加会话视图控制器属性
   private sessionViewController: SessionViewController;
 
+  // 添加 FilterManager 属性
+  private filterManager: FilterManager;
+
+  // 修改 filters getter 以使用 FilterManager
+  get filters(): FilterStates {
+    return this.filterManager.filters;
+  }
+
   /**
    * 构造函数
    */
@@ -77,6 +79,9 @@ export class NavigationVisualizer implements Visualizer {
     
     // 初始化会话视图控制器
     this.sessionViewController = new SessionViewController(this, this.uiManager);
+    
+    // 初始化筛选器管理器 - 新增
+    this.filterManager = new FilterManager(this, this.dataProcessor, this.uiManager);
     
     // 设置缩放变化回调
     this.viewStateManager.setOnZoomChangeCallback(
@@ -138,6 +143,9 @@ export class NavigationVisualizer implements Visualizer {
 
       // 第二阶段：委托UI管理器处理所有UI初始化
       await this.initializeUI();
+      
+      // 初始化筛选器管理器 - 新增
+      this.filterManager.initialize();
 
       // 第三阶段：数据加载与应用 - 使用会话视图控制器
       await this.sessionViewController.initialize();
@@ -280,11 +288,14 @@ export class NavigationVisualizer implements Visualizer {
     // 清理消息处理器
     this.messageHandler.cleanup();
 
+    // 清理筛选器管理器
+    this.filterManager.cleanup();
+
     // 移除事件监听器
     window.removeEventListener("resize", () => this.updateContainerSize());
 
     // 清理其他资源...
-    logger.groupEnd;
+    logger.groupEnd();
   }
 
   /**
@@ -430,25 +441,10 @@ export class NavigationVisualizer implements Visualizer {
   }
   /**
    * 处理筛选器变化
+   * 修改为使用FilterManager
    */
   private handleFilterChange(filterId: string, checked: boolean): void {
-    // 查找对应的筛选器配置
-    const config = this.filterConfigs.find((f) => f.id === filterId);
-    if (!config) {
-      logger.warn(`未知筛选器ID: ${filterId}`);
-      return;
-    }
-
-    // 更新筛选器状态
-    config.enabled = checked;
-
-    // 通知 UI 管理器更新筛选器 UI
-    this.uiManager.updateFilters(this.filters);
-
-    logger.log(`筛选器 ${filterId} (${config.property}) 已更改为 ${checked}`);
-
-    // 使用完整的刷新流程
-    this.refreshVisualization(undefined, { restoreTransform: true });
+    this.filterManager.handleFilterChange(filterId, checked);
   }
 
   /**
@@ -640,52 +636,25 @@ export class NavigationVisualizer implements Visualizer {
 
   /**
    * 应用筛选器并刷新（实现Visualizer接口）
+   * 修改为使用FilterManager
    */
   public applyFilters(): void {
-    // 使用简化的状态对象，与原有方法兼容
-    const filterStates = this.filters;
-    
-    logger.log("应用筛选器:", filterStates);
-    
-    // 使用 DataProcessor 进行筛选
-    const result = this.dataProcessor.applyFilters(
-      this.allNodes,
-      this.allEdges,
-      filterStates
-    );
-    
-    // 更新节点和边
+    const result = this.filterManager.applyFilters(this.allNodes, this.allEdges);
     this.nodes = result.nodes;
     this.edges = result.edges;
-    
-    logger.log(
-      `筛选后数据：节点 ${this.nodes.length}/${this.allNodes.length}，边 ${this.edges.length}/${this.allEdges.length}`
-    );
   }
 
   /**
    * 更新筛选器配置（实现Visualizer接口）
+   * 修改为使用FilterManager
    */
   public updateFilter(filterId: string, value: boolean): void {
-    logger.log(`更新筛选器: ${filterId} = ${value}`);
-    
-    // 查找对应的筛选器配置
-    const filter = this.filterConfigs.find(f => f.id === filterId);
-    if (!filter) {
-      logger.warn(`未知筛选器ID: ${filterId}`);
-      return;
-    }
-    
-    // 直接更新筛选器状态
-    filter.enabled = value;
-    
-    // 通知 UI 管理器更新筛选器 UI
-    this.uiManager.updateFilters(this.filters);
+    this.filterManager.updateFilter(filterId, value);
   }
 
   /**
    * 更新URL以反映当前视图和筛选状态
-   * 实现原本可能缺失的 updateUrl 方法
+   * 修改为使用FilterManager获取筛选器URL参数
    */
   private updateUrl(): void {
     try {
@@ -694,20 +663,8 @@ export class NavigationVisualizer implements Visualizer {
       // 更新视图参数
       url.searchParams.set("view", this.currentView);
 
-      // 更新筛选器参数
-      url.searchParams.set(
-        "filter",
-        JSON.stringify({
-          reload: this.filters.reload,
-          history: this.filters.history,
-          closed: this.filters.closed,
-          tracking: this.filters.showTracking,
-          typeLink: this.filters.typeLink,
-          typeAddress: this.filters.typeAddress,
-          typeForm: this.filters.typeForm,
-          typeJs: this.filters.typeJs,
-        })
-      );
+      // 更新筛选器参数 - 使用FilterManager
+      url.searchParams.set("filter", this.filterManager.getFilterUrlParam());
 
       // 不触发页面刷新的情况下更新URL
       window.history.replaceState(null, "", url);
