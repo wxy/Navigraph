@@ -17,6 +17,10 @@ import {
   NavLink
 } from '../types/session-types.js';
 
+
+import { UrlUtils } from './navigation/utils/url-utils.js';
+import { TabStateManager } from './navigation/managers/tab-state-manager.js';
+
 const logger = new Logger('NavigationManager');
 /**
  * 导航管理器 - 负责创建和管理导航节点、事件和关系
@@ -37,11 +41,8 @@ export class NavigationManager {
   // 会话ID - 只存储当前使用的会话ID
   private currentSessionId: string = '';
 
-  // 标签页追踪状态
-  private tabStates = new Map<number, TabState>();
-  private tabNavigationHistory = new Map<number, string[]>(); // 标签页ID -> 节点ID数组
-  private removedTabs = new Set<number>();
-  private tabActiveTimes = new Map<number, number>(); // 标签页激活时间记录
+  // 标签页状态管理器
+  private tabStateManager: TabStateManager;
 
   // 待处理的数据
   private pendingUpdates = new Map<number, string[]>(); // 标签页ID -> 待更新节点ID数组
@@ -67,6 +68,7 @@ export class NavigationManager {
   private debugMode = false;
 
 
+
   /**
    * 构造函数 - 初始化导航管理器
    * @param messageService 消息服务实例
@@ -82,6 +84,9 @@ export class NavigationManager {
     // 创建存储实例
     this.navigationStorage = navigationStorage || new NavigationStorage();
     this.sessionStorage = sessionStorage || new SessionStorage();
+
+    // 初始化标签页状态管理器
+    this.tabStateManager = new TabStateManager(this.historyLimit);
   }
   /**
    * 初始化导航管理器
@@ -190,6 +195,7 @@ export class NavigationManager {
 
     logger.log("导航事件监听器已设置");
   }
+
   /**
    * 处理标签页创建事件
    */
@@ -199,7 +205,7 @@ export class NavigationManager {
       if (!tabId) return;
 
       // 记录标签页创建时间
-      this.addTabState(tabId, {
+      this.tabStateManager.addTabState(tabId, {
         id: tabId,
         url: tab.url || "",
         title: tab.title,
@@ -212,11 +218,11 @@ export class NavigationManager {
 
       // 如果创建时已有URL，且不是空白页或新标签页，尝试创建初始导航记录
       const url = tab.url || "";
-      if (url && !this.isEmptyTabUrl(url) && !this.isSystemPage(url)) {
+      if (url && !UrlUtils.isEmptyTabUrl(url) && !UrlUtils.isSystemPage(url)) {
         // 获取可能的opener标签页作为父节点来源
         let parentNodeId = "";
         if (tab.openerTabId) {
-          const openerState = this.tabStates.get(tab.openerTabId);
+          const openerState = this.tabStateManager.getTabState(tab.openerTabId);
           if (openerState && openerState.lastNodeId) {
             parentNodeId = openerState.lastNodeId;
           }
@@ -271,15 +277,10 @@ export class NavigationManager {
       }
 
       // 更新标签页状态
-      const tabState = this.tabStates.get(tabId);
-      if (tabState) {
-        if (changeInfo.title) {
-          tabState.title = changeInfo.title;
-        }
-        if (changeInfo.favIconUrl) {
-          tabState.favicon = changeInfo.favIconUrl;
-        }
-      }
+      this.tabStateManager.updateTabState(tabId, {
+        title: changeInfo.title,
+        favicon: changeInfo.favIconUrl
+      });
 
       // 清理已更新的节点
       this.pendingUpdates.delete(tabId);
@@ -298,27 +299,16 @@ export class NavigationManager {
     const now = Date.now();
 
     try {
-      // 更新之前活跃标签页的活跃时间
-      const previousActiveTime = this.tabActiveTimes.get(tabId);
-      if (previousActiveTime) {
-        const activeTabId = Array.from(this.tabActiveTimes.entries()).find(
-          ([id, time]) => time === previousActiveTime && id !== tabId
-        )?.[0];
-
-        if (activeTabId) {
-          const elapsedTime = now - previousActiveTime;
-          this.updateTabActiveTime(activeTabId, elapsedTime);
-        }
-      }
-
-      // 记录当前标签页的激活时间
-      this.tabActiveTimes.set(tabId, now);
+      // 更新标签页激活时间
+      this.tabStateManager.setTabActiveTime(tabId, now);
 
       // 更新标签页状态
-      const tabState = this.tabStates.get(tabId);
+      const tabState = this.tabStateManager.getTabState(tabId);
       if (tabState) {
-        tabState.activated = now;
-        tabState.lastActiveTime = now;
+        this.tabStateManager.updateTabState(tabId, {
+          activated: now,
+          lastActiveTime: now
+        });
       } else {
         // 如果没有找到状态，创建一个新的
         try {
@@ -332,7 +322,7 @@ export class NavigationManager {
             });
           });
 
-          this.addTabState(tabId, {
+          this.tabStateManager.addTabState(tabId, {
             id: tabId,
             url: tab.url || "",
             title: tab.title,
@@ -368,16 +358,14 @@ export class NavigationManager {
     removeInfo: chrome.tabs.TabRemoveInfo
   ): Promise<void> {
     try {
-      // 记录最后一次活跃时间
-      const activeTime = this.tabActiveTimes.get(tabId);
-      if (activeTime) {
-        const elapsedTime = Date.now() - activeTime;
-        this.updateTabActiveTime(tabId, elapsedTime);
-        this.tabActiveTimes.delete(tabId);
+      // 记录标签页活跃时间
+      const activeTime = this.tabStateManager.getTabActiveElapsed(tabId);
+      if (activeTime > 0) {
+        await this.updateTabActiveTime(tabId, activeTime);
       }
 
       // 标记所有此标签页的节点为关闭状态
-      const history = this.tabNavigationHistory.get(tabId) || [];
+      const history = this.tabStateManager.getTabHistory(tabId);
       for (const nodeId of history) {
         try {
           const record = await this.navigationStorage.getNode(nodeId);
@@ -389,12 +377,12 @@ export class NavigationManager {
         }
       }
 
+      // 标记标签页已移除
+      this.tabStateManager.markTabRemoved(tabId);
+      
       // 清理标签页相关数据
-      this.tabStates.delete(tabId);
-      this.tabNavigationHistory.delete(tabId);
       this.pendingUpdates.delete(tabId);
       this.pendingJsNavigations.delete(tabId);
-      this.removedTabs.add(tabId);
 
       if (this.debugMode) {
         logger.log(
@@ -417,14 +405,14 @@ export class NavigationManager {
       // 如果不是主框架或是错误页面，忽略此事件
       if (
         details.frameId !== 0 ||
-        this.isErrorPage(details.url) ||
-        this.isSystemPage(details.url)
+        UrlUtils.isErrorPage(details.url) ||
+        UrlUtils.isSystemPage(details.url)
       ) {
         return;
       }
 
       const tabId = details.tabId;
-      if (this.removedTabs.has(tabId)) {
+      if (this.tabStateManager.isTabRemoved(tabId)) {
         if (this.debugMode) {
           logger.log(`忽略已关闭标签页的导航: ${tabId}`);
         }
@@ -518,7 +506,7 @@ export class NavigationManager {
       const url = details.url;
 
       // 如果是空白页或新标签页，忽略
-      if (this.isEmptyTabUrl(url)) {
+      if (UrlUtils.isEmptyTabUrl(url)) {
         return;
       }
 
@@ -546,16 +534,16 @@ export class NavigationManager {
         const pendingJsNavs = this.pendingJsNavigations.get(tabId) || [];
         if (pendingJsNavs.length > 0) {
           // 标准化URL以便比较
-          const normalizedUrl = this.normalizeUrl(url);
+          const normalizedUrl = UrlUtils.normalizeUrl(url);
 
           // 查找匹配的JS导航
           for (let i = pendingJsNavs.length - 1; i >= 0; i--) {
             const jsNav = pendingJsNavs[i];
-            const normalizedToUrl = this.normalizeUrl(jsNav.to);
+            const normalizedToUrl = UrlUtils.normalizeUrl(jsNav.to);
 
             if (normalizedToUrl === normalizedUrl) {
               // 找到匹配的JS导航，从当前标签页的节点历史中查找源节点
-              const history = this.tabNavigationHistory.get(tabId) || [];
+              const history = this.tabStateManager.getTabHistory(tabId);
               let sourceNodeId = null;
               for (const id of history) {
                 if (await this.isSameNodeUrl(id, jsNav.from)) {
@@ -593,10 +581,10 @@ export class NavigationManager {
       const nodeId = IdGenerator.generateNodeId(tabId, url);
 
       // 6. 记录节点ID到标签页历史
-      this.addToTabNavigationHistory(tabId, nodeId);
+      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
 
       // 7. 更新标签页状态
-      this.updateTabState(tabId, {
+      this.tabStateManager.updateTabState(tabId, {
         url: url,
         lastNodeId: nodeId,
         lastNavigation: now,
@@ -686,8 +674,8 @@ export class NavigationManager {
       // 过滤掉不需要记录的导航
       if (
         details.frameId !== 0 ||
-        this.isErrorPage(details.url) ||
-        this.isSystemPage(details.url)
+        UrlUtils.isErrorPage(details.url) ||
+        UrlUtils.isSystemPage(details.url)
       ) {
         return;
       }
@@ -696,7 +684,7 @@ export class NavigationManager {
       const tabId = details.tabId;
       const url = details.url;
 
-      if (this.removedTabs.has(tabId)) {
+      if (this.tabStateManager.isTabRemoved(tabId)) {
         return;
       }
 
@@ -753,8 +741,8 @@ export class NavigationManager {
     try {
       if (
         details.frameId !== 0 ||
-        this.isErrorPage(details.url) ||
-        this.isSystemPage(details.url)
+        UrlUtils.isErrorPage(details.url) ||
+        UrlUtils.isSystemPage(details.url)
       ) {
         return;
       }
@@ -762,7 +750,7 @@ export class NavigationManager {
       const tabId = details.tabId;
       const url = details.url;
 
-      if (this.removedTabs.has(tabId)) {
+      if (this.tabStateManager.isTabRemoved(tabId)) {
         return;
       }
 
@@ -803,10 +791,10 @@ export class NavigationManager {
       const nodeId = IdGenerator.generateNodeId(tabId, url);
 
       // 记录节点ID到标签页历史
-      this.addToTabNavigationHistory(tabId, nodeId);
+      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
 
       // 更新标签页状态
-      this.updateTabState(tabId, {
+      this.tabStateManager.updateTabState(tabId, {
         url: url,
         lastNodeId: nodeId,
         lastNavigation: now,
@@ -882,7 +870,7 @@ export class NavigationManager {
   ): Promise<string | null> {
     try {
       // 如果是空白页或新标签页，忽略
-      if (this.isEmptyTabUrl(url) || this.isSystemPage(url)) {
+      if (UrlUtils.isEmptyTabUrl(url) || UrlUtils.isSystemPage(url)) {
         return null;
       }
 
@@ -892,10 +880,10 @@ export class NavigationManager {
       const nodeId = IdGenerator.generateNodeId(tabId, url);
 
       // 记录节点ID到标签页历史
-      this.addToTabNavigationHistory(tabId, nodeId);
+      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
 
       // 更新标签页状态
-      this.updateTabState(tabId, {
+      this.tabStateManager.updateTabState(tabId, {
         url: url,
         lastNodeId: nodeId,
         lastNavigation: now,
@@ -1091,7 +1079,7 @@ export class NavigationManager {
       };
       
       // 添加到待处理导航列表
-      const normalizedUrl = this.normalizeUrl(targetUrl);
+      const normalizedUrl = UrlUtils.normalizeUrl(targetUrl);
       if (!this.pendingNavigations.has(normalizedUrl)) {
         this.pendingNavigations.set(normalizedUrl, []);
       }
@@ -1195,7 +1183,7 @@ export class NavigationManager {
     };
 
     // 添加到待处理列表
-    const targetUrl = this.normalizeUrl(message.targetUrl);
+    const targetUrl = UrlUtils.normalizeUrl(message.targetUrl);
     if (!this.pendingNavigations.has(targetUrl)) {
       this.pendingNavigations.set(targetUrl, []);
     }
@@ -1259,7 +1247,7 @@ export class NavigationManager {
       }
 
       // 检查是否为系统页面
-      if (this.isSystemPage(redirectUrl)) {
+      if (UrlUtils.isSystemPage(redirectUrl)) {
         return;
       }
 
@@ -1471,7 +1459,7 @@ export class NavigationManager {
     }
 
     // 2. 再尝试从导航历史中找到最匹配的节点
-    const history = this.tabNavigationHistory.get(tabId) || [];
+    const history = this.tabStateManager.getTabHistory(tabId);
 
     // 倒序查找，优先使用最近的节点
     for (let i = history.length - 1; i >= 0; i--) {
@@ -1482,12 +1470,12 @@ export class NavigationManager {
     }
 
     // 3. 最后尝试找标签页状态的最后节点
-    const tabState = this.tabStates.get(tabId);
+    const tabState = this.tabStateManager.getTabState(tabId);
     if (
       tabState &&
       tabState.lastNodeId &&
       tabState.url &&
-      this.isSameUrl(tabState.url, url)
+      UrlUtils.isSameUrl(tabState.url, url)
     ) {
       return tabState.lastNodeId;
     }
@@ -1496,20 +1484,10 @@ export class NavigationManager {
   }
 
   /**
-   * 查找标签页的最后一个节点ID
+   * 找到标签页的最后一个节点ID
    */
   private async findLastNodeIdForTab(tabId: number): Promise<string | null> {
-    const history = this.tabNavigationHistory.get(tabId) || [];
-    if (history.length > 0) {
-      return history[history.length - 1];
-    }
-
-    const tabState = this.tabStates.get(tabId);
-    if (tabState && tabState.lastNodeId) {
-      return tabState.lastNodeId;
-    }
-
-    return null;
+    return this.tabStateManager.getLastNodeId(tabId);
   }
 
   /**
@@ -1520,7 +1498,7 @@ export class NavigationManager {
 
     try {
       // 检查缓存
-      const normalized = this.normalizeUrl(url);
+      const normalized = UrlUtils.normalizeUrl(url);
       const cached = this.urlToNodeCache.get(normalized);
       if (cached && Date.now() - cached.timestamp < 60000) {
         // 1分钟内的缓存有效
@@ -1528,7 +1506,7 @@ export class NavigationManager {
       }
 
       // 标准化URL
-      const normalizedUrl = this.normalizeUrl(url);
+      const normalizedUrl = UrlUtils.normalizeUrl(url);
 
       // 查询记录
       const records = await this.navigationStorage.queryNodes({
@@ -1541,7 +1519,7 @@ export class NavigationManager {
       // 如果没找到，尝试标准化URL匹配
       if (!matchingRecord) {
         matchingRecord = records.find(
-          (r) => this.normalizeUrl(r.url) === normalizedUrl
+          (r) => UrlUtils.normalizeUrl(r.url) === normalizedUrl
         );
       }
 
@@ -1561,17 +1539,6 @@ export class NavigationManager {
   }
 
   /**
-   * 判断两个URL是否匹配
-   */
-  private isSameUrl(url1: string, url2: string): boolean {
-    try {
-      return this.normalizeUrl(url1) === this.normalizeUrl(url2);
-    } catch (e) {
-      return url1 === url2;
-    }
-  }
-
-  /**
    * 检查节点的URL是否与给定URL匹配
    */
   private async isSameNodeUrl(nodeId: string, url: string): Promise<boolean> {
@@ -1579,47 +1546,10 @@ export class NavigationManager {
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) return false;
 
-      return this.isSameUrl(record.url, url);
+      return UrlUtils.isSameUrl(record.url, url);
     } catch (e) {
       logger.warn(`检查节点URL匹配失败: ${nodeId}`, e);
       return false;
-    }
-  }
-
-  /**
-   * 添加标签页状态
-   */
-  private addTabState(tabId: number, state: Partial<TabState>): void {
-    const existingState = this.tabStates.get(tabId) || { id: tabId, url: "" };
-    this.tabStates.set(tabId, { ...existingState, ...state });
-  }
-
-  /**
-   * 更新标签页状态
-   */
-  private updateTabState(tabId: number, updates: Partial<TabState>): void {
-    const state = this.tabStates.get(tabId);
-    if (state) {
-      Object.assign(state, updates);
-    } else {
-      this.addTabState(tabId, { id: tabId, url: "", ...updates });
-    }
-  }
-
-  /**
-   * 添加到标签页导航历史
-   */
-  private addToTabNavigationHistory(tabId: number, nodeId: string): void {
-    if (!this.tabNavigationHistory.has(tabId)) {
-      this.tabNavigationHistory.set(tabId, []);
-    }
-
-    const history = this.tabNavigationHistory.get(tabId)!;
-    history.push(nodeId);
-
-    // 限制历史记录长度
-    if (history.length > this.historyLimit) {
-      history.shift();
     }
   }
 
@@ -1646,7 +1576,7 @@ export class NavigationManager {
   ): Promise<void> {
     try {
       // 查找活跃标签页中的所有节点
-      const history = this.tabNavigationHistory.get(tabId) || [];
+      const history = this.tabStateManager.getTabHistory(tabId);
       if (history.length === 0) return;
 
       // 更新最后一个节点的活跃时间
@@ -1696,7 +1626,7 @@ export class NavigationManager {
     tabId?: number
   ): PendingNavigation | null {
     // 标准化URL
-    const normalizedUrl = this.normalizeUrl(url);
+    const normalizedUrl = UrlUtils.normalizeUrl(url);
 
     // 1. 首先尝试通过URL精确匹配
     if (this.pendingNavigations.has(normalizedUrl)) {
@@ -1752,66 +1682,6 @@ export class NavigationManager {
 
     const newCount = (record.visitCount || 0) + 1;
     return newCount;
-  }
-
-  /**
-   * 标准化URL（移除片段标识符、末尾斜杠等）
-   */
-  private normalizeUrl(url: string): string {
-    try {
-      // 移除URL末尾的斜杠和片段标识符
-      return url.replace(/\/$/, "").split("#")[0];
-    } catch (e) {
-      return url;
-    }
-  }
-
-  /**
-   * 判断是否为系统页面
-   */
-  private isSystemPage(url: string): boolean {
-    if (!url) return false;
-
-    // 检查常见的系统页面 URL 模式
-    return (
-      url.startsWith("chrome://") ||
-      url.startsWith("chrome-extension://") ||
-      url.startsWith("devtools://") ||
-      url.startsWith("about:") ||
-      url.startsWith("edge://") ||
-      url.startsWith("brave://") ||
-      url.startsWith("opera://") ||
-      url.startsWith("vivaldi://") ||
-      url.startsWith("view-source:") ||
-      url.startsWith("file://") ||
-      url.startsWith("data:") ||
-      url.startsWith("blob:")
-    );
-  }
-
-  /**
-   * 判断是否为空白页或新标签页
-   */
-  private isEmptyTabUrl(url: string): boolean {
-    return (
-      !url ||
-      url === "about:blank" ||
-      url === "chrome://newtab/" ||
-      url.startsWith("chrome://newtab") ||
-      url === "edge://newtab/" ||
-      url === "brave://newtab/"
-    );
-  }
-
-  /**
-   * 判断是否为错误页面
-   */
-  private isErrorPage(url: string): boolean {
-    return (
-      url.startsWith("chrome-error://") ||
-      url.startsWith("chrome://crash") ||
-      url.startsWith("chrome://kill")
-    );
   }
 
   /**
@@ -1936,17 +1806,31 @@ export class NavigationManager {
   public async getActiveNodes(): Promise<NavNode[]> {
     try {
       const activeNodes: NavNode[] = [];
-
-      for (const [tabId, history] of this.tabNavigationHistory.entries()) {
+      
+      // 获取所有标签页状态
+      const allTabStates = this.tabStateManager.getAllTabStates();
+      
+      // 遍历所有标签页状态
+      for (const tabState of allTabStates) {
+        // 获取标签页的导航历史
+        const history = this.tabStateManager.getTabHistory(tabState.id);
+        
         if (history.length > 0) {
+          // 获取最后一个节点
           const lastNodeId = history[history.length - 1];
           const record = await this.navigationStorage.getNode(lastNodeId);
           if (record) {
             activeNodes.push(record);
           }
+        } else if (tabState.lastNodeId) {
+          // 如果没有历史记录但有最后节点ID，也添加
+          const record = await this.navigationStorage.getNode(tabState.lastNodeId);
+          if (record) {
+            activeNodes.push(record);
+          }
         }
       }
-
+  
       return activeNodes;
     } catch (error) {
       logger.error("获取活跃节点失败:", error);
@@ -1959,7 +1843,7 @@ export class NavigationManager {
    */
   public async getTabHistory(tabId: number): Promise<NavNode[]> {
     try {
-      const history = this.tabNavigationHistory.get(tabId) || [];
+      const history = this.tabStateManager.getTabHistory(tabId);
       const records: NavNode[] = [];
 
       for (const nodeId of history) {
@@ -2253,7 +2137,6 @@ export class NavigationManager {
   }
   /**
    * 获取或创建URL对应的节点
-   * 如果节点已存在则返回现有节点，否则创建新节点
    */
   private async getOrCreateNodeForUrl(url: string, options: {
     tabId: number;
@@ -2280,10 +2163,10 @@ export class NavigationManager {
       nodeId = IdGenerator.generateNodeId(tabId, url);
       
       // 3. 记录节点ID到标签页历史
-      this.addToTabNavigationHistory(tabId, nodeId);
+      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
       
       // 4. 更新标签页状态
-      this.updateTabState(tabId, {
+      this.tabStateManager.updateTabState(tabId, {
         url: url,
         lastNodeId: nodeId,
         lastNavigation: timestamp
@@ -2314,7 +2197,7 @@ export class NavigationManager {
       
       // 如果还没找到父节点，尝试使用当前标签页的最后一个节点
       if (!parentId) {
-        parentId = await this.findLastNodeIdForTab(tabId) || "";
+        parentId = this.tabStateManager.getLastNodeId(tabId) || "";
       }
       
       // 8. 创建导航记录
@@ -2374,11 +2257,10 @@ export class NavigationManager {
   }
   /**
    * 重置导航状态
-   * 用于清除会话数据后重置内部状态
    */
   private resetNavigationState(): void {
-    // 重置标签页导航历史
-    this.tabNavigationHistory.clear();
+    // 重置标签页状态管理器
+    this.tabStateManager.reset();
     
     // 清空缓存
     this.tabNodeIdCache.clear();
