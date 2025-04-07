@@ -1,5 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
-import type { NavNode, NavLink } from '../types/navigation.js';
+import { NavNode, NavLink } from '../types/navigation.js';
+import { FilterStates } from './ui/FilterConfig.js';
 
 const logger = new Logger('DataProcessor');
 
@@ -34,31 +35,30 @@ export class DataProcessor {
   ];
 
   /**
-   * 应用筛选器到节点和边
-   * @param allNodes 所有节点
-   * @param allEdges 所有边
-   * @param filters 筛选器配置
-   * @returns 筛选后的节点和边
+   * 应用筛选器
+   * @param nodes 所有节点
+   * @param edges 所有边
+   * @param filters 筛选器状态对象，使用明确的FilterStates类型
    */
   public applyFilters(
-    allNodes: NavNode[], 
-    allEdges: NavLink[], 
-    filters: FilterConfig
-  ): { nodes: NavNode[], edges: NavLink[] } {
+    nodes: NavNode[], 
+    edges: NavLink[], 
+    filters: FilterStates
+  ): { nodes: NavNode[]; edges: NavLink[] } {
     logger.log('应用筛选器:', filters);
     
     // 筛选节点
-    const filteredNodes = this.filterNodes(allNodes, filters);
+    const filteredNodes = this.filterNodes(nodes, filters);
     
     // 获取所有符合条件的节点ID集合，用于边过滤
     const nodeIds = new Set(filteredNodes.map(node => node.id));
     
     // 过滤连接，只保留两端都在筛选后节点中的连接
-    const filteredEdges = allEdges.filter(edge => {
+    const filteredEdges = edges.filter(edge => {
       return nodeIds.has(edge.source) && nodeIds.has(edge.target);
     });
     
-    logger.log(`过滤结果: 从${allNodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
+    logger.log(`过滤结果: 从${nodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
     
     return { nodes: filteredNodes, edges: filteredEdges };
   }
@@ -69,7 +69,7 @@ export class DataProcessor {
    * @param filters 筛选器配置
    * @returns 筛选后的节点列表
    */
-  private filterNodes(nodes: NavNode[], filters: FilterConfig): NavNode[] {
+  private filterNodes(nodes: NavNode[], filters: FilterStates): NavNode[] {
     return nodes.filter(node => {
       // 类型筛选 - 只过滤明确禁用的已知类型
       if (node.type) {

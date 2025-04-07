@@ -1,7 +1,7 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import type { Visualizer } from '../../types/navigation.js';
 import type { BrowsingSession } from '../../types/session.js';
-import { sessionManager } from '../../core/session-manager.js';
+import { sessionServiceClient } from '../../core/session-service-client.js';
 
 const logger = new Logger('SessionSelector');
 
@@ -57,7 +57,7 @@ export class SessionSelector {
     this.currentSessionId = sessionId;
     
     // 调用会话管理器的获取会话方法
-    sessionManager.loadSession(sessionId)
+    sessionServiceClient.loadSession(sessionId)
       .then(() => {
         logger.log('会话加载完成');
       })

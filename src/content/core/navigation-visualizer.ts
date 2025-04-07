@@ -2,17 +2,17 @@
  * 导航图谱可视化器核心类
  */
 import { Logger } from '../../lib/utils/logger.js';
-import { sessionManager } from './session-manager.js';
-import { nodeManager } from './node-manager.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
-import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
 
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
+import { FilterConfig, FilterStates, getInitialFilters, extractFilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
+import { ViewStateManager } from '../visualizer/state/ViewStateManager.js';
+import { SessionViewController } from '../visualizer/state/SessionViewController.js';
+import { NavigationMessageHandler } from '../messaging/handlers/navigation-message-handler.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -23,32 +23,12 @@ export class NavigationVisualizer implements Visualizer {
   // 可视化容器
   container: HTMLElement | null = null;
 
-  // 当前视图类型 ('tree' | 'timeline')
-  currentView: string = "tree";
-
-  // 过滤器设置
-  filters = {
-    reload: true,
-    history: true,
-    closed: false, // 默认不显示已关闭页面
-    typeLink: true,
-    typeAddress: true,
-    typeForm: true,
-    typeJs: true,
-    showTracking: false, // 默认不显示跟踪页面
-  };
-
-  // D3相关
-  svg: any = null;
-  zoom: any = null;
-
-  currentTransform?: { x: number; y: number; k: number } | undefined;
-
-  // 状态跟踪
-  _isRestoringTransform: boolean = false;
-  _savedTransform?: { x: number; y: number; k: number };
-  _treeZoom: any = null; // 树形视图的缩放状态
-  _timelineZoom: any = null; // 时间线视图的缩放状态
+  // 替换原有的筛选器相关属性
+  private filterConfigs: FilterConfig[] = getInitialFilters();
+  
+  get filters(): FilterStates {
+    return extractFilterStates(this.filterConfigs);
+  }
 
   // 数据存储
   nodes: NavNode[] = [];
@@ -67,82 +47,42 @@ export class NavigationVisualizer implements Visualizer {
 
   private dataProcessor: DataProcessor = new DataProcessor();
   private uiManager: UIManager = new UIManager(this);
-
-  private trackingKeywords = [
-    "/track/",
-    "/pixel/",
-    "/analytics/",
-    "/beacon/",
-    "/telemetry/",
-    "/stats/",
-    "/log/",
-    "/metrics/",
-    "/collect/",
-    "/monitor/",
-    "piwik.",
-    "matomo.",
-    "ga.js",
-    "gtm.js",
-    "fbevents",
-    "insight.",
-    "/counter/",
-    "www.google-analytics.com",
-  ];
+  
   // 添加调试工具属性
   private debugTools: DebugTools | null = null;
-  /**
-   * 筛选器配置定义
-   */
-  private readonly filterConfigs = [
-    {
-      id: "filter-reload",
-      text: "显示刷新",
-      property: "reload",
-      defaultValue: true,
-    },
-    {
-      id: "filter-history",
-      text: "显示历史",
-      property: "history",
-      defaultValue: true,
-    },
-    {
-      id: "filter-closed",
-      text: "显示已关闭",
-      property: "closed",
-      defaultValue: false,
-    },
-    {
-      id: "filter-tracking",
-      text: "显示跟踪页面",
-      property: "showTracking",
-      defaultValue: false,
-    },
-    {
-      id: "type-link",
-      text: "链接点击",
-      property: "typeLink",
-      defaultValue: true,
-    },
-    {
-      id: "type-address",
-      text: "地址栏输入",
-      property: "typeAddress",
-      defaultValue: true,
-    },
-    {
-      id: "type-form",
-      text: "表单提交",
-      property: "typeForm",
-      defaultValue: true,
-    },
-    { id: "type-js", text: "JS导航", property: "typeJs", defaultValue: true },
-  ];
+
+  // 添加ViewStateManager
+  private viewStateManager: ViewStateManager;
+
+  // 添加消息处理器属性
+  private messageHandler: NavigationMessageHandler;
+
+  // 添加会话视图控制器属性
+  private sessionViewController: SessionViewController;
+
   /**
    * 构造函数
    */
   constructor() {
     logger.log("初始化NavigationVisualizer...");
+    
+    // 初始化视图状态管理器
+    this.viewStateManager = new ViewStateManager(this);
+    
+    // 初始化消息处理器
+    this.messageHandler = new NavigationMessageHandler(this);
+    
+    // 初始化UI管理器
+    this.uiManager = new UIManager(this);
+    
+    // 初始化会话视图控制器
+    this.sessionViewController = new SessionViewController(this, this.uiManager);
+    
+    // 设置缩放变化回调
+    this.viewStateManager.setOnZoomChangeCallback(
+      // 使用NavigationVisualizer中的节流函数
+      () => this.updateStatusBarThrottled()
+    );
     // 检查d3是否已加载
     if (typeof window.d3 === "undefined") {
       logger.error("d3 库未加载，可视化功能将不可用");
@@ -150,9 +90,39 @@ export class NavigationVisualizer implements Visualizer {
     } else {
       logger.log("d3 库已加载:", window.d3.version);
     }
+  }
 
-    // 不要在构造函数里面初始化，而应该外部初始化
-    //this.initialize();
+  // 代理属性，保持向后兼容性
+  get currentView(): string {
+    return this.viewStateManager.currentView;
+  }
+  
+  set currentView(view: string) {
+    this.viewStateManager.currentView = view;
+  }
+  
+  get svg(): any {
+    return this.viewStateManager.svg;
+  }
+  
+  set svg(value: any) {
+    this.viewStateManager.svg = value;
+  }
+  
+  get zoom(): any {
+    return this.viewStateManager.zoom;
+  }
+  
+  set zoom(value: any) {
+    this.viewStateManager.zoom = value;
+  }
+  
+  get currentTransform(): any {
+    return this.viewStateManager.currentTransform;
+  }
+  
+  set currentTransform(value: any) {
+    this.viewStateManager.currentTransform = value;
   }
 
   /**
@@ -164,15 +134,13 @@ export class NavigationVisualizer implements Visualizer {
       logger.log("初始化导航可视化...");
 
       // 第一阶段：基础配置与消息
-      // 加载配置并设置消息监听，这是其他所有功能的基础
       await this.initializeBaseConfig();
 
       // 第二阶段：委托UI管理器处理所有UI初始化
       await this.initializeUI();
 
-      // 第三阶段：数据加载与应用
-      // 加载会话数据并应用到视图
-      await this.loadInitialData();
+      // 第三阶段：数据加载与应用 - 使用会话视图控制器
+      await this.sessionViewController.initialize();
 
       logger.log("NavigationVisualizer 初始化完成");
     } catch (error) {
@@ -187,8 +155,8 @@ export class NavigationVisualizer implements Visualizer {
    * 初始化基础配置与消息监听
    */
   private async initializeBaseConfig(): Promise<void> {
-    // 设置消息监听器
-    this.initMessageListener();
+    // 初始化消息处理器 - 替换原来的 initMessageListener
+    this.messageHandler.initialize();
 
     // 应用全局配置
     this.applyGlobalConfig();
@@ -209,6 +177,8 @@ export class NavigationVisualizer implements Visualizer {
     const { container, svg } = this.uiManager.initialize();
     this.container = container;
 
+    // 添加窗口大小变化监听
+    window.addEventListener("resize", () => this.updateContainerSize());
     // 使用返回的SVG元素
     if (svg) {
       this.setupSvg(svg); // 配置SVG，添加所需的事件监听等
@@ -220,27 +190,6 @@ export class NavigationVisualizer implements Visualizer {
   // 更新状态栏
   public updateStatusBar(): void {
     this.uiManager.updateStatusBar();
-  }
-
-  /**
-   * 加载初始数据
-   */
-  private async loadInitialData(): Promise<void> {
-    // 订阅会话加载事件
-    sessionManager.onSessionLoaded((session) =>
-      this.handleSessionLoaded(session)
-    );
-    sessionManager.onSessionsListLoaded((sessions) =>
-      this.handleSessionListLoaded(sessions)
-    );
-
-    // 加载会话列表
-    await sessionManager.loadSessions();
-
-    // 加载当前会话
-    await sessionManager.loadCurrentSession();
-
-    logger.log("初始数据加载完成");
   }
 
   /**
@@ -283,47 +232,6 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 初始化SVG元素
-   * 创建SVG元素及相应的分组
-   */
-  private initializeSvg(): void {
-    if (!this.container) {
-      throw new Error("容器不存在，无法初始化SVG");
-    }
-
-    logger.log("初始化SVG元素...");
-
-    // 如果已有SVG元素，先移除
-    const existingSvg = this.container.querySelector("svg");
-    if (existingSvg) {
-      existingSvg.remove();
-    }
-
-    try {
-      // 创建SVG元素
-      this.svg = window.d3
-        .select(this.container)
-        .append("svg")
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .attr("class", "visualization-svg")
-        .attr("data-view", this.currentView);
-
-      // 添加根分组
-      const mainGroup = this.svg.append("g").attr("class", "main-group");
-
-      // 创建链接组和节点组
-      mainGroup.append("g").attr("class", "links-group");
-
-      mainGroup.append("g").attr("class", "nodes-group");
-
-      logger.log("SVG元素初始化成功");
-    } catch (error) {
-      logger.error("初始化SVG失败:", error);
-      throw error;
-    }
-  }
-  /**
    * 配置SVG元素，添加D3所需结构
    * @param svgElement 由UIManager创建的原生SVG元素
    */
@@ -335,22 +243,25 @@ export class NavigationVisualizer implements Visualizer {
       if (!svgElement) {
         throw new Error("SVG元素为空");
       }
+      
       // 将原生SVG元素转换为D3选择集
-      this.svg = d3
+      const svg = d3
         .select(svgElement)
         .attr("class", "visualization-svg")
         .attr("data-view", this.currentView);
+      
+      // 设置SVG到视图状态管理器
+      this.viewStateManager.svg = svg;
 
       // 添加根分组
-      const mainGroup = this.svg.append("g").attr("class", "main-group");
+      const mainGroup = svg.append("g").attr("class", "main-group");
 
       // 创建链接组和节点组
       mainGroup.append("g").attr("class", "links-group");
-
       mainGroup.append("g").attr("class", "nodes-group");
 
-      // 设置缩放行为
-      this.setupBasicZoom();
+      // 使用视图状态管理器设置缩放行为
+      this.viewStateManager.setupBasicZoom();
 
       logger.log("SVG配置成功");
     } catch (error) {
@@ -358,196 +269,7 @@ export class NavigationVisualizer implements Visualizer {
       throw error;
     }
   }
-  /**
-   * 初始化消息监听
-   */
-  private initMessageListener(): void {
-    logger.groupCollapsed("初始化可视化器消息监听...");
 
-    // 使用已导入的 registerHandler 函数
-    // 避免每次都动态导入
-
-    // 注册刷新可视化消息处理函数
-    registerHandler<BaseMessage, BaseResponse>(
-      "refreshVisualization",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到可视化刷新请求");
-
-        // 如果需要回复，发送响应
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟执行刷新操作
-        setTimeout(async () => {
-          try {
-            logger.log("🔄 开始执行刷新操作...");
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("✅ 刷新操作完成");
-          } catch (err) {
-            logger.error("❌ 自动刷新可视化失败:", err);
-          }
-        }, 50);
-
-        // 返回false表示已同步处理了响应
-        return false;
-      }
-    );
-
-    // 注册页面活动消息处理函数
-    registerHandler<BaseMessage, BaseResponse>(
-      "pageActivity",
-      (message: any) => {
-        logger.log("收到页面活动事件，触发刷新", message.source);
-
-        // 触发刷新操作
-        this.triggerRefresh();
-
-        // 不需要回复
-        return false;
-      }
-    );
-
-    // 链接点击消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "linkClicked",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到链接点击消息:", message.linkInfo);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟刷新可视化图表
-        setTimeout(async () => {
-          try {
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("基于链接点击刷新可视化完成");
-          } catch (err) {
-            logger.error("链接点击后刷新可视化失败:", err);
-          }
-        }, 100);
-
-        return false;
-      }
-    );
-
-    // 表单提交消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "formSubmitted",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到表单提交消息:", message.formInfo);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟刷新可视化图表
-        setTimeout(async () => {
-          try {
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("基于表单提交刷新可视化完成");
-          } catch (err) {
-            logger.error("表单提交后刷新可视化失败:", err);
-          }
-        }, 150);
-
-        return false;
-      }
-    );
-
-    // 节点ID获取消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "getNodeId",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到获取节点ID请求:", message.url);
-
-        // 从当前数据中查找URL对应的节点ID
-        let nodeId: string | undefined = undefined;
-        if (this.nodes && message.url) {
-          const node = this.nodes.find((n) => n.url === message.url);
-          nodeId = node?.id;
-        }
-
-        // 返回找到的节点ID
-        sendResponse({
-          success: true,
-          nodeId,
-          requestId: message.requestId,
-        } as BaseResponse);
-
-        return false; // 同步处理
-      }
-    );
-
-    // favicon更新消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "faviconUpdated",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到favicon更新消息:", message.url, message.favicon);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        return false; // 同步处理
-      }
-    );
-
-    // 页面加载完成消息处理
-    registerHandler<BaseMessage, BaseResponse>(
-      "pageLoaded",
-      (message: any, sender, sendResponse) => {
-        logger.log("收到页面加载完成消息:", message.pageInfo?.url);
-
-        // 确认收到
-        if (message.requestId) {
-          sendResponse({
-            success: true,
-            requestId: message.requestId,
-          } as BaseResponse);
-        }
-
-        // 延迟刷新视图
-        setTimeout(async () => {
-          try {
-            await sessionManager.loadSessions();
-            await sessionManager.loadCurrentSession();
-            this.refreshVisualization();
-            logger.log("页面加载后刷新可视化完成");
-          } catch (err) {
-            logger.error("页面加载后刷新可视化失败:", err);
-          }
-        }, 200);
-
-        // 返回false表示已同步处理响应
-        return false;
-      }
-    );
-
-    logger.groupEnd();
-  }
   /**
    * 清理资源
    * 在可视化器销毁或者组件卸载时调用
@@ -555,15 +277,8 @@ export class NavigationVisualizer implements Visualizer {
   cleanup(): void {
     logger.groupCollapsed("清理可视化器资源...");
 
-    // 取消注册消息处理函数
-    unregisterHandler("getNodeId");
-    unregisterHandler("pageLoaded");
-    unregisterHandler("pageTitleUpdated");
-    unregisterHandler("faviconUpdated");
-    unregisterHandler("pageActivity");
-    unregisterHandler("linkClicked");
-    unregisterHandler("formSubmitted");
-    unregisterHandler("jsNavigation");
+    // 清理消息处理器
+    this.messageHandler.cleanup();
 
     // 移除事件监听器
     window.removeEventListener("resize", () => this.updateContainerSize());
@@ -571,6 +286,71 @@ export class NavigationVisualizer implements Visualizer {
     // 清理其他资源...
     logger.groupEnd;
   }
+
+  /**
+   * 更新容器大小并重新渲染
+   */
+  updateContainerSize(): void {
+    if (!this.container) return;
+
+    // 获取主容器尺寸
+    const mainContainer = this.container.closest(".main-container");
+
+    let width, height;
+
+    if (mainContainer) {
+      // 使用父容器的尺寸
+      const rect = mainContainer.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+    } else {
+      // 回退到窗口尺寸，但不完全占满（留出一些边距）
+      width = window.innerWidth - 40;
+      height = window.innerHeight - 100;
+    }
+
+    // 检查尺寸是否真的变化了
+    const oldWidth = parseFloat(this.container.style.width) || 0;
+    const oldHeight = parseFloat(this.container.style.height) || 0;
+
+    // 只有当尺寸变化超过一定阈值时才更新
+    const threshold = 5; // 5像素的阈值
+    if (
+      Math.abs(width - oldWidth) > threshold ||
+      Math.abs(height - oldHeight) > threshold
+    ) {
+      logger.log(`更新容器大小: ${width}x${height}`);
+
+      // 应用尺寸
+      this.container.style.width = `${width}px`;
+      this.container.style.height = `${height}px`;
+
+      // 通知 UI 管理器容器大小变化
+      this.uiManager.handleResize(width, height);
+
+      // 如果已有可视化，重新渲染
+      if (this.nodes.length > 0) {
+        this.renderVisualization({ restoreTransform: true });
+      }
+    } else {
+      logger.log("容器大小变化不显著，跳过更新");
+    }
+  }
+  /**
+   * 节流更新状态栏
+   */
+  private updateStatusBarThrottled = (() => {
+    let ticking = false;
+    return () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          this.updateStatusBar();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+  })();
   /**
    * 触发刷新操作
    * 包含节流控制逻辑
@@ -591,8 +371,8 @@ export class NavigationVisualizer implements Visualizer {
     // 执行刷新操作
     setTimeout(async () => {
       try {
-        await sessionManager.loadSessions();
-        await sessionManager.loadCurrentSession();
+        // 修改：通过会话处理器刷新数据，而不是直接调用sessionServiceClient
+        await this.sessionViewController.refreshData();
         this.refreshVisualization();
         logger.log("页面活动触发的刷新完成");
       } catch (err) {
@@ -660,7 +440,7 @@ export class NavigationVisualizer implements Visualizer {
     }
 
     // 更新筛选器状态
-    (this.filters as any)[config.property] = checked;
+    config.enabled = checked;
 
     // 通知 UI 管理器更新筛选器 UI
     this.uiManager.updateFilters(this.filters);
@@ -672,113 +452,16 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 处理单个会话加载
-   */
-  handleSessionLoaded(session: SessionDetails | null): void {
-    logger.log("会话已加载，准备更新UI和数据");
-
-    // 移除加载状态
-    document.body.classList.remove("loading-session");
-
-    if (!session) {
-      this.showError("会话加载失败或无可用会话");
-      return;
-    }
-
-    // 保存当前会话
-    this.currentSession = session;
-
-    // 从节点管理器获取处理好的数据
-    this.allNodes = [...nodeManager.getNodes()];
-    this.allEdges = [...nodeManager.getEdges()];
-    this.nodes = [...this.allNodes];
-    this.edges = [...this.allEdges];
-    this.nodeMap = nodeManager.getNodeMap();
-
-    // 更新会话相关UI
-    this.updateSessionUI();
-
-    // 应用筛选器
-    this.applyFilters();
-
-    // 刷新可视化
-    this.refreshVisualization(undefined, { restoreTransform: true });
-  }
-  /**
-   * 更新会话相关UI
-   */
-  private updateSessionUI(): void {
-    // 更新会话选择器
-    this.updateSessionSelector();
-
-    // 更新状态栏
-    this.updateStatusBar();
-
-    // 使用 UIManager 隐藏控制面板
-    this.uiManager.hideControlPanel();
-  }
-  /**
-   * 处理会话列表加载事件
-   */
-  handleSessionListLoaded(sessions: any[]): void {
-    logger.log(`会话列表已加载，共${sessions.length}个会话`);
-
-    // 更新会话选择器
-    this.updateSessionSelector(sessions);
-  }
-
-  /**
-   * 更新会话选择器
-   */
-  private updateSessionSelector(sessions?: any[]): void {
-    // 如果提供了会话列表，直接使用
-    if (sessions) {
-      // 获取当前会话ID
-      const currentSession = sessionManager.getCurrentSession();
-      const currentSessionId = currentSession ? currentSession.id : undefined;
-
-      this.uiManager.updateSessionSelector(sessions, currentSessionId);
-      return;
-    }
-
-    // 否则从会话管理器同步获取 (正确处理同步方法)
-    try {
-      const sessions = sessionManager.getSessions();
-
-      // 获取当前会话ID
-      const currentSession = sessionManager.getCurrentSession();
-      const currentSessionId = currentSession ? currentSession.id : undefined;
-
-      this.uiManager.updateSessionSelector(sessions, currentSessionId);
-    } catch (error) {
-      logger.error("获取会话列表失败", error);
-    }
-  }
-
-  /**
    * 切换视图
    */
   switchView(view: "tree" | "timeline"): void {
-    if (this.currentView === view) return;
+    // 使用视图状态管理器切换视图
+    this.viewStateManager.switchView(view);
 
-    const previousView = this.currentView;
-    logger.log(`切换视图: ${previousView} -> ${view}`);
+    // 更新按钮状态
+    this.updateViewButtonsState();
 
     try {
-      // 更新当前视图
-      this.currentView = view;
-
-      // 立即更新按钮状态
-      this.updateViewButtonsState();
-
-      // 重要：重置缩放状态
-      this.zoom = null;
-
-      // 清除 SVG 内容
-      if (this.svg) {
-        this.svg.selectAll("*").remove();
-      }
-
       // 重新初始化 SVG 结构
       const svg = this.uiManager.createSvgElement();
       if (svg) {
@@ -791,12 +474,8 @@ export class NavigationVisualizer implements Visualizer {
       // 重新渲染
       this.refreshVisualization(undefined, { restoreTransform: true });
     } catch (error) {
-      logger.error("切换视图失败:", error);
-
-      // 恢复到先前的视图
-      this.currentView = previousView;
-      this.updateViewButtonsState();
-      this.refreshVisualization(undefined, { restoreTransform: true });
+      logger.error("重新初始化视图失败:", error);
+      this.showError("切换视图失败: " + (error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -891,7 +570,7 @@ export class NavigationVisualizer implements Visualizer {
         });
 
         // 添加简单的缩放功能
-        this.setupBasicZoom();
+        this.viewStateManager.setupBasicZoom();
       } else {
         // 使用渲染器工厂创建相应的渲染器
         const renderer = RendererFactory.createRenderer(
@@ -911,6 +590,14 @@ export class NavigationVisualizer implements Visualizer {
         renderer.render(this.nodes, this.edges, {
           restoreTransform: options.restoreTransform
         });
+      }
+
+      // 在可视化渲染后，尝试恢复视图状态
+      if (options.restoreTransform) {
+        // 尝试恢复视图缩放状态
+        setTimeout(() => {
+          this.viewStateManager.restoreViewState();
+        }, 50);
       }
 
       // 更新状态栏
@@ -952,144 +639,50 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 设置基本缩放功能
-   */
-  private setupBasicZoom(): void {
-    if (!this.svg) return;
-
-    const zoom = d3
-      .zoom()
-      .scaleExtent([0.5, 2])
-      .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        this.svg.select(".main-group").attr("transform", event.transform);
-
-        // 保存当前变换
-        this.currentTransform = event.transform;
-
-        // 更新状态栏
-        this.updateStatusBarThrottled();
-      });
-
-    this.svg.call(zoom);
-    this.zoom = zoom;
-  }
-  
-  private updateStatusBarThrottled = (() => {
-    let ticking = false;
-    return () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          this.updateStatusBar();
-          ticking = false;
-        });
-      }
-    };
-  })();
-
-  /**
-   * 更新容器大小
-   */
-  updateContainerSize(): void {
-    if (!this.container) return;
-
-    // 获取主容器尺寸
-    const mainContainer = this.container.closest(".main-container");
-
-    let width, height;
-
-    if (mainContainer) {
-      // 使用父容器的尺寸
-      const rect = mainContainer.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-    } else {
-      // 回退到窗口尺寸，但不完全占满（留出一些边距）
-      width = window.innerWidth - 40;
-      height = window.innerHeight - 100;
-    }
-
-    // 检查尺寸是否真的变化了
-    const oldWidth = parseFloat(this.container.style.width) || 0;
-    const oldHeight = parseFloat(this.container.style.height) || 0;
-
-    // 只有当尺寸变化超过一定阈值时才更新
-    const threshold = 5; // 5像素的阈值
-    if (
-      Math.abs(width - oldWidth) > threshold ||
-      Math.abs(height - oldHeight) > threshold
-    ) {
-      logger.log(`更新容器大小: ${width}x${height}`);
-
-      // 应用尺寸
-      this.container.style.width = `${width}px`;
-      this.container.style.height = `${height}px`;
-
-      // 通知 UI 管理器容器大小变化
-      this.uiManager.handleResize(width, height);
-
-      // 如果已有可视化，重新渲染
-      if (this.nodes.length > 0) {
-        this.renderVisualization({ restoreTransform: true });
-      }
-    } else {
-      logger.log("容器大小变化不显著，跳过更新");
-    }
-  }
-
-  /**
    * 应用筛选器并刷新（实现Visualizer接口）
    */
   public applyFilters(): void {
-    logger.log("应用筛选器:", this.filters);
-
-    if (!this.filters || !this.allNodes || !this.allEdges) {
-      logger.warn("无法应用筛选器：筛选器配置或节点数据不完整");
-      return;
-    }
-
+    // 使用简化的状态对象，与原有方法兼容
+    const filterStates = this.filters;
+    
+    logger.log("应用筛选器:", filterStates);
+    
     // 使用 DataProcessor 进行筛选
     const result = this.dataProcessor.applyFilters(
       this.allNodes,
       this.allEdges,
-      this.filters
+      filterStates
     );
-
-    // 更新当前节点和边
+    
+    // 更新节点和边
     this.nodes = result.nodes;
     this.edges = result.edges;
-
-    // 添加日志记录，显示筛选前后的节点数量
+    
     logger.log(
       `筛选后数据：节点 ${this.nodes.length}/${this.allNodes.length}，边 ${this.edges.length}/${this.allEdges.length}`
     );
-
-    // 使用完整的刷新流程来更新视图
-    //this.refreshVisualization(undefined, { restoreTransform: true });
   }
+
   /**
    * 更新筛选器配置（实现Visualizer接口）
    */
   public updateFilter(filterId: string, value: boolean): void {
     logger.log(`更新筛选器: ${filterId} = ${value}`);
-
+    
     // 查找对应的筛选器配置
-    const config = this.filterConfigs.find((f) => f.id === filterId);
-    if (!config) {
+    const filter = this.filterConfigs.find(f => f.id === filterId);
+    if (!filter) {
       logger.warn(`未知筛选器ID: ${filterId}`);
       return;
     }
-
-    // 更新筛选器状态
-    (this.filters as any)[config.property] = value;
-
+    
+    // 直接更新筛选器状态
+    filter.enabled = value;
+    
     // 通知 UI 管理器更新筛选器 UI
     this.uiManager.updateFilters(this.filters);
   }
 
-  // 添加 getFilters 方法
-  getFilters(): any {
-    return this.filters;
-  }
   /**
    * 更新URL以反映当前视图和筛选状态
    * 实现原本可能缺失的 updateUrl 方法
@@ -1285,23 +878,193 @@ export class NavigationVisualizer implements Visualizer {
   private updateViewButtonsState(): void {
     this.uiManager.updateViewButtonsState(this.currentView);
   }
+  /**
+   * 更新节点元信息
+   * @param nodeId 节点ID
+   * @param metadata 元数据对象，可以包含title和favicon等
+   */
+  updateNodeMetadata(nodeId: string, metadata: {[key: string]: string}): void {
+    if (!nodeId || !metadata) return;
+    
+    logger.debug(`更新节点元信息: ${nodeId}`, metadata);
+    
+    // 找到对应节点
+    let node: NavNode | undefined;
+    
+    // 先在节点映射中查找
+    if (this.nodeMap && this.nodeMap.has(nodeId)) {
+      node = this.nodeMap.get(nodeId);
+    } 
+    
+    // 如果节点映射中没有，在所有节点中查找
+    if (!node) {
+      node = this.allNodes.find(n => n.id === nodeId);
+    }
+    
+    // 如果找到了节点，更新元信息
+    if (node) {
+      // 更新节点的元信息
+      let needVisualUpdate = false;
+      
+      // 更新标题
+      if ('title' in metadata && metadata.title) {
+        node.title = metadata.title;
+        needVisualUpdate = true;
+      }
+      
+      // 更新图标
+      if ('favicon' in metadata && metadata.favicon) {
+        node.favicon = metadata.favicon;
+        needVisualUpdate = true;
+      }
+      
+      // 如果需要更新视觉效果，尝试更新节点外观
+      if (needVisualUpdate) {
+        this.updateNodeVisual(nodeId);
+      }
+      
+      logger.debug(`节点${nodeId}元信息已更新`);
+    } else {
+      logger.warn(`未找到节点: ${nodeId}`);
+    }
+  }
 
   /**
-   * 应用变换状态
+   * 更新节点视觉效果
+   * @param nodeId 节点ID
    */
-  private applyTransform(transform: any): void {
-    if (!transform || !this.svg || !this.zoom) return;
-
-    this._isRestoringTransform = true;
-
+  private updateNodeVisual(nodeId: string): void {
+    if (!this.svg) return;
+    
+    // 尝试更新节点文本
+    const textElement = this.svg.select(`.node-text[data-node-id="${nodeId}"]`);
+    if (textElement && !textElement.empty()) {
+      const node = this.nodeMap.get(nodeId);
+      if (node) {
+        textElement.text(node.title || node.url || nodeId);
+      }
+    }
+    
+    // 尝试更新节点图标
+    const iconElement = this.svg.select(`.node-icon[data-node-id="${nodeId}"]`);
+    if (iconElement && !iconElement.empty()) {
+      const node = this.nodeMap.get(nodeId);
+      if (node && node.favicon) {
+        iconElement.attr("href", node.favicon);
+      }
+    }
+  }
+  /**
+   * 获取或创建节点ID
+   * @param url 页面URL
+   * @returns 节点ID
+   */
+  getOrCreateNodeId(url: string): string {
+    // 从当前数据中查找URL对应的节点ID
+    let nodeId: string | undefined = undefined;
+    if (this.nodes) {
+      const node = this.nodes.find((n) => n.url === url);
+      nodeId = node?.id;
+    }
+    
+    // 如果没找到，则生成新ID
+    if (!nodeId) {
+      nodeId = `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      logger.debug(`为URL创建新节点ID: ${url} -> ${nodeId}`);
+    }
+    
+    return nodeId;
+  }
+  
+  /**
+   * 设置原始数据
+   * 为会话处理器提供接口
+   */
+  setRawData(nodes: NavNode[], edges: NavLink[], nodeMap?: Map<string, NavNode>): void {
+    // 保存原始数据
+    this.allNodes = [...nodes];
+    this.allEdges = [...edges];
+    this.nodes = [...nodes];
+    this.edges = [...edges];
+    
+    // 如果提供了节点映射，使用它
+    if (nodeMap) {
+      this.nodeMap = nodeMap;
+    } else {
+      this.nodeMap = this.buildNodeMap(nodes);
+    }
+    
+    // 应用筛选器
+    this.applyFilters();
+  }
+  
+  /**
+   * 处理页面加载消息 - 委托给会话处理器
+   */
+  async handlePageLoaded(message: any): Promise<void> {
     try {
-      this.svg.call(this.zoom.transform, transform);
-      setTimeout(() => {
-        this._isRestoringTransform = false;
-      }, 100);
-    } catch (e) {
-      logger.warn("无法应用变换状态", e);
-      this._isRestoringTransform = false;
+      await this.sessionViewController.refreshData();
+      this.refreshVisualization();
+      logger.log("页面加载后刷新可视化完成");
+    } catch (error) {
+      logger.error("页面加载后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 处理链接点击消息 - 委托给会话处理器
+   */
+  async handleLinkClicked(message: any): Promise<void> {
+    try {
+      await this.sessionViewController.refreshData();
+      this.refreshVisualization();
+      logger.log("基于链接点击刷新可视化完成");
+    } catch (error) {
+      logger.error("链接点击后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 处理表单提交消息 - 委托给会话处理器
+   */
+  async handleFormSubmitted(message: any): Promise<void> {
+    try {
+      await this.sessionViewController.refreshData();
+      this.refreshVisualization();
+      logger.log("基于表单提交刷新可视化完成");
+    } catch (error) {
+      logger.error("表单提交后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 处理JS导航消息 - 委托给会话处理器
+   */
+  async handleJsNavigation(message: any): Promise<void> {
+    try {
+      await this.sessionViewController.refreshData();
+      this.refreshVisualization();
+      logger.log("基于JS导航刷新可视化完成");
+    } catch (error) {
+      logger.error("JS导航后刷新可视化失败:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 刷新数据 - 委托给会话处理器
+   */
+  async refreshData(): Promise<void> {
+    try {
+      await this.sessionViewController.refreshData();
+      this.refreshVisualization();
+      logger.log("刷新数据完成");
+    } catch (error) {
+      logger.error("刷新数据失败:", error);
+      throw error;
     }
   }
 }

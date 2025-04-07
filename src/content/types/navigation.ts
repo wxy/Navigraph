@@ -2,6 +2,7 @@
  * 导航图谱公共类型定义
  */
 
+import { FilterStates } from '../visualizer/ui/FilterConfig.js';
 import { SessionDetails } from './session.js';
 
 // 定义节点接口
@@ -86,7 +87,7 @@ export interface Visualizer {
   tabId?: string;
   width?: number;
   height?: number;
-  filters?: any;
+  filters: FilterStates;
   
   // 常用方法
   refreshVisualization(): void;
@@ -99,5 +100,4 @@ export interface Visualizer {
   // 添加筛选器相关方法
   updateFilter(filterId: string, value: boolean): void;
   applyFilters(): void;
-  getFilters(): any;
 }
