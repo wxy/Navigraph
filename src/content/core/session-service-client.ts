@@ -9,11 +9,11 @@ import { sendMessage } from '../messaging/content-message-service.js';
 
 type SessionEventCallback = (session: SessionDetails | null) => void;
 
-const logger = new Logger('SessionManager');
+const logger = new Logger('SessionServiceClient');
 /**
  * 会话管理器类
  */
-export class SessionManager {
+export class SessionServiceClient {
   private sessions: Session[] = [];
   private currentSession: SessionDetails | null = null;
   private currentSessionId: string | null = null;
@@ -250,4 +250,4 @@ export class SessionManager {
 }
 
 // 导出默认实例
-export const sessionManager = new SessionManager();
+export const sessionServiceClient = new SessionServiceClient();

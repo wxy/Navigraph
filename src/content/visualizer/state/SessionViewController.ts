@@ -3,15 +3,15 @@
  * 管理会话相关操作，如加载、保存、切换会话等
  */
 import { Logger } from '../../../lib/utils/logger.js';
-import { sessionManager } from '../../core/session-manager.js';
+import { sessionServiceClient } from '../../core/session-service-client.js';
 import type { UIManager } from '../ui/UIManager.js';
 import type { NavigationVisualizer } from '../../core/navigation-visualizer.js';
 import type { SessionDetails } from '../../types/session.js';
 import { nodeManager } from '../../core/node-manager.js';
 
-const logger = new Logger('SessionHandler');
+const logger = new Logger('SessionViewController');
 
-export class SessionHandler {
+export class SessionViewController {
   private visualizer: NavigationVisualizer;
   private uiManager: UIManager;
   
@@ -21,7 +21,7 @@ export class SessionHandler {
   constructor(visualizer: NavigationVisualizer, uiManager: UIManager) {
     this.visualizer = visualizer;
     this.uiManager = uiManager;
-    logger.log('会话处理器初始化');
+    logger.log('会话视图控制器初始化');
   }
   
   /**
@@ -41,10 +41,10 @@ export class SessionHandler {
       }
       
       // 订阅会话加载事件
-      sessionManager.onSessionLoaded((session) => 
+      sessionServiceClient.onSessionLoaded((session) => 
         this.handleSessionLoaded(session)
       );
-      sessionManager.onSessionsListLoaded((sessions) => 
+      sessionServiceClient.onSessionsListLoaded((sessions) => 
         this.handleSessionListLoaded(sessions)
       );
       
@@ -69,7 +69,7 @@ export class SessionHandler {
     try {
       logger.log("加载会话列表...");
       
-      const sessions = await sessionManager.loadSessions();
+      const sessions = await sessionServiceClient.loadSessions();
       this.handleSessionListLoaded(sessions);
       
       logger.log("会话列表加载完成，找到", sessions.length, "个会话");
@@ -106,7 +106,7 @@ export class SessionHandler {
       // 如果提供了会话列表，直接使用
       if (sessions) {
         // 获取当前会话ID
-        const currentSession = sessionManager.getCurrentSession();
+        const currentSession = sessionServiceClient.getCurrentSession();
         const currentSessionId = currentSession ? currentSession.id : undefined;
 
         // 不再传递回调函数
@@ -115,8 +115,8 @@ export class SessionHandler {
       }
 
       // 否则从会话管理器同步获取
-      const availableSessions = sessionManager.getSessions();
-      const currentSession = sessionManager.getCurrentSession();
+      const availableSessions = sessionServiceClient.getSessions();
+      const currentSession = sessionServiceClient.getCurrentSession();
       const currentSessionId = currentSession ? currentSession.id : undefined;
 
       // 不再传递回调函数
@@ -134,7 +134,7 @@ export class SessionHandler {
       logger.log("选择会话:", sessionId);
 
       // 更新当前会话
-      await sessionManager.switchSession(sessionId);
+      await sessionServiceClient.switchSession(sessionId);
       
       // 加载会话数据
       await this.loadCurrentSession();
@@ -156,7 +156,7 @@ export class SessionHandler {
     try {
       logger.log("加载当前会话...");
 
-      const session = await sessionManager.loadCurrentSession();
+      const session = await sessionServiceClient.loadCurrentSession();
       this.handleSessionLoaded(session);
       
       logger.log("当前会话加载完成");
@@ -236,13 +236,13 @@ export class SessionHandler {
   
   /**
    * 刷新会话数据
-   * 完全包装对sessionManager的调用，统一数据刷新逻辑
+   * 完全包装对sessionServiceClient的调用，统一数据刷新逻辑
    */
   async refreshData(): Promise<void> {
     try {
       logger.log("刷新会话数据...");
-      await sessionManager.loadSessions();
-      await sessionManager.loadCurrentSession();
+      await sessionServiceClient.loadSessions();
+      await sessionServiceClient.loadCurrentSession();
       logger.log("会话数据刷新完成");
     } catch (error) {
       logger.error("刷新会话数据失败:", error);
@@ -255,21 +255,21 @@ export class SessionHandler {
    * 简化的方法，不触发UI更新
    */
   async loadSessionData(): Promise<void> {
-    await sessionManager.loadSessions();
-    await sessionManager.loadCurrentSession();
+    await sessionServiceClient.loadSessions();
+    await sessionServiceClient.loadCurrentSession();
   }
 
   /**
    * 获取当前会话
    */
   getCurrentSession(): SessionDetails | null {
-    return sessionManager.getCurrentSession();
+    return sessionServiceClient.getCurrentSession();
   }
 
   /**
    * 获取所有会话
    */
   getAllSessions(): SessionDetails[] {
-    return sessionManager.getSessions();
+    return sessionServiceClient.getSessions();
   }
 }

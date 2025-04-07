@@ -11,7 +11,7 @@ import { UIManager } from '../visualizer/ui/UIManager.js';
 import { FilterConfig, FilterStates, getInitialFilters, extractFilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
 import { ViewStateManager } from '../visualizer/state/ViewStateManager.js';
-import { SessionHandler } from '../visualizer/state/SessionHandler.js';
+import { SessionViewController } from '../visualizer/state/SessionViewController.js';
 import { NavigationMessageHandler } from '../messaging/handlers/navigation-message-handler.js';
 
 const logger = new Logger('NavigationVisualizer');
@@ -57,8 +57,8 @@ export class NavigationVisualizer implements Visualizer {
   // 添加消息处理器属性
   private messageHandler: NavigationMessageHandler;
 
-  // 添加会话处理器属性
-  private sessionHandler: SessionHandler;
+  // 添加会话视图控制器属性
+  private sessionViewController: SessionViewController;
 
   /**
    * 构造函数
@@ -75,8 +75,8 @@ export class NavigationVisualizer implements Visualizer {
     // 初始化UI管理器
     this.uiManager = new UIManager(this);
     
-    // 初始化会话处理器
-    this.sessionHandler = new SessionHandler(this, this.uiManager);
+    // 初始化会话视图控制器
+    this.sessionViewController = new SessionViewController(this, this.uiManager);
     
     // 设置缩放变化回调
     this.viewStateManager.setOnZoomChangeCallback(
@@ -139,8 +139,8 @@ export class NavigationVisualizer implements Visualizer {
       // 第二阶段：委托UI管理器处理所有UI初始化
       await this.initializeUI();
 
-      // 第三阶段：数据加载与应用 - 使用会话处理器
-      await this.sessionHandler.initialize();
+      // 第三阶段：数据加载与应用 - 使用会话视图控制器
+      await this.sessionViewController.initialize();
 
       logger.log("NavigationVisualizer 初始化完成");
     } catch (error) {
@@ -371,8 +371,8 @@ export class NavigationVisualizer implements Visualizer {
     // 执行刷新操作
     setTimeout(async () => {
       try {
-        // 修改：通过会话处理器刷新数据，而不是直接调用sessionManager
-        await this.sessionHandler.refreshData();
+        // 修改：通过会话处理器刷新数据，而不是直接调用sessionServiceClient
+        await this.sessionViewController.refreshData();
         this.refreshVisualization();
         logger.log("页面活动触发的刷新完成");
       } catch (err) {
@@ -1003,7 +1003,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handlePageLoaded(message: any): Promise<void> {
     try {
-      await this.sessionHandler.refreshData();
+      await this.sessionViewController.refreshData();
       this.refreshVisualization();
       logger.log("页面加载后刷新可视化完成");
     } catch (error) {
@@ -1017,7 +1017,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handleLinkClicked(message: any): Promise<void> {
     try {
-      await this.sessionHandler.refreshData();
+      await this.sessionViewController.refreshData();
       this.refreshVisualization();
       logger.log("基于链接点击刷新可视化完成");
     } catch (error) {
@@ -1031,7 +1031,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handleFormSubmitted(message: any): Promise<void> {
     try {
-      await this.sessionHandler.refreshData();
+      await this.sessionViewController.refreshData();
       this.refreshVisualization();
       logger.log("基于表单提交刷新可视化完成");
     } catch (error) {
@@ -1045,7 +1045,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handleJsNavigation(message: any): Promise<void> {
     try {
-      await this.sessionHandler.refreshData();
+      await this.sessionViewController.refreshData();
       this.refreshVisualization();
       logger.log("基于JS导航刷新可视化完成");
     } catch (error) {
@@ -1059,7 +1059,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async refreshData(): Promise<void> {
     try {
-      await this.sessionHandler.refreshData();
+      await this.sessionViewController.refreshData();
       this.refreshVisualization();
       logger.log("刷新数据完成");
     } catch (error) {
