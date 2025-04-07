@@ -2,13 +2,9 @@
  * 导航图谱可视化器核心类
  */
 import { Logger } from '../../lib/utils/logger.js';
-import { sessionManager } from './session-manager.js';
-import { nodeManager } from './node-manager.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-
-
 
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
@@ -375,8 +371,8 @@ export class NavigationVisualizer implements Visualizer {
     // 执行刷新操作
     setTimeout(async () => {
       try {
-        await sessionManager.loadSessions();
-        await sessionManager.loadCurrentSession();
+        // 修改：通过会话处理器刷新数据，而不是直接调用sessionManager
+        await this.sessionHandler.refreshData();
         this.refreshVisualization();
         logger.log("页面活动触发的刷新完成");
       } catch (err) {

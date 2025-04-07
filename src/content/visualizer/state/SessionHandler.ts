@@ -235,17 +235,41 @@ export class SessionHandler {
   }
   
   /**
-   * 重新加载并刷新所有会话数据
+   * 刷新会话数据
+   * 完全包装对sessionManager的调用，统一数据刷新逻辑
    */
   async refreshData(): Promise<void> {
     try {
       logger.log("刷新会话数据...");
-      await this.loadSessionList();
-      await this.loadCurrentSession();
+      await sessionManager.loadSessions();
+      await sessionManager.loadCurrentSession();
       logger.log("会话数据刷新完成");
     } catch (error) {
       logger.error("刷新会话数据失败:", error);
       throw error;
     }
+  }
+
+  /**
+   * 加载会话内容
+   * 简化的方法，不触发UI更新
+   */
+  async loadSessionData(): Promise<void> {
+    await sessionManager.loadSessions();
+    await sessionManager.loadCurrentSession();
+  }
+
+  /**
+   * 获取当前会话
+   */
+  getCurrentSession(): SessionDetails | null {
+    return sessionManager.getCurrentSession();
+  }
+
+  /**
+   * 获取所有会话
+   */
+  getAllSessions(): SessionDetails[] {
+    return sessionManager.getSessions();
   }
 }
