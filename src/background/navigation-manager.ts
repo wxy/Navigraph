@@ -17,10 +17,10 @@ import {
   NavLink
 } from '../types/session-types.js';
 
-
 import { UrlUtils } from './navigation/utils/url-utils.js';
 import { TabStateManager } from './navigation/managers/tab-state-manager.js';
 import { NodeTracker } from './navigation/managers/node-tracker.js';
+import { EdgeTracker } from './navigation/managers/edge-tracker.js';
 
 const logger = new Logger('NavigationManager');
 /**
@@ -48,15 +48,16 @@ export class NavigationManager {
   // 节点追踪器
   private nodeTracker: NodeTracker;
 
+  // 边追踪器
+  private edgeTracker: EdgeTracker;
+
   private pendingJsNavigations = new Map<
     number,
     { from: string; to: string }[]
   >(); // 标签页ID -> JS导航记录
   private pendingNavigations = new Map<string, PendingNavigation[]>(); // URL -> 待处理导航数组
 
-
   // 其他状态追踪
-  private navigationSequence = 0;
   private expirationTime = 10000; // 待处理导航的过期时间（毫秒）
   private historyLimit = 50; // 每个标签页的历史记录限制
 
@@ -88,6 +89,12 @@ export class NavigationManager {
       this.tabStateManager,
       this.currentSessionId
     );
+
+    // 初始化边追踪器
+    this.edgeTracker = new EdgeTracker(
+      this.navigationStorage,
+      this.currentSessionId
+    );
   }
   /**
    * 初始化导航管理器
@@ -109,9 +116,9 @@ export class NavigationManager {
           title: `浏览会话 ${new Date().toLocaleString()}`,
           makeActive: true
         });
-        this.currentSessionId = newSession.id;
+        this.setCurrentSessionId(newSession.id);
       } else {
-        this.currentSessionId = currentSession.id;
+        this.setCurrentSessionId(currentSession.id);
       }
 
       // 设置定期清理任务
@@ -132,13 +139,26 @@ export class NavigationManager {
       throw new Error(`导航管理器初始化失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-
+  /**
+   * 设置当前会话ID并同步到所有组件
+   * @param sessionId 新的会话ID
+   */
+  private setCurrentSessionId(sessionId: string): void {
+    this.currentSessionId = sessionId;
+    this.nodeTracker.setSessionId(sessionId);
+    this.edgeTracker.setSessionId(sessionId);
+    
+    if (this.debugMode) {
+      logger.log(`已切换到会话: ${sessionId}`);
+    }
+  }
   /**
    * 设置调试模式
    */
   public setDebugMode(enabled: boolean): void {
     this.debugMode = enabled;
     this.nodeTracker.setDebugMode(enabled);
+    this.edgeTracker.setDebugMode(enabled);
     logger.log(`导航管理器调试模式: ${enabled ? "已启用" : "已禁用"}`);
   }
   /**
@@ -652,7 +672,13 @@ export class NavigationManager {
 
       // 14. 如果存在父节点，创建边
       if (parentId) {
-        await this.createNavigationEdge(parentId, nodeId, now, navigationType);
+        await this.edgeTracker.createNavigationEdge({
+          sourceId: parentId,
+          targetId: nodeId,
+          timestamp: now,
+          navigationType: navigationType,
+          sessionId: this.currentSessionId
+        });
       }
 
       if (this.debugMode) {
@@ -815,7 +841,13 @@ export class NavigationManager {
       await this.navigationStorage.saveNode(record);
 
       // 创建边
-      await this.createNavigationEdge(parentId, nodeId, now, "javascript");
+      await this.edgeTracker.createNavigationEdge({
+        sourceId: parentId,
+        targetId: nodeId,
+        timestamp: now,
+        navigationType: "javascript",
+        sessionId: this.currentSessionId
+      });
 
       if (this.debugMode) {
         logger.log(
@@ -905,7 +937,13 @@ export class NavigationManager {
 
       // 如果存在父节点，创建边
       if (parentNodeId) {
-        await this.createNavigationEdge(parentNodeId, nodeId, now, "initial");
+        await this.edgeTracker.createNavigationEdge({
+          sourceId: parentNodeId,
+          targetId: nodeId,
+          timestamp: now,
+          navigationType: "initial",
+          sessionId: this.currentSessionId
+        });
       }
 
       if (this.debugMode) {
@@ -922,62 +960,6 @@ export class NavigationManager {
   }
 
   /**
-   * 创建导航边
-   */
-  private async createNavigationEdge(
-    sourceId: string,
-    targetId: string,
-    timestamp: number,
-    navigationType: NavigationType
-  ): Promise<NavLink> {
-    // 创建边记录
-    this.navigationSequence++;
-
-    const edge: NavLink = {
-      id: IdGenerator.generateEdgeId(sourceId, targetId, timestamp),
-      source: sourceId,
-      target: targetId,
-      timestamp,
-      type: navigationType,
-      sequence: this.navigationSequence,
-      sessionId: this.currentSessionId,
-    };
-
-    // 保存边
-    await this.navigationStorage.saveEdge(edge);
-
-    return edge;
-  }
-
-  private cleanupExpiredNavigations(): void {
-    const now = Date.now();
-    let removedCount = 0;
-
-    // 创建待删除URL的列表，避免在迭代过程中修改集合
-    const urlsToDelete: string[] = [];
-
-    for (const [url, navigations] of this.pendingNavigations.entries()) {
-      const validNavigations = navigations.filter((nav) => nav.expiresAt > now);
-      removedCount += navigations.length - validNavigations.length;
-
-      if (validNavigations.length === 0) {
-        urlsToDelete.push(url);
-      } else {
-        this.pendingNavigations.set(url, validNavigations);
-      }
-    }
-
-    // 删除空的导航列表
-    for (const url of urlsToDelete) {
-      this.pendingNavigations.delete(url);
-    }
-
-    if (removedCount > 0 && this.debugMode) {
-      logger.log(`已清理 ${removedCount} 个过期的待处理导航`);
-    }
-  }
-
-  /**
    * 清理待更新列表
    */
   private async cleanupPendingUpdates(): Promise<void> {
@@ -987,7 +969,42 @@ export class NavigationManager {
       logger.error("清理待更新列表失败:", error);
     }
   }
-
+  /**
+   * 清理已过期的待处理导航记录
+   */
+  private cleanupExpiredNavigations(): void {
+    try {
+      const now = Date.now();
+      let totalRemoved = 0;
+      
+      // 遍历所有待处理导航
+      for (const [url, navigations] of this.pendingNavigations.entries()) {
+        // 过滤出未过期的导航
+        const validNavigations = navigations.filter(nav => nav.expiresAt > now);
+        
+        // 计算已删除的数量
+        const removed = navigations.length - validNavigations.length;
+        totalRemoved += removed;
+        
+        // 如果有导航被删除，更新列表
+        if (removed > 0) {
+          if (validNavigations.length > 0) {
+            this.pendingNavigations.set(url, validNavigations);
+          } else {
+            // 如果没有有效导航，完全删除此URL的条目
+            this.pendingNavigations.delete(url);
+          }
+        }
+      }
+      
+      // 如果有导航被删除且在调试模式，记录日志
+      if (totalRemoved > 0 && this.debugMode) {
+        logger.log(`清理了 ${totalRemoved} 个过期的待处理导航记录`);
+      }
+    } catch (error) {
+      logger.error("清理过期导航失败:", error);
+    }
+  }
   /**
    * 处理链接点击事件
    */
@@ -1305,7 +1322,6 @@ export class NavigationManager {
     return null;
   }
 
-
   /**
    * 判断是否为新弹出窗口
    */
@@ -1331,55 +1347,6 @@ export class NavigationManager {
     // 初始导航也通常是根节点
     if (navigationType === "initial") {
       return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * 判断是否应该使用引用信息查找父节点
-   */
-  private shouldUseReferrerForParent(record: NavNode): boolean {
-    // 如果是JavaScript导航，或者没有父节点，或者是根节点类型，可以使用引用信息
-    return (
-      record.type === "javascript" ||
-      !record.parentId ||
-      record.parentId === "" ||
-      !this.shouldBeRootNavigation(record.type, record.url)
-    );
-  }
-
-  /**
-   * 判断添加父子关系是否会导致循环
-   */
-  private async wouldCreateCycle(
-    parentId: string,
-    childId: string
-  ): Promise<boolean> {
-    if (parentId === childId) return true;
-
-    // 检查从childId向上查找是否能找到parentId
-    let currentId = parentId;
-    const visited = new Set<string>();
-
-    while (currentId) {
-      if (visited.has(currentId)) {
-        // 检测到循环
-        return true;
-      }
-
-      visited.add(currentId);
-
-      const record = await this.navigationStorage.getNode(currentId);
-      if (!record || !record.parentId) {
-        break;
-      }
-
-      if (record.parentId === childId) {
-        return true;
-      }
-
-      currentId = record.parentId;
     }
 
     return false;
@@ -1414,11 +1381,7 @@ export class NavigationManager {
    * 获取当前会话的边数
    */
   public async getEdgeCount(): Promise<number> {
-    const edges = await this.navigationStorage.queryEdges({
-      sessionId: this.currentSessionId
-    });
-
-    return edges.length;
+    return this.edgeTracker.getEdgeCount(this.currentSessionId);
   }
 
   /**
@@ -1755,8 +1718,8 @@ export class NavigationManager {
     // 重置节点追踪器
     this.nodeTracker.reset();
     
-    // 重置序列号
-    this.navigationSequence = 0;
+    // 重置边追踪器
+    this.edgeTracker.reset();
     
     // 清空待处理导航
     this.pendingNavigations.clear();
