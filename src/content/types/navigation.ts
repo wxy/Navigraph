@@ -91,7 +91,6 @@ export interface Visualizer {
   
   // 常用方法
   refreshVisualization(): void;
-  renderVisualization(): void;
   showNodeDetails(data: any): void;
   switchView(viewName: string): void;
   updateStatusBar(): void;
@@ -100,4 +99,6 @@ export interface Visualizer {
   // 添加筛选器相关方法
   updateFilter(filterId: string, value: boolean): void;
   applyFilters(): void;
+  updateData(data: any): void;
+  getFilterUrlParam(): string;
 }
