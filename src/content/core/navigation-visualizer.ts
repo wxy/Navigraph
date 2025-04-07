@@ -5,7 +5,7 @@ import { Logger } from '../../lib/utils/logger.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
-
+import { nodeManager } from './node-manager.js';
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
 import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
@@ -568,44 +568,15 @@ export class NavigationVisualizer implements Visualizer {
     
     logger.debug(`更新节点元信息: ${nodeId}`, metadata);
     
-    // 找到对应节点
-    let node: NavNode | undefined;
+    // 委托给节点管理器
+    const updated = nodeManager.updateNodeMetadata(nodeId, metadata);
     
-    // 先在节点映射中查找
-    if (this.nodeMap && this.nodeMap.has(nodeId)) {
-      node = this.nodeMap.get(nodeId);
-    } 
-    
-    // 如果节点映射中没有，在所有节点中查找
-    if (!node) {
-      node = this.allNodes.find(n => n.id === nodeId);
-    }
-    
-    // 如果找到了节点，更新元信息
-    if (node) {
-      // 更新节点的元信息
-      let needVisualUpdate = false;
-      
-      // 更新标题
-      if ('title' in metadata && metadata.title) {
-        node.title = metadata.title;
-        needVisualUpdate = true;
-      }
-      
-      // 更新图标
-      if ('favicon' in metadata && metadata.favicon) {
-        node.favicon = metadata.favicon;
-        needVisualUpdate = true;
-      }
-      
-      // 如果需要更新视觉效果，尝试更新节点外观
-      if (needVisualUpdate) {
-        this.updateNodeVisual(nodeId);
-      }
-      
+    if (updated) {
+      // 如果更新成功，更新节点视觉效果
+      this.updateNodeVisual(nodeId);
       logger.debug(`节点${nodeId}元信息已更新`);
     } else {
-      logger.warn(`未找到节点: ${nodeId}`);
+      logger.warn(`未能更新节点: ${nodeId}`);
     }
   }
 
@@ -615,20 +586,8 @@ export class NavigationVisualizer implements Visualizer {
    * @returns 节点ID
    */
   getOrCreateNodeId(url: string): string {
-    // 从当前数据中查找URL对应的节点ID
-    let nodeId: string | undefined = undefined;
-    if (this.nodes) {
-      const node = this.nodes.find((n) => n.url === url);
-      nodeId = node?.id;
-    }
-    
-    // 如果没找到，则生成新ID
-    if (!nodeId) {
-      nodeId = `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      logger.debug(`为URL创建新节点ID: ${url} -> ${nodeId}`);
-    }
-    
-    return nodeId;
+    // 现有实现已经在 NodeManager 中
+    return nodeManager.getOrCreateNodeId(url);
   }
   
   /**
