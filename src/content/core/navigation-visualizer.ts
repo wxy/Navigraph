@@ -4,17 +4,15 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { sessionManager } from './session-manager.js';
 import { nodeManager } from './node-manager.js';
-import { renderTreeLayout } from '../renderers/tree-renderer.js';
-import { renderTimelineLayout } from '../renderers/timeline-renderer.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
 import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
 import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
-import { initStatusBar, updateStatusBar } from '../utils/state-manager.js';
 
 import { DataProcessor } from '../visualizer/DataProcessor.js';
 import { UIManager } from '../visualizer/ui/UIManager.js';
+import { RendererFactory } from '../visualizer/renderers/RendererFactory.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -895,42 +893,24 @@ export class NavigationVisualizer implements Visualizer {
         // 添加简单的缩放功能
         this.setupBasicZoom();
       } else {
-        // 根据当前视图类型渲染
-        if (this.currentView === "timeline") {
-          if (this._timelineZoom) {
-            this.zoom = this._timelineZoom;
-          } else {
-            this.zoom = 1.0;
-            this._timelineZoom = 1.0;
-          }
-
-          renderTimelineLayout(
-            this.container,
-            this.svg,
-            this.nodes,
-            this.edges,
-            width,
-            height,
-            this
-          );
-        } else {
-          if (this._treeZoom) {
-            this.zoom = this._treeZoom;
-          } else {
-            this.zoom = 1.0;
-            this._treeZoom = 1.0;
-          }
-
-          renderTreeLayout(
-            this.container,
-            this.svg,
-            this.nodes,
-            this.edges,
-            width,
-            height,
-            this
-          );
-        }
+        // 使用渲染器工厂创建相应的渲染器
+        const renderer = RendererFactory.createRenderer(
+          this.currentView as 'tree' | 'timeline',
+          this
+        );
+        
+        // 初始化渲染器
+        renderer.initialize(
+          this.svg,
+          this.container,
+          width,
+          height
+        );
+        
+        // 渲染视图
+        renderer.render(this.nodes, this.edges, {
+          restoreTransform: options.restoreTransform
+        });
       }
 
       // 更新状态栏
@@ -1002,7 +982,6 @@ export class NavigationVisualizer implements Visualizer {
           this.updateStatusBar();
           ticking = false;
         });
-        ticking = true;
       }
     };
   })();
