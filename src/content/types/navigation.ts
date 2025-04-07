@@ -40,6 +40,21 @@ export interface ExtendedNavNode extends NavNode {
 }
 
 /**
+ * 节点元数据接口
+ * 用于更新节点的各种元数据属性
+ */
+export interface NodeMetadata {
+  /** 节点标题 */
+  title?: string;
+  /** 节点图标URL */
+  favicon?: string;
+  /** 节点URL */
+  url?: string;
+  // 其他可能的元数据属性
+  [key: string]: string | undefined;
+}
+
+/**
  * D3树节点接口
  * 对应树布局后的节点结构
  */

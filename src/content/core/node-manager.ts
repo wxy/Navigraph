@@ -1,28 +1,65 @@
 /**
- * 节点管理模块
- * 负责处理节点和边的数据转换与关系管理
+ * 节点管理器
+ * 负责管理导航节点和边的数据模型，处理节点间关系，并提供统一的访问接口
  */
 import { Logger } from '../../lib/utils/logger.js';
 import type { BrowsingSession, NavNode, NavLink } from '../../types/session-types.js';
+import type { NodeMetadata } from '../types/navigation.js';
 
 // 为方便代码迁移，定义类型别名
 type SessionDetails = BrowsingSession;
-// 定义Record类型别名
-type NodeRecord = NavNode;
-type EdgeRecord = NavLink;
 
 const logger = new Logger('NodeManager');
+
 export class NodeManager {
+  // ===== 数据存储 =====
   private nodes: NavNode[] = [];
   private edges: NavLink[] = [];
   private nodeMap: Map<string, NavNode> = new Map();
 
+  // ===== 数据处理方法 =====
+  
+  /**
+   * 处理会话数据，构建节点和边
+   * @param session 会话数据
+   */
+  processSessionData(session: SessionDetails): void {
+    if (!session) return;
+    
+    logger.log('开始处理会话数据...');
+    
+    try {
+      this.processRecordsToNodes(session);
+      this.processRelationships();
+      this.processEdges(session);
+      
+      logger.log('会话数据处理完成');
+      logger.log('节点:', this.nodes.length);
+      logger.log('边:', this.edges.length);
+    } catch (error) {
+      logger.error('处理会话数据失败:', error);
+      this.resetData();
+    }
+  }
+  
+  /**
+   * 将会话记录转换为节点
+   */
+  private processRecordsToNodes(session: SessionDetails): void {
+    // 记录存储
+    const records = session.records || {};
+    const recordIds = Object.keys(records);
+    
+    logger.log(`处理${recordIds.length}条记录`);
+    
+    // 转换为节点数组
+    this.nodes = recordIds.map(id => this.processNavNode(records[id]));
+  }
+  
   /**
    * 处理导航节点，添加前端所需属性
    */
   private processNavNode(record: NavNode): NavNode {
-    // 已经是NavNode类型，只需添加前端所需的属性和修正数据
-    
     // 处理必要字段默认值
     if (!record.title) {
       record.title = this.extractTitle(record.url);
@@ -43,88 +80,86 @@ export class NodeManager {
     
     return record;
   }
-
+  
   /**
-   * 从会话数据构建节点和边
+   * 处理节点关系
    */
-  processSessionData(session: SessionDetails): void {
-    if (!session) return;
-    
-    logger.log('开始处理会话数据...');
-    
-    try {
-      // 记录存储
-      const records = session.records || {};
-      const recordIds = Object.keys(records);
-      
-      logger.log(`处理${recordIds.length}条记录`);
-      
-      // 转换为节点数组
-      this.nodes = recordIds.map(id => this.processNavNode(records[id]));
-      
-      // 重建父子关系
-      this.reconstructParentChildRelationships();
-      
-      // 计算节点深度
-      this.calculateNodeDepths();
-      
-      // 获取所有边
-      const edgeMap = session.edges || {};
-      const edgeIds = Object.keys(edgeMap);
-      
-      logger.log(`处理${edgeIds.length}条边`);
-      
-      // 转换为边数组
-      this.edges = edgeIds.map(id => ({
-        ...edgeMap[id],
-        type: edgeMap[id].type || 'unknown',
-        sessionId: edgeMap[id].sessionId || ''
-      }));
-      
-      // 构建节点映射表
-      this.buildNodeMap();
-
-      // 添加基于重构的父子关系创建附加边
-      this.enhanceEdgesFromParentChildRelationships();
-      
-      logger.log('会话数据处理完成');
-      logger.log('节点:', this.nodes.length);
-      logger.log('边:', this.edges.length);
-    } catch (error) {
-      logger.error('处理会话数据失败:', error);
-      this.nodes = [];
-      this.edges = [];
-      this.nodeMap.clear();
-    }
+  private processRelationships(): void {
+    this.rebuildParentChildRelationships();
+    this.calculateNodeDepths();
+    this.buildNodeMap();
   }
-
+  
   /**
-   * 构建节点ID到节点对象的映射表，优化查询性能
+   * 处理边数据
    */
-  private buildNodeMap(): void {
+  private processEdges(session: SessionDetails): void {
+    // 获取所有边
+    const edgeMap = session.edges || {};
+    const edgeIds = Object.keys(edgeMap);
+    
+    logger.log(`处理${edgeIds.length}条边`);
+    
+    // 转换为边数组
+    this.edges = edgeIds.map(id => ({
+      ...edgeMap[id],
+      type: edgeMap[id].type || 'unknown',
+      sessionId: edgeMap[id].sessionId || ''
+    }));
+    
+    // 添加基于重构的父子关系创建附加边
+    this.enhanceEdgesFromParentChildRelationships();
+  }
+  
+  /**
+   * 重置数据
+   */
+  private resetData(): void {
+    this.nodes = [];
+    this.edges = [];
     this.nodeMap.clear();
-    if (this.nodes && this.nodes.length) {
-      this.nodes.forEach(node => {
-        this.nodeMap.set(node.id, node);
-      });
-    }
-    logger.log(`已建立${this.nodeMap.size}个节点的索引`);
   }
-
+  
+  // ===== 节点关系管理 =====
+  
   /**
    * 重建父子关系
    */
-  private reconstructParentChildRelationships(): void {
+  private rebuildParentChildRelationships(): void {
     logger.log('开始重建父子关系...');
     
     // 创建节点ID映射，便于快速查找
+    const nodesById = this.createNodeIdMap();
+    
+    // 按标签页组织节点
+    const nodesByTabId = this.organizeNodesByTab();
+    
+    // 分配父节点
+    const assignedCount = this.assignParentNodes(nodesById, nodesByTabId);
+    
+    // 重新构建子节点引用
+    this.buildChildReferences(nodesById);
+    
+    logger.log(`父子关系重建完成: ${assignedCount}/${this.nodes.length} 节点有父节点`);
+  }
+  
+  /**
+   * 创建节点ID到节点的映射
+   */
+  private createNodeIdMap(): {[key: string]: NavNode} {
     const nodesById: {[key: string]: NavNode} = {};
     this.nodes.forEach(node => {
       nodesById[node.id] = node;
     });
-    
-    // 按标签页和时间排序
+    return nodesById;
+  }
+  
+  /**
+   * 按标签页组织节点
+   */
+  private organizeNodesByTab(): {[key: string]: NavNode[]} {
     const nodesByTabId: {[key: string]: NavNode[]} = {};
+    
     this.nodes.forEach(node => {
       const tabId = String(node.tabId || '');
       if (!tabId) return;
@@ -140,9 +175,19 @@ export class NodeManager {
       nodesByTabId[tabId].sort((a, b) => a.timestamp - b.timestamp);
     });
     
+    return nodesByTabId;
+  }
+  
+  /**
+   * 分配父节点
+   */
+  private assignParentNodes(
+    nodesById: {[key: string]: NavNode}, 
+    nodesByTabId: {[key: string]: NavNode[]}
+  ): number {
     let assignedCount = 0;
     
-    // 首先按照时间顺序处理所有节点 - 模拟实际导航序列
+    // 按时间顺序处理节点
     const sortedNodes = [...this.nodes].sort((a, b) => a.timestamp - b.timestamp);
     
     // 跟踪每个标签页当前活跃的节点
@@ -165,74 +210,8 @@ export class NodeManager {
       }
       
       // 根据导航类型确定父节点
-      switch(node.type) {
-        case 'link_click':
-          // 链接点击通常来自同一标签页的前一个节点
-          const tabId = String(node.tabId || '');
-          if (!tabId) break;
-          
-          const sameTabNodes = nodesByTabId[tabId] || [];
-          const nodeIndex = sameTabNodes.findIndex(n => n.id === node.id);
-          
-          // 如果在同一标签页中有前一个节点，将其设为父节点
-          if (nodeIndex > 0) {
-            node.parentId = sameTabNodes[nodeIndex - 1].id;
-            assignedCount++;
-          }
-          break;
-          
-        case 'address_bar':
-          // 地址栏输入通常是新的导航序列，可能没有父节点
-          // 但如果是在现有标签页中输入，可能与前一页有关
-          const nodeTabId = String(node.tabId || '');
-          if (nodeTabId && activeNodesByTabId[nodeTabId]) {
-            node.parentId = activeNodesByTabId[nodeTabId].id;
-            assignedCount++;
-          } else {
-            node.parentId = ''; // 新标签页的第一次导航
-          }
-          break;
-          
-        case 'form_submit':
-          // 表单提交通常来自同一标签页的前一个节点
-          const formTabId = String(node.tabId || '');
-          if (formTabId && activeNodesByTabId[formTabId]) {
-            node.parentId = activeNodesByTabId[formTabId].id;
-            assignedCount++;
-          }
-          break;
-          
-        case 'history_back':
-        case 'history_forward':
-          // 历史导航指向同一标签页中的某个节点
-          // 这种情况较复杂，暂时保持当前处理方式
-          break;
-          
-        case 'reload':
-          // 刷新操作应该保持当前节点，不改变父子关系
-          // 已在上面处理了自循环情况
-          break;
-          
-        default:
-          // 对于其他类型，查找直接的导航关系
-          // 用边信息补充 - 这是原始记录的实际导航关系
-          if (this.edges) {
-            const directEdges = this.edges.filter(e => 
-              (e.target === node.id)
-            );
-            
-            if (directEdges.length > 0) {
-              // 优先使用最近的边
-              directEdges.sort((a, b) => {
-                const aTime = a.timestamp || 0;
-                const bTime = b.timestamp || 0;
-                return bTime - aTime;
-              });
-              node.parentId = directEdges[0].source;
-              assignedCount++;
-            }
-          }
-          break;
+      if (this.assignParentByNodeType(node, nodesByTabId, activeNodesByTabId, nodesById)) {
+        assignedCount++;
       }
       
       // 更新当前标签页的活跃节点
@@ -242,29 +221,106 @@ export class NodeManager {
       }
     });
     
-    // 重新构建子节点引用
+    return assignedCount;
+  }
+  
+  /**
+   * 根据节点类型分配父节点
+   */
+  private assignParentByNodeType(
+    node: NavNode, 
+    nodesByTabId: {[key: string]: NavNode[]},
+    activeNodesByTabId: {[key: string]: NavNode},
+    nodesById: {[key: string]: NavNode}
+  ): boolean {
+    const tabId = String(node.tabId || '');
+    
+    switch(node.type) {
+      case 'link_click':
+        // 链接点击通常来自同一标签页的前一个节点
+        if (!tabId) return false;
+        
+        const sameTabNodes = nodesByTabId[tabId] || [];
+        const nodeIndex = sameTabNodes.findIndex(n => n.id === node.id);
+        
+        // 如果在同一标签页中有前一个节点，将其设为父节点
+        if (nodeIndex > 0) {
+          node.parentId = sameTabNodes[nodeIndex - 1].id;
+          return true;
+        }
+        break;
+        
+      case 'address_bar':
+        // 地址栏输入通常是新的导航序列，可能没有父节点
+        // 但如果是在现有标签页中输入，可能与前一页有关
+        if (tabId && activeNodesByTabId[tabId]) {
+          node.parentId = activeNodesByTabId[tabId].id;
+          return true;
+        } else {
+          node.parentId = ''; // 新标签页的第一次导航
+        }
+        break;
+        
+      case 'form_submit':
+        // 表单提交通常来自同一标签页的前一个节点
+        if (tabId && activeNodesByTabId[tabId]) {
+          node.parentId = activeNodesByTabId[tabId].id;
+          return true;
+        }
+        break;
+        
+      case 'history_back':
+      case 'history_forward':
+        // 历史导航指向同一标签页中的某个节点
+        // 这种情况较复杂，暂时保持当前处理方式
+        break;
+        
+      case 'reload':
+        // 刷新操作应该保持当前节点，不改变父子关系
+        // 已在上面处理了自循环情况
+        break;
+        
+      default:
+        // 对于其他类型，查找直接的导航关系
+        // 用边信息补充 - 这是原始记录的实际导航关系
+        if (this.edges) {
+          const directEdges = this.edges.filter(e => 
+            (e.target === node.id)
+          );
+          
+          if (directEdges.length > 0) {
+            // 优先使用最近的边
+            directEdges.sort((a, b) => {
+              const aTime = a.timestamp || 0;
+              const bTime = b.timestamp || 0;
+              return bTime - aTime;
+            });
+            node.parentId = directEdges[0].source;
+            return true;
+          }
+        }
+        break;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * 建立子节点引用
+   */
+  private buildChildReferences(nodesById: {[key: string]: NavNode}): void {
+    // 重置所有节点的子节点数组
     this.nodes.forEach(node => {
-      // 移除类型断言，直接设置children字段
-      if (!node.children) {
-        node.children = [];
-      } else {
-        node.children = [];
-      }
+      node.children = [];
     });
     
     // 填充子节点数组
     this.nodes.forEach(node => {
       const parentId = node.parentId as string | undefined;
       if (parentId && nodesById[parentId]) {
-        // 确保children是数组
-        if (!nodesById[parentId].children) {
-          nodesById[parentId].children = [];
-        }
         nodesById[parentId].children!.push(node);
       }
     });
-    
-    logger.log(`父子关系重建完成: ${assignedCount}/${this.nodes.length} 节点有父节点`);
   }
   
   /**
@@ -273,32 +329,39 @@ export class NodeManager {
   private calculateNodeDepths(): void {
     try {
       // 首先找出所有根节点
-      const rootNodes = this.nodes.filter(node => !node.parentId);
+      const rootNodes = this.findRootNodes();
       
       if (rootNodes.length === 0) {
-        logger.warn('没有找到根节点，设置所有节点深度为0');
-        this.nodes.forEach(node => {
-          // 直接设置depth字段
-          node.depth = 0;
-        });
+        this.setDefaultDepths();
         return;
       }
       
       // 为每个根节点及其子节点计算深度
       rootNodes.forEach(rootNode => {
-        // 直接设置depth字段
         rootNode.depth = 0;
         this.calculateChildDepths(rootNode, 1);
       });
     } catch (error) {
       logger.error('计算节点深度失败:', error);
-      // 出错时确保所有节点至少有深度值
-      this.nodes.forEach(node => {
-        if (typeof node.depth === 'undefined') {
-          node.depth = 0;
-        }
-      });
+      this.setDefaultDepths();
     }
+  }
+  
+  /**
+   * 查找所有根节点
+   */
+  private findRootNodes(): NavNode[] {
+    return this.nodes.filter(node => !node.parentId);
+  }
+  
+  /**
+   * 设置默认深度值
+   */
+  private setDefaultDepths(): void {
+    logger.warn('没有找到根节点，设置所有节点深度为0');
+    this.nodes.forEach(node => {
+      node.depth = 0;
+    });
   }
   
   /**
@@ -308,13 +371,10 @@ export class NodeManager {
     if (!parentNode || !parentNode.id) return;
     
     // 找出父节点的所有直接子节点
-    const childNodes = this.nodes.filter(node => 
-      node.parentId === parentNode.id && node.id !== parentNode.id
-    );
+    const childNodes = this.findChildNodesById(parentNode.id);
     
     // 设置子节点深度并递归处理
     childNodes.forEach(childNode => {
-      // 直接设置depth字段
       childNode.depth = depth;
       // 防止循环引用导致栈溢出
       if (childNode.id !== parentNode.id) {
@@ -324,10 +384,47 @@ export class NodeManager {
   }
   
   /**
+   * 根据父节点ID查找子节点
+   */
+  private findChildNodesById(parentId: string): NavNode[] {
+    return this.nodes.filter(node => 
+      node.parentId === parentId && node.id !== parentId
+    );
+  }
+  
+  /**
+   * 构建节点ID到节点对象的映射表
+   */
+  private buildNodeMap(): void {
+    this.nodeMap.clear();
+    if (this.nodes && this.nodes.length) {
+      this.nodes.forEach(node => {
+        this.nodeMap.set(node.id, node);
+      });
+    }
+    logger.log(`已建立${this.nodeMap.size}个节点的索引`);
+  }
+  
+  /**
    * 根据重构的父子关系增强边集合
    */
   private enhanceEdgesFromParentChildRelationships(): void {
     // 创建现有边的映射
+    const existingEdgeMap = this.createEdgeMap();
+    
+    // 为缺失的父子关系创建新边
+    const newEdges = this.createMissingEdges(existingEdgeMap);
+    
+    if (newEdges.length > 0) {
+      logger.log(`添加了${newEdges.length}条生成的边`);
+      this.edges = [...this.edges, ...newEdges];
+    }
+  }
+  
+  /**
+   * 创建边的映射
+   */
+  private createEdgeMap(): {[key: string]: boolean} {
     const existingEdgeMap: {[key: string]: boolean} = {};
     this.edges.forEach(edge => {
       const source = edge.source;
@@ -335,9 +432,15 @@ export class NodeManager {
       const key = `${source}#${target}`;
       existingEdgeMap[key] = true;
     });
-    
-    // 为缺失的父子关系创建新边
+    return existingEdgeMap;
+  }
+  
+  /**
+   * 创建缺失的边
+   */
+  private createMissingEdges(existingEdgeMap: {[key: string]: boolean}): NavLink[] {
     const newEdges: NavLink[] = [];
+    
     this.nodes.forEach(node => {
       const parentId = node.parentId as string | undefined;
       if (parentId) {
@@ -360,20 +463,103 @@ export class NodeManager {
       }
     });
     
-    if (newEdges.length > 0) {
-      logger.log(`添加了${newEdges.length}条生成的边`);
-      this.edges = [...this.edges, ...newEdges];
-    }
+    return newEdges;
   }
+  
+  // ===== 节点操作方法 =====
+  
+  /**
+   * 更新节点元数据
+   * @param nodeId 节点ID
+   * @param metadata 要更新的元数据对象，可包含title、favicon等
+   * @returns 是否成功更新
+   */
+  updateNodeMetadata(nodeId: string, metadata: NodeMetadata): boolean {
+    if (!nodeId || !metadata) return false;
     
+    const node = this.nodeMap.get(nodeId);
+    if (!node) return false;
+    
+    let updated = false;
+    
+    // 遍历所有元数据属性
+    Object.keys(metadata).forEach(key => {
+      const value = metadata[key];
+      if (value !== undefined) {
+        // 使用类型断言告诉TypeScript这是安全的
+        (node as any)[key] = value;
+        updated = true;
+      }
+    });
+    
+    return updated;
+  }
+  
+  /**
+   * 查找或创建节点ID
+   * @param url 节点URL
+   * @returns 节点ID
+   */
+  getOrCreateNodeId(url: string): string {
+    // 首先查找是否有匹配URL的现有节点
+    const existingNode = this.nodes.find(node => node.url === url);
+    if (existingNode) {
+      return existingNode.id;
+    }
+    
+    // 如果没有找到，创建一个新的ID
+    return `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  }
+  
+  /**
+   * 查询节点
+   * @param property 属性名
+   * @param value 属性值
+   * @returns 匹配的节点数组
+   */
+  findNodesByProperty(property: string, value: any): NavNode[] {
+    return this.nodes.filter(node => (node as any)[property] === value);
+  }
+  
+  /**
+   * 查找节点的子节点
+   * @param nodeId 节点ID
+   * @returns 子节点数组
+   */
+  findChildNodes(nodeId: string): NavNode[] {
+    return this.nodes.filter(node => node.parentId === nodeId);
+  }
+  
+  /**
+   * 查找节点的父节点
+   * @param nodeId 节点ID
+   * @returns 父节点，如果不存在则返回undefined
+   */
+  findParentNode(nodeId: string): NavNode | undefined {
+    const node = this.nodeMap.get(nodeId);
+    if (!node || !node.parentId) return undefined;
+    
+    return this.nodeMap.get(node.parentId as string);
+  }
+  
+  /**
+   * 过滤节点
+   * @param predicate 过滤函数
+   * @returns 符合条件的节点数组
+   */
+  filterNodes(predicate: (node: NavNode) => boolean): NavNode[] {
+    return this.nodes.filter(predicate);
+  }
+  
+  // ===== 辅助方法 =====
+  
   /**
    * 从URL中提取标题
    * 当节点没有原始标题时，尝试从URL中提取有意义的信息作为标题
+   * @param url URL字符串
+   * @returns 提取的标题
    */
   private extractTitle(url: string): string {
-    // 代码不变
-    // ...
-    
     try {
       if (!url) return '未知页面';
       
@@ -432,8 +618,11 @@ export class NodeManager {
     }
   }
   
+  // ===== 数据访问方法 =====
+  
   /**
    * 获取所有节点
+   * @returns 所有节点的数组
    */
   getNodes(): NavNode[] {
     return this.nodes;
@@ -441,6 +630,7 @@ export class NodeManager {
   
   /**
    * 获取所有边
+   * @returns 所有边的数组
    */
   getEdges(): NavLink[] {
     return this.edges;
@@ -448,6 +638,7 @@ export class NodeManager {
   
   /**
    * 获取节点映射表
+   * @returns 节点ID到节点对象的映射
    */
   getNodeMap(): Map<string, NavNode> {
     return this.nodeMap;
@@ -455,6 +646,8 @@ export class NodeManager {
 
   /**
    * 根据ID获取节点
+   * @param id 节点ID
+   * @returns 对应的节点对象，如果不存在则返回undefined
    */
   getNodeById(id: string): NavNode | undefined {
     return this.nodeMap.get(id);
