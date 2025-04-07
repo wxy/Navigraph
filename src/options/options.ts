@@ -1,7 +1,9 @@
+import { Logger } from '../lib/utils/logger.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
 import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
 
+const logger = new Logger('OptionsPage');
 // 获取设置服务
 const settingsService = getSettingsService();
 
@@ -9,7 +11,7 @@ const settingsService = getSettingsService();
 let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
 
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
-  console.log('DOM已加载，开始初始化选项页...');
+  logger.log('DOM已加载，开始初始化选项页...');
   
   // 初始化通知元素
   const notification = document.getElementById('notification');
@@ -17,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     notification.className = 'notification hidden';
     notification.style.display = 'none';
   } else {
-    console.warn('未找到通知元素，可能会影响用户反馈');
+    logger.warn('未找到通知元素，可能会影响用户反馈');
   }
   
   // 初始化UI
@@ -30,20 +32,20 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     
     // 加载设置
     await loadSettings();
-    console.log('配置加载成功:', currentSettings);
+    logger.log('配置加载成功:', currentSettings);
     
     // 应用主题到选项页面
     applyThemeToOptionsPage();
     
     // 添加设置变更监听器
     settingsService.addChangeListener(settings => {
-      console.log('检测到设置变更:', settings);
+      logger.log('检测到设置变更:', settings);
       currentSettings = { ...settings };
       applySettingsToUI();
       applyThemeToOptionsPage();
     });
   } catch (error) {
-    console.error('初始化选项页面失败:', error);
+    logger.error('初始化选项页面失败:', error);
     showNotification('加载设置失败，请重试', 'error');
   }
 });
@@ -87,7 +89,7 @@ function setupEventListeners(): void {
       settingsService.updateSettings({ theme })
         .then(() => showNotification('主题已更新'))
         .catch(error => {
-          console.error('更新主题失败:', error);
+          logger.error('更新主题失败:', error);
           showNotification('更新主题失败', 'error');
         });
     });
@@ -190,9 +192,9 @@ async function loadSettings(): Promise<void> {
     // 应用设置到UI
     applySettingsToUI();
     
-    console.log('设置已加载', currentSettings);
+    logger.log('设置已加载', currentSettings);
   } catch (error) {
-    console.error('加载设置时出错:', error);
+    logger.error('加载设置时出错:', error);
     showNotification('加载设置失败', 'error');
   }
 }
@@ -296,7 +298,7 @@ async function saveSettings(): Promise<void> {
     // 检查设置变更并显示综合通知
     showSettingsSavedNotification(oldSettings, newSettings);
   } catch (error) {
-    console.error('保存设置时出错:', error);
+    logger.error('保存设置时出错:', error);
     showNotification('保存设置失败', 'error', 3000);
   }
 }
@@ -357,7 +359,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
           try {
             chrome.runtime.reload();
           } catch (e) {
-            console.error('重载扩展失败:', e);
+            logger.error('重载扩展失败:', e);
             showNotification('重载扩展失败，请手动刷新', 'error');
           }
         };
@@ -377,7 +379,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
         return; // 提前返回
       }
     } catch (e) {
-      console.error('创建复杂通知失败，回退到标准通知:', e);
+      logger.error('创建复杂通知失败，回退到标准通知:', e);
     }
   } else if (affectsFrontend) {
     message += ' - 请刷新已打开的扩展页以应用新设置';
@@ -410,7 +412,7 @@ async function resetSettings(): Promise<void> {
       showSettingsSavedNotification(oldSettings, currentSettings);
     }
   } catch (error) {
-    console.error('重置设置时出错:', error);
+    logger.error('重置设置时出错:', error);
     showNotification('重置设置失败', 'error');
   }
 }
@@ -432,7 +434,7 @@ async function clearAllData(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('清除数据时出错:', error);
+    logger.error('清除数据时出错:', error);
     showNotification('清除数据失败', 'error');
   }
 }
@@ -448,11 +450,11 @@ const notificationManager = {
    * 显示通知
    */
   show(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
-    console.log(`显示通知: "${message}" (${type})`);
+    logger.log(`显示通知: "${message}" (${type})`);
     
     const notification = document.getElementById('notification');
     if (!notification) {
-      console.error('找不到通知元素');
+      logger.error('找不到通知元素');
       return;
     }
     

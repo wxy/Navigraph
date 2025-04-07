@@ -1,7 +1,9 @@
+import { Logger } from '../../../lib/utils/logger.js';
 import { ContentMessageService } from '../content-message-service.js';
 import { ContentMessages, ContentResponses } from '../../../types/messages/content.js';
 import { sendToBackground, isExtensionContextValid } from '../../../lib/messaging/sender.js';
 
+const logger = new Logger('TrackingHandlers');
 // 存储从后台获取的标准节点ID
 // @ts-ignore - 全局变量可能未在类型中声明
 window.standardNodeId = null;
@@ -44,11 +46,11 @@ export function registerTrackingHandlers(messageService: ContentMessageService):
     return true; // 异步响应
   });
   
-  console.log('跟踪相关消息处理程序已注册');
+  logger.log('跟踪相关消息处理程序已注册');
   
   // 初始请求节点ID
   setTimeout(() => {
-    requestNodeId().catch(err => console.error('初始化节点ID失败:', err));
+    requestNodeId().catch(err => logger.error('初始化节点ID失败:', err));
   }, 1000);
 }
 
@@ -58,7 +60,7 @@ export function registerTrackingHandlers(messageService: ContentMessageService):
  */
 async function requestNodeId(): Promise<string | null> {
   if (!isExtensionContextValid()) {
-    console.warn('扩展上下文无效，无法请求节点ID');
+    logger.warn('扩展上下文无效，无法请求节点ID');
     return null;
   }
   
@@ -66,7 +68,7 @@ async function requestNodeId(): Promise<string | null> {
   
   // 限制频率
   if (now - lastRequestTime < 5000) {
-    console.debug('请求节点ID间隔过短，跳过');
+    logger.debug('请求节点ID间隔过短，跳过');
     // @ts-ignore - 全局变量可能未在类型中声明
     return window.standardNodeId;
   }
@@ -80,7 +82,7 @@ async function requestNodeId(): Promise<string | null> {
   }
   
   try {
-    console.log('请求标签页ID...');
+    logger.log('请求标签页ID...');
     
     // 获取标签页ID
     const tabIdResponse = await sendToBackground('getTabId', {});
@@ -102,7 +104,7 @@ async function requestNodeId(): Promise<string | null> {
       }
     }
   } catch (error) {
-    console.error('获取节点ID失败:', error);
+    logger.error('获取节点ID失败:', error);
   }
   
   return null;
@@ -139,7 +141,7 @@ export async function sendLinkClickToBackground(linkInfo: {
     }
   });
   
-  console.log('链接点击已发送到后台:', linkInfo.targetUrl);
+  logger.log('链接点击已发送到后台:', linkInfo.targetUrl);
 }
 
 /**
@@ -174,5 +176,5 @@ export async function sendFormSubmitToBackground(formInfo: {
     }
   });
   
-  console.log('表单提交已发送到后台:', formInfo.formAction);
+  logger.log('表单提交已发送到后台:', formInfo.formAction);
 }

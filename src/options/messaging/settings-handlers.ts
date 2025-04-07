@@ -1,4 +1,7 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { sendToBackground } from '../../lib/messaging/sender.js';
+
+const logger = new Logger('SettingsHandlers');
 
 /**
  * 保存设置到后台
@@ -6,7 +9,7 @@ import { sendToBackground } from '../../lib/messaging/sender.js';
  * @returns 保存操作的Promise
  */
 export function saveSettings(settings: any): Promise<any> {
-  console.log('保存设置:', settings);
+  logger.log('保存设置:', settings);
   return sendToBackground('saveSettings', { settings });
 }
 

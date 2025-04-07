@@ -1,22 +1,30 @@
 /**
- * 时间线视图渲染模块
+ * 时间线视图渲染器
  * 负责绘制基于时间的导航历史
  */
+import { Logger } from '../../../lib/utils/logger.js';
+import { 
+  NavNode, 
+  NavLink, 
+  Visualizer 
+} from '../../types/navigation.js';
 
-const d3 = window.d3;
-
-import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import { 
   getNodeColor, 
   getEdgeColor, 
-  isTrackingPage,
+  isTrackingPage,    
   renderEmptyTreeMessage 
-} from '../utils/visualization-utils.js';
-// 合并导入，避免重复
+} from '../../utils/visualization-utils.js';
+
 import { 
   saveViewState, 
   getViewState
-} from '../utils/state-manager.js';
+} from '../../utils/state-manager.js';
+
+import { BaseRenderer } from './BaseRenderer.js';
+
+const d3 = window.d3;
+const logger = new Logger('TimelineRenderer');
 
 // 扩展NavNode类型以包含渲染坐标
 interface RenderableNode extends NavNode {
@@ -24,251 +32,63 @@ interface RenderableNode extends NavNode {
   renderY?: number;
 }
 
-/**
- * 更新时间轴和网格线
- * @param transform 当前变换状态
- * @param timeAxisGroup 时间轴元素组
- * @param mainGroup 主内容组
- * @param timeRange 原始时间范围参数
- * @param dimensions 视图尺寸参数
- */
-function updateTimeAxis(
-  transform: any, 
-  timeAxisGroup: any, 
-  mainGroup: any, 
-  timeRange: { minTime: number, maxTime: number }, 
-  dimensions: { width: number, height: number }
-): void {
-  const { minTime, maxTime } = timeRange;
-  const { width, height } = dimensions;
-
-  // 计算当前可见区域的时间范围
-  // 1. 计算当前可视区域的左右边界（相对于原始未变换坐标系）
-  const visibleLeft = -transform.x / transform.k;
-  const visibleRight = (width - transform.x) / transform.k;
+export class TimelineRenderer implements BaseRenderer {
+  private visualizer: Visualizer;
+  private svg: any = null;
+  private container: HTMLElement | null = null;
+  private width: number = 0;
+  private height: number = 0;
   
-  // 2. 将这些值从像素坐标系映射到时间值，并扩展范围确保两侧有足够空间
-  const timeRatio = (maxTime - minTime) / width;
-  // 扩展可见区域，确保包含更多网格线
-  const extraRatio = 0.2; // 固定为较小值
-  const visibleTimeSpan = visibleRight - visibleLeft;
-  const visibleMinTime = minTime + (visibleLeft - visibleTimeSpan * extraRatio) * timeRatio;
-  const visibleMaxTime = minTime + (visibleRight + visibleTimeSpan * extraRatio) * timeRatio;
-  
-  // 3. 根据当前缩放比例计算合适的刻度数量
-  const baseTickCount = 10;
-  let tickCount;
-  const minLabelSpacing = 80; // 标签最小间距（像素）
-
-  // 计算可用宽度下可容纳的最大刻度数
-  const maxTicks = Math.floor(width / minLabelSpacing);
-
-  // 限制刻度数量避免过度增长
-  if (transform.k < 0.5) {
-    // 低缩放级别 - 少量主要刻度
-    tickCount = Math.min(Math.max(4, Math.floor(baseTickCount * transform.k)), maxTicks);
-  } else if (transform.k <= 2) {
-    // 中等缩放级别 - 适量刻度
-    tickCount = Math.min(baseTickCount + Math.floor((transform.k - 1) * 3), maxTicks);
-  } else {
-    // 高缩放级别 - 适量刻度，避免过多
-    tickCount = Math.min(15, maxTicks); // 限制最大刻度数为15
+  constructor(visualizer: Visualizer) {
+    this.visualizer = visualizer;
   }
   
-  // 4. 创建新的时间轴比例尺和刻度格式化函数
-  const timeScale = d3.scaleTime()
-    .domain([new Date(visibleMinTime), new Date(visibleMaxTime)])
-    .range([0, width]); // 固定范围，始终占满整个宽度
-  
-  // 5. 创建新的时间轴
-  const timeAxis = d3.axisBottom(timeScale)
-    .ticks(tickCount)
-    .tickFormat((d: Date) => {
-      // 判断是否是0点
-      if (d.getHours() === 0 && d.getMinutes() === 0) {
-        // 0点显示日期和时间
-        return d3.timeFormat('%m-%d 00:00')(d);
-      }
-      // 其他时间点根据缩放级别显示
-      return transform.k < 0.5 ? d3.timeFormat('%H:%M')(d) : d3.timeFormat('%H:%M:%S')(d);
-    })
-    .tickSize(6)
-    .tickPadding(2);
+  /**
+   * 初始化渲染器
+   */
+  initialize(svg: any, container: HTMLElement, width: number, height: number): void {
+    this.svg = svg;
+    this.container = container;
+    this.width = width;
+    this.height = height;
     
-  // 6. 更新时间轴元素
-  timeAxisGroup.select('.time-axis')
-    .attr('transform', 'translate(0, 20)') // 固定位置
-    .call(timeAxis)
-    .call(function(g: d3.Selection<SVGGElement, unknown, null, undefined>) {
-      // 样式设置
-      g.select('.domain')
-        .attr('stroke', '#aaa')
-        .attr('stroke-width', 1)
-        .attr('opacity', 0.7);
-      
-      g.selectAll('.tick line')
-        .attr('stroke', '#aaa')
-        .attr('y2', 6);
-      
-      // 标签样式
-      g.selectAll('.tick text')
-        .attr('fill', '#eee')
-        .attr('font-size', '10px')
-        .style('opacity', function(d, i) {
-          return i % 2 === 0 || transform.k < 4 ? 1 : 0.5;
-        })
-        .each(function(d: any) {
-          // 0点加粗显示
-          // 使用更安全的类型检查
-          if (d instanceof Date && d.getHours() === 0 && d.getMinutes() === 0) {
-            const element = this as Element; // 使用基本Element类型
-            d3.select(element)
-              .attr('fill', '#fff')
-              .attr('font-weight', 'bold')
-              .style('opacity', 1);
-            
-            // 对应的刻度线也加粗
-            const parent = element.parentNode;
-            if (parent) {
-              const tickLine = d3.select(parent).select('line');
-              tickLine
-                .attr('stroke', '#fff')
-                .attr('stroke-width', 1.5)
-                .attr('y2', 10);
-            }
-          }
-        });
-    });
-    
-  // 7. 更新网格线 - 确保网格线布满整个区域
-  //updateGridLines(mainGroup, timeScale, transform, { width, height });
-    
-  // 8. 更新标题显示可见时间范围
-  const formatTimeOnly = d3.timeFormat('%H:%M:%S');
-  const formatDateOnly = d3.timeFormat('%Y-%m-%d');
-  
-  const visibleMinDate = new Date(visibleMinTime);
-  const visibleMaxDate = new Date(visibleMaxTime);
-  
-  // 判断是否跨天
-  const isSameDay = visibleMinDate.toDateString() === visibleMaxDate.toDateString();
-  
-  // 根据是否跨天显示不同格式
-  let titleText;
-  if (isSameDay) {
-    // 同一天内 - 只显示一次日期
-    titleText = `时间线 - ${formatDateOnly(visibleMinDate)} ${formatTimeOnly(visibleMinDate)} 至 ${formatTimeOnly(visibleMaxDate)}`;
-  } else {
-    // 跨天 - 显示完整日期和时间
-    titleText = `时间线 - ${formatDateOnly(visibleMinDate)} ${formatTimeOnly(visibleMinDate)} 至 ${formatDateOnly(visibleMaxDate)} ${formatTimeOnly(visibleMaxDate)}`;
+    logger.log('时间线渲染器已初始化', { width, height });
   }
   
-  timeAxisGroup.select('text.time-axis-title')
-    .text(titleText);
-}
-
-/**
- * 更新网格线 - 使用与时间轴相同的绘制逻辑
- */
-function updateGridLines(
-  mainGroup: any, 
-  timeScale: any, 
-  transform: any, 
-  dimensions: { width: number, height: number }
-): void {
-  const { width, height } = dimensions;
-  
-  // 获取当前时间轴的刻度位置 - 动态调整密度
-  const density = transform.k < 0.5 ? 30 :
-  transform.k < 1 ? 60 :
-  transform.k < 2 ? 120 :
-  transform.k < 4 ? 180 : 240; // 大幅增加密度
-  const timeAxisTicks = timeScale.ticks(density); // 使用变化的密度
-  
-  // 清除网格线，但保留容器
-  const gridContainer = mainGroup.select('.grid');
-  if (gridContainer.empty()) {
-    // 如果不存在，创建新的网格容器
-    mainGroup.append('g').attr('class', 'grid');
-  } else {
-    // 如果存在，只清除内部线条
-    gridContainer.selectAll('*').remove();
+  /**
+   * 渲染可视化视图
+   */
+  render(nodes: NavNode[], edges: NavLink[], options: { restoreTransform?: boolean } = {}): void {
+    if (!this.svg || !this.container) {
+      logger.error('无法渲染：SVG或容器未初始化');
+      return;
+    }
+    
+    // 调用原有的渲染函数
+    renderTimelineLayout(
+      this.container,
+      this.svg,
+      nodes,
+      edges,
+      this.width,
+      this.height,
+      this.visualizer
+    );
   }
   
-  // 获取最新的网格容器引用
-  const currentGrid = mainGroup.select('.grid');
-  
-  // 直接基于时间轴位置添加网格线
-  timeAxisTicks.forEach((tick: Date) => {
-    const xPos = timeScale(tick);
-    currentGrid.append('line')
-      .attr('class', 'grid-line')
-      .attr('x1', xPos)
-      .attr('y1', -height) // 确保足够高，向上延伸
-      .attr('x2', xPos)
-      .attr('y2', height * 2) // 确保足够长，向下延伸
-      .attr('stroke', '#555')
-      .attr('stroke-width', 0.5)
-      .attr('opacity', 0.3);
-  });
-  
-  // 添加额外的左右边界辅助线，确保超出可见区域
-  // 左侧边界外
-  for (let i = 1; i <= 20; i++) { // 从10增加到20
-    const domain = timeScale.domain();
-    const timeSpan = domain[1].getTime() - domain[0].getTime();
-    
-    // 添加左侧辅助线 - 使用更大的比例扩展
-    const leftTime = new Date(domain[0].getTime() - timeSpan * i / 4); // 从1/5改为1/4
-    const leftPos = timeScale(leftTime);
-    currentGrid.append('line')
-      .attr('class', 'grid-line extra-line')
-      .attr('x1', leftPos)
-      .attr('y1', -height * 2) // 加大高度范围
-      .attr('x2', leftPos)
-      .attr('y2', height * 3)  // 加大高度范围
-      .attr('stroke', '#555')
-      .attr('stroke-width', 0.5)
-      .attr('opacity', 0.3);
-    
-    // 添加右侧辅助线 - 同样使用更大比例扩展
-    const rightTime = new Date(domain[1].getTime() + timeSpan * i / 4); // 从1/5改为1/4
-    const rightPos = timeScale(rightTime);
-    currentGrid.append('line')
-      .attr('class', 'grid-line extra-line')
-      .attr('x1', rightPos)
-      .attr('y1', -height * 2) // 加大高度范围
-      .attr('x2', rightPos)
-      .attr('y2', height * 3)  // 加大高度范围
-      .attr('stroke', '#555')
-      .attr('stroke-width', 0.5)
-      .attr('opacity', 0.3);
-  }
-
-  // 添加额外的内部网格线，确保密度足够
-  const domain = timeScale.domain();
-  const timeSpan = domain[1].getTime() - domain[0].getTime();
-  const steps = 50; // 内部额外的网格线数量
-
-  for (let i = 0; i <= steps; i++) {
-    const time = domain[0].getTime() + (timeSpan * i / steps);
-    const pos = timeScale(new Date(time));
-    
-    currentGrid.append('line')
-      .attr('class', 'grid-line inner-line')
-      .attr('x1', pos)
-      .attr('y1', -height * 2)
-      .attr('x2', pos)
-      .attr('y2', height * 3)
-      .attr('stroke', '#555')
-      .attr('stroke-width', 0.5)
-      .attr('opacity', 0.2); // 稍微淡一点
+  /**
+   * 清理资源
+   */
+  cleanup(): void {
+    // 清理任何需要释放的资源
+    this.svg = null;
+    this.container = null;
+    logger.log('时间线渲染器已清理');
   }
 }
-/**
- * 渲染时间线布局
- */
-export function renderTimelineLayout(
+
+// 保留原有的renderTimelineLayout函数，但改为文件内部函数
+function renderTimelineLayout(
   container: any, 
   svg: any, 
   nodes: NavNode[], 
@@ -277,7 +97,7 @@ export function renderTimelineLayout(
   height: number, 
   visualizer: Visualizer
 ): void {
-  console.log('使用模块化时间线渲染器');
+  logger.log('使用模块化时间线渲染器');
   
   try {
     // 获取特定视图类型的状态 - 不再使用临时标志
@@ -290,7 +110,7 @@ export function renderTimelineLayout(
     if (savedState && savedState.transform) {
       const { x, y, k } = savedState.transform;
       if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
-        console.log('检测到保存的时间线状态:', savedState.transform);
+        logger.log('检测到保存的时间线状态:', savedState.transform);
         shouldRestoreTransform = true;
         transformToRestore = savedState.transform;
       }
@@ -582,7 +402,7 @@ export function renderTimelineLayout(
     
     // 设置缩放行为，关键是让时间轴与内容同步缩放和移动
     try {
-      console.log('为时间线视图设置缩放行为');
+      logger.log('为时间线视图设置缩放行为');
       
       // 获取DOM引用
       const mainGroup = svg.select('.main-group');
@@ -601,7 +421,7 @@ export function renderTimelineLayout(
         if (!isFinite(x) || !isFinite(y) || !isFinite(k) ||
             Math.abs(x) > width * 2 || Math.abs(y) > height * 2 || 
             k < 0.01 || k > 100) {
-          console.warn('检测到无效变换:', event.transform, '，恢复到安全状态');
+          logger.warn('检测到无效变换:', event.transform, '，恢复到安全状态');
           // 重置到安全变换
           const safeTransform = d3.zoomIdentity.translate(0, 0).scale(0.8);
           if (visualizer.zoom) {
@@ -656,9 +476,9 @@ export function renderTimelineLayout(
       svg.call(zoom)
         .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动
     
-      console.log('已设置时间线缩放行为');
+      logger.log('已设置时间线缩放行为');
     } catch (error) {
-      console.error('设置时间线缩放失败:', error);
+      logger.error('设置时间线缩放失败:', error);
     }    
     // 修改变换恢复/应用逻辑
     setTimeout(() => {
@@ -684,7 +504,7 @@ export function renderTimelineLayout(
             .scale(validK);
           
           if (visualizer.zoom) {
-            console.log('恢复时间线保存的变换状态:', transformToRestore);
+            logger.log('恢复时间线保存的变换状态:', transformToRestore);
             svg.call(visualizer.zoom.transform, transform);
             // 立即触发时间轴更新
             updateTimeAxis(transform, timeAxisGroup, mainGroup, timeRangeInfo, dimensionsInfo);
@@ -734,7 +554,7 @@ export function renderTimelineLayout(
           }
         }
       } catch (err) {
-        console.error('应用变换失败:', err);
+        logger.error('应用变换失败:', err);
       }
     }, 100);
     
@@ -743,7 +563,7 @@ export function renderTimelineLayout(
     //visualizer.timeAxisGroup = timeAxisGroup;
     
   } catch (err) {
-    console.error('时间线渲染过程中出错:', err);
+    logger.error('时间线渲染过程中出错:', err);
     
     // 渲染错误信息
     svg.append('text')
@@ -758,19 +578,207 @@ export function renderTimelineLayout(
   }
 }
 
-/**
- * 渲染空白时间线
- */
+// 保留其他原有辅助函数...
+function updateTimeAxis(
+  transform: any, 
+  timeAxisGroup: any, 
+  mainGroup: any, 
+  timeRange: { minTime: number, maxTime: number }, 
+  dimensions: { width: number, height: number }
+): void {
+  const { minTime, maxTime } = timeRange;
+  const { width, height } = dimensions;
+
+  // 计算当前可见区域的时间范围
+  const visibleLeft = -transform.x / transform.k;
+  const visibleRight = (width - transform.x) / transform.k;
+  
+  const timeRatio = (maxTime - minTime) / width;
+  const extraRatio = 0.2;
+  const visibleTimeSpan = visibleRight - visibleLeft;
+  const visibleMinTime = minTime + (visibleLeft - visibleTimeSpan * extraRatio) * timeRatio;
+  const visibleMaxTime = minTime + (visibleRight + visibleTimeSpan * extraRatio) * timeRatio;
+  
+  const baseTickCount = 10;
+  let tickCount;
+  const minLabelSpacing = 80;
+
+  const maxTicks = Math.floor(width / minLabelSpacing);
+
+  if (transform.k < 0.5) {
+    tickCount = Math.min(Math.max(4, Math.floor(baseTickCount * transform.k)), maxTicks);
+  } else if (transform.k <= 2) {
+    tickCount = Math.min(baseTickCount + Math.floor((transform.k - 1) * 3), maxTicks);
+  } else {
+    tickCount = Math.min(15, maxTicks);
+  }
+  
+  const timeScale = d3.scaleTime()
+    .domain([new Date(visibleMinTime), new Date(visibleMaxTime)])
+    .range([0, width]);
+  
+  const timeAxis = d3.axisBottom(timeScale)
+    .ticks(tickCount)
+    .tickFormat((d: Date) => {
+      if (d.getHours() === 0 && d.getMinutes() === 0) {
+        return d3.timeFormat('%m-%d 00:00')(d);
+      }
+      return transform.k < 0.5 ? d3.timeFormat('%H:%M')(d) : d3.timeFormat('%H:%M:%S')(d);
+    })
+    .tickSize(6)
+    .tickPadding(2);
+    
+  timeAxisGroup.select('.time-axis')
+    .attr('transform', 'translate(0, 20)')
+    .call(timeAxis)
+    .call(function(g: d3.Selection<SVGGElement, unknown, null, undefined>) {
+      g.select('.domain')
+        .attr('stroke', '#aaa')
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.7);
+      
+      g.selectAll('.tick line')
+        .attr('stroke', '#aaa')
+        .attr('y2', 6);
+      
+      g.selectAll('.tick text')
+        .attr('fill', '#eee')
+        .attr('font-size', '10px')
+        .style('opacity', function(d, i) {
+          return i % 2 === 0 || transform.k < 4 ? 1 : 0.5;
+        })
+        .each(function(d: any) {
+          if (d instanceof Date && d.getHours() === 0 && d.getMinutes() === 0) {
+            const element = this as Element;
+            d3.select(element)
+              .attr('fill', '#fff')
+              .attr('font-weight', 'bold')
+              .style('opacity', 1);
+            
+            const parent = element.parentNode;
+            if (parent) {
+              const tickLine = d3.select(parent).select('line');
+              tickLine
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 1.5)
+                .attr('y2', 10);
+            }
+          }
+        });
+    });
+    
+  const formatTimeOnly = d3.timeFormat('%H:%M:%S');
+  const formatDateOnly = d3.timeFormat('%Y-%m-%d');
+  
+  const visibleMinDate = new Date(visibleMinTime);
+  const visibleMaxDate = new Date(visibleMaxTime);
+  
+  const isSameDay = visibleMinDate.toDateString() === visibleMaxDate.toDateString();
+  
+  let titleText;
+  if (isSameDay) {
+    titleText = `时间线 - ${formatDateOnly(visibleMinDate)} ${formatTimeOnly(visibleMinDate)} 至 ${formatTimeOnly(visibleMaxDate)}`;
+  } else {
+    titleText = `时间线 - ${formatDateOnly(visibleMinDate)} ${formatTimeOnly(visibleMinDate)} 至 ${formatDateOnly(visibleMaxDate)} ${formatTimeOnly(visibleMaxDate)}`;
+  }
+  
+  timeAxisGroup.select('text.time-axis-title')
+    .text(titleText);
+}
+
+function updateGridLines(
+  mainGroup: any, 
+  timeScale: any, 
+  transform: any, 
+  dimensions: { width: number, height: number }
+): void {
+  const { width, height } = dimensions;
+  
+  const density = transform.k < 0.5 ? 30 :
+  transform.k < 1 ? 60 :
+  transform.k < 2 ? 120 :
+  transform.k < 4 ? 180 : 240;
+  const timeAxisTicks = timeScale.ticks(density);
+  
+  const gridContainer = mainGroup.select('.grid');
+  if (gridContainer.empty()) {
+    mainGroup.append('g').attr('class', 'grid');
+  } else {
+    gridContainer.selectAll('*').remove();
+  }
+  
+  const currentGrid = mainGroup.select('.grid');
+  
+  timeAxisTicks.forEach((tick: Date) => {
+    const xPos = timeScale(tick);
+    currentGrid.append('line')
+      .attr('class', 'grid-line')
+      .attr('x1', xPos)
+      .attr('y1', -height)
+      .attr('x2', xPos)
+      .attr('y2', height * 2)
+      .attr('stroke', '#555')
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.3);
+  });
+  
+  for (let i = 1; i <= 20; i++) {
+    const domain = timeScale.domain();
+    const timeSpan = domain[1].getTime() - domain[0].getTime();
+    
+    const leftTime = new Date(domain[0].getTime() - timeSpan * i / 4);
+    const leftPos = timeScale(leftTime);
+    currentGrid.append('line')
+      .attr('class', 'grid-line extra-line')
+      .attr('x1', leftPos)
+      .attr('y1', -height * 2)
+      .attr('x2', leftPos)
+      .attr('y2', height * 3)
+      .attr('stroke', '#555')
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.3);
+    
+    const rightTime = new Date(domain[1].getTime() + timeSpan * i / 4);
+    const rightPos = timeScale(rightTime);
+    currentGrid.append('line')
+      .attr('class', 'grid-line extra-line')
+      .attr('x1', rightPos)
+      .attr('y1', -height * 2)
+      .attr('x2', rightPos)
+      .attr('y2', height * 3)
+      .attr('stroke', '#555')
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.3);
+  }
+
+  const domain = timeScale.domain();
+  const timeSpan = domain[1].getTime() - domain[0].getTime();
+  const steps = 50;
+
+  for (let i = 0; i <= steps; i++) {
+    const time = domain[0].getTime() + (timeSpan * i / steps);
+    const pos = timeScale(new Date(time));
+    
+    currentGrid.append('line')
+      .attr('class', 'grid-line inner-line')
+      .attr('x1', pos)
+      .attr('y1', -height * 2)
+      .attr('x2', pos)
+      .attr('y2', height * 3)
+      .attr('stroke', '#555')
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.2);
+  }
+}
+
 function renderEmptyTimeline(svg: any, width: number, height: number = 200): void {
   svg.selectAll("*").remove();
   
-  // 添加背景
   svg.append('rect')
     .attr('width', '100%')
     .attr('height', '100%')
     .attr('fill', '#FFF');
   
-  // 添加时间轴区域
   svg.append('rect')
     .attr('x', 0)
     .attr('y', 0)
@@ -778,7 +786,6 @@ function renderEmptyTimeline(svg: any, width: number, height: number = 200): voi
     .attr('height', 55)
     .attr('fill', '#212730');
   
-  // 添加空状态文字 - 放在页面中间
   svg.append('text')
     .attr('x', width / 2)
     .attr('y', height / 2)
@@ -786,7 +793,6 @@ function renderEmptyTimeline(svg: any, width: number, height: number = 200): voi
     .attr('fill', '#333')
     .text('无时间数据可显示');
   
-  // 添加时间轴标题
   svg.append('text')
     .attr('x', width / 2)
     .attr('y', 20)
@@ -796,19 +802,14 @@ function renderEmptyTimeline(svg: any, width: number, height: number = 200): voi
     .text('时间线');
 }
 
-/**
- * 优化节点布局，避免重叠
- */
 function optimizeNodeLayout(nodes: RenderableNode[]): void {
-  // 按X坐标排序
   const sortedNodes = [...nodes].sort((a, b) => {
     const aX = typeof a.renderX === 'number' ? a.renderX : 0;
     const bX = typeof b.renderX === 'number' ? b.renderX : 0;
     return aX - bX;
   });
   
-  // 碰撞检测和解决
-  const minDistance = 40; // 最小节点间距
+  const minDistance = 40;
   
   for (let i = 0; i < sortedNodes.length - 1; i++) {
     const current = sortedNodes[i];
@@ -823,13 +824,10 @@ function optimizeNodeLayout(nodes: RenderableNode[]): void {
     
     const xDistance = nextX - currentX;
     
-    // 如果X距离过小，可能会重叠
     if (xDistance < minDistance) {
-      // 检查Y距离是否也很小
       const yDistance = Math.abs(nextY - currentY);
       
       if (yDistance < minDistance) {
-        // 如果两个节点太近，增加Y轴的距离
         const displacement = (minDistance - yDistance) / 2;
         current.renderY = currentY - displacement;
         next.renderY = nextY + displacement;

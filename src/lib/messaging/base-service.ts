@@ -1,4 +1,6 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { BaseMessage, BaseResponse, MessageHandler, MessageTarget } from '../../types/messages/common.js';
+const logger = new Logger('BaseMessageService');
 
 /**
  * 基础消息服务类
@@ -35,7 +37,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
   ): boolean {
     // 验证消息格式
     if (!message || !message.action) {
-      console.error(`[${this.serviceTarget}] 收到无效消息，缺少action字段：`, message);
+      logger.error(`[${this.serviceTarget}] 收到无效消息，缺少action字段：`, message);
       sendResponse({ 
         success: false, 
         error: '缺少action字段',
@@ -44,12 +46,12 @@ export abstract class BaseMessageService<T extends MessageTarget> {
       return false;
     }
     
-    console.log(`[${this.serviceTarget}] 收到消息: ${message.action} [ID:${message.requestId || 'unknown'}]`, 
+    logger.log(`[${this.serviceTarget}] 收到消息: ${message.action} [ID:${message.requestId || 'unknown'}]`, 
                 'target:', message.target);
     
     // 仅处理目标匹配的消息
     if (message.target !== this.serviceTarget) {
-      console.log(`[${this.serviceTarget}] 跳过非当前目标消息: ${message.action}, target: ${message.target || '未指定'}`);
+      logger.log(`[${this.serviceTarget}] 跳过非当前目标消息: ${message.action}, target: ${message.target || '未指定'}`);
       return false;
     }
     
@@ -57,7 +59,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     const handlers = this.handlers.get(message.action) || [];
     
     if (handlers.length === 0) {
-      console.warn(`[${this.serviceTarget}] 未找到处理程序: ${message.action}`);
+      logger.warn(`[${this.serviceTarget}] 未找到处理程序: ${message.action}`);
       sendResponse({ 
         success: false, 
         error: `未注册的消息类型: ${message.action}`,
@@ -70,7 +72,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     try {
       return handlers[0](message, sender, sendResponse);
     } catch (error) {
-      console.error(`[${this.serviceTarget}] 处理消息 ${message.action} 时出错:`, error);
+      logger.error(`[${this.serviceTarget}] 处理消息 ${message.action} 时出错:`, error);
       sendResponse({ 
         success: false, 
         error: `处理消息时出错: ${error instanceof Error ? error.message : String(error)}`,
@@ -92,7 +94,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     }
     
     this.handlers.get(action)!.push(handler);
-    console.log(`[${this.serviceTarget}] 已注册消息处理程序: ${action}`);
+    logger.log(`[${this.serviceTarget}] 已注册消息处理程序: ${action}`);
   }
   
   /**
@@ -120,7 +122,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
       const index = handlers.indexOf(handler);
       if (index !== -1) {
         handlers.splice(index, 1);
-        console.log(`[${this.serviceTarget}] 已移除消息处理程序: ${action}`);
+        logger.log(`[${this.serviceTarget}] 已移除消息处理程序: ${action}`);
       }
       
       // 如果没有处理程序了，删除整个条目
@@ -130,7 +132,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     } else {
       // 移除所有该类型的处理程序
       this.handlers.delete(action);
-      console.log(`[${this.serviceTarget}] 已移除所有 ${action} 处理程序`);
+      logger.log(`[${this.serviceTarget}] 已移除所有 ${action} 处理程序`);
     }
   }
   

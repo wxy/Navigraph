@@ -1,5 +1,8 @@
+import { Logger } from '../../lib/utils/logger.js';
 import { Theme } from '../../lib/settings/types.js';
 import { getSettingsService } from '../../lib/settings/service.js';
+
+const logger = new Logger('ThemeManager');
 
 /**
  * 主题管理器类
@@ -33,7 +36,7 @@ export class ThemeManager {
   public async initialize(): Promise<void> {
     // 防止重复初始化
     if (this.initialized) {
-      console.log("主题管理器已初始化，跳过");
+      logger.log("主题管理器已初始化，跳过");
       return;
     }
     
@@ -51,21 +54,21 @@ export class ThemeManager {
       
       if (window.navigraphSettings && window.navigraphSettings.theme) {
         theme = window.navigraphSettings.theme;
-        console.log('从全局配置读取主题设置:', theme);
+        logger.log('从全局配置读取主题设置:', theme);
       } else {
         // 尝试从设置服务获取
         theme = this.settingsService.getSetting("theme") || 'system';
-        console.log('从设置服务读取主题设置:', theme);
+        logger.log('从设置服务读取主题设置:', theme);
       }
       
       // 在初始化时应用主题
       this.applyTheme(theme);
     } catch (error) {
-      console.warn("获取主题设置失败，使用系统主题", error);
+      logger.warn("获取主题设置失败，使用系统主题", error);
       this.applyTheme("system");
     }
   
-    console.log("主题管理器初始化完成，当前主题:", this.currentTheme);
+    logger.log("主题管理器初始化完成，当前主题:", this.currentTheme);
   }
 
   /**
@@ -99,7 +102,7 @@ export class ThemeManager {
    * 解析主题设置并应用相应的主题
    */
   public applyTheme(theme: Theme): void {
-    console.log("应用主题设置:", theme);
+    logger.log("应用主题设置:", theme);
     
     if (theme === "system") {
       // 使用系统主题
@@ -120,11 +123,11 @@ export class ThemeManager {
     document.documentElement.setAttribute("data-theme", theme);
     // 如果主题已经应用，避免重复工作
     if (this.currentTheme === theme) {
-      console.log("主题已经是", theme, "，无需更改");
+      logger.log("主题已经是", theme, "，无需更改");
       return;
     }
 
-    console.log("设置主题为:", theme);
+    logger.log("设置主题为:", theme);
     this.currentTheme = theme;
 
 
@@ -137,7 +140,7 @@ export class ThemeManager {
       this.saveThemeToLocalStorage(theme);
     }
 
-    console.log("已更新主题为:", theme);
+    logger.log("已更新主题为:", theme);
   }
 
   /**
@@ -164,7 +167,7 @@ export class ThemeManager {
       const theme = localStorage.getItem("navigraph_theme") as Theme;
       return theme || null;
     } catch (error) {
-      console.warn("从本地存储获取主题失败:", error);
+      logger.warn("从本地存储获取主题失败:", error);
       return null;
     }
   }
@@ -176,7 +179,7 @@ export class ThemeManager {
     try {
       localStorage.setItem("navigraph_theme", theme);
     } catch (error) {
-      console.warn("保存主题到本地存储失败:", error);
+      logger.warn("保存主题到本地存储失败:", error);
     }
   }
 
@@ -191,7 +194,7 @@ export class ThemeManager {
       link.rel = "stylesheet";
       link.href = chrome.runtime.getURL("dist/content/styles/themes.css");
       document.head.appendChild(link);
-      console.log("已添加主题样式表");
+      logger.log("已添加主题样式表");
     }
   }
   /**

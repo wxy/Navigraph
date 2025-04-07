@@ -2,7 +2,9 @@
  * 模块加载器
  * 提供动态加载模块的功能
  */
+import { Logger } from '../lib/utils/logger.js';
 
+const logger = new Logger('ModuleLoader');
 // 全局模块缓存
 const moduleCache = new Map<string, any>();
 
@@ -12,11 +14,11 @@ const moduleCache = new Map<string, any>();
  */
 export async function loadModule(path: string): Promise<any> {
   try {
-    console.log(`尝试加载模块: ${path}`);
+    logger.log(`尝试加载模块: ${path}`);
     
     // 检查缓存
     if (moduleCache.has(path)) {
-      console.log(`从缓存返回模块: ${path}`);
+      logger.log(`从缓存返回模块: ${path}`);
       return moduleCache.get(path);
     }
     
@@ -27,7 +29,7 @@ export async function loadModule(path: string): Promise<any> {
       : `dist/content/${path}`;
     
     const moduleUrl = chrome.runtime.getURL(fullPath);
-    console.log(`完整模块URL: ${moduleUrl}`);
+    logger.log(`完整模块URL: ${moduleUrl}`);
     
     // 动态导入
     const module = await import(moduleUrl);
@@ -35,10 +37,10 @@ export async function loadModule(path: string): Promise<any> {
     // 缓存模块
     moduleCache.set(path, module);
     
-    console.log(`模块加载成功: ${path}`);
+    logger.log(`模块加载成功: ${path}`);
     return module;
   } catch (err) {
-    console.error(`加载模块失败 ${path}:`, err);
+    logger.error(`加载模块失败 ${path}:`, err);
     const errorMessage = err instanceof Error ? err.message : String(err);
     throw new Error(`加载模块 ${path} 失败: ${errorMessage}`);
   }
@@ -50,13 +52,13 @@ export async function loadModule(path: string): Promise<any> {
  */
 export async function preloadModules(paths: string[]): Promise<void> {
   try {
-    console.log(`预加载 ${paths.length} 个模块`);
+    logger.log(`预加载 ${paths.length} 个模块`);
     
     await Promise.all(paths.map(path => loadModule(path)));
     
-    console.log('所有模块预加载完成');
+    logger.log('所有模块预加载完成');
   } catch (err) {
-    console.error('预加载模块失败:', err);
+    logger.error('预加载模块失败:', err);
     throw err;
   }
 }

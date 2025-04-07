@@ -294,6 +294,7 @@ export interface NavNode {
   
   // 状态
   isClosed?: boolean;        // 是否已关闭
+  closeTime?: number;        // 关闭时间
 
   children?: NavNode[];      // 子节点列表
   depth?: number;            // 深度

@@ -2,8 +2,8 @@
  * 后台会话管理器
  * 负责创建、管理和维护浏览会话
  */
-
-import { IdGenerator } from "./id-generator.js";
+import { Logger } from '../../lib/utils/logger.js';
+import { IdGenerator } from "../lib/id-generator.js";
 import { SessionStorage } from "../store/session-storage.js";
 import { NavigationStorage } from "../store/navigation-storage.js";
 import { sessionEvents } from "./session-event-emitter.js";
@@ -24,6 +24,8 @@ import {
 import { getSettingsService } from '../../lib/settings/service.js';
 import { NavigraphSettings } from '../../lib/settings/types.js';
 
+const logger = new Logger('BackgroundSessionManager');
+
 /**
  * 后台会话管理器类
  * 负责会话的创建、更新、删除和查询等操作
@@ -34,9 +36,6 @@ export class BackgroundSessionManager {
 
   // 当前激活的会话ID
   private currentSessionId: string | null = null;
-
-  // 会话缓存 - 提高性能
-  private sessionCache: Map<string, BrowsingSession> = new Map();
 
   // 初始化状态
   private initialized = false;
@@ -59,7 +58,7 @@ export class BackgroundSessionManager {
   constructor() {
     this.storage = new SessionStorage();
 
-    console.log("后台会话管理器已创建");
+    logger.log("后台会话管理器已创建");
   }
 
   /**
@@ -67,12 +66,12 @@ export class BackgroundSessionManager {
    */
   public async initialize(): Promise<void> {
     if (this.initialized) {
-      console.log("会话管理器已经初始化，跳过");
+      logger.log("会话管理器已经初始化，跳过");
       return;
     }
 
     try {
-      console.log("初始化会话管理器...");
+      logger.log("初始化会话管理器...");
       // 先设置初始化标志，以防止循环调用
       this.initialized = true;
 
@@ -85,25 +84,26 @@ export class BackgroundSessionManager {
       // 注册监听器
       await this.setupListeners();
 
-      // 检查日期转换（是否需要新建今日会话）
+      // 先加载活跃会话，确保currentSessionId已设置
+      await this.loadActiveSessions();
+
+      // 恢复lastActivityTime
+      await this.restoreActivityTime();
+      
+      // 修改：仅在加载会话后再检查日期转换
       if (this.sessionMode === 'daily') {
         await this.checkDayTransition();
       }
       
-      // 加载会话并检查活跃会话
-      if (!this.currentSessionId) {
-        await this.loadActiveSessions();
-      }
-
-      // 记录当前时间为最后活动时间
-      this.lastActivityTime = Date.now();
-      
       // 设置会话活动监听器
       this.setupActivityListeners();
 
-      console.log("会话管理器初始化完成");
+      // 启动状态一致性检查
+      this.startStateConsistencyChecker();
+
+      logger.log("会话管理器初始化完成");
     } catch (error) {
-      console.error("会话管理器初始化失败:", error);
+      logger.error("会话管理器初始化失败:", error);
       throw new Error(
         `会话管理器初始化失败: ${
           error instanceof Error ? error.message : String(error)
@@ -111,16 +111,107 @@ export class BackgroundSessionManager {
       );
     }
   }
-
+  
+  /**
+   * 启动状态一致性检查器
+   */
+  private startStateConsistencyChecker(): void {
+    // 每5分钟执行一次检查
+    setInterval(() => {
+      this.checkNodeStateConsistency()
+        .catch(err => logger.error('节点状态一致性检查失败:', err));
+    }, 5 * 60 * 1000);
+  }
+  
+  /**
+   * 检查节点状态一致性
+   */
+  private async checkNodeStateConsistency(): Promise<void> {
+    if (!this.currentSessionId) return;
+    
+    try {
+      logger.log('执行节点状态一致性检查...');
+      
+      // 1. 获取所有活跃标签页
+      const tabs = await this.getAllActiveTabs();
+      const activeTabIds = new Set(tabs.map(tab => tab.id));
+      
+      // 2. 获取当前会话的所有未关闭节点
+      const navStorage = new NavigationStorage();
+      await navStorage.initialize();
+      // 查询当前会话的节点
+      const sessionNodes = await navStorage.queryNodes({
+        sessionId: this.currentSessionId
+      });
+      
+      // 过滤出活跃(未关闭)节点
+      const activeNodes = sessionNodes.filter(node => !node.isClosed);
+      
+      // 3. 找出标签页已关闭但节点未标记为关闭的节点
+      const orphanedNodes = activeNodes.filter(node => 
+        node.tabId && !activeTabIds.has(node.tabId)
+      );
+      
+      if (orphanedNodes.length > 0) {
+        logger.log(`发现 ${orphanedNodes.length} 个孤立节点，标记为已关闭`);
+        
+        // 更新这些节点状态
+        for (const node of orphanedNodes) {
+          await navStorage.updateNode(node.id, {
+            isClosed: true,
+            closeTime: Date.now()
+          });
+        }
+      }
+      
+      logger.log('节点状态一致性检查完成');
+    } catch (error) {
+      logger.error('节点状态一致性检查出错:', error);
+    }
+  }
+  
+  /**
+   * 获取所有活跃标签页
+   */
+  private async getAllActiveTabs(): Promise<chrome.tabs.Tab[]> {
+    return new Promise((resolve) => {
+      chrome.tabs.query({}, (tabs) => {
+        resolve(tabs);
+      });
+    });
+  }
+  /**
+   * 恢复最后活动时间
+   */
+  private async restoreActivityTime(): Promise<void> {
+    try {
+      // 如果已有当前会话
+      if (this.currentSessionId) {
+        const currentSession = await this.getSessionDetails(this.currentSessionId);
+        if (currentSession) {
+          // 使用会话的lastActivity或startTime作为最后活动时间
+          this.lastActivityTime = currentSession.lastActivity || currentSession.startTime;
+          logger.log(`恢复会话活动时间: ${new Date(this.lastActivityTime).toLocaleString()}`);
+          return;
+        }
+      }
+      
+      // 默认设置为当前时间
+      this.lastActivityTime = Date.now();
+    } catch (error) {
+      logger.error("恢复活动时间失败:", error);
+      this.lastActivityTime = Date.now();
+    }
+  }
   /**
    * 设置会话活动监听器
    */
   private setupActivityListeners(): void {
-    console.log('设置会话活动监听器');
+    logger.log('设置会话活动监听器');
     
     // 浏览器启动时
     chrome.runtime.onStartup.addListener(() => {
-      console.log('浏览器启动');
+      logger.log('浏览器启动');
       this.checkDayTransition();
     });
     
@@ -140,6 +231,58 @@ export class BackgroundSessionManager {
         this.markSessionActivity();
       }
     });
+
+    // 添加: 标签页关闭监听
+    chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+      this.handleTabClosed(tabId, removeInfo);
+    });
+  }
+
+  /**
+   * 处理标签页关闭
+   */
+  private async handleTabClosed(tabId: number, removeInfo: chrome.tabs.TabRemoveInfo): Promise<void> {
+    try {
+      if (!this.currentSessionId) return;
+      
+      logger.log(`标签页 ${tabId} 已关闭，更新节点状态`);
+      
+      // 获取导航存储实例
+      const navStorage = new NavigationStorage();
+      await navStorage.initialize();
+      
+      // 查找与此标签页相关的活跃节点
+      const activeNodes = await navStorage.queryNodes({
+        tabId: tabId,
+        sessionId: this.currentSessionId,
+        // 可以根据NavDataQueryOptions的定义添加其他查询条件
+      });
+      
+      const nodesToUpdate = activeNodes.filter(node => !node.isClosed);
+    
+      if (nodesToUpdate.length === 0) {
+        logger.log(`标签页 ${tabId} 没有需要更新状态的活跃节点`);
+        return;
+      }
+      
+      logger.log(`找到 ${activeNodes.length} 个与关闭标签相关的节点，正在更新状态`);
+      
+      // 更新这些节点为已关闭状态
+      for (const node of activeNodes) {
+        // 只更新未标记为关闭的节点
+        if (!node.isClosed) {
+          // 更新节点状态
+          await navStorage.updateNode(node.id, {
+            isClosed: true,
+            closeTime: Date.now()
+          });
+          
+          logger.log(`已将节点 ${node.id} 标记为关闭`);
+        }
+      }
+    } catch (error) {
+      logger.error('处理标签页关闭失败:', error);
+    }
   }
 
   /**
@@ -148,63 +291,6 @@ export class BackgroundSessionManager {
   private async ensureInitialized(): Promise<void> {
     if (!this.initialized) {
       await this.initialize();
-    }
-  }
-
-  /**
-   * 检查会话切换
-   * 改进版：综合考虑工作日和空闲时长
-   */
-  public async checkSessionTransition(): Promise<void> {
-    try {
-      await this.ensureInitialized();
-      
-      // 获取当前活跃会话
-      const currentSession = await this.getCurrentSession();
-      if (!currentSession) {
-        console.log("没有活跃会话，创建新会话");
-        await this.createDailySession();
-        return;
-      }
-      
-      // 检查是否超过最大空闲时长
-      const idleTimeout = this.getIdleTimeout();
-      const now = Date.now();
-      const idleTime = now - this.lastActivityTime;
-      
-      if (idleTime > idleTimeout) {
-        console.log(`空闲时间(${Math.round(idleTime / (60 * 1000)) / 60}小时)已超过阈值(${this.idleTimeoutMinutes / 60}小时)，创建新会话`);
-
-        await this.endSession(currentSession.id);
-        await this.createDailySession();
-        return;
-      }
-      
-      // 检查工作日变更 - 只有在有足够空闲时间时才创建新会话
-      // 这样即使跨越了午夜，只要用户持续活跃，仍然使用原会话
-      try {
-        // 获取会话的日期和当前日期
-        const sessionDate = new Date(currentSession.startTime);
-        const nowDate = new Date();
-        
-        // 计算会话日期和当前日期的工作日
-        const sessionWorkDay = this.getWorkDayIdentifier(sessionDate);
-        const currentWorkDay = this.getWorkDayIdentifier(nowDate);
-        
-        // 获取最小空闲时间阈值（例如2小时 = 7,200,000 ms）
-        const minIdleForNewDay = 2 * 60 * 60 * 1000; 
-        
-        // 如果工作日发生变化且空闲时间超过阈值
-        if (sessionWorkDay !== currentWorkDay && idleTime > minIdleForNewDay) {
-          console.log(`检测到新工作日且空闲足够长(${idleTime}ms)，创建新会话`);
-          await this.endSession(currentSession.id);
-          await this.createDailySession();
-        }
-      } catch (error) {
-        console.error("工作日检查失败:", error);
-      }
-    } catch (error) {
-      console.error("会话切换检查失败:", error);
     }
   }
 
@@ -230,7 +316,7 @@ export class BackgroundSessionManager {
       // 获取当前活跃会话
       const currentSession = await this.getCurrentSession();
       if (!currentSession) {
-        console.log("没有活跃会话，创建新会话");
+        logger.log("没有活跃会话，创建新会话");
         await this.createDailySession();
         return;
       }
@@ -253,21 +339,13 @@ export class BackgroundSessionManager {
       
       // 如果工作日不同且有足够的空闲时间，创建新会话
       if (sessionWorkDay !== currentWorkDay && idleTime > minIdleForNewDay) {
-        console.log(`检测到新工作日且长时间未活动(${Math.round(idleTime / (60 * 60 * 1000))}小时)，创建新会话`);
+        logger.log(`检测到新工作日且长时间未活动(${Math.round(idleTime / (60 * 60 * 1000))}小时)，创建新会话`);
         await this.endSession(currentSession.id);
         await this.createDailySession();
       }
     } catch (error) {
-      console.error("日期转换检查失败:", error);
+      logger.error("日期转换检查失败:", error);
     }
-  }
-  /**
-   * 获取空闲超时时间
-   * @returns 空闲超时时间，以毫秒为单位
-   */
-  private getIdleTimeout(): number {
-    // 将分钟转换为毫秒
-    return this.idleTimeoutMinutes * 60 * 1000;
   }
 
   /**
@@ -279,7 +357,7 @@ export class BackgroundSessionManager {
     const dateStr = now.toLocaleDateString();
     const timeStr = now.toLocaleTimeString();
     
-    console.log(`创建新的每日会话: ${dateStr}`);
+    logger.log(`创建新的每日会话: ${dateStr}`);
     
     return await this.createSession({
       title: `${dateStr} 浏览会话`,
@@ -289,34 +367,6 @@ export class BackgroundSessionManager {
         date: now.getTime()
       }
     }, true);
-  }
-
-  /**
-   * 获取最新活跃会话
-   * 与getCurrentSession不同，此方法总是返回时间最新的活跃会话
-   */
-  public async getLatestActiveSession(): Promise<BrowsingSession | null> {
-    await this.ensureInitialized();
-    
-    try {
-      // 获取所有活跃会话
-      const sessions = await this.getSessions({
-        includeInactive: false,
-        sortBy: 'startTime',
-        sortOrder: 'desc',
-        limit: 1
-      });
-      
-      if (sessions.length === 0) {
-        return null;
-      }
-      
-      // 返回最新的会话
-      return sessions[0];
-    } catch (error) {
-      console.error('获取最新活跃会话失败:', error);
-      return null;
-    }
   }
 
   /**
@@ -371,56 +421,77 @@ export class BackgroundSessionManager {
     // 如果没有当前会话，不需要处理
     if (!this.currentSessionId) return;
     
-    console.log(`检测到用户空闲超过${this.idleTimeoutMinutes / 60}小时，自动结束当前会话`);
+    logger.log(`检测到用户空闲超过${this.idleTimeoutMinutes / 60}小时，自动结束当前会话`);
     
     try {
       // 结束当前会话
       await this.endSession(this.currentSessionId);
     } catch (error) {
-      console.error("自动结束会话失败:", error);
+      logger.error("自动结束会话失败:", error);
     }
   }
 
-  /**
+   /**
    * 加载活跃会话
    */
   private async loadActiveSessions(): Promise<void> {
     try {
-      // 获取活跃会话
-      const sessions = await this.storage.getSessions({
+      // 1. 首先查找活跃会话
+      const activeSessions = await this.storage.getSessions({
         includeInactive: false,
       });
-
-      if (sessions.length > 0) {
+  
+      if (activeSessions.length > 0) {
         // 使用最近的活跃会话作为当前会话
-        const mostRecent = sessions.sort(
+        const mostRecent = activeSessions.sort(
           (a, b) => b.startTime - a.startTime
         )[0];
         this.currentSessionId = mostRecent.id;
-        this.sessionCache.set(mostRecent.id, mostRecent);
-
-        console.log(`加载了活跃会话: ${mostRecent.id} - ${mostRecent.title}`);
-      } else {
-        console.log("未找到活跃会话，将创建新会话");
-        // 创建新的默认会话
-        await this.createSession({
-          title: `会话 ${new Date().toLocaleString()}`,
-          description: "自动创建的默认会话",
-        }, true);
+  
+        logger.log(`加载了活跃会话: ${mostRecent.id} - ${mostRecent.title}`);
+        return;  // 找到活跃会话，直接返回
       }
-
-      // 加载其他会话到缓存
-      sessions.forEach((session) => {
-        if (session.id !== this.currentSessionId) {
-          this.sessionCache.set(session.id, session);
-        }
+  
+      // 2. 没有活跃会话，查找最近的已结束会话
+      const recentSessions = await this.storage.getSessions({
+        includeInactive: true,
+        sortBy: 'endTime',
+        sortOrder: 'desc',
+        limit: 1
       });
-
-      console.log(
-        `已加载 ${sessions.length} 个活跃会话，当前会话ID: ${this.currentSessionId}`
-      );
+  
+      if (recentSessions.length > 0) {
+        const mostRecent = recentSessions[0];
+        const lastActivityTime = mostRecent.lastActivity || mostRecent.endTime || mostRecent.startTime;
+        const now = Date.now();
+        const timeSinceLastActivity = now - lastActivityTime;
+        
+        // 如果最后活动时间在合理范围内（默认12小时），重用该会话
+        const maxReusePeriod = 12 * 60 * 60 * 1000;  // 12小时
+        if (timeSinceLastActivity < maxReusePeriod) {
+          logger.log(`找到最近会话(${mostRecent.id})，距现在${Math.round(timeSinceLastActivity / (1000 * 60 * 60))}小时，重新激活`);
+          
+          // 重新激活该会话
+          mostRecent.isActive = true;
+          mostRecent.lastActivity = now;
+          await this.storage.saveSession(mostRecent);
+          
+          this.currentSessionId = mostRecent.id;
+          
+          sessionEvents.emitSessionActivated(mostRecent.id);
+          return;
+        }
+      }
+  
+      // 3. 没有找到活跃会话或最近会话已过期，创建新会话
+      logger.log("未找到活跃会话或最近会话已过期，创建新会话");
+      await this.createSession({
+        title: `会话 ${new Date().toLocaleString()}`,
+        description: "自动创建的默认会话",
+      }, true);
+  
     } catch (error) {
-      console.error("加载活跃会话失败:", error);
+      logger.error("加载活跃会话失败:", error);
       throw new Error(
         `加载活跃会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -446,7 +517,7 @@ export class BackgroundSessionManager {
     // 应用设置
     this.applySettings(settings);
 
-    console.log(`已加载会话设置: 模式=${this.sessionMode}, 空闲超时=${this.idleTimeoutMinutes / 60}小时`);
+    logger.log(`已加载会话设置: 模式=${this.sessionMode}, 空闲超时=${this.idleTimeoutMinutes / 60}小时`);
   }
 
   /**
@@ -473,7 +544,7 @@ export class BackgroundSessionManager {
     // 处理模式更改
     if (this.initialized && oldMode !== this.sessionMode) {
       this.handleSessionModeChange(oldMode).catch(err => {
-        console.error('处理会话模式变更失败:', err);
+        logger.error('处理会话模式变更失败:', err);
       });
     }
     
@@ -487,7 +558,7 @@ export class BackgroundSessionManager {
    * 处理设置变更
    */
   private handleSettingsChange(settings: NavigraphSettings): void {
-    console.log('检测到设置变更，更新会话管理器配置');
+    logger.log('检测到设置变更，更新会话管理器配置');
     this.applySettings(settings);
   }
   
@@ -495,7 +566,7 @@ export class BackgroundSessionManager {
    * 处理会话模式变更
    */
   private async handleSessionModeChange(oldMode: string): Promise<void> {
-    console.log(`会话模式从 ${oldMode} 变更为 ${this.sessionMode}`);
+    logger.log(`会话模式从 ${oldMode} 变更为 ${this.sessionMode}`);
     
     // 如果切换到每日模式，检查是否需要创建新会话
     if (this.sessionMode === 'daily' && oldMode !== 'daily') {
@@ -552,9 +623,8 @@ export class BackgroundSessionManager {
 
       // 保存到存储和缓存
       await this.storage.saveSession(newSession);
-      this.sessionCache.set(sessionId, newSession);
 
-      console.log(`已创建新会话: ${sessionId} - ${newSession.title}`);
+      logger.log(`已创建新会话: ${sessionId} - ${newSession.title}`);
 
       // 发出事件
       sessionEvents.emitSessionCreated(sessionId, {
@@ -568,7 +638,7 @@ export class BackgroundSessionManager {
 
       return newSession;
     } catch (error) {
-      console.error("创建会话失败:", error);
+      logger.error("创建会话失败:", error);
       throw new Error(
         `创建会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -602,12 +672,12 @@ export class BackgroundSessionManager {
 
       // 如果会话ID与当前会话相同，无需操作
       if (sessionId === this.currentSessionId) {
-        console.log(`会话 ${sessionId} 已经是当前活跃会话`);
-        return this.getSessionById(sessionId);
+        logger.log(`会话 ${sessionId} 已经是当前活跃会话`);
+        return this.getSessionDetails(sessionId);
       }
 
       // 检查会话是否存在
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -621,16 +691,15 @@ export class BackgroundSessionManager {
       // 更新会话为活跃状态
       session.isActive = true;
       await this.storage.saveSession(session);
-      this.sessionCache.set(sessionId, session);
 
-      console.log(`已将会话 ${sessionId} 设置为当前活跃会话`);
+      logger.log(`已将会话 ${sessionId} 设置为当前活跃会话`);
 
       // 发出事件
       sessionEvents.emitSessionActivated(sessionId);
 
       return session;
     } catch (error) {
-      console.error(`设置当前会话 ${sessionId} 失败:`, error);
+      logger.error(`设置当前会话 ${sessionId} 失败:`, error);
       throw new Error(
         `设置当前会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -651,9 +720,9 @@ export class BackgroundSessionManager {
     }
 
     try {
-      return await this.getSessionById(this.currentSessionId);
+      return await this.getSessionDetails(this.currentSessionId);
     } catch (error) {
-      console.error("获取当前会话失败:", error);
+      logger.error("获取当前会话失败:", error);
       throw new Error(
         `获取当前会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -675,26 +744,17 @@ export class BackgroundSessionManager {
    * @param sessionId 会话ID
    * @returns 会话对象，如果不存在则返回null
    */
-  public async getSessionById(
+  public async getSessionDetails(
     sessionId: string
   ): Promise<BrowsingSession | null> {
     await this.ensureInitialized();
-
     try {
-      // 先尝试从缓存获取
-      if (this.sessionCache.has(sessionId)) {
-        const cachedSession = this.sessionCache.get(sessionId);
-        // 如果缓存中已有完整数据（包含records和edges），直接返回
-        if (cachedSession && cachedSession.records) {
-          return cachedSession;
-        }
-      }
-
       // 从存储获取基本会话信息
       const session = await this.storage.getSession(sessionId);
-
+      
       // 如果会话不存在，返回null
       if (!session) {
+        logger.error(`会话 ${sessionId} 不存在`);
         return null;
       }
 
@@ -709,12 +769,9 @@ export class BackgroundSessionManager {
         rootIds: navData.rootIds,
       };
 
-      // 更新缓存
-      this.sessionCache.set(sessionId, fullSession);
-
       return fullSession;
     } catch (error) {
-      console.error(`获取会话 ${sessionId} 失败:`, error);
+      logger.error(`获取会话 ${sessionId} 失败:`, error);
       throw new Error(
         `获取会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -736,7 +793,7 @@ export class BackgroundSessionManager {
     // 创建导航存储实例
     const navStorage = new NavigationStorage();
     await navStorage.initialize();
-    
+
     try {
       // 获取会话的所有节点和边
       const { nodes, edges } = await navStorage.getSessionGraph(sessionId);
@@ -769,7 +826,7 @@ export class BackgroundSessionManager {
         rootIds,
       };
     } catch (error) {
-      console.error(`获取会话 ${sessionId} 的导航数据失败:`, error);
+      logger.error(`获取会话 ${sessionId} 的导航数据失败:`, error);
       // 出错时返回空数据，而不是终止整个流程
       return {
         records: {},
@@ -792,7 +849,7 @@ export class BackgroundSessionManager {
     try {
       return await this.storage.getSessions(options);
     } catch (error) {
-      console.error("获取会话列表失败:", error);
+      logger.error("获取会话列表失败:", error);
       throw new Error(
         `获取会话列表失败: ${
           error instanceof Error ? error.message : String(error)
@@ -815,7 +872,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取原会话
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -859,16 +916,15 @@ export class BackgroundSessionManager {
 
       // 保存更新
       await this.storage.saveSession(session);
-      this.sessionCache.set(sessionId, session);
 
-      console.log(`已更新会话 ${sessionId}`);
+      logger.log(`已更新会话 ${sessionId}`);
 
       // 发出事件
       sessionEvents.emitSessionUpdated(sessionId, { updates });
 
       return session;
     } catch (error) {
-      console.error(`更新会话 ${sessionId} 失败:`, error);
+      logger.error(`更新会话 ${sessionId} 失败:`, error);
       throw new Error(
         `更新会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -887,7 +943,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取会话
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -903,9 +959,8 @@ export class BackgroundSessionManager {
 
       // 保存更新
       await this.storage.saveSession(session);
-      this.sessionCache.set(sessionId, session);
 
-      console.log(`已结束会话 ${sessionId}`);
+      logger.log(`已结束会话 ${sessionId}`);
 
       // 发出事件
       sessionEvents.emitSessionEnded(sessionId, {
@@ -914,7 +969,7 @@ export class BackgroundSessionManager {
 
       return session;
     } catch (error) {
-      console.error(`结束会话 ${sessionId} 失败:`, error);
+      logger.error(`结束会话 ${sessionId} 失败:`, error);
       throw new Error(
         `结束会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -937,20 +992,17 @@ export class BackgroundSessionManager {
         this.currentSessionId = null;
       }
 
-      // 从缓存移除
-      this.sessionCache.delete(sessionId);
-
       // 从存储删除
       const result = await this.storage.deleteSession(sessionId);
 
-      console.log(`已删除会话 ${sessionId}`);
+      logger.log(`已删除会话 ${sessionId}`);
 
       // 发出事件
       sessionEvents.emitSessionDeleted(sessionId);
 
       return result;
     } catch (error) {
-      console.error(`删除会话 ${sessionId} 失败:`, error);
+      logger.error(`删除会话 ${sessionId} 失败:`, error);
       throw new Error(
         `删除会话失败: ${
           error instanceof Error ? error.message : String(error)
@@ -971,7 +1023,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取会话
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
         throw new Error(`会话 ${sessionId} 不存在`);
       }
@@ -993,7 +1045,7 @@ export class BackgroundSessionManager {
 
       return stats;
     } catch (error) {
-      console.error(`获取会话 ${sessionId} 统计信息失败:`, error);
+      logger.error(`获取会话 ${sessionId} 统计信息失败:`, error);
       throw new Error(
         `获取会话统计信息失败: ${
           error instanceof Error ? error.message : String(error)
@@ -1014,9 +1066,9 @@ export class BackgroundSessionManager {
     await this.ensureInitialized();
 
     try {
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
-        console.warn(`更新节点计数失败: 会话 ${sessionId} 不存在`);
+        logger.warn(`更新节点计数失败: 会话 ${sessionId} 不存在`);
         return;
       }
 
@@ -1026,11 +1078,10 @@ export class BackgroundSessionManager {
         session.nodeCount = (session.nodeCount || 0) + 1;
       }
 
-      // 更新缓存和存储
-      this.sessionCache.set(sessionId, session);
+      // 更新存储
       await this.storage.saveSession(session);
     } catch (error) {
-      console.error(`更新会话 ${sessionId} 节点计数失败:`, error);
+      logger.error(`更新会话 ${sessionId} 节点计数失败:`, error);
     }
   }
 
@@ -1046,9 +1097,9 @@ export class BackgroundSessionManager {
     await this.ensureInitialized();
 
     try {
-      const session = await this.getSessionById(sessionId);
+      const session = await this.getSessionDetails(sessionId);
       if (!session) {
-        console.warn(`更新标签页计数失败: 会话 ${sessionId} 不存在`);
+        logger.warn(`更新标签页计数失败: 会话 ${sessionId} 不存在`);
         return;
       }
 
@@ -1058,11 +1109,10 @@ export class BackgroundSessionManager {
         session.tabCount = (session.tabCount || 0) + 1;
       }
 
-      // 更新缓存和存储
-      this.sessionCache.set(sessionId, session);
+      // 更新存储
       await this.storage.saveSession(session);
     } catch (error) {
-      console.error(`更新会话 ${sessionId} 标签页计数失败:`, error);
+      logger.error(`更新会话 ${sessionId} 标签页计数失败:`, error);
     }
   }
 
@@ -1076,7 +1126,7 @@ export class BackgroundSessionManager {
 
     try {
       // 获取当前会话
-      const session = await this.getSessionById(this.currentSessionId);
+      const session = await this.getSessionDetails(this.currentSessionId);
       if (!session) {
         // 当前会话不存在，直接清空当前会话ID
         this.currentSessionId = null;
@@ -1088,17 +1138,16 @@ export class BackgroundSessionManager {
 
       // 保存更新
       await this.storage.saveSession(session);
-      this.sessionCache.set(session.id, session);
 
-      console.log(`将会话 ${session.id} 设置为非活跃状态`);
+      logger.log(`将会话 ${session.id} 设置为非活跃状态`);
 
       // 发出事件
       sessionEvents.emitSessionDeactivated(session.id);
     } catch (error) {
-      console.error("设置当前会话为非活跃状态失败:", error);
+      logger.error("设置当前会话为非活跃状态失败:", error);
     }
   }
-
+ 
   /**
    * 注册消息处理程序
    * @param messageService 消息服务实例
@@ -1106,7 +1155,7 @@ export class BackgroundSessionManager {
   public registerMessageHandlers(
     messageService: BackgroundMessageService
   ): void {
-    console.log("注册会话相关消息处理程序");
+    logger.groupCollapsed("注册会话相关消息处理程序");
 
     // 获取会话列表
     messageService.registerHandler(
@@ -1158,7 +1207,7 @@ export class BackgroundSessionManager {
         const ctx = messageService.createMessageContext(message, sender, sendResponse);
         const { sessionId } = message;
 
-        this.getSessionById(sessionId)
+        this.getSessionDetails(sessionId)
           .then((session) => {
             if (!session) {
               ctx.error(`会话 ${sessionId} 不存在`);
@@ -1408,6 +1457,7 @@ export class BackgroundSessionManager {
         return false; // 同步响应
       }
     );
+    logger.groupEnd();
   }
 }
 

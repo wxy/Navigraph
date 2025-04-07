@@ -35,6 +35,52 @@ body.loading-session #visualization-container::before {
   font-size: 16px;
 }
 
+/* 加载指示器样式 */
+#loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+#loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #333;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* ========== 布局组件 ========== */
 /* 主布局容器 */
 .app-container {
@@ -333,6 +379,72 @@ svg {
   }
 }
 
+/* ========== 通知样式 ========== */
+.notification-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  width: 300px;
+}
+
+.notification {
+  background: #fff;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-left: 4px solid #4caf50;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.notification.error {
+  border-left-color: #f44336;
+}
+
+.notification-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* ========== 无数据会话节点样式 ========== */
+.empty-session .node-circle {
+  fill: #f5f5f5;
+  stroke: #ddd;
+  stroke-width: 2;
+  stroke-dasharray: 5,3;
+  opacity: 0.7;
+}
+
+.empty-session:hover .node-circle {
+  fill: #e8e8e8;
+  stroke: #aaa;
+  cursor: pointer;
+}
+
+.empty-node-icon {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.empty-session:hover .empty-node-icon {
+  opacity: 1;
+}
+
+.empty-node-label {
+  font-size: 14px;
+  fill: #666;
+  font-weight: bold;
+}
+
+.empty-data-message {
+  font-size: 12px;
+  fill: #999;
+  font-style: italic;
+}
+
 /* ========== 详情面板 ========== */
 .details-container {
   width: 300px;
@@ -628,18 +740,20 @@ svg .node-label {
   position: absolute;
   right: 20px;
   top: 70px;
-  width: 300px;
   background: var(--popup-bg, rgba(40, 44, 52, 0.9));
   border: 1px solid var(--border-color, #555);
   border-radius: 8px;
   padding: 15px;
   color: var(--text-color, white);
   font-size: 14px;
-  z-index: 1000;
+  z-index: 998;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   max-height: calc(100vh - 140px);
-  overflow-y: auto;
+  overflow: hidden;
   transition: none !important; /* 禁用可能导致拖动问题的过渡效果 */
+  max-width: 350px; /* 设置最大宽度 */
+  width: auto; /* 允许面板宽度根据内容调整 */
+  min-width: 300px; /* 保持最小宽度 */
 }
 
 /* 拖动时样式 */
@@ -649,11 +763,16 @@ svg .node-label {
   opacity: 0.9;
 }
 
+.dragging {
+  opacity: 0.8;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
 /* 关闭按钮 */
 .node-details-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 21px;
+  right: 26px;
   background: transparent;
   border: none;
   color: var(--text-color, white);
@@ -672,18 +791,24 @@ svg .node-label {
   overflow: hidden;
   font-weight: bold;
   color: var(--text-color) !important;
+  margin: 0;
+  flex-grow: 1;
 }
 
 /* 详情项容器 */
-.detail-item {
+.detail-table {
   margin: 5px;
   line-height: 1.5;
   color: var(--text-color) !important;
+  word-break: break-word; /* 允许在任意字符间断行 */
+  overflow-wrap: break-word; /* 当单词太长时允许断行 */
+  max-width: 100%; /* 限制最大宽度 */
 }
 
 /* 详情标签 */
 .detail-label {
   color: var(--label-color) !important;
+  width: 45px;  
 }
 
 /* 详情值 */
@@ -695,6 +820,12 @@ svg .node-label {
 .detail-url {
   color: var(--btn-primary, #6bf);
   text-decoration: none;
+  display: inline-block; /* 更好的控制元素 */
+  max-width: 100%; /* 限制宽度不超过容器 */
+  overflow-wrap: break-word; /* 允许单词内断行 */
+  word-break: break-all; /* 确保长 URL 可以断行 */
+  white-space: normal; /* 允许正常换行 */
+  hyphens: auto; /* 允许使用连字符 */
 }
 
 .detail-url:hover {
@@ -728,6 +859,8 @@ svg .node-label {
   margin-top: 10px;
   font-size: 12px;
   color: var(--label-color, #ccc);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* 拖拽手柄 */
@@ -740,6 +873,28 @@ svg .node-label {
   cursor: move;
   background: transparent;
   z-index: 10;
+}
+
+.draggable-handle {
+  cursor: move;
+}
+
+/* 详情面板标题栏 */
+.node-details-titlebar {
+  display: flex;
+  align-items: center;
+  background: #f0f0f0;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  cursor: move;
+  user-select: none;
+}
+
+.drag-indicator {
+  margin-right: 8px;
+  color: #666;
+  display: flex;
+  align-items: center;
 }
 
 /* ========== 时间线相关样式 ========== */
@@ -881,6 +1036,22 @@ svg .node-label {
   stroke: #ff7733;
   stroke-width: 2px;
   stroke-dasharray: 3,2;
+}
+
+/* 为自循环节点添加样式 */
+.node.self-loop circle {
+  stroke: #ff7700;
+  stroke-width: 2px;
+}
+
+.self-loop-indicator {
+  fill: #ff7700;
+}
+
+.self-loop-icon {
+  fill: #ffffff;
+  font-family: 'FontAwesome';
+  font-size: 10px;
 }
 
 /* 会话节点样式 */

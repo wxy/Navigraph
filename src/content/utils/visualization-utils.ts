@@ -2,9 +2,10 @@
  * 可视化工具函数
  * 为渲染器提供共享功能
  */
-
+import { Logger } from '../../lib/utils/logger.js';
 import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 
+const logger = new Logger('VisualizationUtils');
 /**
  * 获取节点颜色
  */
@@ -54,10 +55,6 @@ export function getEdgeColor(type: string): string {
  * 判断是否为跟踪页面
  */
 export function isTrackingPage(node: NavNode, visualizer: Visualizer): boolean {
-  // 首先尝试使用可视化器的方法
-  if (visualizer && typeof visualizer.isTrackingPage === 'function') {
-    return visualizer.isTrackingPage(node);
-  }
   
   // 否则使用内置的模式匹配
   const trackingPatterns = [
@@ -144,7 +141,7 @@ export function getLinkType(d3Link: any, links: NavLink[]): string {
     
     return originalLink ? originalLink.type : 'default';
   } catch (err) {
-    console.warn('获取链接类型时出错:', err);
+    logger.warn('获取链接类型时出错:', err);
     return 'default';
   }
 }

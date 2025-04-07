@@ -325,42 +325,6 @@ export interface UpdateSettingsResponse extends BaseResponseMessage {
 
 // ============ 导航数据相关消息 ============
 
-/**
- * 获取导航树请求
- */
-export interface GetNavigationTreeRequest extends BaseMessage {
-  action: 'getNavigationTree';
-  sessionId?: string;         // 会话ID(可选，不提供则使用当前会话)
-  options?: {                 // 查询选项(可选)
-    maxDepth?: number;        // 最大深度
-    includeMetadata?: boolean;// 是否包含元数据
-    filter?: any;             // 过滤条件
-  };
-}
-
-/**
- * 获取导航树响应
- */
-export interface GetNavigationTreeResponse extends BaseResponseMessage {
-  tree: any;                  // 导航树数据
-  sessionId: string;          // 会话ID
-}
-
-/**
- * 清除所有记录请求
- */
-export interface ClearAllRecordsRequest extends BaseMessage {
-  action: 'clearAllRecords';
-  confirm?: boolean;          // 确认清除
-}
-
-/**
- * 清除所有记录响应
- */
-export interface ClearAllRecordsResponse extends BaseResponseMessage {
-  recordsCleared: boolean;    // 记录是否已清除
-}
-
 // 添加 clearAllData 相关定义
 export interface ClearAllDataRequest extends BaseMessage {
   action: 'clearAllData';
@@ -494,16 +458,6 @@ export interface RequestResponseMap {
   updateSettings: {
     request: UpdateSettingsRequest;
     response: UpdateSettingsResponse;
-  };
-
-  // 导航数据相关
-  getNavigationTree: {
-    request: GetNavigationTreeRequest;
-    response: GetNavigationTreeResponse;
-  };
-  clearAllRecords: {
-    request: ClearAllRecordsRequest;
-    response: ClearAllRecordsResponse;
   };
 
   // 数据管理

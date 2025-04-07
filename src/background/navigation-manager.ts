@@ -1,3 +1,4 @@
+import { Logger } from '../lib/utils/logger.js';
 import { NavigationStorage } from './store/navigation-storage.js';
 import { SessionStorage } from './store/session-storage.js';
 import { IdGenerator } from './lib/id-generator.js';
@@ -16,6 +17,7 @@ import {
   NavLink
 } from '../types/session-types.js';
 
+const logger = new Logger('NavigationManager');
 /**
  * 导航管理器 - 负责创建和管理导航节点、事件和关系
 * 
@@ -26,6 +28,8 @@ import {
  * 4. 提供导航数据查询和更新接口
  */
 export class NavigationManager {
+  // 消息服务实例
+  private messageService: BackgroundMessageService;
   // 存储引用
   private navigationStorage: NavigationStorage;
   private sessionStorage: SessionStorage;
@@ -74,39 +78,27 @@ export class NavigationManager {
     navigationStorage?: NavigationStorage,
     sessionStorage?: SessionStorage
   ) {
+    this.messageService = messageService;
     // 创建存储实例
     this.navigationStorage = navigationStorage || new NavigationStorage();
     this.sessionStorage = sessionStorage || new SessionStorage();
-
-    // 设置定期清理任务
-    setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
-    setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
-
-    // 初始化事件侦听器
-    this.setupEventListeners();
-
-    // 注册消息处理程序
-    this.registerMessageHandlers(messageService);
-
-    console.log("导航管理器已初始化");
   }
   /**
    * 初始化导航管理器
    */
   public async initialize(): Promise<void> {
     try {
-      console.log("初始化导航管理器...");
+      logger.log("初始化导航管理器...");
       
       // 初始化导航存储
       await this.navigationStorage.initialize();
-      
       // 初始化会话存储
       await this.sessionStorage.initialize();
   
       // 确保有活跃会话
       const currentSession = await this.sessionStorage.getCurrentSession();
       if (!currentSession) {
-        console.log("未找到活跃会话，创建新的默认会话...");
+        logger.log("未找到活跃会话，创建新的默认会话...");
         const newSession = await this.sessionStorage.createSession({
           title: `浏览会话 ${new Date().toLocaleString()}`,
           makeActive: true
@@ -116,11 +108,21 @@ export class NavigationManager {
         this.currentSessionId = currentSession.id;
       }
 
-      console.log(`导航管理器使用会话ID: ${this.currentSessionId}`);
-    
-      console.log("导航管理器初始化完成");
+      // 设置定期清理任务
+      setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
+      setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
+
+      // 注册消息处理程序
+      logger.groupCollapsed('注册导航相关消息处理程序');
+      this.registerMessageHandlers(this.messageService);
+      logger.groupEnd();
+
+      // 初始化事件侦听器
+      this.setupEventListeners();
+            
+      logger.log("导航管理器初始化完成");
     } catch (error) {
-      console.error("导航管理器初始化失败:", error);
+      logger.error("导航管理器初始化失败:", error);
       throw new Error(`导航管理器初始化失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -130,7 +132,7 @@ export class NavigationManager {
    */
   public setDebugMode(enabled: boolean): void {
     this.debugMode = enabled;
-    console.log(`导航管理器调试模式: ${enabled ? "已启用" : "已禁用"}`);
+    logger.log(`导航管理器调试模式: ${enabled ? "已启用" : "已禁用"}`);
   }
   /**
    * 获取导航存储实例
@@ -186,7 +188,7 @@ export class NavigationManager {
       { urls: ["<all_urls>"] }
     );
 
-    console.log("导航事件监听器已设置");
+    logger.log("导航事件监听器已设置");
   }
   /**
    * 处理标签页创建事件
@@ -205,7 +207,7 @@ export class NavigationManager {
       });
 
       if (this.debugMode) {
-        console.log(`标签页创建: ID=${tabId}, URL=${tab.url || "空"}`);
+        logger.log(`标签页创建: ID=${tabId}, URL=${tab.url || "空"}`);
       }
 
       // 如果创建时已有URL，且不是空白页或新标签页，尝试创建初始导航记录
@@ -224,7 +226,7 @@ export class NavigationManager {
         await this.handleInitialNavigation(tabId, url, parentNodeId);
       }
     } catch (error) {
-      console.error("处理标签页创建失败:", error);
+      logger.error("处理标签页创建失败:", error);
     }
   }
 
@@ -249,7 +251,7 @@ export class NavigationManager {
       }
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `标签页更新: ID=${tabId}, 标题=${changeInfo.title || "没变"}, 图标=${
             changeInfo.favIconUrl ? "已更新" : "没变"
           }`
@@ -282,7 +284,7 @@ export class NavigationManager {
       // 清理已更新的节点
       this.pendingUpdates.delete(tabId);
     } catch (error) {
-      console.error("处理标签页更新失败:", error);
+      logger.error("处理标签页更新失败:", error);
     }
   }
 
@@ -339,14 +341,14 @@ export class NavigationManager {
           });
 
           if (this.debugMode) {
-            console.log(
+            logger.log(
               `标签页激活: ID=${tabId}, 窗口=${windowId}, URL=${
                 tab.url || "未知"
               }`
             );
           }
         } catch (err) {
-          console.warn(
+          logger.warn(
             `获取标签页信息失败: ${
               err instanceof Error ? err.message : String(err)
             }`
@@ -354,7 +356,7 @@ export class NavigationManager {
         }
       }
     } catch (error) {
-      console.error("处理标签页激活失败:", error);
+      logger.error("处理标签页激活失败:", error);
     }
   }
 
@@ -383,7 +385,7 @@ export class NavigationManager {
             await this.navigationStorage.updateNode(nodeId, { isClosed: true });
           }
         } catch (e) {
-          console.warn(`更新节点关闭状态失败: ${nodeId}`, e);
+          logger.warn(`更新节点关闭状态失败: ${nodeId}`, e);
         }
       }
 
@@ -395,12 +397,12 @@ export class NavigationManager {
       this.removedTabs.add(tabId);
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `标签页关闭: ID=${tabId}, 窗口=${removeInfo.windowId}, 窗口关闭=${removeInfo.isWindowClosing}`
         );
       }
     } catch (error) {
-      console.error("处理标签页移除失败:", error);
+      logger.error("处理标签页移除失败:", error);
     }
   }
 
@@ -424,7 +426,7 @@ export class NavigationManager {
       const tabId = details.tabId;
       if (this.removedTabs.has(tabId)) {
         if (this.debugMode) {
-          console.log(`忽略已关闭标签页的导航: ${tabId}`);
+          logger.log(`忽略已关闭标签页的导航: ${tabId}`);
         }
         return;
       }
@@ -486,11 +488,11 @@ export class NavigationManager {
       }
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `导航提交: 标签页=${tabId}, URL=${url}, 类型=${navigationType}, 目标=${openTarget}`
         );
-        console.log(`  - 过渡类型: ${transitionType}`);
-        console.log(
+        logger.log(`  - 过渡类型: ${transitionType}`);
+        logger.log(
           `  - 过渡限定词: ${transitionQualifiers.join(", ") || "无"}`
         );
       }
@@ -498,7 +500,7 @@ export class NavigationManager {
       // 处理常规导航
       await this.handleRegularNavigation(details, navigationType, openTarget);
     } catch (error) {
-      console.error("处理导航提交事件失败:", error);
+      logger.error("处理导航提交事件失败:", error);
     }
   }
 
@@ -533,7 +535,7 @@ export class NavigationManager {
           parentId = pendingNav.sourceNodeId;
         }
         if (this.debugMode) {
-          console.log(
+          logger.log(
             `找到匹配的待处理导航: ${pendingNav.type}, 父节点ID: ${parentId}`
           );
         }
@@ -565,7 +567,7 @@ export class NavigationManager {
               if (sourceNodeId) {
                 parentId = sourceNodeId;
                 if (this.debugMode) {
-                  console.log(`找到JS导航的父节点: ${parentId}`);
+                  logger.log(`找到JS导航的父节点: ${parentId}`);
                 }
 
                 // 移除已使用的JS导航记录
@@ -652,7 +654,7 @@ export class NavigationManager {
           }
         }
       } catch (e) {
-        console.warn(`无法获取标签页信息用于导航记录:`, e);
+        logger.warn(`无法获取标签页信息用于导航记录:`, e);
       }
 
       // 13. 保存记录
@@ -664,14 +666,14 @@ export class NavigationManager {
       }
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `已创建导航节点: ID=${nodeId}, 父节点=${
             parentId || "无"
           }, 类型=${navigationType}`
         );
       }
     } catch (error) {
-      console.error("处理常规导航失败:", error);
+      logger.error("处理常规导航失败:", error);
     }
   }
 /**
@@ -699,14 +701,14 @@ export class NavigationManager {
       }
 
       if (this.debugMode) {
-        console.log(`导航完成: 标签页=${tabId}, URL=${url}`);
+        logger.log(`导航完成: 标签页=${tabId}, URL=${url}`);
       }
 
       // 获取节点ID
       const nodeId = await this.getNodeIdForTab(tabId, url);
       if (!nodeId) {
         if (this.debugMode) {
-          console.log(`未找到导航完成的节点ID: 标签页=${tabId}, URL=${url}`);
+          logger.log(`未找到导航完成的节点ID: 标签页=${tabId}, URL=${url}`);
         }
         return;
       }
@@ -723,7 +725,7 @@ export class NavigationManager {
       if (record && record.timestamp) {
         loadTime = Date.now() - record.timestamp;
         if (this.debugMode) {
-          console.log(`计算加载时间: ${loadTime}ms (当前时间 - 节点创建时间)`);
+          logger.log(`计算加载时间: ${loadTime}ms (当前时间 - 节点创建时间)`);
         }
       }
 
@@ -738,7 +740,7 @@ export class NavigationManager {
         "navigation_event"
       );
     } catch (error) {
-      console.error("处理导航完成失败:", error);
+      logger.error("处理导航完成失败:", error);
     }
   }
   /**
@@ -768,7 +770,7 @@ export class NavigationManager {
       const existingNodeId = await this.getNodeIdForTab(tabId, url);
       if (existingNodeId) {
         if (this.debugMode) {
-          console.log(
+          logger.log(
             `历史状态更新: 已存在节点 ${existingNodeId} 于URL=${url}`
           );
         }
@@ -789,7 +791,7 @@ export class NavigationManager {
       // 如果没有找到父节点，则忽略
       if (!parentId) {
         if (this.debugMode) {
-          console.log(
+          logger.log(
             `历史状态更新: 未找到父节点, 标签页=${tabId}, URL=${url}`
           );
         }
@@ -829,7 +831,7 @@ export class NavigationManager {
           favicon = await this.getFavicon(url, tab.favIconUrl);
         }
       } catch (e) {
-        console.warn("获取标签页信息失败:", e);
+        logger.warn("获取标签页信息失败:", e);
       }
 
       // 创建导航记录
@@ -860,12 +862,12 @@ export class NavigationManager {
       await this.createNavigationEdge(parentId, nodeId, now, "javascript");
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `历史状态更新: 已创建节点 ${nodeId}, 父节点=${parentId}, URL=${url}`
         );
       }
     } catch (error) {
-      console.error("处理历史状态更新失败:", error);
+      logger.error("处理历史状态更新失败:", error);
     }
   }
 
@@ -918,7 +920,7 @@ export class NavigationManager {
           favicon = await this.getFavicon(url, tab.favIconUrl);
         }
       } catch (e) {
-        console.warn("获取标签页信息失败:", e);
+        logger.warn("获取标签页信息失败:", e);
       }
 
       // 创建导航记录
@@ -951,14 +953,14 @@ export class NavigationManager {
       }
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `已创建初始导航节点: ID=${nodeId}, 父节点=${parentNodeId || "无"}`
         );
       }
 
       return nodeId;
     } catch (error) {
-      console.error("处理初始导航失败:", error);
+      logger.error("处理初始导航失败:", error);
       return null;
     }
   }
@@ -1015,7 +1017,7 @@ export class NavigationManager {
     }
 
     if (removedCount > 0 && this.debugMode) {
-      console.log(`已清理 ${removedCount} 个过期的待处理导航`);
+      logger.log(`已清理 ${removedCount} 个过期的待处理导航`);
     }
   }
 
@@ -1046,12 +1048,12 @@ export class NavigationManager {
       }
 
       if (totalRemoved > 0 && this.debugMode) {
-        console.log(
+        logger.log(
           `自动清理完成，从待更新列表中移除了 ${totalRemoved} 个无效节点`
         );
       }
     } catch (error) {
-      console.error("清理待更新列表失败:", error);
+      logger.error("清理待更新列表失败:", error);
     }
   }
 
@@ -1102,15 +1104,15 @@ export class NavigationManager {
       
       // 记录到控制台
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `记录链接点击: 从[${sourceUrl}](${sourcePageId}) -> 到[${targetUrl}], ` +
           `文本="${anchorText}", 新标签页=${isNewTab}`
         );
       } else {
-        console.log(`记录链接点击: ${sourceUrl} -> ${targetUrl}`);
+        logger.log(`记录链接点击: ${sourceUrl} -> ${targetUrl}`);
       }
     } catch (error) {
-      console.error('处理链接点击失败:', error);
+      logger.error('处理链接点击失败:', error);
     }
   }
 
@@ -1143,7 +1145,7 @@ export class NavigationManager {
     this.pendingNavigations.get(key)?.push(pendingNav);
 
     if (this.debugMode) {
-      console.log(
+      logger.log(
         `表单提交: ${formInfo.sourceUrl} -> ${formInfo.formAction} (源节点: ${formInfo.sourcePageId})`
       );
     }
@@ -1200,7 +1202,7 @@ export class NavigationManager {
     this.pendingNavigations.get(targetUrl)?.push(pendingNav);
 
     if (this.debugMode) {
-      console.log(
+      logger.log(
         `JS导航: ${message.sourceUrl} -> ${targetUrl} (源节点: ${message.sourcePageId})`
       );
     }
@@ -1242,7 +1244,7 @@ export class NavigationManager {
               const originalUrl = new URL(details.url);
               redirectUrl = `${originalUrl.origin}${redirectUrl}`;
             } catch (e) {
-              console.warn(`无法将相对路径转换为绝对URL: ${redirectUrl}`);
+              logger.warn(`无法将相对路径转换为绝对URL: ${redirectUrl}`);
             }
           }
         }
@@ -1251,7 +1253,7 @@ export class NavigationManager {
       // 如果找不到重定向URL，退出
       if (!redirectUrl) {
         if (this.debugMode) {
-          console.log(`重定向事件没有目标URL: ${details.url}, 状态码: ${details.statusCode}`);
+          logger.log(`重定向事件没有目标URL: ${details.url}, 状态码: ${details.statusCode}`);
         }
         return;
       }
@@ -1266,7 +1268,7 @@ export class NavigationManager {
       const targetUrl = redirectUrl;
 
       if (this.debugMode) {
-        console.log(
+        logger.log(
           `重定向: 标签页=${tabId}, 从=${sourceUrl}, 到=${targetUrl}, 状态码=${details.statusCode}`
         );
       }
@@ -1274,7 +1276,7 @@ export class NavigationManager {
       // 其余代码保持不变...
       // ... 处理重定向节点的创建 ...
     } catch (error) {
-      console.error("处理重定向事件失败:", error);
+      logger.error("处理重定向事件失败:", error);
     }
   }
 
@@ -1294,7 +1296,7 @@ export class NavigationManager {
     source: "chrome_api" | "content_script" | "navigation_event" = "chrome_api"
   ): Promise<void> {
     if (!nodeId) {
-      console.warn("更新元数据失败: 无效的节点ID");
+      logger.warn("更新元数据失败: 无效的节点ID");
       return;
     }
 
@@ -1302,7 +1304,7 @@ export class NavigationManager {
       // 获取现有记录
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) {
-        console.warn(`未找到节点 ${nodeId}，无法更新元数据`);
+        logger.warn(`未找到节点 ${nodeId}，无法更新元数据`);
         return;
       }
 
@@ -1331,7 +1333,7 @@ export class NavigationManager {
         }
 
         if (updates.title && this.debugMode) {
-          console.log(`更新标题: ${record.title || "无"} -> ${updates.title}`);
+          logger.log(`更新标题: ${record.title || "无"} -> ${updates.title}`);
         }
       }
 
@@ -1346,7 +1348,7 @@ export class NavigationManager {
         if (useFavicon) {
           updates.favicon = metadata.favicon;
           if (this.debugMode) {
-            console.log(
+            logger.log(
               `更新Favicon: ${record.favicon ? "已有图标" : "无图标"} -> 新图标`
             );
           }
@@ -1365,7 +1367,7 @@ export class NavigationManager {
             if (!(await this.wouldCreateCycle(potentialParentId, nodeId))) {
               updates.parentId = potentialParentId;
               if (this.debugMode) {
-                console.log(`基于引用信息更新父节点: ${potentialParentId}`);
+                logger.log(`基于引用信息更新父节点: ${potentialParentId}`);
               }
 
               // 创建导航边
@@ -1377,7 +1379,7 @@ export class NavigationManager {
               );
             } else {
               if (this.debugMode) {
-                console.warn(
+                logger.warn(
                   `基于引用信息的父节点 ${potentialParentId} -> ${nodeId} 会导致循环，已阻止`
                 );
               }
@@ -1404,11 +1406,11 @@ export class NavigationManager {
       if (Object.keys(updates).length > 0) {
         await this.navigationStorage.updateNode(nodeId, updates);
         if (this.debugMode) {
-          console.log(`已更新节点[${nodeId}]元数据，来源:${source}`);
+          logger.log(`已更新节点[${nodeId}]元数据，来源:${source}`);
         }
       }
     } catch (error) {
-      console.error("更新节点元数据失败:", error);
+      logger.error("更新节点元数据失败:", error);
     }
   }
 
@@ -1433,7 +1435,7 @@ export class NavigationManager {
 
     if (!nodeId) {
       if (this.debugMode) {
-        console.log(`未找到标签页${tabId}的节点ID: ${url}，不更新元数据`);
+        logger.log(`未找到标签页${tabId}的节点ID: ${url}，不更新元数据`);
       }
       return null;
     }
@@ -1553,7 +1555,7 @@ export class NavigationManager {
 
       return matchingRecord?.id || null;
     } catch (error) {
-      console.error("通过URL查找节点失败:", error);
+      logger.error("通过URL查找节点失败:", error);
       return null;
     }
   }
@@ -1579,7 +1581,7 @@ export class NavigationManager {
 
       return this.isSameUrl(record.url, url);
     } catch (e) {
-      console.warn(`检查节点URL匹配失败: ${nodeId}`, e);
+      logger.warn(`检查节点URL匹配失败: ${nodeId}`, e);
       return false;
     }
   }
@@ -1657,13 +1659,13 @@ export class NavigationManager {
         });
 
         if (this.debugMode) {
-          console.log(
+          logger.log(
             `更新标签页[${tabId}]活跃时间: +${elapsedTime}ms, 节点=${lastNodeId}`
           );
         }
       }
     } catch (error) {
-      console.warn("更新标签页活跃时间失败:", error);
+      logger.warn("更新标签页活跃时间失败:", error);
     }
   }
 
@@ -1911,7 +1913,7 @@ export class NavigationManager {
       
       return nodes.length;
     } catch (error) {
-      console.error('获取记录数量失败:', error);
+      logger.error('获取记录数量失败:', error);
       return 0;
     }
   }
@@ -1947,7 +1949,7 @@ export class NavigationManager {
 
       return activeNodes;
     } catch (error) {
-      console.error("获取活跃节点失败:", error);
+      logger.error("获取活跃节点失败:", error);
       return [];
     }
   }
@@ -1969,7 +1971,7 @@ export class NavigationManager {
 
       return records;
     } catch (error) {
-      console.error(`获取标签页[${tabId}]历史失败:`, error);
+      logger.error(`获取标签页[${tabId}]历史失败:`, error);
       return [];
     }
   }
@@ -1999,13 +2001,13 @@ export class NavigationManager {
           });
           
           if (node && node.id) {
-            console.log(`为URL分配节点ID: ${url} -> ${node.id}`);
+            logger.log(`为URL分配节点ID: ${url} -> ${node.id}`);
             ctx.success({ nodeId: node.id });
           } else {
             ctx.error('无法创建节点');
           }
         } catch (error) {
-          console.error('处理getNodeId失败:', error);
+          logger.error('处理getNodeId失败:', error);
           ctx.error(`获取节点ID失败: ${error instanceof Error ? error.message : String(error)}`);
         }
       };
@@ -2033,7 +2035,7 @@ export class NavigationManager {
       }
       
       if (this.debugMode) {
-        console.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
+        logger.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
       }
       
       this.updatePageMetadata(tabId, {
@@ -2150,7 +2152,7 @@ export class NavigationManager {
       const ctx = service.createMessageContext(message, sender, sendResponse);
       
       if (this.debugMode) {
-        console.log(
+        logger.log(
           "收到页面活动消息:",
           message.source || "unknown source",
           message.timestamp
@@ -2188,7 +2190,7 @@ export class NavigationManager {
           
           ctx.success();
         } catch (error) {
-          console.error('处理链接点击失败:', error);
+          logger.error('处理链接点击失败:', error);
           ctx.error(`处理链接点击失败: ${error instanceof Error ? error.message : String(error)}`);
         }
         return false;
@@ -2221,7 +2223,7 @@ export class NavigationManager {
         this.handleFormSubmitted(tabId, message.formInfo);
         ctx.success();
       } catch (error) {
-        console.error('处理表单提交失败:', error);
+        logger.error('处理表单提交失败:', error);
         ctx.error(`处理表单提交失败: ${error instanceof Error ? error.message : String(error)}`);
       }
       return false; // 同步响应
@@ -2244,167 +2246,12 @@ export class NavigationManager {
         this.handleJsNavigation(tabId, message);
         return ctx.success();
       } catch (error) {
-        console.error('处理JS导航失败:', error);
+        logger.error('处理JS导航失败:', error);
         return ctx.error(`处理JS导航失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
-    
-    // 获取会话列表请求
-    service.registerHandler('getSessions', (
-      message: BackgroundMessages.GetSessionsRequest,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: BackgroundResponses.GetSessionsResponse) => void
-    ) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
-      
-      this.sessionStorage.getSessions()
-        .then(sessions => {
-          // 创建简化的会话摘要
-          const sessionSummaries = Array.isArray(sessions) ? sessions.map(session => ({
-            id: session.id,
-            title: session.title || session.id,
-            startTime: session.startTime,
-            endTime: session.endTime || 0,
-            recordCount: session.records ? Object.keys(session.records).length : 0
-          })) : [];
-          
-          return ctx.success({ sessions: sessionSummaries });
-        })
-        .catch(error => {
-          console.error('获取会话列表失败:', error);
-          return ctx.error(String(error));
-        });
-      
-      return true; // 异步响应
-    });
-    
-    // 获取会话详情请求
-    service.registerHandler('getSessionDetails', (
-      message: BackgroundMessages.GetSessionDetailsRequest,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: BackgroundResponses.GetSessionDetailsResponse) => void
-    ) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
-      
-      if (!message.sessionId) {
-        return ctx.error('缺少会话ID参数');
-      }
-      
-      this.sessionStorage.getSession(message.sessionId)
-        .then(async session => {
-          if (!session) {
-            return ctx.error(`未找到会话: ${message.sessionId}`);
-          }
-          
-          // 获取导航图谱数据
-          try {
-            const graphData = await this.navigationStorage.getSessionGraph(message.sessionId);
-            
-            // 构造完整响应
-            const completeSession = {
-              ...session,              
-              // 添加完整节点和边数据
-              records: graphData.nodes,
-              edges: graphData.edges
-            };
-            
-            return ctx.success({ session: completeSession });
-          } catch (error) {
-            console.error(`获取会话 ${message.sessionId} 的节点和边数据失败:`, error);
-            // 如果图谱数据获取失败，仍然返回基本会话信息
-            return ctx.success({ session });
-          }
-        })
-        .catch(error => {
-          console.error('获取会话详情失败:', error);
-          return ctx.error(String(error));
-        });
-      
-      return true; // 异步响应
-    });
-    
-    // 获取导航树请求
-    service.registerHandler('getNavigationTree', (
-      message: BackgroundMessages.GetNavigationTreeRequest,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: BackgroundResponses.GetNavigationTreeResponse) => void
-    ) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
-      
-      const options = message.options || {};
-      if (this.debugMode) {
-        console.log('获取导航树数据...', options);
-      }
-      
-      this.navigationStorage.getSessionGraph(this.currentSessionId)
-      .then(treeData => {
-        // 检查是否需要提供上次更新时间（用于增量更新）
-        if (options && options.lastUpdate) {
-          // 如果客户端提供了上次更新时间，标记在此时间后更新的节点
-          const lastUpdateTime = parseInt(options.lastUpdate);
-          if (!isNaN(lastUpdateTime)) {
-            this.markUpdatedNodes(treeData, lastUpdateTime);
-          }
-        }
-        
-        return ctx.success({
-          data: {
-            nodes: treeData.nodes,
-            edges: treeData.edges
-          },
-          sessionId: this.currentSessionId,
-          timestamp: Date.now() // 添加当前时间戳，客户端用于增量更新
-        });
-      })
-      .catch(error => {
-        console.error('获取导航树失败:', error);
-        return ctx.error(String(error));
-      });
-      
-      return true; // 异步响应
-    });
-    
-    // 清除所有记录请求
-    service.registerHandler('clearAllRecords', (
-      message: BackgroundMessages.ClearAllRecordsRequest,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response: BackgroundResponses.ClearAllRecordsResponse) => void
-    ) => {
-      const ctx = service.createMessageContext(message, sender, sendResponse);
-      
-      // 获取当前会话并清空其相关记录
-      this.sessionStorage.getCurrentSession()
-        .then(session => {
-          if (!session) {
-            return Promise.reject('无法获取当前会话');
-          }
-          //
-          return this.sessionStorage.clearSessionData(session.id)
-            .then(() => {
-              // 重置导航管理器内部状态
-              this.resetNavigationState();
-              
-              // 更新会话统计信息（如有必要）
-              return this.sessionStorage.updateSession(session.id, { 
-                nodeCount: 0 
-              });
-            });
-        })
-        .then(() => {
-          console.log('清空记录成功');
-          return ctx.success();
-        })
-        .catch(error => {
-          console.error('清空记录失败:', error);
-          return ctx.error(String(error));
-        });
-      
-      return true; // 异步响应
-    });
-    
-    console.log('导航管理器消息处理程序已注册');
   }
-    /**
+  /**
    * 获取或创建URL对应的节点
    * 如果节点已存在则返回现有节点，否则创建新节点
    */
@@ -2498,12 +2345,12 @@ export class NavigationManager {
       }
       
       if (this.debugMode) {
-        console.log(`创建新节点: ID=${nodeId}, URL=${url}, 父节点=${parentId || "无"}`);
+        logger.log(`创建新节点: ID=${nodeId}, URL=${url}, 父节点=${parentId || "无"}`);
       }
       
       return { id: nodeId, isNew: true };
     } catch (error) {
-      console.error("获取或创建节点失败:", error);
+      logger.error("获取或创建节点失败:", error);
       return null;
     }
   }
@@ -2545,6 +2392,6 @@ export class NavigationManager {
     this.pendingNavigations.clear();
     this.pendingJsNavigations.clear();
     
-    console.log('已重置导航管理器内部状态');
+    logger.log('已重置导航管理器内部状态');
   }
 }

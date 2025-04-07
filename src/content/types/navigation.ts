@@ -2,6 +2,9 @@
  * 导航图谱公共类型定义
  */
 
+import { FilterStates } from '../visualizer/ui/FilterConfig.js';
+import { SessionDetails } from './session.js';
+
 // 定义节点接口
 export interface NavNode {
   id: string;
@@ -67,23 +70,35 @@ export interface Visualizer {
   statusBar?: HTMLElement;
   
   // 视图相关
-  currentView?: string;
+  currentView: string;
   currentTransform?: {x: number, y: number, k: number};
   svg?: any;
   zoom?: any;
   container?: HTMLElement | any;
 
   // 会话相关
-  currentSession?: {startTime: number};
+  currentSession?: SessionDetails
   
+  // 节点和边数据
+  nodes: NavNode[];
+  edges: NavLink[];
+
   // 其他必要属性
   tabId?: string;
   width?: number;
   height?: number;
+  filters: FilterStates;
   
   // 常用方法
-  renderVisualization(): void;
+  refreshVisualization(): void;
   showNodeDetails(data: any): void;
   switchView(viewName: string): void;
   updateStatusBar(): void;
+  isTrackingPage(node: NavNode): boolean;
+
+  // 添加筛选器相关方法
+  updateFilter(filterId: string, value: boolean): void;
+  applyFilters(): void;
+  updateData(data: any): void;
+  getFilterUrlParam(): string;
 }

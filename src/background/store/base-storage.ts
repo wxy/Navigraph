@@ -1,4 +1,6 @@
-// src/background/lib/store/base-storage.ts
+import { Logger } from '../../lib/utils/logger.js';
+const logger = new Logger('BaseStorage');
+
 export abstract class BaseStorage {
   protected initialized = false;
   
