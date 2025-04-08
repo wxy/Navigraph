@@ -300,6 +300,7 @@ export class NodeDetails {
    */
   private formatNavigationType(type: string): string {
     const typeMap: Record<string, string> = {
+      initial: "外部打开",
       link_click: "链接点击",
       address_bar: "地址栏输入",
       form_submit: "表单提交",
