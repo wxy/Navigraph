@@ -58,7 +58,7 @@ export class NavigationEventHandler {
     private edgeTracker: EdgeTracker,
     private pendingNavigationTracker: PendingNavigationTracker,
     private navigationStorage: NavigationStorage,
-    private currentSessionId: string,
+    private currentSessionId: string
   ) {
     // 预绑定所有事件处理方法
     this.boundHandlers = {
@@ -478,7 +478,6 @@ export class NavigationEventHandler {
       // 检查是否已有相同URL的节点
       const existingNodeId = await this.nodeTracker.getNodeIdForTab(tabId, url);
       if (existingNodeId) {
-
         // 更新现有节点的访问时间和计数
         const now = Date.now();
         await this.navigationStorage.updateNode(existingNodeId, {
@@ -630,8 +629,35 @@ export class NavigationEventHandler {
       const sourceUrl = details.url;
       const targetUrl = redirectUrl;
 
-      // 其余代码保持不变...
-      // ... 处理重定向节点的创建 ...
+      // 添加待处理导航记录，使得onCommitted事件能够使用这些信息
+      // 1. 尝试找到源URL对应的节点
+      const sourceNodeId = await this.nodeTracker.getNodeIdForTab(
+        tabId,
+        sourceUrl
+      );
+
+      // 2. 添加重定向记录，让onCommitted事件处理时能够检测到
+      if (sourceNodeId) {
+        // 添加到待处理导航中
+        this.pendingNavigationTracker.addRedirectNavigation({
+          sourceNodeId,
+          sourceUrl,
+          targetUrl,
+          tabId,
+          timestamp: Date.now(),
+        });
+      } else {
+        // 如果没有找到源节点，仍然记录重定向信息，但不包含源节点ID
+        this.pendingNavigationTracker.addRedirectNavigation({
+          sourceUrl,
+          targetUrl,
+          tabId,
+          timestamp: Date.now(),
+        });
+      }
+
+      // 重定向事件本身并不创建节点，而是记录信息供onCommitted事件使用
+      // 在onCommitted事件中，会根据找到的待处理导航信息完成节点和边的创建
     } catch (error) {
       logger.error("处理重定向事件失败:", error);
     }
@@ -884,7 +910,6 @@ export class NavigationEventHandler {
           sessionId: this.currentSessionId,
         });
       }
-
     } catch (error) {
       logger.error("处理常规导航失败:", error);
     }

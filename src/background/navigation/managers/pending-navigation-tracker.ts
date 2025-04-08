@@ -144,6 +144,36 @@ export class PendingNavigationTracker {
   }
   
   /**
+   * 添加重定向导航记录
+   * 记录HTTP重定向信息，供后续导航事件使用
+   */
+  public addRedirectNavigation(redirectInfo: {
+    sourceNodeId?: string; // 可选的源节点ID
+    sourceUrl: string;
+    targetUrl: string;
+    tabId: number;
+    timestamp: number;
+  }): void {
+    // 添加到待处理导航记录中
+    const expiresAt = redirectInfo.timestamp + this.expirationTime;
+    const pendingNav: PendingNavigation = {
+      type: "redirect",
+      sourceNodeId: redirectInfo.sourceNodeId ?? '',
+      sourceUrl: redirectInfo.sourceUrl,
+      targetUrl: redirectInfo.targetUrl,
+      sourceTabId: redirectInfo.tabId,
+      timestamp: redirectInfo.timestamp,
+      expiresAt
+    };
+
+    this.addPendingNavigation(redirectInfo.targetUrl, pendingNav);
+
+    logger.log(
+      `添加重定向导航记录: 从 ${redirectInfo.sourceUrl} 到 ${redirectInfo.targetUrl}, 标签页=${redirectInfo.tabId}`
+    );
+  }
+  
+  /**
    * 查找与URL匹配的待处理导航
    * @param url 目标URL
    * @param tabId 可选的标签页ID
