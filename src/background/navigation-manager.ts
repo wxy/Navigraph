@@ -21,6 +21,7 @@ import { UrlUtils } from './navigation/utils/url-utils.js';
 import { TabStateManager } from './navigation/managers/tab-state-manager.js';
 import { NodeTracker } from './navigation/managers/node-tracker.js';
 import { EdgeTracker } from './navigation/managers/edge-tracker.js';
+import { PendingNavigationTracker } from './navigation/managers/pending-navigation-tracker.js';
 
 const logger = new Logger('NavigationManager');
 /**
@@ -51,11 +52,8 @@ export class NavigationManager {
   // 边追踪器
   private edgeTracker: EdgeTracker;
 
-  private pendingJsNavigations = new Map<
-    number,
-    { from: string; to: string }[]
-  >(); // 标签页ID -> JS导航记录
-  private pendingNavigations = new Map<string, PendingNavigation[]>(); // URL -> 待处理导航数组
+  // 待处理导航追踪器
+  private pendingNavigationTracker: PendingNavigationTracker;
 
   // 其他状态追踪
   private expirationTime = 10000; // 待处理导航的过期时间（毫秒）
@@ -94,6 +92,11 @@ export class NavigationManager {
     this.edgeTracker = new EdgeTracker(
       this.navigationStorage,
       this.currentSessionId
+    );
+
+    // 初始化待处理导航追踪器
+    this.pendingNavigationTracker = new PendingNavigationTracker(
+      this.expirationTime
     );
   }
   /**
@@ -159,6 +162,7 @@ export class NavigationManager {
     this.debugMode = enabled;
     this.nodeTracker.setDebugMode(enabled);
     this.edgeTracker.setDebugMode(enabled);
+    this.pendingNavigationTracker.setDebugMode(enabled);
     logger.log(`导航管理器调试模式: ${enabled ? "已启用" : "已禁用"}`);
   }
   /**
@@ -404,7 +408,7 @@ export class NavigationManager {
       
       // 清理标签页相关数据
       this.nodeTracker.clearPendingUpdates(tabId);
-      this.pendingJsNavigations.delete(tabId);
+      this.pendingNavigationTracker.clearTabNavigations(tabId);
 
       if (this.debugMode) {
         logger.log(
@@ -536,7 +540,7 @@ export class NavigationManager {
       let parentId = await this.findLastNodeIdForTab(tabId);
 
       // 2. 查找待处理导航
-      const pendingNav = this.getPendingNavigationForUrl(url, tabId);
+      const pendingNav = this.pendingNavigationTracker.getPendingNavigationForUrl(url, tabId);
 
       if (pendingNav) {
         // 使用待处理导航信息设置父节点和导航类型
@@ -553,42 +557,28 @@ export class NavigationManager {
 
       // 3. 如果是JS导航，尝试找到更好的父节点
       if (navigationType === "javascript") {
-        const pendingJsNavs = this.pendingJsNavigations.get(tabId) || [];
-        if (pendingJsNavs.length > 0) {
-          // 标准化URL以便比较
-          const normalizedUrl = UrlUtils.normalizeUrl(url);
-
-          // 查找匹配的JS导航
-          for (let i = pendingJsNavs.length - 1; i >= 0; i--) {
-            const jsNav = pendingJsNavs[i];
-            const normalizedToUrl = UrlUtils.normalizeUrl(jsNav.to);
-
-            if (normalizedToUrl === normalizedUrl) {
-              // 找到匹配的JS导航，从当前标签页的节点历史中查找源节点
-              const history = this.tabStateManager.getTabHistory(tabId);
-              let sourceNodeId = null;
-              for (const id of history) {
-                if (await this.nodeTracker.isSameNodeUrl(id, jsNav.from)) {
-                  sourceNodeId = id;
-                  break;
-                }
-              }
-
-              if (sourceNodeId) {
-                parentId = sourceNodeId;
-                if (this.debugMode) {
-                  logger.log(`找到JS导航的父节点: ${parentId}`);
-                }
-
-                // 移除已使用的JS导航记录
-                pendingJsNavs.splice(i, 1);
-                break;
-              }
+        const matchResult = this.pendingNavigationTracker.findMatchingJsNavigation(tabId, url);
+        if (matchResult) {
+          const jsNav = matchResult.record;
+          // 从当前标签页的节点历史中查找源节点
+          const history = this.tabStateManager.getTabHistory(tabId);
+          let sourceNodeId = null;
+          for (const id of history) {
+            if (await this.nodeTracker.isSameNodeUrl(id, jsNav.from)) {
+              sourceNodeId = id;
+              break;
             }
           }
 
-          // 更新JS导航列表
-          this.pendingJsNavigations.set(tabId, pendingJsNavs);
+          if (sourceNodeId) {
+            parentId = sourceNodeId;
+            if (this.debugMode) {
+              logger.log(`找到JS导航的父节点: ${parentId}`);
+            }
+
+            // 移除已使用的JS导航记录
+            this.pendingNavigationTracker.removeJsNavigation(tabId, matchResult.index);
+          }
         }
       }
 
@@ -974,32 +964,10 @@ export class NavigationManager {
    */
   private cleanupExpiredNavigations(): void {
     try {
-      const now = Date.now();
-      let totalRemoved = 0;
+      const removed = this.pendingNavigationTracker.cleanupExpiredNavigations();
       
-      // 遍历所有待处理导航
-      for (const [url, navigations] of this.pendingNavigations.entries()) {
-        // 过滤出未过期的导航
-        const validNavigations = navigations.filter(nav => nav.expiresAt > now);
-        
-        // 计算已删除的数量
-        const removed = navigations.length - validNavigations.length;
-        totalRemoved += removed;
-        
-        // 如果有导航被删除，更新列表
-        if (removed > 0) {
-          if (validNavigations.length > 0) {
-            this.pendingNavigations.set(url, validNavigations);
-          } else {
-            // 如果没有有效导航，完全删除此URL的条目
-            this.pendingNavigations.delete(url);
-          }
-        }
-      }
-      
-      // 如果有导航被删除且在调试模式，记录日志
-      if (totalRemoved > 0 && this.debugMode) {
-        logger.log(`清理了 ${totalRemoved} 个过期的待处理导航记录`);
+      if (removed > 0 && this.debugMode) {
+        logger.log(`清理了 ${removed} 个过期的待处理导航记录`);
       }
     } catch (error) {
       logger.error("清理过期导航失败:", error);
@@ -1017,48 +985,7 @@ export class NavigationManager {
     timestamp: number;
   }): void {
     try {
-      const { sourcePageId, sourceUrl, targetUrl, anchorText, isNewTab, timestamp } = linkInfo;
-      
-      // 创建一个待处理的导航记录，稍后当用户访问目标URL时会自动关联
-      const expiresAt = timestamp + this.expirationTime;
-      
-      // 创建一个待处理导航记录
-      const pendingNav: PendingNavigation = {
-        type: "link_click",
-        sourceNodeId: sourcePageId,
-        sourceUrl: sourceUrl,
-        targetUrl: targetUrl,
-        data: {
-          anchorText: anchorText,
-          isNewTab: isNewTab
-        },
-        timestamp: timestamp,
-        expiresAt: expiresAt,
-        // 如果知道源标签页ID，可以从linkInfo中获取并添加
-        sourceTabId: 0 // 此处可能需要从上下文中获取tabId
-      };
-      
-      // 添加到待处理导航列表
-      const normalizedUrl = UrlUtils.normalizeUrl(targetUrl);
-      if (!this.pendingNavigations.has(normalizedUrl)) {
-        this.pendingNavigations.set(normalizedUrl, []);
-      }
-      this.pendingNavigations.get(normalizedUrl)?.push(pendingNav);
-      
-      // 如果目标是在新标签页打开，记录这个信息
-      if (isNewTab) {
-        pendingNav.isNewTab = true;
-      }
-      
-      // 记录到控制台
-      if (this.debugMode) {
-        logger.log(
-          `记录链接点击: 从[${sourceUrl}](${sourcePageId}) -> 到[${targetUrl}], ` +
-          `文本="${anchorText}", 新标签页=${isNewTab}`
-        );
-      } else {
-        logger.log(`记录链接点击: ${sourceUrl} -> ${targetUrl}`);
-      }
+      this.pendingNavigationTracker.addLinkNavigation(linkInfo);
     } catch (error) {
       logger.error('处理链接点击失败:', error);
     }
@@ -1070,32 +997,11 @@ export class NavigationManager {
    */
   public handleFormSubmitted(tabId: number, formInfo: any): void {
     if (!formInfo || !tabId) return;
-
-    const expiresAt = Date.now() + this.expirationTime;
-
-    // 生成待处理导航记录
-    const pendingNav: PendingNavigation = {
-      type: "form_submit",
-      sourceNodeId: formInfo.sourcePageId,
-      sourceTabId: tabId,
-      sourceUrl: formInfo.sourceUrl,
-      targetUrl: formInfo.formAction,
-      data: formInfo,
-      timestamp: formInfo.timestamp || Date.now(),
-      expiresAt,
-    };
-
-    // 添加到待处理列表 - 使用标签页ID作为键
-    const key = `tab:${tabId}`;
-    if (!this.pendingNavigations.has(key)) {
-      this.pendingNavigations.set(key, []);
-    }
-    this.pendingNavigations.get(key)?.push(pendingNav);
-
-    if (this.debugMode) {
-      logger.log(
-        `表单提交: ${formInfo.sourceUrl} -> ${formInfo.formAction} (源节点: ${formInfo.sourcePageId})`
-      );
+    
+    try {
+      this.pendingNavigationTracker.addFormSubmission(tabId, formInfo);
+    } catch (error) {
+      logger.error('处理表单提交失败:', error);
     }
   }
 
@@ -1105,54 +1011,16 @@ export class NavigationManager {
    */
   public handleJsNavigation(tabId: number, message: any): void {
     if (!message || !tabId) return;
-
-    // 记录JavaScript导航以用于确定父子关系
-    const jsNavRecord = {
-      from: message.sourceUrl,
-      to: message.targetUrl,
-    };
-
-    if (!this.pendingJsNavigations.has(tabId)) {
-      this.pendingJsNavigations.set(tabId, []);
-    }
-
-    // 添加到JS导航记录列表，限制大小
-    const jsNavs = this.pendingJsNavigations.get(tabId) || [];
-    jsNavs.push(jsNavRecord);
-
-    // 保持列表不超过10项
-    if (jsNavs.length > 10) {
-      jsNavs.shift();
-    }
-
-    this.pendingJsNavigations.set(tabId, jsNavs);
-
-    // 同时也加入待处理导航
-    const expiresAt = Date.now() + this.expirationTime;
-
-    // 生成待处理导航记录
-    const pendingNav: PendingNavigation = {
-      type: "javascript",
-      sourceNodeId: message.sourcePageId,
-      sourceTabId: tabId,
-      sourceUrl: message.sourceUrl,
-      targetUrl: message.targetUrl,
-      data: message,
-      timestamp: message.timestamp || Date.now(),
-      expiresAt,
-    };
-
-    // 添加到待处理列表
-    const targetUrl = UrlUtils.normalizeUrl(message.targetUrl);
-    if (!this.pendingNavigations.has(targetUrl)) {
-      this.pendingNavigations.set(targetUrl, []);
-    }
-    this.pendingNavigations.get(targetUrl)?.push(pendingNav);
-
-    if (this.debugMode) {
-      logger.log(
-        `JS导航: ${message.sourceUrl} -> ${targetUrl} (源节点: ${message.sourcePageId})`
-      );
+    
+    try {
+      this.pendingNavigationTracker.addJsNavigation(tabId, {
+        sourcePageId: message.sourcePageId,
+        sourceUrl: message.sourceUrl,
+        targetUrl: message.targetUrl,
+        timestamp: message.timestamp
+      });
+    } catch (error) {
+      logger.error('处理JS导航失败:', error);
     }
   }
 
@@ -1265,61 +1133,6 @@ export class NavigationManager {
     } catch (error) {
       logger.warn("更新标签页活跃时间失败:", error);
     }
-  }
-
-  /**
-   * 查找与URL匹配的待处理导航
-   */
-  private getPendingNavigationForUrl(
-    url: string,
-    tabId?: number
-  ): PendingNavigation | null {
-    // 标准化URL
-    const normalizedUrl = UrlUtils.normalizeUrl(url);
-
-    // 1. 首先尝试通过URL精确匹配
-    if (this.pendingNavigations.has(normalizedUrl)) {
-      const navigations = this.pendingNavigations.get(normalizedUrl) || [];
-
-      // 找到最近的尚未过期的导航
-      const now = Date.now();
-      const foundNavigation = navigations.find(
-        (nav) =>
-          nav.expiresAt > now &&
-          (!tabId ||
-            nav.isNewTab ||
-            nav.sourceTabId === tabId ||
-            nav.targetTabId === tabId)
-      );
-
-      // 如果找到匹配项，从列表中移除
-      if (foundNavigation) {
-        const index = navigations.indexOf(foundNavigation);
-        navigations.splice(index, 1);
-        return foundNavigation;
-      }
-    }
-
-    // 2. 如果提供了tabId，尝试通过tabId匹配(适用于表单提交)
-    if (tabId) {
-      const tabKey = `tab:${tabId}`;
-      if (this.pendingNavigations.has(tabKey)) {
-        const navigations = this.pendingNavigations.get(tabKey) || [];
-
-        // 找到最近的尚未过期的导航
-        const now = Date.now();
-        const foundNavigation = navigations.find((nav) => nav.expiresAt > now);
-
-        // 如果找到匹配项，从列表中移除
-        if (foundNavigation) {
-          const index = navigations.indexOf(foundNavigation);
-          navigations.splice(index, 1);
-          return foundNavigation;
-        }
-      }
-    }
-
-    return null;
   }
 
   /**
@@ -1721,9 +1534,8 @@ export class NavigationManager {
     // 重置边追踪器
     this.edgeTracker.reset();
     
-    // 清空待处理导航
-    this.pendingNavigations.clear();
-    this.pendingJsNavigations.clear();
+    // 重置待处理导航追踪器
+    this.pendingNavigationTracker.reset();
     
     logger.log('已重置导航管理器内部状态');
   }
