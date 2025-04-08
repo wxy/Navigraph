@@ -20,9 +20,6 @@ export class EdgeTracker {
   // 导航序列号
   private navigationSequence = 0;
   
-  // 调试模式
-  private debugMode = false;
-  
   /**
    * 构造函数
    * @param navigationStorage 导航存储实例
@@ -36,14 +33,6 @@ export class EdgeTracker {
     this.sessionId = sessionId;
     
     logger.log('边追踪器初始化完成');
-  }
-  
-  /**
-   * 设置调试模式
-   * @param enabled 是否启用调试模式
-   */
-  setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
   }
   
   /**
@@ -84,10 +73,6 @@ export class EdgeTracker {
 
     // 保存边
     await this.navigationStorage.saveEdge(edge);
-    
-    if (this.debugMode) {
-      logger.log(`创建导航边: ${sourceId} -> ${targetId}, 类型=${navigationType}`);
-    }
 
     return edge;
   }

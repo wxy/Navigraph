@@ -28,9 +28,6 @@ export class PendingNavigationTracker {
   /** 导航记录过期时间(毫秒) */
   private expirationTime = 10000; // 默认10秒
   
-  /** 是否启用调试模式 */
-  private debugMode = false;
-  
   /**
    * 构造函数
    * @param expirationTime 导航记录过期时间(毫秒)，默认为10秒
@@ -41,14 +38,6 @@ export class PendingNavigationTracker {
     }
     
     logger.log('待处理导航追踪器初始化完成');
-  }
-  
-  /**
-   * 设置调试模式
-   * @param enabled 是否启用调试模式
-   */
-  setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
   }
   
   /**
@@ -83,13 +72,6 @@ export class PendingNavigationTracker {
     
     // 添加到待处理导航列表
     this.addPendingNavigation(targetUrl, pendingNav);
-    
-    if (this.debugMode) {
-      logger.log(
-        `记录链接点击: 从[${sourceUrl}](${sourcePageId}) -> 到[${targetUrl}], ` +
-        `文本="${anchorText}", 新标签页=${isNewTab}`
-      );
-    }
   }
   
   /**
@@ -117,12 +99,6 @@ export class PendingNavigationTracker {
     // 添加到待处理列表 - 使用标签页ID作为键
     const key = `tab:${tabId}`;
     this.addPendingNavigation(key, pendingNav);
-
-    if (this.debugMode) {
-      logger.log(
-        `表单提交: ${formInfo.sourceUrl} -> ${formInfo.formAction} (源节点: ${formInfo.sourcePageId})`
-      );
-    }
   }
   
   /**
@@ -165,12 +141,6 @@ export class PendingNavigationTracker {
 
     // 添加到待处理列表
     this.addPendingNavigation(jsNavInfo.targetUrl, pendingNav);
-
-    if (this.debugMode) {
-      logger.log(
-        `JS导航: ${jsNavInfo.sourceUrl} -> ${jsNavInfo.targetUrl} (源节点: ${jsNavInfo.sourcePageId})`
-      );
-    }
   }
   
   /**
@@ -295,10 +265,6 @@ export class PendingNavigationTracker {
     if (index >= 0 && index < pendingJsNavs.length) {
       pendingJsNavs.splice(index, 1);
       this.pendingJsNavigations.set(tabId, pendingJsNavs);
-      
-      if (this.debugMode) {
-        logger.log(`已移除标签页[${tabId}]的JS导航记录，索引: ${index}`);
-      }
     }
   }
   
@@ -332,7 +298,7 @@ export class PendingNavigationTracker {
       }
       
       // 如果有导航被删除且在调试模式，记录日志
-      if (totalRemoved > 0 && this.debugMode) {
+      if (totalRemoved > 0) {
         logger.log(`清理了 ${totalRemoved} 个过期的待处理导航记录`);
       }
       
@@ -386,10 +352,6 @@ export class PendingNavigationTracker {
     
     // 还可以遍历其他待处理导航并删除与此标签页相关的记录
     // 但这可能比较耗时，如果数量不多可以在定期清理中处理
-    
-    if (this.debugMode) {
-      logger.log(`已清理标签页[${tabId}]的所有导航记录`);
-    }
   }
   
   /**

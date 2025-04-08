@@ -28,9 +28,6 @@ export class NodeTracker {
     { nodeId: string; timestamp: number }
   >(); // URL -> {节点ID, 时间戳}
 
-  // 调试模式
-  private debugMode = false;
-
   /**
    * 构造函数
    * @param navigationStorage 导航存储实例
@@ -47,14 +44,6 @@ export class NodeTracker {
     this.sessionId = sessionId;
 
     logger.log("节点追踪器初始化完成");
-  }
-
-  /**
-   * 设置调试模式
-   * @param enabled 是否启用调试模式
-   */
-  setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
   }
 
   /**
@@ -142,12 +131,6 @@ export class NodeTracker {
 
       // 保存记录
       await this.navigationStorage.saveNode(record);
-
-      if (this.debugMode) {
-        logger.log(
-          `创建新节点: ID=${nodeId}, URL=${url}, 父节点=${parentId || "无"}`
-        );
-      }
 
       return nodeId;
     } catch (error) {
@@ -261,12 +244,6 @@ export class NodeTracker {
       // 9. 保存记录
       await this.navigationStorage.saveNode(record);
 
-      if (this.debugMode) {
-        logger.log(
-          `创建新节点: ID=${nodeId}, URL=${url}, 父节点=${parentId || "无"}`
-        );
-      }
-
       return { id: nodeId, isNew: true };
     } catch (error) {
       logger.error("获取或创建节点失败:", error);
@@ -327,7 +304,7 @@ export class NodeTracker {
           updatedFields.push("title");
         }
 
-        if (updates.title && this.debugMode) {
+        if (updates.title) {
           logger.log(`更新标题: ${record.title || "无"} -> ${updates.title}`);
         }
       }
@@ -343,12 +320,6 @@ export class NodeTracker {
         if (useFavicon) {
           updates.favicon = metadata.favicon;
           updatedFields.push("favicon");
-
-          if (this.debugMode) {
-            logger.log(
-              `更新Favicon: ${record.favicon ? "已有图标" : "无图标"} -> 新图标`
-            );
-          }
         }
       }
 
@@ -386,14 +357,6 @@ export class NodeTracker {
       // 应用更新
       if (Object.keys(updates).length > 0) {
         await this.navigationStorage.updateNode(nodeId, updates);
-
-        if (this.debugMode) {
-          logger.log(
-            `已更新节点[${nodeId}]元数据: ${updatedFields.join(
-              ", "
-            )}, 来源:${source}`
-          );
-        }
 
         return {
           success: true,
@@ -436,9 +399,7 @@ export class NodeTracker {
     const nodeId = await this.getNodeIdForTab(tabId, url);
 
     if (!nodeId) {
-      if (this.debugMode) {
-        logger.log(`未找到标签页${tabId}的节点ID: ${url}，不更新元数据`);
-      }
+      logger.log(`未找到标签页${tabId}的节点ID: ${url}，不更新元数据`);
       return null;
     }
 
@@ -650,11 +611,9 @@ export class NodeTracker {
   /**
    * 处理导航完成事件
    * @param details 导航完成详情
-   * @param debugMode 是否启用调试模式
    */
   public async handleNavigationCompleted(
-    details: ExtendedCompletedDetails,
-    debugMode: boolean = false
+    details: ExtendedCompletedDetails
   ): Promise<void> {
     try {
       const tabId = details.tabId;
@@ -663,9 +622,6 @@ export class NodeTracker {
       // 获取节点ID
       const nodeId = await this.getNodeIdForTab(tabId, url);
       if (!nodeId) {
-        if (debugMode) {
-          logger.log(`未找到导航完成的节点ID: 标签页=${tabId}, URL=${url}`);
-        }
         return;
       }
 
@@ -680,9 +636,6 @@ export class NodeTracker {
       let loadTime: number | undefined = undefined;
       if (record && record.timestamp) {
         loadTime = Date.now() - record.timestamp;
-        if (debugMode) {
-          logger.log(`计算加载时间: ${loadTime}ms (当前时间 - 节点创建时间)`);
-        }
       }
 
       // 更新元数据
@@ -776,7 +729,7 @@ export class NodeTracker {
         }
       }
 
-      if (totalRemoved > 0 && this.debugMode) {
+      if (totalRemoved > 0) {
         logger.log(`清理缓存：移除了 ${totalRemoved} 个无效待更新节点`);
       }
     } catch (error) {

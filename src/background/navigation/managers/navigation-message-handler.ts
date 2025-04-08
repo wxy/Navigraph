@@ -23,15 +23,7 @@ export class NavigationMessageHandler {
     private messageService: BackgroundMessageService,
     private nodeTracker: NodeTracker,
     private navigationEventHandler: NavigationEventHandler,
-    private debugMode: boolean = false
   ) {}
-
-  /**
-   * 设置调试模式
-   */
-  public setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
-  }
 
   /**
    * 注册所有消息处理程序
@@ -90,10 +82,6 @@ export class NavigationMessageHandler {
       
       if (!tabId || !url) {
         return ctx.error('缺少必要的页面信息');
-      }
-      
-      if (this.debugMode) {
-        logger.log(`处理页面加载事件: 标签页=${tabId}, URL=${url}`);
       }
       
       this.nodeTracker.updatePageMetadata(tabId, {
@@ -208,16 +196,6 @@ export class NavigationMessageHandler {
       sendResponse: (response: BackgroundResponses.PageActivityResponse) => void
     ) => {
       const ctx = this.messageService.createMessageContext(message, sender, sendResponse);
-      
-      if (this.debugMode) {
-        logger.log(
-          "收到页面活动消息:",
-          message.source || "unknown source",
-          message.timestamp
-            ? new Date(message.timestamp).toLocaleTimeString()
-            : "unknown time"
-        );
-      }
       
       // 这里可以添加更多处理逻辑，例如更新节点的最后访问时间
       

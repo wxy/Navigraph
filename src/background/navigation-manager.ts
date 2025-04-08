@@ -1,23 +1,12 @@
 import { Logger } from '../lib/utils/logger.js';
 import { NavigationStorage } from './store/navigation-storage.js';
 import { SessionStorage } from './store/session-storage.js';
-import { IdGenerator } from './lib/id-generator.js';
 import { BackgroundMessageService } from './messaging/bg-message-service.js';
-import { BackgroundMessages, BackgroundResponses } from '../types/messages/background.js';
 import { 
-  NavigationType,
-  OpenTarget,
   BrowsingSession,
-  ExtendedCommittedDetails, 
-  ExtendedCompletedDetails,
-  ExtendedTransitionDetails,
-  TabState,
-  PendingNavigation,
-  NavNode,
-  NavLink
+  NavNode
 } from '../types/session-types.js';
 
-import { UrlUtils } from './navigation/utils/url-utils.js';
 import { TabStateManager } from './navigation/managers/tab-state-manager.js';
 import { NodeTracker } from './navigation/managers/node-tracker.js';
 import { EdgeTracker } from './navigation/managers/edge-tracker.js';
@@ -26,87 +15,74 @@ import { NavigationEventHandler } from './navigation/managers/navigation-event-h
 import { NavigationMessageHandler } from './navigation/managers/navigation-message-handler.js';
 
 const logger = new Logger('NavigationManager');
+
 /**
- * 导航管理器 - 负责创建和管理导航节点、事件和关系
-* 
- * 该类处理：
- * 1. 通过Chrome浏览器API监听导航事件并创建节点
- * 2. 处理从内容脚本收到的用户交互事件（链接点击、表单提交等）
- * 3. 管理节点间的关系和导航历史
- * 4. 提供导航数据查询和更新接口
+ * 导航管理器 - 协调各组件管理导航节点、事件和关系
+ * 
+ * 该类作为中央协调器，管理和协调下列子组件：
+ * 1. NavigationEventHandler - 处理Chrome API导航事件
+ * 2. NavigationMessageHandler - 处理内容脚本消息
+ * 3. NodeTracker - 管理节点创建和更新
+ * 4. EdgeTracker - 管理节点间的关系
+ * 5. TabStateManager - 管理标签页状态
+ * 6. PendingNavigationTracker - 管理待处理导航
  */
 export class NavigationManager {
-  // 消息服务实例
-  private messageService: BackgroundMessageService;
   // 存储引用
   private navigationStorage: NavigationStorage;
   private sessionStorage: SessionStorage;
 
-  // 会话ID - 只存储当前使用的会话ID
+  // 会话ID
   private currentSessionId: string = '';
 
-  // 标签页状态管理器
+  // 组件实例
   private tabStateManager: TabStateManager;
-
-  // 节点追踪器
   private nodeTracker: NodeTracker;
-
-  // 边追踪器
   private edgeTracker: EdgeTracker;
-
-  // 待处理导航追踪器
   private pendingNavigationTracker: PendingNavigationTracker;
-
-  // 导航事件处理器
   private navigationEventHandler: NavigationEventHandler;
-
-  // 导航消息处理器
   private navigationMessageHandler: NavigationMessageHandler;
 
-  // 其他状态追踪
+  // 配置参数
   private expirationTime = 10000; // 待处理导航的过期时间（毫秒）
-  private historyLimit = 50; // 每个标签页的历史记录限制
-
-  // 调试标志
-  private debugMode = false;
+  private historyLimit = 50;      // 每个标签页的历史记录限制
 
   /**
    * 构造函数 - 初始化导航管理器
    * @param messageService 消息服务实例
-   * @param navStorage 导航存储实例（可选，用于依赖注入）
+   * @param navigationStorage 导航存储实例（可选，用于依赖注入）
    * @param sessionStorage 会话存储实例（可选，用于依赖注入）
    */
   constructor(
-    messageService: BackgroundMessageService,
+    private readonly messageService: BackgroundMessageService,
     navigationStorage?: NavigationStorage,
     sessionStorage?: SessionStorage
   ) {
-    this.messageService = messageService;
-    // 创建存储实例
+    // 初始化存储
     this.navigationStorage = navigationStorage || new NavigationStorage();
     this.sessionStorage = sessionStorage || new SessionStorage();
-
+  
     // 初始化标签页状态管理器
     this.tabStateManager = new TabStateManager(this.historyLimit);
-
+  
     // 初始化节点追踪器
     this.nodeTracker = new NodeTracker(
       this.navigationStorage, 
       this.tabStateManager,
       this.currentSessionId
     );
-
+  
     // 初始化边追踪器
     this.edgeTracker = new EdgeTracker(
       this.navigationStorage,
       this.currentSessionId
     );
-
+  
     // 初始化待处理导航追踪器
     this.pendingNavigationTracker = new PendingNavigationTracker(
       this.expirationTime
     );
-
+  
     // 初始化导航事件处理器
     this.navigationEventHandler = new NavigationEventHandler(
       this.tabStateManager,
@@ -114,18 +90,23 @@ export class NavigationManager {
       this.edgeTracker,
       this.pendingNavigationTracker,
       this.navigationStorage,
-      this.currentSessionId,
-      this.debugMode
+      this.currentSessionId
     );
-
+  
     // 初始化导航消息处理器
     this.navigationMessageHandler = new NavigationMessageHandler(
       messageService,
       this.nodeTracker,
-      this.navigationEventHandler,
-      this.debugMode
+      this.navigationEventHandler
     );
   }
+  
+  // 删除 initializeComponents 方法，因为它的逻辑现在在构造函数中
+
+  //-------------------------------------------------------------------------
+  // 初始化相关方法
+  //-------------------------------------------------------------------------
+
   /**
    * 初始化导航管理器
    */
@@ -133,42 +114,75 @@ export class NavigationManager {
     try {
       logger.log("初始化导航管理器...");
       
-      // 初始化导航存储
-      await this.navigationStorage.initialize();
-      // 初始化会话存储
-      await this.sessionStorage.initialize();
-  
-      // 确保有活跃会话
-      const currentSession = await this.sessionStorage.getCurrentSession();
-      if (!currentSession) {
-        logger.log("未找到活跃会话，创建新的默认会话...");
-        const newSession = await this.sessionStorage.createSession({
-          title: `浏览会话 ${new Date().toLocaleString()}`,
-          makeActive: true
-        });
-        this.setCurrentSessionId(newSession.id);
-      } else {
-        this.setCurrentSessionId(currentSession.id);
-      }
-
-      // 设置定期清理任务
-      setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
-      setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
-
-      // 注册消息处理程序
-      logger.groupCollapsed('注册导航相关消息处理程序');
-      this.navigationMessageHandler.registerMessageHandlers();
-      logger.groupEnd();
-
-      // 使用NavigationEventHandler设置事件监听器替代原来的方法
-      this.navigationEventHandler.setupEventListeners();
-            
+      // 初始化存储
+      await this.initializeStorage();
+      
+      // 初始化会话
+      await this.initializeSession();
+      
+      // 设置定期任务
+      this.setupPeriodicTasks();
+      
+      // 注册事件和消息处理程序
+      this.registerHandlers();
+      
       logger.log("导航管理器初始化完成");
     } catch (error) {
       logger.error("导航管理器初始化失败:", error);
       throw new Error(`导航管理器初始化失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+
+  /**
+   * 初始化存储系统
+   */
+  private async initializeStorage(): Promise<void> {
+    await this.navigationStorage.initialize();
+    await this.sessionStorage.initialize();
+  }
+
+  /**
+   * 初始化会话管理
+   */
+  private async initializeSession(): Promise<void> {
+    const currentSession = await this.sessionStorage.getCurrentSession();
+    if (!currentSession) {
+      logger.log("未找到活跃会话，创建新的默认会话...");
+      const newSession = await this.sessionStorage.createSession({
+        title: `浏览会话 ${new Date().toLocaleString()}`,
+        makeActive: true
+      });
+      this.setCurrentSessionId(newSession.id);
+    } else {
+      this.setCurrentSessionId(currentSession.id);
+    }
+  }
+
+  /**
+   * 设置定期任务
+   */
+  private setupPeriodicTasks(): void {
+    setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
+    setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
+  }
+
+  /**
+   * 注册所有处理程序
+   */
+  private registerHandlers(): void {
+    // 注册消息处理程序
+    logger.log('注册导航相关消息处理程序...');
+    this.navigationMessageHandler.registerMessageHandlers();
+
+    // 设置事件监听器
+    logger.log('设置导航相关事件监听器...');
+    this.navigationEventHandler.setupEventListeners();
+  }
+
+  //-------------------------------------------------------------------------
+  // 会话管理方法
+  //-------------------------------------------------------------------------
+
   /**
    * 设置当前会话ID并同步到所有组件
    * @param sessionId 新的会话ID
@@ -179,23 +193,21 @@ export class NavigationManager {
     this.edgeTracker.setSessionId(sessionId);
     this.navigationEventHandler.setCurrentSessionId(sessionId);
     
-    if (this.debugMode) {
-      logger.log(`已切换到会话: ${sessionId}`);
-    }
+    logger.log(`已切换到会话: ${sessionId}`);
   }
-  /**
-   * 设置调试模式
-   */
-  public setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
-    this.nodeTracker.setDebugMode(enabled);
-    this.edgeTracker.setDebugMode(enabled);
-    this.pendingNavigationTracker.setDebugMode(enabled);
-    this.navigationEventHandler.setDebugMode(enabled);
-    this.navigationMessageHandler.setDebugMode(enabled);
 
-    logger.log(`导航管理器调试模式: ${enabled ? "已启用" : "已禁用"}`);
+  /**
+   * 获取当前会话信息
+   */
+  public async getCurrentSession(): Promise<BrowsingSession | null> {
+    const currentSession = await this.sessionStorage.getCurrentSession();
+    return currentSession ? currentSession : null;
   }
+
+  //-------------------------------------------------------------------------
+  // 资源和状态管理方法
+  //-------------------------------------------------------------------------
+
   /**
    * 清理资源
    */
@@ -223,11 +235,37 @@ export class NavigationManager {
     this.edgeTracker.reset();
     this.pendingNavigationTracker.reset();
     
-    // 重置当前会话ID
     // 注意：不重置currentSessionId，因为这可能会在后续的操作中需要
     
     logger.log('已重置导航管理器内部状态');
   }
+
+  //-------------------------------------------------------------------------
+  // 定期维护任务
+  //-------------------------------------------------------------------------
+
+  /**
+   * 清理待更新列表
+   */
+  private async cleanupPendingUpdates(): Promise<void> {
+    try {
+      await this.nodeTracker.cleanupCache();
+    } catch (error) {
+      logger.error("清理待更新列表失败:", error);
+    }
+  }
+
+  /**
+   * 清理已过期的待处理导航记录
+   */
+  private cleanupExpiredNavigations(): void {
+    this.navigationEventHandler.cleanupExpiredNavigations();
+  }
+
+  //-------------------------------------------------------------------------
+  // 数据访问方法
+  //-------------------------------------------------------------------------
+
   /**
    * 获取导航存储实例
    */
@@ -240,31 +278,6 @@ export class NavigationManager {
    */
   public getSessionStorage(): SessionStorage {
     return this.sessionStorage;
-  }
-
-  /**
-   * 清理待更新列表
-   */
-  private async cleanupPendingUpdates(): Promise<void> {
-    try {
-      await this.nodeTracker.cleanupCache();
-    } catch (error) {
-      logger.error("清理待更新列表失败:", error);
-    }
-  }
-  /**
-   * 清理已过期的待处理导航记录
-   */
-  private cleanupExpiredNavigations(): void {
-    this.navigationEventHandler.cleanupExpiredNavigations(); 
-  }
-
-  /**
-   * 获取当前会话信息
-   */
-  public async getCurrentSession(): Promise<BrowsingSession | null> {
-    const currentSession = await this.sessionStorage.getCurrentSession();
-    return currentSession ? currentSession : null;
   }
 
   /**
@@ -318,25 +331,6 @@ export class NavigationManager {
     } catch (error) {
       logger.error(`获取标签页[${tabId}]历史失败:`, error);
       return [];
-    }
-  }
-  
-  /**
-   * 为导航树中的节点标记更新状态
-   */
-  private markUpdatedNodes(treeData: { nodes: any[]; edges: any[] }, lastUpdateTime: number): void {
-    // 遍历所有节点，标记新增或更新的
-    for (const node of treeData.nodes) {
-      if (node.timestamp > lastUpdateTime) {
-        node.isUpdated = true;
-      }
-    }
-    
-    // 遍历所有边，标记新增或更新的
-    for (const edge of treeData.edges) {
-      if (edge.timestamp > lastUpdateTime) {
-        edge.isUpdated = true;
-      }
     }
   }
 }

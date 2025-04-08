@@ -59,7 +59,6 @@ export class NavigationEventHandler {
     private pendingNavigationTracker: PendingNavigationTracker,
     private navigationStorage: NavigationStorage,
     private currentSessionId: string,
-    private debugMode: boolean = false
   ) {
     // 预绑定所有事件处理方法
     this.boundHandlers = {
@@ -72,13 +71,6 @@ export class NavigationEventHandler {
       historyStateUpdated: this.handleHistoryStateUpdated.bind(this),
       redirect: this.handleRedirect.bind(this),
     };
-  }
-
-  /**
-   * 设置调试模式
-   */
-  public setDebugMode(enabled: boolean): void {
-    this.debugMode = enabled;
   }
 
   /**
@@ -185,10 +177,6 @@ export class NavigationEventHandler {
         created: Date.now(),
       });
 
-      if (this.debugMode) {
-        logger.log(`标签页创建: ID=${tabId}, URL=${tab.url || "空"}`);
-      }
-
       // 如果创建时已有URL，且不是空白页或新标签页，尝试创建初始导航记录
       const url = tab.url || "";
       if (url && !UrlUtils.isEmptyTabUrl(url) && !UrlUtils.isSystemPage(url)) {
@@ -228,14 +216,6 @@ export class NavigationEventHandler {
       const nodeIds = this.nodeTracker.getPendingUpdates(tabId);
       if (nodeIds.length === 0) {
         return;
-      }
-
-      if (this.debugMode) {
-        logger.log(
-          `标签页更新: ID=${tabId}, 标题=${changeInfo.title || "没变"}, 图标=${
-            changeInfo.favIconUrl ? "已更新" : "没变"
-          }`
-        );
       }
 
       // 使用统一方法更新元数据
@@ -304,14 +284,6 @@ export class NavigationEventHandler {
             activated: now,
             lastActiveTime: now,
           });
-
-          if (this.debugMode) {
-            logger.log(
-              `标签页激活: ID=${tabId}, 窗口=${windowId}, URL=${
-                tab.url || "未知"
-              }`
-            );
-          }
         } catch (err) {
           logger.warn(
             `获取标签页信息失败: ${
@@ -359,12 +331,6 @@ export class NavigationEventHandler {
       // 清理标签页相关数据
       this.nodeTracker.clearPendingUpdates(tabId);
       this.pendingNavigationTracker.clearTabNavigations(tabId);
-
-      if (this.debugMode) {
-        logger.log(
-          `标签页关闭: ID=${tabId}, 窗口=${removeInfo.windowId}, 窗口关闭=${removeInfo.isWindowClosing}`
-        );
-      }
     } catch (error) {
       logger.error("处理标签页移除失败:", error);
     }
@@ -389,9 +355,6 @@ export class NavigationEventHandler {
 
       const tabId = details.tabId;
       if (this.tabStateManager.isTabRemoved(tabId)) {
-        if (this.debugMode) {
-          logger.log(`忽略已关闭标签页的导航: ${tabId}`);
-        }
         return;
       }
 
@@ -451,16 +414,6 @@ export class NavigationEventHandler {
         }
       }
 
-      if (this.debugMode) {
-        logger.log(
-          `导航提交: 标签页=${tabId}, URL=${url}, 类型=${navigationType}, 目标=${openTarget}`
-        );
-        logger.log(`  - 过渡类型: ${transitionType}`);
-        logger.log(
-          `  - 过渡限定词: ${transitionQualifiers.join(", ") || "无"}`
-        );
-      }
-
       // 处理常规导航
       await this.handleRegularNavigation(details, navigationType, openTarget);
     } catch (error) {
@@ -492,12 +445,8 @@ export class NavigationEventHandler {
         return;
       }
 
-      if (this.debugMode) {
-        logger.log(`导航完成: 标签页=${tabId}, URL=${url}`);
-      }
-
       // 委托给 NodeTracker 处理所有节点相关的逻辑
-      await this.nodeTracker.handleNavigationCompleted(details, this.debugMode);
+      await this.nodeTracker.handleNavigationCompleted(details);
     } catch (error) {
       logger.error("处理导航完成失败:", error);
     }
@@ -529,9 +478,6 @@ export class NavigationEventHandler {
       // 检查是否已有相同URL的节点
       const existingNodeId = await this.nodeTracker.getNodeIdForTab(tabId, url);
       if (existingNodeId) {
-        if (this.debugMode) {
-          logger.log(`历史状态更新: 已存在节点 ${existingNodeId} 于URL=${url}`);
-        }
 
         // 更新现有节点的访问时间和计数
         const now = Date.now();
@@ -550,9 +496,6 @@ export class NavigationEventHandler {
 
       // 如果没有找到父节点，则忽略
       if (!parentId) {
-        if (this.debugMode) {
-          logger.log(`历史状态更新: 未找到父节点, 标签页=${tabId}, URL=${url}`);
-        }
         return;
       }
 
@@ -624,12 +567,6 @@ export class NavigationEventHandler {
         navigationType: "javascript",
         sessionId: this.currentSessionId,
       });
-
-      if (this.debugMode) {
-        logger.log(
-          `历史状态更新: 已创建节点 ${nodeId}, 父节点=${parentId}, URL=${url}`
-        );
-      }
     } catch (error) {
       logger.error("处理历史状态更新失败:", error);
     }
@@ -681,11 +618,6 @@ export class NavigationEventHandler {
 
       // 如果找不到重定向URL，退出
       if (!redirectUrl) {
-        if (this.debugMode) {
-          logger.log(
-            `重定向事件没有目标URL: ${details.url}, 状态码: ${details.statusCode}`
-          );
-        }
         return;
       }
 
@@ -697,12 +629,6 @@ export class NavigationEventHandler {
       const tabId = details.tabId;
       const sourceUrl = details.url;
       const targetUrl = redirectUrl;
-
-      if (this.debugMode) {
-        logger.log(
-          `重定向: 标签页=${tabId}, 从=${sourceUrl}, 到=${targetUrl}, 状态码=${details.statusCode}`
-        );
-      }
 
       // 其余代码保持不变...
       // ... 处理重定向节点的创建 ...
@@ -798,12 +724,6 @@ export class NavigationEventHandler {
         });
       }
 
-      if (this.debugMode) {
-        logger.log(
-          `已创建初始导航节点: ID=${nodeId}, 父节点=${parentNodeId || "无"}`
-        );
-      }
-
       return nodeId;
     } catch (error) {
       logger.error("处理初始导航失败:", error);
@@ -843,11 +763,6 @@ export class NavigationEventHandler {
         if (pendingNav.sourceNodeId) {
           parentId = pendingNav.sourceNodeId;
         }
-        if (this.debugMode) {
-          logger.log(
-            `找到匹配的待处理导航: ${pendingNav.type}, 父节点ID: ${parentId}`
-          );
-        }
       }
 
       // 3. 如果是JS导航，尝试找到更好的父节点
@@ -868,9 +783,6 @@ export class NavigationEventHandler {
 
           if (sourceNodeId) {
             parentId = sourceNodeId;
-            if (this.debugMode) {
-              logger.log(`找到JS导航的父节点: ${parentId}`);
-            }
 
             // 移除已使用的JS导航记录
             this.pendingNavigationTracker.removeJsNavigation(
@@ -973,13 +885,6 @@ export class NavigationEventHandler {
         });
       }
 
-      if (this.debugMode) {
-        logger.log(
-          `已创建导航节点: ID=${nodeId}, 父节点=${
-            parentId || "无"
-          }, 类型=${navigationType}`
-        );
-      }
     } catch (error) {
       logger.error("处理常规导航失败:", error);
     }
@@ -1014,12 +919,6 @@ export class NavigationEventHandler {
         await this.navigationStorage.updateNode(lastNodeId, {
           activeTime: (record.activeTime || 0) + elapsedTime,
         });
-
-        if (this.debugMode) {
-          logger.log(
-            `更新标签页[${tabId}]活跃时间: +${elapsedTime}ms, 节点=${lastNodeId}`
-          );
-        }
       }
     } catch (error) {
       logger.warn("更新标签页活跃时间失败:", error);
@@ -1065,7 +964,7 @@ export class NavigationEventHandler {
     try {
       const removed = this.pendingNavigationTracker.cleanupExpiredNavigations();
 
-      if (removed > 0 && this.debugMode) {
+      if (removed > 0) {
         logger.log(`清理了 ${removed} 个过期的待处理导航记录`);
       }
     } catch (error) {

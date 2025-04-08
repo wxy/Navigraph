@@ -51,10 +51,6 @@ export class TabStateManager {
     
     // 触发事件
     this.notifyListeners(tabId, TabEventType.STATE_CHANGED, newState);
-    
-    if (this.isDebugMode()) {
-      logger.log(`添加标签页状态: ID=${tabId}, URL=${state.url || '无'}`);
-    }
   }
   
   /**
@@ -70,10 +66,6 @@ export class TabStateManager {
       // 触发事件
       this.notifyListeners(tabId, TabEventType.STATE_CHANGED, state);
       
-      if (this.isDebugMode()) {
-        const keysChanged = Object.keys(updates).join(', ');
-        logger.log(`更新标签页状态: ID=${tabId}, 变化: ${keysChanged}`);
-      }
     } else {
       this.addTabState(tabId, { id: tabId, url: "", ...updates });
     }
@@ -105,10 +97,6 @@ export class TabStateManager {
     
     // 触发事件
     this.notifyListeners(tabId, TabEventType.HISTORY_UPDATED, { nodeId, historyLength: history.length });
-    
-    if (this.isDebugMode()) {
-      logger.log(`添加导航历史: 标签页=${tabId}, 节点=${nodeId}, 历史长度=${history.length}`);
-    }
   }
   
   /**
@@ -125,10 +113,6 @@ export class TabStateManager {
     
     // 触发事件
     this.notifyListeners(tabId, TabEventType.REMOVED);
-    
-    if (this.isDebugMode()) {
-      logger.log(`标记标签页已移除: ID=${tabId}`);
-    }
   }
   
   /**
@@ -138,10 +122,6 @@ export class TabStateManager {
    */
   setTabActiveTime(tabId: number, time: number): void {
     this.tabActiveTimes.set(tabId, time);
-    
-    if (this.isDebugMode()) {
-      logger.log(`设置标签页激活时间: ID=${tabId}, 时间=${new Date(time).toISOString()}`);
-    }
   }
   
   /**
@@ -264,15 +244,5 @@ export class TabStateManager {
         logger.error(`事件监听器错误: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-  }
-  
-  /**
-   * 判断是否为调试模式
-   * 实现注意：此方法应该从外部注入调试状态，这里临时返回false
-   * @returns 是否为调试模式
-   */
-  private isDebugMode(): boolean {
-    // TODO: 从外部配置中获取调试模式状态
-    return false;
   }
 }
