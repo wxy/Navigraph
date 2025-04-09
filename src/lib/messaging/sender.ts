@@ -96,14 +96,39 @@ function handleResponse<T extends BaseResponse>(
 
 /**
  * 发送消息到后台脚本
- * 使用新的类型约束方式
+ * 支持配置重试选项
  */
 export function sendToBackground<A extends string>(
   action: A,
-  data: any = {}
+  data: any = {},
+  options?: {
+    retry?: boolean;           // 是否启用重试
+    maxRetries?: number;       // 最大重试次数
+    initialDelay?: number;     // 初始延迟(毫秒)
+    maxDelay?: number;         // 最大延迟(毫秒)
+    factor?: number;           // 退避因子
+    defaultValue?: any;        // 所有重试失败后返回的默认值
+  }
 ): Promise<any> {
-  type ValidAction = PrefixedAction<'background', A>;
-  return sendMessage(action, 'background', data);
+  // 默认不开启重试
+  if (!options?.retry) {
+    return sendMessage(action, 'background', data);
+  }
+  
+  // 启用重试
+  return sendMessageWithRetry(
+    action, 
+    'background', 
+    data, 
+    {
+      maxRetries: options.maxRetries || 3,
+      retryDelay: options.initialDelay || 500,
+      exponentialBackoff: true,
+      factor: options.factor || 2,
+      maxDelay: options.maxDelay || 5000,
+      defaultValue: options.defaultValue
+    }
+  );
 }
 
 /**
@@ -147,37 +172,66 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
   action: A,
   target: T,
   data: any = {},
-  options: { maxRetries?: number; retryDelay?: number } = {}
+  options: { 
+    maxRetries?: number; 
+    retryDelay?: number;
+    exponentialBackoff?: boolean;
+    factor?: number;
+    maxDelay?: number;
+    defaultValue?: any;
+  } = {}
 ): Promise<any> {
-  const { maxRetries = 3, retryDelay = 1000 } = options;
+  const { 
+    maxRetries = 3, 
+    retryDelay = 500,
+    exponentialBackoff = true,
+    factor = 2,
+    maxDelay = 5000,
+    defaultValue = undefined
+  } = options;
   
   return new Promise(async (resolve, reject) => {
     let lastError: any;
+    let currentDelay = retryDelay;
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
           logger.log(`重试发送消息 (${attempt}/${maxRetries}): ${action}`);
-          await new Promise(r => setTimeout(r, retryDelay * attempt));
+          await new Promise(r => setTimeout(r, currentDelay));
+          
+          // 计算下一次延迟（如果启用指数退避）
+          if (exponentialBackoff) {
+            const jitter = Math.random() * 0.3 + 0.85; // 85%-115%的随机因子
+            currentDelay = Math.min(currentDelay * factor * jitter, maxDelay);
+          }
         }
         
         const response = await sendMessage(action, target, data);
         resolve(response);
         return;
       } catch (error) {
-        logger.warn(`发送消息失败 (${attempt}/${maxRetries}):`, error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.warn(`发送消息失败 (${attempt}/${maxRetries}): ${action} - ${errorMsg}`);
         lastError = error;
         
         // 如果是扩展上下文失效错误，不再重试
         if (error instanceof Error && 
-            error.message.includes('Extension context invalidated')) {
-          logger.error('扩展上下文已失效，不再重试');
+            (error.message.includes('Extension context invalidated') ||
+             error.message.includes('The message port closed'))) {
+          logger.error('扩展上下文已失效或消息端口已关闭，不再重试');
           break;
         }
       }
     }
     
-    reject(lastError || new Error(`在 ${maxRetries} 次尝试后发送消息失败`));
+    // 所有重试都失败了
+    if (defaultValue !== undefined) {
+      logger.warn(`发送消息 ${action} 失败，使用默认值`);
+      resolve(defaultValue);
+    } else {
+      reject(lastError || new Error(`在 ${maxRetries} 次尝试后发送消息失败`));
+    }
   });
 }
 

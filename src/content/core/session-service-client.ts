@@ -54,7 +54,13 @@ export class SessionServiceClient {
     try {
       logger.log('加载会话列表...');
       
-      const response = await sendMessage('getSessions');
+      const response = await sendMessage('getSessions', {}, {
+        retry: true,             // 启用重试
+        maxRetries: 5,           // 多次重试
+        initialDelay: 300,       // 起始延迟较短
+        factor: 1.5,             // 较小的退避因子
+        defaultValue: { sessions: [] }  // 重试失败后默认返回空数组        
+      });
       logger.log('收到会话列表响应:', response);
       
       // 强化错误处理和类型检查
@@ -143,7 +149,13 @@ export class SessionServiceClient {
       logger.log(`尝试加载会话: ${sessionId}`);
       
       // 使用sendMessage函数
-      const response = await sendMessage('getSessionDetails', { sessionId });
+      const response = await sendMessage('getSessionDetails', { sessionId }, {
+        retry: true,             // 启用重试
+        maxRetries: 5,           // 多次重试
+        initialDelay: 300,       // 起始延迟较短
+        factor: 1.5,             // 较小的退避因子
+        defaultValue: { SessionDetails: null }  // 重试失败后默认返回空对象        
+      });
       
       logger.log('getSessionDetails响应:', response);
       
