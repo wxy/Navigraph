@@ -13,6 +13,21 @@ const logger = new Logger('SessionStorage');
  * 提供会话数据的持久化存储和检索功能
  */
 export class SessionStorage {
+  // 添加单例实例
+  private static instance: SessionStorage | null = null;
+  
+  /**
+   * 获取SessionStorage单例
+   * @param db 可选的数据库实例
+   * @returns SessionStorage单例实例
+   */
+  public static getInstance(db?: IndexedDBStorage): SessionStorage {
+    if (!this.instance) {
+      this.instance = new SessionStorage(db);
+    }
+    return this.instance;
+  }
+  
   // 数据库引用
   private db: IndexedDBStorage;
   
@@ -25,7 +40,7 @@ export class SessionStorage {
   /**
    * 创建会话存储实例
    */
-  constructor(db?: IndexedDBStorage) {
+  private constructor(db?: IndexedDBStorage) {
     // 由于不能直接创建IndexedDBStorage实例，我们需要接受已创建的实例或使用getInstance
     this.db = db || IndexedDBStorage.getInstance(NavigraphDBSchema);
   }
@@ -518,4 +533,11 @@ export class SessionStorage {
       throw new Error(`更新会话属性失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+}
+
+/**
+ * 获取会话存储单例的辅助函数
+ */
+export function getSessionStorage(db?: IndexedDBStorage): SessionStorage {
+  return SessionStorage.getInstance(db);
 }
