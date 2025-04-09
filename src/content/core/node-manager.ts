@@ -37,20 +37,19 @@ export class NodeManager {
   processSessionData(session: SessionDetails): void {
     if (!session) return;
     
-    logger.log('开始处理会话数据...');
+    logger.groupCollapsed('开始处理会话数据...');
     
     try {
       this.processRecordsToNodes(session);
       this.processRelationships();
       this.processEdges(session);
       
-      logger.log('会话数据处理完成');
-      logger.log('节点:', this.nodes.length);
-      logger.log('边:', this.edges.length);
+      logger.log(`会话数据处理完成，节点: ${this.nodes.length}, 边: ${this.edges.length}`);
     } catch (error) {
       logger.error('处理会话数据失败:', error);
       this.resetData();
     }
+    logger.groupEnd();
   }
   
   /**

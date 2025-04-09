@@ -13,7 +13,7 @@ import { DatabaseSchema } from '../../types/storage-types.js';
 /**
  * Navigraph 存储架构
  */
-export const StorageSchema: DatabaseSchema = {
+export const NavigraphDBSchema: DatabaseSchema = {
   name: 'NavigraphDB',
   version: 1,
   stores: [

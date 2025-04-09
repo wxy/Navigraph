@@ -1,6 +1,5 @@
 (async function() {
-  const loggerModule = await import('../lib/utils/logger.js');
-  const logger = new loggerModule.Logger('ContentScript');
+  const DEBUG = false; // 是否启用调试模式
   try {
     // 内联实现sendToBackground函数
     async function sendToBackground(action: string, data?: any): Promise<any> {
@@ -59,7 +58,9 @@
      */
     async function requestNodeId(): Promise<void> {
       if (!isExtensionContextValid() || !isExtensionActive) {
-        logger.warn('扩展不活跃或上下文无效，无法请求节点ID');
+        if (DEBUG) {
+          console.warn('扩展上下文无效或扩展不活跃，无法请求节点ID');
+        }
         return;
       }
       
@@ -67,7 +68,9 @@
       
       // 限制频率
       if (now - lastRequestTime < 5000) {
-        logger.debug('请求节点ID间隔过短，跳过');
+        if (DEBUG) {
+          console.debug('请求节点ID间隔过短，跳过');
+        }
         return;
       }
       
@@ -83,7 +86,9 @@
         // 获取标签页ID
         const tabIdResponse = await sendToBackground('getTabId', {});
         
-        logger.log('收到标签页ID响应:', tabIdResponse);
+        if (DEBUG) {
+          console.log('收到标签页ID响应:', tabIdResponse);
+        }
         
         if (tabIdResponse.tabId !== undefined) {
           // 请求节点ID
@@ -94,21 +99,31 @@
             timestamp: Date.now()
           });
           
-          logger.log('收到节点ID响应:', nodeIdResponse);
+          if (DEBUG) {
+            console.log('收到节点ID响应:', nodeIdResponse);
+          }
           
           if (nodeIdResponse.nodeId) {
             if (standardNodeId !== nodeIdResponse.nodeId) {
-              logger.log(`更新节点ID: ${standardNodeId || 'null'} -> ${nodeIdResponse.nodeId}`);
+              if (DEBUG) {
+                console.log(`更新节点ID: ${standardNodeId || 'null'} -> ${nodeIdResponse.nodeId}`);
+              }
               standardNodeId = nodeIdResponse.nodeId;
             }
           } else {
-            logger.warn('无法获取节点ID');
+            if (DEBUG) {
+              console.warn('无法获取节点ID');
+            }
           }
         } else {
-          logger.warn('无法获取标签页ID');
+          if (DEBUG) {
+            console.warn('无法获取标签页ID');
+          }
         }
       } catch (error) {
-        logger.error('获取节点ID失败:', error);
+        if (DEBUG) {
+          console.error('请求节点ID失败:', error);
+        }
       }
     }
     
@@ -116,11 +131,14 @@
      * 初始化函数
      */
     async function init(): Promise<void> {
-      logger.log('Navigraph: 导航追踪器初始化开始');
+      if (DEBUG) {
+        console.log('Navigraph: 导航图谱初始化开始');
+      }
       
       try {
-        // 等待后台脚本初始化
-        logger.log('等待后台脚本初始化...');
+        if (DEBUG) {
+          console.log('等待后台脚本初始化...');
+        }
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // 请求当前页面的节点ID
@@ -128,20 +146,28 @@
         
         // 注册历史记录状态变化监听
         window.addEventListener('popstate', () => {
-          logger.log('检测到历史记录状态变化');
+          
+          if (DEBUG) {
+            console.log('检测到历史记录状态变化');
+          }
           requestNodeId();
         });
-        
-        logger.log('Navigraph: 导航追踪器初始化完成');
+        if (DEBUG) {
+          console.log('导航图谱初始化完成');
+        }
       } catch (error) {
-        logger.error('导航追踪器初始化失败:', error);
+        if (DEBUG) {
+          console.error('导航图谱初始化失败:', error);
+        }
       }
     }
     
     // 立即执行初始化函数
     await init();
-    
+    console.log('Navigraph: 导航图谱已加载');
   } catch (error) {
-    logger.error('导航追踪器加载失败:', error);
+    if (DEBUG) {
+      console.error('导航图谱加载失败:', error);
+    }
   }
 })();

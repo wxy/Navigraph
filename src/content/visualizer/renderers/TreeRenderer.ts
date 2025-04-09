@@ -262,7 +262,7 @@ function renderTreeLayout(
     nodes.forEach(node => {
       const extNode = nodeById[node.id];
       // 判断是否为根节点或父节点不存在
-      if (node.parentId === null || !nodeById[node.parentId]) {
+      if (node.parentId === '' || !nodeById[node.parentId]) {
         // 明确作为根节点处理
         extNode.isRoot = true;
         rootNodes.push(extNode);

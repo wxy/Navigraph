@@ -4,8 +4,8 @@
  */
 import { Logger } from '../../lib/utils/logger.js';
 import { IdGenerator } from "../lib/id-generator.js";
-import { SessionStorage } from "../store/session-storage.js";
-import { NavigationStorage } from "../store/navigation-storage.js";
+import { SessionStorage, getSessionStorage } from "../store/session-storage.js";
+import { NavigationStorage, getNavigationStorage } from "../store/navigation-storage.js";
 import { sessionEvents } from "./session-event-emitter.js";
 import { BackgroundMessageService } from "../messaging/bg-message-service.js";
 import {
@@ -56,7 +56,7 @@ export class BackgroundSessionManager {
    * 创建后台会话管理器实例
    */
   constructor() {
-    this.storage = new SessionStorage();
+    this.storage = getSessionStorage();
 
     logger.log("后台会话管理器已创建");
   }
@@ -137,7 +137,7 @@ export class BackgroundSessionManager {
       const activeTabIds = new Set(tabs.map(tab => tab.id));
       
       // 2. 获取当前会话的所有未关闭节点
-      const navStorage = new NavigationStorage();
+      const navStorage = getNavigationStorage();
       await navStorage.initialize();
       // 查询当前会话的节点
       const sessionNodes = await navStorage.queryNodes({
@@ -248,7 +248,7 @@ export class BackgroundSessionManager {
       logger.log(`标签页 ${tabId} 已关闭，更新节点状态`);
       
       // 获取导航存储实例
-      const navStorage = new NavigationStorage();
+      const navStorage = getNavigationStorage();
       await navStorage.initialize();
       
       // 查找与此标签页相关的活跃节点
@@ -791,7 +791,7 @@ export class BackgroundSessionManager {
     rootIds: string[];
   }> {
     // 创建导航存储实例
-    const navStorage = new NavigationStorage();
+    const navStorage = getNavigationStorage();
     await navStorage.initialize();
 
     try {

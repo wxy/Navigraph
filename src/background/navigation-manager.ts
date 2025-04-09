@@ -1,6 +1,6 @@
 import { Logger } from '../lib/utils/logger.js';
-import { NavigationStorage } from './store/navigation-storage.js';
-import { SessionStorage } from './store/session-storage.js';
+import { NavigationStorage, getNavigationStorage } from './store/navigation-storage.js';
+import { SessionStorage, getSessionStorage } from './store/session-storage.js';
 import { BackgroundMessageService } from './messaging/bg-message-service.js';
 import { 
   BrowsingSession,
@@ -58,9 +58,9 @@ export class NavigationManager {
     navigationStorage?: NavigationStorage,
     sessionStorage?: SessionStorage
   ) {
-    // 初始化存储
-    this.navigationStorage = navigationStorage || new NavigationStorage();
-    this.sessionStorage = sessionStorage || new SessionStorage();
+    // 优先使用传入的实例，否则使用单例
+    this.navigationStorage = navigationStorage || getNavigationStorage();
+    this.sessionStorage = sessionStorage || getSessionStorage();
   
     // 初始化标签页状态管理器
     this.tabStateManager = new TabStateManager(this.historyLimit);

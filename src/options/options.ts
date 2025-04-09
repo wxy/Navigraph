@@ -232,7 +232,7 @@ function applySettingsToUI(): void {
   // 空闲超时 - 以小时为单位
   const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
   if (idleTimeoutInput) {
-    idleTimeoutInput.value = String(currentSettings.idleTimeout || 2);
+    idleTimeoutInput.value = String(currentSettings.idleTimeout || 6);
   }
   
   // 数据保留
@@ -262,8 +262,8 @@ function collectSettingsFromUI(): NavigraphSettings {
   // 空闲超时 - 输入为小时，存储为小时，内部处理再转分钟
   const idleTimeoutInput = document.getElementById('idle-timeout') as HTMLInputElement;
   const idleTimeout = idleTimeoutInput ? 
-    Math.max(1, Math.min(24, parseInt(idleTimeoutInput.value) || 2)) : 
-    currentSettings.idleTimeout || 2;
+    Math.max(1, Math.min(24, parseInt(idleTimeoutInput.value) || 6)) : 
+    currentSettings.idleTimeout || 6;
   
   return {
     theme,

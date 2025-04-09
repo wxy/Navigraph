@@ -994,6 +994,12 @@ svg .node-label {
 
 /* ========== 节点类型样式 ========== */
 /* 节点类型颜色 */
+.node.initial circle { 
+  fill: #222; 
+  stroke: #111;
+  stroke-width: 2px;
+}
+
 .node.link_click circle { 
   fill: #4285f4; 
   stroke: #2a75f3;
@@ -1089,6 +1095,8 @@ svg .node-label {
   fill: none;
   stroke-width: 1.5px;
   opacity: 0.8; /* 提高默认不透明度 */
+  stroke: #000;
+  stroke-width: 2px;
 }
 /* 曲线连接 */
 .link {
@@ -1096,6 +1104,11 @@ svg .node-label {
 }
 
 /* 连接线类型样式 */
+.link.initial, .edge.initial { 
+  stroke: #222; 
+  stroke-width: 2px;
+}
+
 .link.link_click, .edge.link_click { 
   stroke: #4285f4; 
   stroke-width: 2px;

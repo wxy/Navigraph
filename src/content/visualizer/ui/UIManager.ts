@@ -195,6 +195,7 @@ export class UIManager {
    * 初始化所有UI组件
    */
   private initializeComponents(): void {
+    logger.groupCollapsed("初始化UI组件");
     // 初始化各个组件
     this.statusBar.initialize();
     this.viewSwitcher.initialize();
@@ -211,7 +212,7 @@ export class UIManager {
       logger.warn("容器元素不存在，控制面板无法初始化");
     }
 
-    logger.log("所有UI组件已初始化");
+    logger.groupEnd();
   }
 
   /**
@@ -247,11 +248,6 @@ export class UIManager {
     currentSessionId?: string
   ): void {
     this.sessionSelector.update(sessions, currentSessionId);
-
-    // 如果控制面板有自己独立的会话选择器，再调用这个
-    if (typeof this.controlPanel.updateSessionSelector === "function") {
-      this.controlPanel.updateSessionSelector(sessions, currentSessionId);
-    }
   }
 
   /**

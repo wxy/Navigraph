@@ -98,7 +98,6 @@ export class SessionSelector {
       
       // 格式化会话名称：添加时间信息
       const date = new Date(session.startTime);
-      const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
       
       option.textContent = `${session.title || '未命名会话'}`;
       this.selectorElement?.appendChild(option);

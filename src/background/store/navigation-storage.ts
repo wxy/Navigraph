@@ -4,7 +4,7 @@
  */
 import { Logger } from '../../lib/utils/logger.js';
 import { IndexedDBStorage } from './indexed-db.js';
-import { StorageSchema } from './storage-schema.js';
+import { NavigraphDBSchema } from './storage-schema.js';
 import { NavNode, NavLink, NavDataQueryOptions } from '../../types/session-types.js';
 const logger = new Logger('NavigationStorage');
 
@@ -13,6 +13,21 @@ const logger = new Logger('NavigationStorage');
  * 提供导航数据的访问功能
  */
 export class NavigationStorage {
+  // 添加单例实例
+  private static instance: NavigationStorage | null = null;
+  
+  /**
+   * 获取NavigationStorage单例
+   * @param db 可选的数据库实例
+   * @returns NavigationStorage单例实例
+   */
+  public static getInstance(db?: IndexedDBStorage): NavigationStorage {
+    if (!this.instance) {
+      this.instance = new NavigationStorage(db);
+    }
+    return this.instance;
+  }
+  
   // 数据库引用
   private db: IndexedDBStorage;
   
@@ -26,8 +41,9 @@ export class NavigationStorage {
   /**
    * 创建导航存储实例
    */
-  constructor(db?: IndexedDBStorage) {
-    this.db = db || new IndexedDBStorage(StorageSchema);
+  private constructor(db?: IndexedDBStorage) {
+    // 由于不能直接创建IndexedDBStorage实例，我们需要接受已创建的实例或使用getInstance
+    this.db = db || IndexedDBStorage.getInstance(NavigraphDBSchema);
   }
   
   /**
@@ -39,8 +55,14 @@ export class NavigationStorage {
     }
     
     try {
-      // 初始化新数据库
+      // 使用getInstance获取共享实例
+      if (!this.db) {
+        this.db = IndexedDBStorage.getInstance(NavigraphDBSchema);
+      }
+      
+      // 确保数据库初始化
       await this.db.initialize();
+      
       this.initialized = true;
       logger.log('导航存储已初始化');
     } catch (error) {
@@ -336,4 +358,11 @@ export class NavigationStorage {
       throw new Error(`获取会话图谱失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+}
+
+/**
+ * 获取导航存储单例的辅助函数
+ */
+export function getNavigationStorage(db?: IndexedDBStorage): NavigationStorage {
+  return NavigationStorage.getInstance(db);
 }
