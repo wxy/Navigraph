@@ -4,7 +4,7 @@
  */
 import { Logger } from '../../lib/utils/logger.js';
 import { IndexedDBStorage } from './indexed-db.js';
-import { StorageSchema } from './storage-schema.js';
+import { NavigraphDBSchema } from './storage-schema.js';
 import { NavNode, NavLink, NavDataQueryOptions } from '../../types/session-types.js';
 const logger = new Logger('NavigationStorage');
 
@@ -27,7 +27,8 @@ export class NavigationStorage {
    * 创建导航存储实例
    */
   constructor(db?: IndexedDBStorage) {
-    this.db = db || new IndexedDBStorage(StorageSchema);
+    // 由于不能直接创建IndexedDBStorage实例，我们需要接受已创建的实例或使用getInstance
+    this.db = db || IndexedDBStorage.getInstance(NavigraphDBSchema);
   }
   
   /**
@@ -39,8 +40,14 @@ export class NavigationStorage {
     }
     
     try {
-      // 初始化新数据库
+      // 使用getInstance获取共享实例
+      if (!this.db) {
+        this.db = IndexedDBStorage.getInstance(NavigraphDBSchema);
+      }
+      
+      // 确保数据库初始化
       await this.db.initialize();
+      
       this.initialized = true;
       logger.log('导航存储已初始化');
     } catch (error) {

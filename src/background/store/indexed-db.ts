@@ -12,26 +12,77 @@ const logger = new Logger('IndexedDBStorage');
 export class IndexedDBStorage {
   private db: IDBDatabase | null = null;
   private schema: DatabaseSchema;
+  private initializationPromise: Promise<void> | null = null;
+  private isInitialized = false;
+  
+  // 单例存储 - 按数据库名称缓存实例
+  private static instances: Map<string, IndexedDBStorage> = new Map();
   
   /**
-   * 创建IndexedDB存储实例
+   * 获取数据库实例（单例模式）
+   * 这是获取IndexedDBStorage实例的唯一方法
+   * @param schema 数据库架构
+   * @returns IndexedDBStorage实例
+   */
+  public static getInstance(schema: DatabaseSchema): IndexedDBStorage {
+    const key = `${schema.name}_v${schema.version}`;
+    
+    if (!this.instances.has(key)) {
+      this.instances.set(key, new IndexedDBStorage(schema));
+      logger.debug(`创建新的数据库实例: ${key}`);
+    }
+    
+    return this.instances.get(key)!;
+  }
+  
+  /**
+   * 私有构造函数
+   * 确保只能通过getInstance方法获取实例
    * @param schema 数据库架构
    */
-  constructor(schema: DatabaseSchema) {
+  private constructor(schema: DatabaseSchema) {
     this.schema = schema;
   }
   
   /**
    * 初始化数据库
+   * 如果已经初始化，则直接返回
    * @returns Promise，完成时数据库已初始化
    */
-  public async initialize(): Promise<IDBDatabase> {
-    if (this.db) {
-      return this.db;
+  public async initialize(): Promise<void> {
+    // 如果已经初始化完成，直接返回
+    if (this.isInitialized && this.db) {
+      return;
     }
     
-    return new Promise<IDBDatabase>((resolve, reject) => {
+    // 如果正在初始化，等待初始化完成
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+    
+    // 开始初始化
+    this.initializationPromise = this.openDatabase();
+    
+    try {
+      await this.initializationPromise;
+      this.isInitialized = true;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
+  
+  /**
+   * 打开数据库连接
+   */
+  private async openDatabase(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       try {
+        // 如果已经有打开的连接，直接返回
+        if (this.db) {
+          resolve();
+          return;
+        }
+        
         const request = indexedDB.open(this.schema.name, this.schema.version);
         
         request.onerror = (event) => {
@@ -48,14 +99,20 @@ export class IndexedDBStorage {
         };
         
         request.onsuccess = (event) => {
-          this.db = (event.target as IDBOpenDBRequest).result;
-          logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已打开`);
+          this.db = request.result;
           
-          this.db.onerror = (event) => {
-            logger.error('数据库错误:', event);
-          };
+          // 只在第一次打开时输出日志，避免重复
+          if (!this.isInitialized) {
+            logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已打开`);
+          }
           
-          resolve(this.db);
+          resolve();
+        };
+        
+        request.onerror = (event) => {
+          const error = request.error;
+          logger.error('打开数据库失败:', error);
+          reject(new Error(`打开数据库失败: ${error?.message || '未知错误'}`));
         };
       } catch (error) {
         logger.error('初始化数据库失败:', error);
@@ -66,12 +123,19 @@ export class IndexedDBStorage {
   
   /**
    * 关闭数据库连接
+   * 同时从单例缓存中移除此实例
    */
   public close(): void {
     if (this.db) {
       this.db.close();
       this.db = null;
-      logger.log('数据库连接已关闭');
+      this.isInitialized = false;
+      
+      // 从单例缓存中移除
+      const key = `${this.schema.name}_v${this.schema.version}`;
+      IndexedDBStorage.instances.delete(key);
+      
+      logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已关闭`);
     }
   }
   

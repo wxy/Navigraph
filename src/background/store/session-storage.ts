@@ -5,7 +5,7 @@
 import { Logger, LogLevel } from '../../lib/utils/logger.js';
 import { BrowsingSession, SessionQueryOptions, SessionCreationOptions } from '../../types/session-types.js';
 import { IndexedDBStorage } from './indexed-db.js';
-import { StorageSchema } from './storage-schema.js';
+import { NavigraphDBSchema } from './storage-schema.js';
 import { IdGenerator } from '../lib/id-generator.js';
 const logger = new Logger('SessionStorage');
 /**
@@ -24,10 +24,10 @@ export class SessionStorage {
   
   /**
    * 创建会话存储实例
-   * @param db 可选的数据库实例，用于依赖注入和测试
    */
   constructor(db?: IndexedDBStorage) {
-    this.db = db || new IndexedDBStorage(StorageSchema);
+    // 由于不能直接创建IndexedDBStorage实例，我们需要接受已创建的实例或使用getInstance
+    this.db = db || IndexedDBStorage.getInstance(NavigraphDBSchema);
   }
   
   /**
@@ -39,7 +39,14 @@ export class SessionStorage {
     }
     
     try {
+      // 使用getInstance获取共享实例
+      if (!this.db) {
+        this.db = IndexedDBStorage.getInstance(NavigraphDBSchema);
+      }
+      
+      // 确保数据库初始化
       await this.db.initialize();
+      
       this.initialized = true;
       logger.log('会话存储已初始化');
     } catch (error) {
