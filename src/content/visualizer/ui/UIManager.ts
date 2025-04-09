@@ -248,11 +248,6 @@ export class UIManager {
     currentSessionId?: string
   ): void {
     this.sessionSelector.update(sessions, currentSessionId);
-
-    // 如果控制面板有自己独立的会话选择器，再调用这个
-    if (typeof this.controlPanel.updateSessionSelector === "function") {
-      this.controlPanel.updateSessionSelector(sessions, currentSessionId);
-    }
   }
 
   /**
