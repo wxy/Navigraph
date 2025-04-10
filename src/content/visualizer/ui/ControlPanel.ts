@@ -1,7 +1,7 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import type { Visualizer } from '../../types/navigation.js';
 import { ViewSwitcher } from './ViewSwitcher.js';
-import { SessionSelector } from './SessionSelector.js';
+import { CalendarSessionSelector } from './CalendarSessionSelector.js'; // 导入新日历会话选择器
 import { FilterPanel } from './FilterPanel.js';
 
 const logger = new Logger('ControlPanel');
@@ -12,10 +12,11 @@ const logger = new Logger('ControlPanel');
  */
 export class ControlPanel {
   private visualizer: Visualizer;
+  private uiManager: any; // 或替换为正确的UIManager类型
   private controlPanelElement: HTMLElement | null = null;
   private handleElement: HTMLElement | null = null;
   private viewSwitcher: ViewSwitcher;
-  private sessionSelector: SessionSelector;
+  private calendarSessionSelector: CalendarSessionSelector; // 添加日历会话选择器
   private filterPanel: FilterPanel;
   
   // 计时器变量，用于处理鼠标悬停和离开
@@ -24,12 +25,14 @@ export class ControlPanel {
   
   constructor(visualizer: Visualizer, 
               viewSwitcher: ViewSwitcher,
-              sessionSelector: SessionSelector,
-              filterPanel: FilterPanel) {
+              calendarSessionSelector: CalendarSessionSelector, // 添加日历会话选择器参数
+              filterPanel: FilterPanel,
+              uiManager: any) { 
     this.visualizer = visualizer;
     this.viewSwitcher = viewSwitcher;
-    this.sessionSelector = sessionSelector;
+    this.calendarSessionSelector = calendarSessionSelector; // 存储日历会话选择器引用
     this.filterPanel = filterPanel;
+    this.uiManager = uiManager; 
     
     logger.log('控制面板已创建');
   }
@@ -47,10 +50,23 @@ export class ControlPanel {
       return;
     }
     
+    // 创建控制面板内容
+    this.createControlPanelContent();
+    
+    // 在创建容器后，初始化各个子组件到对应容器
+    // 视图切换器初始化
+    this.viewSwitcher.initialize();
+    
+    // 日历会话选择器初始化
+    this.calendarSessionSelector.initialize('calendar-session-selector');
+    
+    // 筛选面板初始化
+    this.filterPanel.initialize();
+    
     // 初始化控制面板交互
     this.initializeControlPanelInteraction(container);
     
-    logger.log('控制面板已初始化');
+    logger.log('控制面板及所有子组件已初始化');
   }
   
   /**
@@ -155,6 +171,68 @@ export class ControlPanel {
   }
 
   /**
+   * 创建会话区域的标题栏
+   */
+  private createSessionAreaHeader(): HTMLElement {
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    
+    const title = document.createElement('h3');
+    title.textContent = '会话历史'; // 更新标题
+    title.className = 'section-title';
+    header.appendChild(title);
+    
+    return header;
+  }
+
+  /**
+   * 创建会话区域
+   */
+  private createSessionArea(): HTMLElement {
+    const sessionArea = document.createElement('div');
+    sessionArea.className = 'control-panel-section session-area';
+    
+    // 添加标题栏
+    const header = this.createSessionAreaHeader();
+    sessionArea.appendChild(header); // 现在正确添加标题
+    
+    // 创建日历会话选择器容器
+    const calendarSessionSelectorElement = document.createElement('div');
+    calendarSessionSelectorElement.id = 'calendar-session-selector';
+    calendarSessionSelectorElement.className = 'calendar-session-selector';
+    
+    // 确保日历容器有足够的高度和可视性
+    calendarSessionSelectorElement.style.minHeight = '280px';
+    
+    sessionArea.appendChild(calendarSessionSelectorElement);
+    
+    return sessionArea;
+  }
+
+  /**
+   * 创建控制面板内容
+   */
+  private createControlPanelContent(): void {
+    if (!this.controlPanelElement) return;
+    
+    // 创建视图切换区域
+    const viewSwitcherArea = document.createElement('div');
+    viewSwitcherArea.className = 'control-panel-section';
+    viewSwitcherArea.id = 'view-switcher-container';
+    this.controlPanelElement.appendChild(viewSwitcherArea);
+    
+    // 创建会话选择区域
+    const sessionArea = this.createSessionArea();
+    this.controlPanelElement.appendChild(sessionArea);
+    
+    // 创建筛选器区域
+    const filterArea = document.createElement('div');
+    filterArea.className = 'control-panel-section';
+    filterArea.id = 'filter-panel-container';
+    this.controlPanelElement.appendChild(filterArea);
+  }
+
+  /**
    * 更新视图按钮状态
    * @param currentView 当前视图
    */
@@ -168,7 +246,7 @@ export class ControlPanel {
    * @param currentSessionId 当前选中的会话ID
    */
   public updateSessionSelector(sessions: any[], currentSessionId?: string): void {
-    this.sessionSelector.update(sessions, currentSessionId);
+    this.calendarSessionSelector.update(sessions, currentSessionId); // 新方式使用日历会话选择器
   }
 
   /**

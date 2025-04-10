@@ -79,6 +79,32 @@ body.loading-session #visualization-container::before {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ========== 日历加载指示器 ========== */
+.calendar-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.calendar-loading .spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(74, 108, 247, 0.2);
+  border-top-color: #4a6cf7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 8px;
 }
 
 /* ========== 布局组件 ========== */
@@ -136,11 +162,196 @@ body.loading-session #visualization-container::before {
   font-weight: bold;
 }
 
+/* ========== 日历会话选择器 ========== */
+.calendar-session-selector {
+  font-family: system-ui, -apple-system, sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  background: var(--card-bg, white);
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+}
+
+.current-month {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.month-nav {
+  background: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color, #555);
+}
+
+.month-nav:hover {
+  background: var(--color-bg-hover, rgba(0,0,0,0.05));
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-gap: 1px;
+  padding: 8px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--label-color, #666);
+  padding: 6px;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+}
+
+/* 基本日期单元格 */
+.day-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 32px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+/* 当前日期 - 使用顶部边框标记，方便与其他样式叠加 */
+.current-day {
+  box-shadow: inset 0 3px 0 var(--accent-color, #4a6cf7);
+  font-weight: 500;
+}
+
+/* 会话开始日 - 使用更醒目的样式 */
+.session-start {
+  cursor: pointer;
+  background-color: rgba(74, 108, 247, 0.15);
+  font-weight: bold;
+  /* 添加脉冲动画效果 */
+  animation: pulse 2s infinite;
+}
+
+.session-start::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-color, #4a6cf7);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 会话持续日 - 使用渐变背景 */
+.session-continue {
+  background: linear-gradient(to right, 
+    rgba(74, 108, 247, 0.1), 
+    rgba(74, 108, 247, 0.05)
+  );
+  position: relative;
+}
+
+/* 会话持续日指示线 */
+.session-continue::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right,
+    rgba(74, 108, 247, 0.5),
+    rgba(74, 108, 247, 0.1)
+  );
+}
+
+/* 当前选中日期 */
+.selected-day {
+  border: 2px solid var(--accent-color, #4a6cf7);
+  z-index: 1; /* 确保选中态在顶层 */
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 108, 247, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(74, 108, 247, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 108, 247, 0);
+  }
+}
+
+/* 今天 */
+.current-day .day-number {
+  background: var(--btn-primary, #4a6cf7);
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 会话开始日 */
+.session-start::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--btn-primary, #4a6cf7);
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 会话持续日 */
+.session-continue {
+  background-color: var(--color-bg-hover, rgba(74, 108, 247, 0.1));
+}
+
+/* 当前选中日期 */
+.selected-day {
+  border: 2px solid var(--btn-primary, #4a6cf7);
+}
+
+/* 不在当前月份的日期 */
+.other-month {
+  opacity: 0.3;
+}
+
 /* 视图模式切换 */
 .view-mode {
   display: flex;
   border-radius: 4px;
-  overflow: hidden;
   margin-bottom: 20px;
 }
 
@@ -185,7 +396,6 @@ body.loading-session #visualization-container::before {
   padding: 16px;
   background-color: var(--filter-bg, #fff);
   border-right: 1px solid var(--filter-border, #e0e0e0);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -195,7 +405,7 @@ body.loading-session #visualization-container::before {
 .filters-panel h2 {
   font-size: 16px;
   font-weight: 500;
-  margin-bottom: 12px;
+  margin-bottom: 0px;
   color: var(--label-color, #424242);
 }
 
@@ -1318,7 +1528,7 @@ svg .node-label {
 .control-panel .view-mode {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
 }
 
 .control-panel .view-mode button {

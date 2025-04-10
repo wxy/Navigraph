@@ -34,15 +34,25 @@
           <button id="tree-view" class="active">树形视图</button>
           <button id="timeline-view">时间线视图</button>
         </div>
-        
-        <!-- 会话选择器（暂时保留原始下拉框，后续会替换为日历） -->
-        <div class="session-selector-container">
-          <label for="session-selector">选择会话</label>
-          <select id="session-selector" aria-label="选择会话">
-            <option value="">正在加载会话...</option>
-          </select>
+    
+        <div id="calendar-session-selector" class="calendar-session-selector">
+          <div class="calendar-header">
+            <button class="month-nav prev" title="上个月">◀</button>
+            <h3 class="current-month">2025年4月</h3>
+            <button class="month-nav next" title="下个月">▶</button>
+          </div>
+          
+          <div class="calendar-grid">
+            <div class="weekday">日</div>
+            <div class="weekday">一</div>
+            <div class="weekday">二</div>
+            <div class="weekday">三</div>
+            <div class="weekday">四</div>
+            <div class="weekday">五</div>
+            <div class="weekday">六</div>
+            <!-- 日期单元格由JS动态生成 -->
+          </div>
         </div>
-        
         <!-- 筛选面板 -->
         <div class="filters-panel">
           <h2>筛选器</h2>

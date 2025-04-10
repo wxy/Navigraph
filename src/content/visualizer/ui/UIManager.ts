@@ -2,12 +2,12 @@ import { Logger } from '../../../lib/utils/logger.js';
 import type { Visualizer, NavNode, NavLink } from '../../types/navigation.js';
 import { StatusBar } from './StatusBar.js';
 import { ViewSwitcher } from './ViewSwitcher.js';
-import { SessionSelector } from './SessionSelector.js';
 import { FilterPanel } from './FilterPanel.js';
 import { NodeDetails } from './NodeDetails.js';
 import { ErrorNotification } from './ErrorNotification.js';
 import { ControlPanel } from './ControlPanel.js';
 import { LoadingIndicator } from './LoadingIndicator.js';
+import { CalendarSessionSelector } from './CalendarSessionSelector.js';
 
 const logger = new Logger('UIManager');
 
@@ -22,13 +22,13 @@ export class UIManager {
   // UI组件
   private statusBar: StatusBar;
   private viewSwitcher: ViewSwitcher;
-  private sessionSelector: SessionSelector;
+  private calendarSessionSelector: CalendarSessionSelector;
   private filterPanel: FilterPanel;
   private nodeDetails: NodeDetails;
   private errorNotification: ErrorNotification;
   private controlPanel: ControlPanel;
   private loadingIndicator: LoadingIndicator;
-
+  
   // 容器元素
   private containerElement: HTMLElement | null = null;
 
@@ -48,18 +48,19 @@ export class UIManager {
     // 初始化基本UI组件
     this.statusBar = new StatusBar(visualizer);
     this.viewSwitcher = new ViewSwitcher(visualizer);
-    this.sessionSelector = new SessionSelector(visualizer);
+    this.calendarSessionSelector = new CalendarSessionSelector(visualizer);
     this.filterPanel = new FilterPanel(visualizer);
     this.nodeDetails = new NodeDetails(visualizer);
     this.errorNotification = new ErrorNotification();
     this.loadingIndicator = new LoadingIndicator();
 
-    // 初始化控制面板，传入其包含的子组件
+    // 初始化控制面板，传入其包含的子组件，包括日历会话选择器
     this.controlPanel = new ControlPanel(
       visualizer,
       this.viewSwitcher,
-      this.sessionSelector,
-      this.filterPanel
+      this.calendarSessionSelector, // 添加日历会话选择器
+      this.filterPanel,
+      this // 传入UIManager自身引用
     );
 
     logger.log("UI管理器已创建");
@@ -196,18 +197,23 @@ export class UIManager {
    */
   private initializeComponents(): void {
     logger.groupCollapsed("初始化UI组件");
-    // 初始化各个组件
+    
+    // 先初始化其他组件
     this.statusBar.initialize();
     this.viewSwitcher.initialize();
-    this.sessionSelector.initialize();
     this.filterPanel.initialize();
     this.nodeDetails.initialize();
     this.errorNotification.initialize();
     this.loadingIndicator.initialize();
 
-    // 初始化控制面板（它包含视图切换、会话选择和筛选面板）
+    // 初始化控制面板
     if (this.containerElement) {
       this.controlPanel.initialize(this.containerElement);
+      
+      // 控制面板初始化后立即初始化日历选择器
+      // 但使用延迟加载策略
+      this.calendarSessionSelector.initialize('calendar-session-selector');
+      logger.log('日历会话选择器已初始化');
     } else {
       logger.warn("容器元素不存在，控制面板无法初始化");
     }
@@ -247,7 +253,27 @@ export class UIManager {
     sessions: any[],
     currentSessionId?: string
   ): void {
-    this.sessionSelector.update(sessions, currentSessionId);
+    // 使用性能更佳的方式更新日历
+    if (sessions.length > 0) {
+      logger.log(`准备更新会话选择器，共 ${sessions.length} 个会话`);
+      
+      // 显示加载状态
+      this.setLoadingState(true);
+      
+      // 使用requestAnimationFrame确保UI渲染优先
+      requestAnimationFrame(() => {
+        // 更新日历会话选择器
+        this.calendarSessionSelector.update(sessions, currentSessionId);
+        
+        // 更新完成后隐藏加载状态
+        setTimeout(() => {
+          this.setLoadingState(false);
+        }, 100); // 短暂延迟以确保视觉上的平滑过渡
+      });
+    } else {
+      // 无会话数据时直接更新
+      this.calendarSessionSelector.update(sessions, currentSessionId);
+    }
   }
 
   /**
@@ -420,5 +446,21 @@ export class UIManager {
   public onSvgInitialized(svg: any): void {
     logger.log("SVG初始化完成通知已接收");
     // 可以在这里执行任何需要在SVG初始化后进行的UI操作
+  }
+
+  /**
+   * 清理UI资源
+   */
+  public dispose(): void {
+    logger.log('清理UI管理器资源');
+    
+    // 清理各组件资源
+    if (typeof this.calendarSessionSelector.dispose === 'function') {
+      this.calendarSessionSelector.dispose();
+    }
+    
+    // 其他组件清理...
+    
+    logger.log('UI管理器资源已清理');
   }
 }
