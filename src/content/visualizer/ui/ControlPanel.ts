@@ -216,20 +216,23 @@ export class ControlPanel {
     if (!this.controlPanelElement) return;
     
     // 创建视图切换区域
-    const viewSwitcherArea = document.createElement('div');
-    viewSwitcherArea.className = 'control-panel-section';
-    viewSwitcherArea.id = 'view-switcher-container';
-    this.controlPanelElement.appendChild(viewSwitcherArea);
+    const viewSwitcherContainer = document.createElement('div');
+    viewSwitcherContainer.className = 'control-panel-section';
+    viewSwitcherContainer.id = 'view-switcher-container';
+    this.controlPanelElement.appendChild(viewSwitcherContainer);
     
-    // 创建会话选择区域
-    const sessionArea = this.createSessionArea();
-    this.controlPanelElement.appendChild(sessionArea);
+    // 创建日历会话选择区域 - 移除多余标题
+    const calendarContainer = document.createElement('div');
+    calendarContainer.className = 'control-panel-section';
+    calendarContainer.id = 'calendar-session-selector';
+    
+    this.controlPanelElement.appendChild(calendarContainer);
     
     // 创建筛选器区域
-    const filterArea = document.createElement('div');
-    filterArea.className = 'control-panel-section';
-    filterArea.id = 'filter-panel-container';
-    this.controlPanelElement.appendChild(filterArea);
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'control-panel-section';
+    filterContainer.id = 'filter-panel-container';
+    this.controlPanelElement.appendChild(filterContainer);
   }
 
   /**

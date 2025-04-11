@@ -62,29 +62,115 @@ export class CalendarSessionSelector {
   private createCalendarStructure(): void {
     if (!this.container) return;
     
-    // 创建基础HTML结构，添加加载指示器
-    this.container.innerHTML = `
-      <div class="calendar-header">
-        <button class="month-nav prev" title="上个月">◀</button>
-        <h3 class="current-month">${this.currentYear}年${this.monthNames[this.currentMonth]}</h3>
-        <button class="month-nav next" title="下个月">▶</button>
-      </div>
-      
-      <div class="calendar-grid">
-        <div class="weekday">日</div>
-        <div class="weekday">一</div>
-        <div class="weekday">二</div>
-        <div class="weekday">三</div>
-        <div class="weekday">四</div>
-        <div class="weekday">五</div>
-        <div class="weekday">六</div>
-      </div>
-      
-      <div class="calendar-loading" style="${this.isLoading ? '' : 'display:none;'}">
-        <div class="spinner"></div>
-        <span>加载会话数据...</span>
-      </div>
-    `;
+    // 清空容器
+    while (this.container.firstChild) {
+      this.container.removeChild(this.container.firstChild);
+    }
+    
+    // 创建日历头部
+    const calendarHeader = document.createElement('div');
+    calendarHeader.className = 'calendar-header';
+    
+    // 创建上个月按钮
+    const prevButton = document.createElement('button');
+    prevButton.className = 'month-nav prev';
+    prevButton.title = '上个月';
+    prevButton.textContent = '◀';
+    calendarHeader.appendChild(prevButton);
+    
+    // 创建月份标题
+    const monthTitle = document.createElement('h3');
+    monthTitle.className = 'current-month';
+    monthTitle.textContent = `${this.currentYear}年${this.monthNames[this.currentMonth]}`;
+    calendarHeader.appendChild(monthTitle);
+    
+    // 创建下个月按钮
+    const nextButton = document.createElement('button');
+    nextButton.className = 'month-nav next';
+    nextButton.title = '下个月';
+    nextButton.textContent = '▶';
+    calendarHeader.appendChild(nextButton);
+    
+    // 添加日历头部到容器
+    this.container.appendChild(calendarHeader);
+    
+    // 创建日历网格
+    const calendarGrid = document.createElement('div');
+    calendarGrid.className = 'calendar-grid';
+    
+    // 添加星期标题
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    weekdays.forEach(day => {
+      const weekday = document.createElement('div');
+      weekday.className = 'weekday';
+      weekday.textContent = day;
+      calendarGrid.appendChild(weekday);
+    });
+    
+    // 添加日历网格到容器
+    this.container.appendChild(calendarGrid);
+    
+    // 创建加载指示器
+    const loadingElement = document.createElement('div');
+    loadingElement.className = 'calendar-loading';
+    loadingElement.style.display = this.isLoading ? 'flex' : 'none';
+    
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+    loadingElement.appendChild(spinner);
+    
+    const loadingText = document.createElement('span');
+    loadingText.textContent = '加载会话数据...';
+    loadingElement.appendChild(loadingText);
+    
+    // 添加加载指示器到容器
+    this.container.appendChild(loadingElement);
+    
+    // 创建会话列表容器
+    this.createSessionListContainer();
+  }
+  
+  /**
+   * 创建会话列表容器
+   */
+  private createSessionListContainer(): void {
+    if (!this.container) return;
+    
+    // 如果已经存在就不再创建
+    if (document.getElementById('session-list-container')) return;
+    
+    // 创建会话列表容器
+    const listContainer = document.createElement('div');
+    listContainer.className = 'session-list-container';
+    listContainer.id = 'session-list-container';
+    listContainer.style.display = 'none';
+    
+    // 创建标题区域
+    const header = document.createElement('div');
+    header.className = 'session-list-header';
+    
+    const title = document.createElement('h4');
+    title.className = 'session-list-title';
+    title.textContent = '选择会话';
+    header.appendChild(title);
+    
+    const closeButton = document.createElement('button');
+    closeButton.className = 'session-list-close';
+    closeButton.id = 'session-list-close';
+    closeButton.innerHTML = '&times;';
+    header.appendChild(closeButton);
+    
+    listContainer.appendChild(header);
+    
+    // 创建会话列表
+    const sessionList = document.createElement('div');
+    sessionList.className = 'session-list';
+    sessionList.id = 'session-list';
+    
+    listContainer.appendChild(sessionList);
+    
+    // 添加会话列表容器到日历容器
+    this.container.appendChild(listContainer);
   }
   
   /**
@@ -206,9 +292,22 @@ export class CalendarSessionSelector {
       // 创建并添加单元格
       const cell = this.createDayCell(day, className.trim(), dateStr);
       
-      // 为开始日添加会话ID数据
+      // 为开始日添加会话ID数据 - 保留原有代码
       if (sessionsByDate[dateStr]?.startSessionId) {
         cell.dataset.sessionId = sessionsByDate[dateStr].startSessionId;
+      }
+      
+      // 新增：添加会话ID数组数据
+      if (sessionsByDate[dateStr]?.startSessionIds && sessionsByDate[dateStr]?.startSessionIds.length > 0) {
+        cell.dataset.sessionIds = JSON.stringify(sessionsByDate[dateStr].startSessionIds);
+        
+        // 如果有多个会话，添加多会话指示器
+        if (sessionsByDate[dateStr].startSessionIds.length > 1) {
+          const multiIndicator = document.createElement('span');
+          multiIndicator.className = 'multi-session-indicator';
+          multiIndicator.textContent = sessionsByDate[dateStr].startSessionIds.length.toString();
+          cell.appendChild(multiIndicator);
+        }
       }
       
       fragment.appendChild(cell);
@@ -260,14 +359,20 @@ export class CalendarSessionSelector {
   private analyzeSessionDates(): Record<string, {
     hasStart: boolean,
     hasContinue: boolean,
-    startSessionId?: string
+    startSessionId?: string,  // 保留原有字段
+    startSessionIds: string[] // 新字段：存储所有会话ID数组
   }> {
-    // 创建日期索引Map，比Object性能更好
     const result: Record<string, {
       hasStart: boolean,
       hasContinue: boolean,
-      startSessionId?: string
+      startSessionId?: string,
+      startSessionIds: string[]
     }> = {};
+    
+    // 如果没有会话，返回空结果
+    if (!this.sessions || this.sessions.length === 0) {
+      return result;
+    }
     
     // 如果会话太多，限制处理数量
     const maxSessions = 500; // 设置合理的最大值以避免性能问题
@@ -297,14 +402,25 @@ export class CalendarSessionSelector {
       const startDateStr = this.formatDate(startDate);
       
       if (!result[startDateStr]) {
-        result[startDateStr] = { hasStart: false, hasContinue: false };
+        result[startDateStr] = { 
+          hasStart: false, 
+          hasContinue: false,
+          startSessionIds: [] 
+        };
       }
       
       // 标记为开始日，并存储会话ID
       result[startDateStr].hasStart = true;
-      result[startDateStr].startSessionId = session.id;
       
-      // 如果有结束时间且不同于开始日期，处理跨天
+      // 保存第一个会话ID作为兼容旧代码的startSessionId
+      if (!result[startDateStr].startSessionId) {
+        result[startDateStr].startSessionId = session.id;
+      }
+      
+      // 所有会话ID存入数组
+      result[startDateStr].startSessionIds.push(session.id);
+      
+      // 以下代码保持不变，处理会话持续日期
       if (session.endTime) {
         const endDate = new Date(session.endTime);
         
@@ -320,7 +436,7 @@ export class CalendarSessionSelector {
             const dateStr = this.formatDate(currentDate);
             
             if (!result[dateStr]) {
-              result[dateStr] = { hasStart: false, hasContinue: false };
+              result[dateStr] = { hasStart: false, hasContinue: false, startSessionIds: [] };
             }
             
             // 标记为持续日
@@ -413,10 +529,151 @@ export class CalendarSessionSelector {
     // 如果没有点击到单元格或不是会话开始日，忽略
     if (!cell || !cell.classList.contains('session-start')) return;
     
+    // 检查是否有多个会话
+    const sessionIdsStr = cell.dataset.sessionIds;
+    if (sessionIdsStr) {
+      try {
+        const sessionIds = JSON.parse(sessionIdsStr);
+        
+        if (Array.isArray(sessionIds) && sessionIds.length > 1) {
+          // 多个会话，显示选择列表
+          this.showSessionList(sessionIds, cell.dataset.date);
+          return;
+        } else if (Array.isArray(sessionIds) && sessionIds.length === 1) {
+          // 单个会话，直接选择
+          this.selectSession(sessionIds[0]);
+          return;
+        }
+      } catch (e) {
+        logger.error('解析会话ID数组失败:', e);
+        const sessionId = cell.dataset.sessionId;
+        if (sessionId) {
+          this.selectSession(sessionId);
+        }
+      }
+    }
+    
+    // 降级到原有逻辑
     const sessionId = cell.dataset.sessionId;
     if (sessionId) {
       this.selectSession(sessionId);
     }
+  }
+
+  /**
+   * 显示指定日期的会话列表
+   */
+  private showSessionList(sessionIds: string[], dateStr?: string): void {
+    // 获取列表容器
+    const listContainer = document.getElementById('session-list-container');
+    const sessionList = document.getElementById('session-list');
+    if (!listContainer || !sessionList) {
+      logger.error('找不到会话列表容器元素');
+      return;
+    }
+    
+    // 清空现有内容
+    while (sessionList.firstChild) {
+      sessionList.removeChild(sessionList.firstChild);
+    }
+    
+    // 如果有日期，更新标题
+    if (dateStr) {
+      const date = new Date(dateStr);
+      const title = listContainer.querySelector('.session-list-title');
+      if (title && date instanceof Date && !isNaN(date.getTime())) {
+        title.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日的会话`;
+      }
+    }
+    
+    // 为每个会话创建列表项
+    for (const sessionId of sessionIds) {
+      const session = this.sessions.find(s => s.id === sessionId);
+      if (!session) continue;
+      
+      // 创建列表项容器
+      const item = document.createElement('div');
+      item.className = 'session-list-item';
+      item.dataset.sessionId = sessionId;
+      
+      // 格式化会话时间
+      const startTime = new Date(session.startTime);
+      const timeStr = startTime.toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // 创建时间元素
+      const timeElement = document.createElement('div');
+      timeElement.className = 'session-time';
+      timeElement.textContent = timeStr;
+      item.appendChild(timeElement);
+      
+      // 创建详情容器
+      const infoElement = document.createElement('div');
+      infoElement.className = 'session-info';
+      
+      // 计算会话时长
+      let durationStr = '进行中';
+      if (session.endTime) {
+        const endTime = new Date(session.endTime);
+        const durationMs = endTime.getTime() - startTime.getTime();
+        const durationMin = Math.floor(durationMs / 60000);
+        
+        if (durationMin < 1) {
+          durationStr = '不足1分钟';
+        } else if (durationMin < 60) {
+          durationStr = `${durationMin}分钟`;
+        } else {
+          const hours = Math.floor(durationMin / 60);
+          const mins = durationMin % 60;
+          durationStr = `${hours}小时${mins > 0 ? ` ${mins}分钟` : ''}`;
+        }
+      }
+      
+      // 添加持续时间
+      const durationElement = document.createElement('span');
+      durationElement.className = 'session-duration';
+      durationElement.textContent = durationStr;
+      infoElement.appendChild(durationElement);
+      
+      item.appendChild(infoElement);
+      
+      // 添加点击事件
+      item.addEventListener('click', () => {
+        this.selectSession(sessionId);
+        listContainer.style.display = 'none';
+      });
+      
+      // 添加到列表中
+      sessionList.appendChild(item);
+    }
+    
+    // 显示列表容器
+    listContainer.style.display = 'block';
+    
+    // 添加关闭按钮事件
+    const closeButton = document.getElementById('session-list-close');
+    if (closeButton) {
+        // 移除旧的事件监听（如果有）
+        closeButton.removeEventListener('click', () => {});
+        // 添加新的事件监听
+        closeButton.addEventListener('click', () => {
+          listContainer.style.display = 'none';
+        });
+      }
+    
+    // 添加点击外部关闭功能
+    setTimeout(() => {
+      const handleOutsideClick = (e: MouseEvent) => {
+        if (!listContainer.contains(e.target as Node) && 
+            !(e.target as Element).closest('.day-cell.session-start')) {
+          listContainer.style.display = 'none';
+          document.removeEventListener('click', handleOutsideClick);
+        }
+      };
+      document.addEventListener('click', handleOutsideClick);
+    }, 10);
   }
   
   /**

@@ -1625,3 +1625,115 @@ svg .node-label {
   /* 新增变量 */
   --session-continue-highlight: rgba(74, 108, 247, 0.12);
 }
+
+/* 多会话指示器样式 */
+.multi-session-indicator {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background-color: var(--accent-color, #4a6cf7);
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  z-index: 1;
+}
+
+/* 会话列表容器样式 */
+.session-list-container {
+  margin-top: 10px;
+  background-color: var(--card-bg, white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(0,0,0,0.1));
+  overflow: hidden;
+  border: 1px solid var(--border-color, #eaeaea);
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.session-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+}
+
+.session-list-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.session-list-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--label-color, #777);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.session-list-close:hover {
+  background-color: var(--hover-bg, rgba(0,0,0,0.05));
+}
+
+.session-list {
+  padding: 4px 0;
+}
+
+.session-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.session-list-item:last-child {
+  border-bottom: none;
+}
+
+.session-list-item:hover {
+  background-color: var(--hover-bg, rgba(74, 108, 247, 0.08));
+}
+
+.session-time {
+  font-weight: 500;
+  color: var(--text-color);
+  min-width: 60px;
+}
+
+.session-info {
+  display: flex;
+  gap: 12px;
+}
+
+.session-duration {
+  color: var(--label-color, #666);
+  font-size: 13px;
+}
+
+.session-pages {
+  color: var(--accent-color, #4a6cf7);
+  font-size: 13px;
+  font-weight: 500;
+}
