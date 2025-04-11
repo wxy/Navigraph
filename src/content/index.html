@@ -30,15 +30,15 @@
       <!-- 右侧控制面板 - 默认隐藏 -->
       <div class="control-panel" id="control-panel">
         <!-- 视图切换 -->
-        <div class="view-mode">
+        <div id="view-switcher-container" class="view-mode">
           <button id="tree-view" class="active">树形视图</button>
           <button id="timeline-view">时间线视图</button>
         </div>
-    
+
         <div id="calendar-session-selector" class="calendar-session-selector">
           <div class="calendar-header">
             <button class="month-nav prev" title="上个月">◀</button>
-            <h3 class="current-month">2025年4月</h3>
+            <h3 class="current-month"></h3>
             <button class="month-nav next" title="下个月">▶</button>
           </div>
           
@@ -65,7 +65,7 @@
           </div>
         </div>
         <!-- 筛选面板 -->
-        <div class="filters-panel">
+        <div id="filter-panel-container" class="filters-panel">
           <h2>筛选器</h2>
           
           <div class="filter-section">

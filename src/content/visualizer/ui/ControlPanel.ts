@@ -1,8 +1,8 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import type { Visualizer } from '../../types/navigation.js';
-import { ViewSwitcher } from './ViewSwitcher.js';
-import { CalendarSessionSelector } from './CalendarSessionSelector.js'; // 导入新日历会话选择器
-import { FilterPanel } from './FilterPanel.js';
+import { ViewSwitcher } from './ControlPanel/ViewSwitcher.js';
+import { CalendarSessionSelector } from './ControlPanel/CalendarSessionSelector.js'; // 导入新日历会话选择器
+import { FilterPanel } from './ControlPanel/FilterPanel.js';
 
 const logger = new Logger('ControlPanel');
 
@@ -12,27 +12,29 @@ const logger = new Logger('ControlPanel');
  */
 export class ControlPanel {
   private visualizer: Visualizer;
-  private uiManager: any; // 或替换为正确的UIManager类型
   private controlPanelElement: HTMLElement | null = null;
   private handleElement: HTMLElement | null = null;
+  
+  // 子组件
   private viewSwitcher: ViewSwitcher;
-  private calendarSessionSelector: CalendarSessionSelector; // 添加日历会话选择器
+  private calendarSessionSelector: CalendarSessionSelector; 
   private filterPanel: FilterPanel;
   
-  // 计时器变量，用于处理鼠标悬停和离开
+  // 计时器变量
   private hoverTimer: number | null = null;
   private leaveTimer: number | null = null;
   
-  constructor(visualizer: Visualizer, 
-              viewSwitcher: ViewSwitcher,
-              calendarSessionSelector: CalendarSessionSelector, // 添加日历会话选择器参数
-              filterPanel: FilterPanel,
-              uiManager: any) { 
+  /**
+   * 构造函数
+   * @param visualizer 可视化器实例
+   */
+  constructor(visualizer: Visualizer) { 
     this.visualizer = visualizer;
-    this.viewSwitcher = viewSwitcher;
-    this.calendarSessionSelector = calendarSessionSelector; // 存储日历会话选择器引用
-    this.filterPanel = filterPanel;
-    this.uiManager = uiManager; 
+    
+    // 一致地创建所有子组件，传入相同参数
+    this.viewSwitcher = new ViewSwitcher(visualizer);
+    this.calendarSessionSelector = new CalendarSessionSelector(visualizer);
+    this.filterPanel = new FilterPanel(visualizer);
     
     logger.log('控制面板已创建');
   }
@@ -50,20 +52,12 @@ export class ControlPanel {
       return;
     }
     
-    // 创建控制面板内容
-    this.createControlPanelContent();
-    
-    // 在创建容器后，初始化各个子组件到对应容器
-    // 视图切换器初始化
+    // 初始化子组件 - 不需要传入容器ID，使用各自内置的查找和初始化方法
     this.viewSwitcher.initialize();
-    
-    // 日历会话选择器初始化
-    this.calendarSessionSelector.initialize('calendar-session-selector');
-    
-    // 筛选面板初始化
+    this.calendarSessionSelector.initialize(); 
     this.filterPanel.initialize();
     
-    // 初始化控制面板交互
+    // 初始化控制面板交互行为
     this.initializeControlPanelInteraction(container);
     
     logger.log('控制面板及所有子组件已初始化');
@@ -237,7 +231,6 @@ export class ControlPanel {
 
   /**
    * 更新视图按钮状态
-   * @param currentView 当前视图
    */
   public updateViewButtonsState(currentView: string): void {
     this.viewSwitcher.updateButtonsState(currentView);
@@ -245,23 +238,32 @@ export class ControlPanel {
 
   /**
    * 更新会话选择器
-   * @param sessions 会话列表
-   * @param currentSessionId 当前选中的会话ID
    */
   public updateSessionSelector(sessions: any[], currentSessionId?: string): void {
-    this.calendarSessionSelector.update(sessions, currentSessionId); // 新方式使用日历会话选择器
+    // 如果会话数量较多，使用优化的更新方式
+    if (sessions.length > 0) {
+      logger.log(`控制面板更新会话选择器，共 ${sessions.length} 个会话`);
+      
+      // 使用requestAnimationFrame确保UI渲染优先
+      requestAnimationFrame(() => {
+        // 更新日历会话选择器
+        this.calendarSessionSelector.update(sessions, currentSessionId);
+      });
+    } else {
+      // 无会话数据时直接更新
+      this.calendarSessionSelector.update(sessions, currentSessionId);
+    }
   }
 
   /**
-   * 更新筛选器UI
-   * @param filters 当前筛选器配置
+   * 更新筛选面板
    */
   public updateFilters(filters: any): void {
     this.filterPanel.updateUI(filters);
   }
 
   /**
-   * 重置所有筛选器为默认值
+   * 重置所有筛选器
    */
   public resetFilters(): void {
     this.filterPanel.resetFilters();

@@ -413,7 +413,7 @@ body.loading-session #visualization-container::before {
   border-right: 1px solid var(--filter-border, #e0e0e0);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   color: var(--filter-text, #333);
 }
 
@@ -1517,7 +1517,7 @@ svg .node-label {
   font-size: 16px;
   font-weight: 500;
   margin-top: 0;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   color: var(--color-text-emphasis);
   border-bottom: 1px solid var(--color-border);
   padding-bottom: 8px;
@@ -1596,7 +1596,7 @@ svg .node-label {
 
 /* 修改选项样式以适应新布局 */
 .control-panel .filter-section {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
 }
 
 .control-panel .filter-section h3 {

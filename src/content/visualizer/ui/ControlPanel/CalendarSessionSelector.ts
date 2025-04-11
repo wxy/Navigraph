@@ -1,7 +1,7 @@
-import { Logger } from '../../../lib/utils/logger.js';
-import type { Visualizer } from '../../types/navigation.js';
-import type { BrowsingSession } from '../../types/session.js';
-import { sessionServiceClient } from '../../core/session-service-client.js';
+import { Logger } from '../../../../lib/utils/logger.js';
+import type { Visualizer } from '../../../types/navigation.js';
+import type { BrowsingSession } from '../../../types/session.js';
+import { sessionServiceClient } from '../../../core/session-service-client.js';
 
 const logger = new Logger('CalendarSessionSelector');
 
@@ -35,22 +35,24 @@ export class CalendarSessionSelector {
   }
   
   /**
-   * 初始化日历选择器
-   * @param containerId 容器元素ID
+   * 初始化日历会话选择器
+   * @param containerId 容器元素ID或容器元素
    */
-  public initialize(containerId: string = 'calendar-session-selector'): void {
-    this.container = document.getElementById(containerId);
+  public initialize(): void {
+    this.container = document.getElementById('calendar-session-selector');
     
     if (!this.container) {
-      logger.error(`日历选择器容器 #${containerId} 未找到`);
+      logger.error(`日历选择器容器未找到`);
       return;
     }
     
-    // 调试信息
-    logger.log(`找到日历选择器容器，尺寸: ${this.container.offsetWidth}x${this.container.offsetHeight}`);
-    
+    // 创建日历结构
     this.createCalendarStructure();
+    
+    // 渲染日历天数
     this.renderCalendarDays();
+    
+    // 设置事件监听器
     this.setupEventListeners();
     
     logger.log('日历会话选择器已初始化');
