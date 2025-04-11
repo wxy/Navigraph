@@ -1,9 +1,6 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import type { Visualizer, NavNode, NavLink } from '../../types/navigation.js';
 import { StatusBar } from './StatusBar.js';
-import { ViewSwitcher } from './ViewSwitcher.js';
-import { SessionSelector } from './SessionSelector.js';
-import { FilterPanel } from './FilterPanel.js';
 import { NodeDetails } from './NodeDetails.js';
 import { ErrorNotification } from './ErrorNotification.js';
 import { ControlPanel } from './ControlPanel.js';
@@ -19,11 +16,8 @@ export class UIManager {
   // 主可视化器引用
   private visualizer: Visualizer;
 
-  // UI组件
+  // 顶层UI组件
   private statusBar: StatusBar;
-  private viewSwitcher: ViewSwitcher;
-  private sessionSelector: SessionSelector;
-  private filterPanel: FilterPanel;
   private nodeDetails: NodeDetails;
   private errorNotification: ErrorNotification;
   private controlPanel: ControlPanel;
@@ -45,22 +39,14 @@ export class UIManager {
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
 
-    // 初始化基本UI组件
+    // 初始化顶层UI组件
     this.statusBar = new StatusBar(visualizer);
-    this.viewSwitcher = new ViewSwitcher(visualizer);
-    this.sessionSelector = new SessionSelector(visualizer);
-    this.filterPanel = new FilterPanel(visualizer);
     this.nodeDetails = new NodeDetails(visualizer);
     this.errorNotification = new ErrorNotification();
     this.loadingIndicator = new LoadingIndicator();
 
-    // 初始化控制面板，传入其包含的子组件
-    this.controlPanel = new ControlPanel(
-      visualizer,
-      this.viewSwitcher,
-      this.sessionSelector,
-      this.filterPanel
-    );
+    // 只创建控制面板，不再传入子组件
+    this.controlPanel = new ControlPanel(visualizer);
 
     logger.log("UI管理器已创建");
   }
@@ -196,18 +182,17 @@ export class UIManager {
    */
   private initializeComponents(): void {
     logger.groupCollapsed("初始化UI组件");
-    // 初始化各个组件
+    
+    // 初始化顶层组件
     this.statusBar.initialize();
-    this.viewSwitcher.initialize();
-    this.sessionSelector.initialize();
-    this.filterPanel.initialize();
     this.nodeDetails.initialize();
     this.errorNotification.initialize();
     this.loadingIndicator.initialize();
 
-    // 初始化控制面板（它包含视图切换、会话选择和筛选面板）
+    // 初始化控制面板 - 它会负责初始化其子组件
     if (this.containerElement) {
       this.controlPanel.initialize(this.containerElement);
+      // 不再直接初始化子组件
     } else {
       logger.warn("容器元素不存在，控制面板无法初始化");
     }
@@ -221,48 +206,6 @@ export class UIManager {
   public updateStatusBar(): void {
     // 状态栏直接从 visualizer 实例获取数据
     this.statusBar.update();
-  }
-
-  /**
-   * 更新视图按钮状态
-   * @param currentView 当前视图
-   */
-  public updateViewButtonsState(currentView: string): void {
-    // ViewSwitcher 和 ControlPanel 中的切换按钮应该是独立的
-    // 如果 ControlPanel 已经包含了 ViewSwitcher，就只需要调用一个
-    this.viewSwitcher.updateButtonsState(currentView);
-
-    // 如果控制面板有自己独立的视图按钮，再调用这个
-    if (typeof this.controlPanel.updateViewButtonsState === "function") {
-      this.controlPanel.updateViewButtonsState(currentView);
-    }
-  }
-
-  /**
-   * 更新会话选择器
-   * @param sessions 会话列表
-   * @param currentSessionId 当前会话ID
-   */
-  public updateSessionSelector(
-    sessions: any[],
-    currentSessionId?: string
-  ): void {
-    this.sessionSelector.update(sessions, currentSessionId);
-  }
-
-  /**
-   * 更新筛选面板
-   * @param filters 当前过滤器配置
-   */
-  public updateFilters(filters: any): void {
-    this.filterPanel.updateUI(filters);
-  }
-
-  /**
-   * 重置所有筛选器
-   */
-  public resetFilters(): void {
-    this.filterPanel.resetFilters();
   }
 
   /**
@@ -420,5 +363,59 @@ export class UIManager {
   public onSvgInitialized(svg: any): void {
     logger.log("SVG初始化完成通知已接收");
     // 可以在这里执行任何需要在SVG初始化后进行的UI操作
+  }
+
+  /**
+   * 更新视图按钮状态
+   * @param currentView 当前视图
+   */
+  public updateViewButtonsState(currentView: string): void {
+    // 只通过控制面板更新视图切换器
+    this.controlPanel.updateViewButtonsState(currentView);
+  }
+
+  /**
+   * 更新会话选择器
+   * @param sessions 会话列表
+   * @param currentSessionId 当前会话ID
+   */
+  public updateSessionSelector(sessions: any[], currentSessionId?: string): void {
+    // 显示加载状态
+    this.setLoadingState(true);
+    
+    // 通过控制面板更新会话选择器
+    this.controlPanel.updateSessionSelector(sessions, currentSessionId);
+    
+    // 更新完成后隐藏加载状态
+    setTimeout(() => {
+      this.setLoadingState(false);
+    }, 100); // 短暂延迟以确保视觉上的平滑过渡
+  }
+
+  /**
+   * 更新筛选面板
+   * @param filters 当前过滤器配置
+   */
+  public updateFilters(filters: any): void {
+    // 通过控制面板更新筛选面板
+    this.controlPanel.updateFilters(filters);
+  }
+
+  /**
+   * 重置所有筛选器
+   */
+  public resetFilters(): void {
+    // 通过控制面板重置筛选器
+    this.controlPanel.resetFilters();
+  }
+
+  /**
+   * 清理UI资源
+   */
+  public dispose(): void {
+    logger.log('清理UI管理器资源');
+    
+    // 清理各组件资源
+    logger.log('UI管理器资源已清理');
   }
 }

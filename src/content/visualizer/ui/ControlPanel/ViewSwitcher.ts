@@ -1,5 +1,5 @@
-import { Logger } from '../../../lib/utils/logger.js';
-import type { Visualizer } from '../../types/navigation.js';
+import { Logger } from '../../../../lib/utils/logger.js';
+import type { Visualizer } from '../../../types/navigation.js';
 
 const logger = new Logger('ViewSwitcher');
 

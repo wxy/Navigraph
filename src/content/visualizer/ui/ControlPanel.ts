@@ -1,8 +1,8 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import type { Visualizer } from '../../types/navigation.js';
-import { ViewSwitcher } from './ViewSwitcher.js';
-import { SessionSelector } from './SessionSelector.js';
-import { FilterPanel } from './FilterPanel.js';
+import { ViewSwitcher } from './ControlPanel/ViewSwitcher.js';
+import { CalendarSessionSelector } from './ControlPanel/CalendarSessionSelector.js'; // 导入新日历会话选择器
+import { FilterPanel } from './ControlPanel/FilterPanel.js';
 
 const logger = new Logger('ControlPanel');
 
@@ -14,22 +14,27 @@ export class ControlPanel {
   private visualizer: Visualizer;
   private controlPanelElement: HTMLElement | null = null;
   private handleElement: HTMLElement | null = null;
+  
+  // 子组件
   private viewSwitcher: ViewSwitcher;
-  private sessionSelector: SessionSelector;
+  private calendarSessionSelector: CalendarSessionSelector; 
   private filterPanel: FilterPanel;
   
-  // 计时器变量，用于处理鼠标悬停和离开
+  // 计时器变量
   private hoverTimer: number | null = null;
   private leaveTimer: number | null = null;
   
-  constructor(visualizer: Visualizer, 
-              viewSwitcher: ViewSwitcher,
-              sessionSelector: SessionSelector,
-              filterPanel: FilterPanel) {
+  /**
+   * 构造函数
+   * @param visualizer 可视化器实例
+   */
+  constructor(visualizer: Visualizer) { 
     this.visualizer = visualizer;
-    this.viewSwitcher = viewSwitcher;
-    this.sessionSelector = sessionSelector;
-    this.filterPanel = filterPanel;
+    
+    // 一致地创建所有子组件，传入相同参数
+    this.viewSwitcher = new ViewSwitcher(visualizer);
+    this.calendarSessionSelector = new CalendarSessionSelector(visualizer);
+    this.filterPanel = new FilterPanel(visualizer);
     
     logger.log('控制面板已创建');
   }
@@ -47,10 +52,15 @@ export class ControlPanel {
       return;
     }
     
-    // 初始化控制面板交互
+    // 初始化子组件 - 不需要传入容器ID，使用各自内置的查找和初始化方法
+    this.viewSwitcher.initialize();
+    this.calendarSessionSelector.initialize(); 
+    this.filterPanel.initialize();
+    
+    // 初始化控制面板交互行为
     this.initializeControlPanelInteraction(container);
     
-    logger.log('控制面板已初始化');
+    logger.log('控制面板及所有子组件已初始化');
   }
   
   /**
@@ -155,8 +165,72 @@ export class ControlPanel {
   }
 
   /**
+   * 创建会话区域的标题栏
+   */
+  private createSessionAreaHeader(): HTMLElement {
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    
+    const title = document.createElement('h3');
+    title.textContent = '会话历史'; // 更新标题
+    title.className = 'section-title';
+    header.appendChild(title);
+    
+    return header;
+  }
+
+  /**
+   * 创建会话区域
+   */
+  private createSessionArea(): HTMLElement {
+    const sessionArea = document.createElement('div');
+    sessionArea.className = 'control-panel-section session-area';
+    
+    // 添加标题栏
+    const header = this.createSessionAreaHeader();
+    sessionArea.appendChild(header); // 现在正确添加标题
+    
+    // 创建日历会话选择器容器
+    const calendarSessionSelectorElement = document.createElement('div');
+    calendarSessionSelectorElement.id = 'calendar-session-selector';
+    calendarSessionSelectorElement.className = 'calendar-session-selector';
+    
+    // 确保日历容器有足够的高度和可视性
+    calendarSessionSelectorElement.style.minHeight = '280px';
+    
+    sessionArea.appendChild(calendarSessionSelectorElement);
+    
+    return sessionArea;
+  }
+
+  /**
+   * 创建控制面板内容
+   */
+  private createControlPanelContent(): void {
+    if (!this.controlPanelElement) return;
+    
+    // 创建视图切换区域
+    const viewSwitcherContainer = document.createElement('div');
+    viewSwitcherContainer.className = 'control-panel-section';
+    viewSwitcherContainer.id = 'view-switcher-container';
+    this.controlPanelElement.appendChild(viewSwitcherContainer);
+    
+    // 创建日历会话选择区域 - 移除多余标题
+    const calendarContainer = document.createElement('div');
+    calendarContainer.className = 'control-panel-section';
+    calendarContainer.id = 'calendar-session-selector';
+    
+    this.controlPanelElement.appendChild(calendarContainer);
+    
+    // 创建筛选器区域
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'control-panel-section';
+    filterContainer.id = 'filter-panel-container';
+    this.controlPanelElement.appendChild(filterContainer);
+  }
+
+  /**
    * 更新视图按钮状态
-   * @param currentView 当前视图
    */
   public updateViewButtonsState(currentView: string): void {
     this.viewSwitcher.updateButtonsState(currentView);
@@ -164,23 +238,32 @@ export class ControlPanel {
 
   /**
    * 更新会话选择器
-   * @param sessions 会话列表
-   * @param currentSessionId 当前选中的会话ID
    */
   public updateSessionSelector(sessions: any[], currentSessionId?: string): void {
-    this.sessionSelector.update(sessions, currentSessionId);
+    // 如果会话数量较多，使用优化的更新方式
+    if (sessions.length > 0) {
+      logger.log(`控制面板更新会话选择器，共 ${sessions.length} 个会话`);
+      
+      // 使用requestAnimationFrame确保UI渲染优先
+      requestAnimationFrame(() => {
+        // 更新日历会话选择器
+        this.calendarSessionSelector.update(sessions, currentSessionId);
+      });
+    } else {
+      // 无会话数据时直接更新
+      this.calendarSessionSelector.update(sessions, currentSessionId);
+    }
   }
 
   /**
-   * 更新筛选器UI
-   * @param filters 当前筛选器配置
+   * 更新筛选面板
    */
   public updateFilters(filters: any): void {
     this.filterPanel.updateUI(filters);
   }
 
   /**
-   * 重置所有筛选器为默认值
+   * 重置所有筛选器
    */
   public resetFilters(): void {
     this.filterPanel.resetFilters();
