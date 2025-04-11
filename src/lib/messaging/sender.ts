@@ -1,27 +1,26 @@
 import { Logger } from '../../lib/utils/logger.js';
-import { MessageTarget, BaseMessage, BaseResponse } from '../../types/messages/common.js';
-import { RequestResponseMap } from '../../types/messages/index.js';
-
-// 自定义类型帮助器，将target和action转换为RequestResponseMap的键
-type PrefixedAction<T extends MessageTarget, A extends string> = 
-  `${T}.${A}` extends keyof RequestResponseMap ? `${T}.${A}` : never;
-
-// 查找不带前缀的动作对应的完整键名
-type FindActionWithTarget<A extends string> = 
-  {[K in keyof RequestResponseMap]: K extends `${infer T}.${A}` ? K : never}[keyof RequestResponseMap];
+import { 
+  MessageTarget, 
+  BaseMessage, 
+  BaseResponse,
+  RetryInfo 
+} from '../../types/messages/common.js';
+import { 
+  RequestResponseMap,
+  PrefixedAction,
+  FindActionWithTarget
+} from '../../types/messages/index.js';
 
 const logger = new Logger('MessageSender');
 
 /**
  * 发送消息到指定目标
- * @param action 消息动作
- * @param target 目标接收者
- * @param data 消息数据
  */
 export function sendMessage<T extends MessageTarget, A extends string>(
   action: A, 
   target: T,
-  data: any = {}
+  data: any = {},
+  retryInfo?: RetryInfo
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     try {
@@ -30,13 +29,19 @@ export function sendMessage<T extends MessageTarget, A extends string>(
       const requestId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
       
       const message = {
-        action: action, // 保持原始action名称，不使用带前缀的键
+        action: action,
         requestId,
         target,
         ...data
       };
       
-      logger.log(`发送消息: ${action} [ID:${requestId}] 至 ${target}`);
+      // 修改日志记录逻辑
+      // 只在不是中间重试尝试时记录日志
+      if (!retryInfo || retryInfo.isLastAttempt || retryInfo.attempt === 0) {
+        logger.log(`发送消息: ${action} [ID:${requestId}] 至 ${target}${
+          retryInfo && retryInfo.attempt > 0 ? ` (尝试 ${retryInfo.attempt}/${retryInfo.maxRetries})` : ''
+        }`);
+      }
       
       if (target === 'content') {
         // 发送到特定标签页内容脚本
@@ -45,7 +50,7 @@ export function sendMessage<T extends MessageTarget, A extends string>(
           delete (data as any).tabId; // 从数据中移除tabId，避免重复
           
           chrome.tabs.sendMessage(tabId, message, (response) => {
-            handleResponse(response, resolve, reject);
+            handleResponse(response, resolve, reject, retryInfo);
           });
         } else {
           reject(new Error('发送到内容脚本时必须指定tabId'));
@@ -53,11 +58,15 @@ export function sendMessage<T extends MessageTarget, A extends string>(
       } else {
         // 发送到后台脚本或其他目标
         chrome.runtime.sendMessage(message, (response) => {
-          handleResponse(response, resolve, reject);
+          handleResponse(response, resolve, reject, retryInfo);
         });
       }
     } catch (error) {
-      logger.error('发送消息异常:', error);
+      // 修改错误日志记录
+      // 只有在最后一次尝试时才记录错误
+      if (!retryInfo || retryInfo.isLastAttempt) {
+        logger.error('发送消息异常:', error);
+      }
       reject(error);
     }
   });
@@ -69,24 +78,35 @@ export function sendMessage<T extends MessageTarget, A extends string>(
 function handleResponse<T extends BaseResponse>(
   response: any, 
   resolve: (value: T) => void, 
-  reject: (reason: any) => void
+  reject: (reason: any) => void,
+  retryInfo?: RetryInfo
 ): void {
+  // 修改抑制错误的条件逻辑
+  // 只有在这是最后一次尝试时才记录错误
+  const suppressErrors = retryInfo?.isLastAttempt === false;
+  
   if (chrome.runtime.lastError) {
-    logger.error('发送消息时出错:', chrome.runtime.lastError);
+    if (!suppressErrors) {
+      logger.error('发送消息时出错:', chrome.runtime.lastError);
+    }
     reject(chrome.runtime.lastError);
     return;
   }
   
   if (!response) {
     const error = new Error('没有收到响应');
-    logger.error(error);
+    if (!suppressErrors) {
+      logger.error(error);
+    }
     reject(error);
     return;
   }
   
   if (!response.success) {
     const error = new Error(response.error || '未知错误');
-    logger.error('收到错误响应:', response.error);
+    if (!suppressErrors) {
+      logger.error('收到错误响应:', response.error);
+    }
     reject(error);
     return;
   }
@@ -202,17 +222,23 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
           
           // 计算下一次延迟（如果启用指数退避）
           if (exponentialBackoff) {
-            const jitter = Math.random() * 0.3 + 0.85; // 85%-115%的随机因子
+            const jitter = Math.random() * 0.3 + 0.85;
             currentDelay = Math.min(currentDelay * factor * jitter, maxDelay);
           }
         }
         
-        const response = await sendMessage(action, target, data);
+        // 创建更详细的重试信息对象
+        const retryInfo = {
+          isRetrying: attempt > 0,
+          isLastAttempt: attempt === maxRetries,
+          attempt: attempt,
+          maxRetries: maxRetries
+        };
+        
+        const response = await sendMessage(action, target, data, retryInfo);
         resolve(response);
         return;
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        logger.warn(`发送消息失败 (${attempt}/${maxRetries}): ${action} - ${errorMsg}`);
         lastError = error;
         
         // 如果是扩展上下文失效错误，不再重试
@@ -230,6 +256,8 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
       logger.warn(`发送消息 ${action} 失败，使用默认值`);
       resolve(defaultValue);
     } else {
+      // 最终失败时记录一条整体错误
+      logger.error(`在 ${maxRetries + 1} 次尝试后发送消息失败: ${action}`);
       reject(lastError || new Error(`在 ${maxRetries} 次尝试后发送消息失败`));
     }
   });
