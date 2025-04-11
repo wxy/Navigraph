@@ -45,3 +45,15 @@ type MessageMapByTarget<T extends MessageTarget, API extends Record<string, any>
     response: API[K]['response'];
   };
 };
+
+/**
+ * 自定义类型帮助器，将target和action转换为RequestResponseMap的键
+ */
+export type PrefixedAction<T extends MessageTarget, A extends string> = 
+  `${T}.${A}` extends keyof RequestResponseMap ? `${T}.${A}` : never;
+
+/**
+ * 查找不带前缀的动作对应的完整键名
+ */
+export type FindActionWithTarget<A extends string> = 
+  {[K in keyof RequestResponseMap]: K extends `${infer T}.${A}` ? K : never}[keyof RequestResponseMap];
