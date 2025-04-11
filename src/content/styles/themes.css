@@ -98,6 +98,17 @@
   --logo-bg-color: rgba(26, 29, 33, 0.8);
   --logo-border: 1px solid rgba(255, 255, 255, 0.1);
   --logo-text-color: #333;
+
+  /* 添加日历相关变量 */
+  --calendar-bg: #2d333b;
+  --calendar-text: #e6edf3;
+  --calendar-border: #444c56;
+  --calendar-weekday: #adbac7;
+  --session-start-bg: rgba(88, 166, 255, 0.2);
+  --session-start-shadow: rgba(88, 166, 255, 0.2);
+  --session-continue-bg: rgba(88, 166, 255, 0.1);
+  --selected-day-bg: rgba(88, 166, 255, 0.3);
+  --accent-color: #58a6ff;
 }
 
 /* 亮色主题 */
@@ -195,6 +206,17 @@
   --logo-bg-color: rgba(255, 255, 255, 0.8);
   --logo-border: 1px solid rgba(0, 0, 0, 0.1);
   --logo-text-color: #333;
+
+  /* 添加日历相关变量 */
+  --calendar-bg: white;
+  --calendar-text: #333;
+  --calendar-border: #eaeaea;
+  --calendar-weekday: #666;
+  --session-start-bg: rgba(74, 108, 247, 0.15);
+  --session-start-shadow: rgba(74, 108, 247, 0.1);
+  --session-continue-bg: rgba(74, 108, 247, 0.06);
+  --selected-day-bg: rgba(74, 108, 247, 0.2);
+  --accent-color: #4a6cf7;
 }
 
 /* 添加系统默认主题变量，用于未指定主题时的默认值 */

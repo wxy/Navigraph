@@ -36,3 +36,17 @@ export interface BaseResponse {
  */
 export type MessageHandler<TRequest extends BaseMessage, TResponse extends BaseResponse> = 
   (message: TRequest, sender: chrome.runtime.MessageSender, sendResponse: (response: TResponse) => void) => boolean;
+
+/**
+ * 消息重试相关信息
+ */
+export type RetryInfo = {
+  /** 是否是重试请求 */
+  isRetrying: boolean;
+  /** 是否是最后一次尝试 */
+  isLastAttempt: boolean;
+  /** 当前是第几次尝试 (0表示首次尝试) */
+  attempt: number;
+  /** 最大尝试次数 */
+  maxRetries: number;
+};

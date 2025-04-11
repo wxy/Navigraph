@@ -1,5 +1,5 @@
-import { Logger } from '../../../lib/utils/logger.js';
-import type { Visualizer } from '../../types/navigation.js';
+import { Logger } from '../../../../lib/utils/logger.js';
+import type { Visualizer } from '../../../types/navigation.js';
 
 const logger = new Logger('FilterPanel');
 
@@ -21,52 +21,52 @@ export class FilterPanel {
   private visualizer: Visualizer;
   private filterContainer: HTMLElement | null = null;
   
-  // 默认过滤器定义
+  // 默认过滤器定义 - 这些ID必须与HTML中的ID匹配
   private filterDefinitions: FilterDefinition[] = [
     {
-      id: 'filter-reload',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'filter-reload',
       label: '显示刷新',
       defaultValue: true,
       description: '显示页面刷新操作'
     },
     {
-      id: 'filter-history',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'filter-history',
       label: '显示历史导航',
       defaultValue: true,
       description: '显示浏览器历史前进/后退操作'
     },
     {
-      id: 'filter-closed',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'filter-closed',
       label: '显示已关闭页面',
       defaultValue: false,
       description: '显示已关闭的页面'
     },
     {
-      id: 'filter-tracking',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'filter-tracking',
       label: '显示跟踪页面',
       defaultValue: false,
       description: '显示分析和跟踪相关的请求'
     },
     {
-      id: 'type-link',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'type-link',
       label: '显示链接点击',
       defaultValue: true,
       description: '显示由链接点击导致的导航'
     },
     {
-      id: 'type-address',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'type-address',
       label: '显示地址栏输入',
       defaultValue: true,
       description: '显示由地址栏输入导致的导航'
     },
     {
-      id: 'type-form',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'type-form',
       label: '显示表单提交',
       defaultValue: true,
       description: '显示由表单提交导致的导航'
     },
     {
-      id: 'type-js',  // 修改为匹配 NavigationVisualizer 的 ID
+      id: 'type-js',
       label: '显示JS导航',
       defaultValue: true,
       description: '显示由JavaScript导致的导航'
@@ -81,7 +81,7 @@ export class FilterPanel {
    * 初始化筛选面板
    */
   public initialize(): void {
-    this.filterContainer = document.querySelector('.filters-panel');
+    this.filterContainer = document.getElementById('filter-panel-container');
     
     if (!this.filterContainer) {
       logger.warn('筛选器容器未找到');
@@ -94,34 +94,34 @@ export class FilterPanel {
     logger.log('筛选面板已初始化');
   }
   
-/**
- * 为现有HTML中的筛选器添加事件监听器
- */
-private attachEventListenersToExistingFilters(): void {
-  // 直接使用filterDefinitions中的ID，它们现在与HTML元素ID匹配
-  this.filterDefinitions.forEach(filter => {
-    const checkbox = document.getElementById(filter.id) as HTMLInputElement;
-    if (checkbox) {
-      // 获取初始值
-      const initialValue = this.getFilterValue(
-        filter.id, 
-        filter.defaultValue
-      );
-      
-      // 设置初始状态
-      checkbox.checked = initialValue;
-      
-      // 添加事件监听器
-      checkbox.addEventListener('change', () => {
-        this.handleFilterChange(filter.id, checkbox.checked);
-      });
-      
-      logger.debug(`为筛选器 ${filter.id} 添加了事件监听器，初始值: ${initialValue}`);
-    } else {
-      logger.warn(`筛选器元素 ${filter.id} 未找到`);
-    }
-  });
-}
+  /**
+   * 为现有HTML中的筛选器添加事件监听器
+   */
+  private attachEventListenersToExistingFilters(): void {
+    // 直接使用filterDefinitions中的ID，它们与HTML元素ID一致
+    this.filterDefinitions.forEach(filter => {
+      const checkbox = document.getElementById(filter.id) as HTMLInputElement;
+      if (checkbox) {
+        // 获取初始值
+        const initialValue = this.getFilterValue(
+          filter.id, 
+          filter.defaultValue
+        );
+        
+        // 设置初始状态
+        checkbox.checked = initialValue;
+        
+        // 添加事件监听器
+        checkbox.addEventListener('change', () => {
+          this.handleFilterChange(filter.id, checkbox.checked);
+        });
+        
+        logger.debug(`为筛选器 ${filter.id} 添加了事件监听器，初始值: ${initialValue}`);
+      } else {
+        logger.warn(`筛选器元素 ${filter.id} 未找到`);
+      }
+    });
+  }
   
   /**
    * 获取指定筛选器的默认值
@@ -132,74 +132,17 @@ private attachEventListenersToExistingFilters(): void {
   }
   
   /**
-   * 创建筛选器UI
-   */
-  private createFilterUI(): void {
-    if (!this.filterContainer) return;
-    
-    // 清空容器
-    this.filterContainer.innerHTML = '';
-    
-    // 添加标题
-    const headerElement = document.createElement('h3');
-    headerElement.textContent = '筛选器';
-    headerElement.className = 'filter-header';
-    this.filterContainer.appendChild(headerElement);
-    
-    // 创建每个筛选选项
-    this.filterDefinitions.forEach(filter => {
-      const filterItem = this.createFilterItem(filter);
-      this.filterContainer?.appendChild(filterItem);
-    });
-  }
-  
-  /**
-   * 创建单个筛选器项
-   */
-  private createFilterItem(filter: FilterDefinition): HTMLElement {
-    // 创建容器
-    const filterItem = document.createElement('div');
-    filterItem.className = 'filter-item';
-    
-    // 创建复选框
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = `filter-${filter.id}`;
-    checkbox.checked = this.getFilterValue(filter.id, filter.defaultValue);
-    checkbox.addEventListener('change', () => {
-      this.handleFilterChange(filter.id, checkbox.checked);
-    });
-    
-    // 创建标签
-    const label = document.createElement('label');
-    label.htmlFor = `filter-${filter.id}`;
-    label.textContent = filter.label;
-    
-    // 添加工具提示 (如果有描述)
-    if (filter.description) {
-      label.title = filter.description;
-      label.classList.add('has-tooltip');
-    }
-    
-    // 组装项目
-    filterItem.appendChild(checkbox);
-    filterItem.appendChild(label);
-    
-    return filterItem;
-  }
-  
-  /**
    * 处理筛选器变更
    */
   private handleFilterChange(filterId: string, value: boolean): void {
     logger.log(`筛选器变更: ${filterId} = ${value}`);
     
-  // 检查可视化器是否有handleFilterChange方法
-  if (typeof (this.visualizer as any).handleFilterChange === 'function') {
-    // 直接调用NavigationVisualizer的handleFilterChange方法
-    (this.visualizer as any).handleFilterChange(filterId, value);
-    logger.debug(`使用可视化器的handleFilterChange方法处理筛选器变化`);
-  } else {
+    // 检查可视化器是否有handleFilterChange方法
+    if (typeof (this.visualizer as any).handleFilterChange === 'function') {
+      // 直接调用NavigationVisualizer的handleFilterChange方法
+      (this.visualizer as any).handleFilterChange(filterId, value);
+      logger.debug(`使用可视化器的handleFilterChange方法处理筛选器变化`);
+    } else {
       // 否则使用默认实现
       // 更新可视化器的筛选器配置
       this.visualizer.updateFilter(filterId, value);
@@ -225,20 +168,25 @@ private attachEventListenersToExistingFilters(): void {
   /**
    * 重置所有筛选器为默认值
    */
-  resetFilters(): void {
+  public resetFilters(): void {
     this.filterDefinitions.forEach(filter => {
+      // 修复：直接使用 filter.id 而不是 `filter-${filter.id}`
       const checkbox = document.getElementById(filter.id) as HTMLInputElement;
       if (checkbox) {
         // 使用默认值设置复选框状态
-        checkbox.checked = filter.defaultValue;
+        checkbox.checked = filter.defaultValue; // 直接使用 filter.defaultValue
         
         // 向可视化器通知筛选器变化
         this.handleFilterChange(filter.id, filter.defaultValue);
+      } else {
+        logger.warn(`重置筛选器时未找到元素: ${filter.id}`);
       }
     });
     
     // 更新UI状态
-    this.updateUI(this.visualizer.filters); // 替换 getFilters() 为 filters
+    this.updateUI(this.visualizer.filters);
+    
+    logger.log('所有筛选器已重置为默认值');
   }
   
   /**

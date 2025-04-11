@@ -30,21 +30,42 @@
       <!-- 右侧控制面板 - 默认隐藏 -->
       <div class="control-panel" id="control-panel">
         <!-- 视图切换 -->
-        <div class="view-mode">
+        <div id="view-switcher-container" class="view-mode">
           <button id="tree-view" class="active">树形视图</button>
           <button id="timeline-view">时间线视图</button>
         </div>
-        
-        <!-- 会话选择器（暂时保留原始下拉框，后续会替换为日历） -->
-        <div class="session-selector-container">
-          <label for="session-selector">选择会话</label>
-          <select id="session-selector" aria-label="选择会话">
-            <option value="">正在加载会话...</option>
-          </select>
+
+        <div id="calendar-session-selector" class="calendar-session-selector">
+          <div class="calendar-header">
+            <button class="month-nav prev" title="上个月">◀</button>
+            <h3 class="current-month"></h3>
+            <button class="month-nav next" title="下个月">▶</button>
+          </div>
+          
+          <div class="calendar-grid">
+            <div class="weekday">日</div>
+            <div class="weekday">一</div>
+            <div class="weekday">二</div>
+            <div class="weekday">三</div>
+            <div class="weekday">四</div>
+            <div class="weekday">五</div>
+            <div class="weekday">六</div>
+            <!-- 日期单元格由JS动态生成 -->
+          </div>
+          
+          <!-- 添加多会话列表容器 -->
+          <div class="session-list-container" id="session-list-container" style="display: none;">
+            <div class="session-list-header">
+              <h4 class="session-list-title">选择会话</h4>
+              <button class="session-list-close" id="session-list-close">&times;</button>
+            </div>
+            <div class="session-list" id="session-list">
+              <!-- 会话项将动态生成 -->
+            </div>
+          </div>
         </div>
-        
         <!-- 筛选面板 -->
-        <div class="filters-panel">
+        <div id="filter-panel-container" class="filters-panel">
           <h2>筛选器</h2>
           
           <div class="filter-section">
