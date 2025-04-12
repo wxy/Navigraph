@@ -135,10 +135,12 @@ export class BackgroundSessionManager {
       // 1. 获取所有活跃标签页
       const tabs = await this.getAllActiveTabs();
       const activeTabIds = new Set(tabs.map(tab => tab.id));
+      logger.log(`当前有 ${activeTabIds.size} 个活跃标签页`);
       
       // 2. 获取当前会话的所有未关闭节点
       const navStorage = getNavigationStorage();
       await navStorage.initialize();
+      
       // 查询当前会话的节点
       const sessionNodes = await navStorage.queryNodes({
         sessionId: this.currentSessionId
@@ -146,22 +148,28 @@ export class BackgroundSessionManager {
       
       // 过滤出活跃(未关闭)节点
       const activeNodes = sessionNodes.filter(node => !node.isClosed);
+      logger.log(`当前会话有 ${activeNodes.length} 个活跃节点`);
       
       // 3. 找出标签页已关闭但节点未标记为关闭的节点
       const orphanedNodes = activeNodes.filter(node => 
-        node.tabId && !activeTabIds.has(node.tabId)
+        node.tabId !== undefined && !activeTabIds.has(node.tabId)
       );
       
       if (orphanedNodes.length > 0) {
         logger.log(`发现 ${orphanedNodes.length} 个孤立节点，标记为已关闭`);
         
+        const now = Date.now();
+        
         // 更新这些节点状态
         for (const node of orphanedNodes) {
+          logger.log(`标记节点 ${node.id} (tabId=${node.tabId}) 为已关闭`);
           await navStorage.updateNode(node.id, {
             isClosed: true,
-            closeTime: Date.now()
+            closeTime: now
           });
         }
+      } else {
+        logger.log('未发现需要更新状态的孤立节点');
       }
       
       logger.log('节点状态一致性检查完成');

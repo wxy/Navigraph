@@ -189,35 +189,32 @@ export class CalendarSessionSelector {
     // 显示加载指示器
     this.setLoading(true);
     
-    // 使用requestAnimationFrame确保UI先更新
+    // 不再嵌套两层异步，只使用一个
     requestAnimationFrame(() => {
-      // 处理会话数据（异步）
-      setTimeout(() => {
-        logger.log(`更新日历选择器，会话数量: ${sessions.length}`);
-        this.sessions = sessions;
-        this.selectedSessionId = currentSessionId || null;
-        
-        // 如果有当前选中会话，定位到会话所在月份
-        if (currentSessionId) {
-          const selectedSession = sessions.find(s => s.id === currentSessionId);
-          if (selectedSession) {
-            const sessionDate = new Date(selectedSession.startTime);
-            this.currentMonth = sessionDate.getMonth();
-            this.currentYear = sessionDate.getFullYear();
-          }
+      logger.log(`更新日历选择器，会话数量: ${sessions.length}`);
+      this.sessions = sessions;
+      this.selectedSessionId = currentSessionId || null;
+      
+      // 如果有当前选中会话，定位到会话所在月份
+      if (currentSessionId) {
+        const selectedSession = sessions.find(s => s.id === currentSessionId);
+        if (selectedSession) {
+          const sessionDate = new Date(selectedSession.startTime);
+          this.currentMonth = sessionDate.getMonth();
+          this.currentYear = sessionDate.getFullYear();
         }
-        
-        // 强制确保日历结构存在
-        if (!this.container?.querySelector('.calendar-grid')) {
-          logger.warn('日历网格不存在，重新创建结构');
-          this.createCalendarStructure();
-        }
-        
-        this.renderCalendarDays();
-        this.setLoading(false); // 隐藏加载指示器
-        
-        logger.log('日历会话选择器更新完成');
-      }, 0);
+      }
+      
+      // 强制确保日历结构存在
+      if (!this.container?.querySelector('.calendar-grid')) {
+        logger.warn('日历网格不存在，重新创建结构');
+        this.createCalendarStructure();
+      }
+      
+      this.renderCalendarDays();
+      this.setLoading(false); // 隐藏加载指示器
+      
+      logger.log('日历会话选择器更新完成');
     });
   }
   
