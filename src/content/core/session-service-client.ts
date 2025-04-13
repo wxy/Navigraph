@@ -26,6 +26,12 @@ export class SessionServiceClient {
   private sessionLoadListeners: SessionEventCallback[] = [];
   private sessionsListLoadedListeners: ((sessions: Session[]) => void)[] = [];
 
+  // 添加最新会话相关属性和方法
+  private latestSession: any = null;
+  private latestSessionId: string | null = null;
+
+  private latestSessionLoadListeners: ((session: any | null) => void)[] = [];
+
   // 私有构造函数
   private constructor() {
     // 初始化代码
@@ -48,6 +54,10 @@ export class SessionServiceClient {
 
   onSessionsListLoaded(callback: (sessions: Session[]) => void): void {
     this.sessionsListLoadedListeners.push(callback);
+  }
+
+  onLatestSessionLoaded(callback: (session: any | null) => void): void {
+    this.latestSessionLoadListeners.push(callback);
   }
 
   /**
@@ -196,6 +206,44 @@ export class SessionServiceClient {
   }
 
   /**
+   * 加载最新活跃会话
+   */
+  async loadLatestSession(): Promise<any | null> {
+    try {
+      const response = await sendMessage('getLatestSession', {});
+      
+      if (response?.session) {
+        this.latestSession = response.session;
+        this.latestSessionId = response.session.id;
+        this.triggerLatestSessionLoaded(response.session);
+      } else {
+        this.latestSession = null;
+        this.latestSessionId = null;
+        this.triggerLatestSessionLoaded(null);
+      }
+      
+      return this.latestSession;
+    } catch (error) {
+      logger.error("加载最新会话失败:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取最新活跃会话ID
+   */
+  getLatestSessionId(): string | null {
+    return this.latestSessionId;
+  }
+
+  /**
+   * 获取最新活跃会话
+   */
+  getLatestSession(): any | null {
+    return this.latestSession;
+  }
+
+  /**
    * 加载当前会话
    */
   async loadCurrentSession(): Promise<any | null> {
@@ -261,6 +309,17 @@ export class SessionServiceClient {
    */
   getCurrentSessionId(): string | null {
     return this.currentSessionId;
+  }
+
+  // 事件触发相关方法
+  private triggerLatestSessionLoaded(session: any | null): void {
+    for (const listener of this.latestSessionLoadListeners) {
+      try {
+        listener(session);
+      } catch (error) {
+        logger.error("调用最新会话加载监听器失败:", error);
+      }
+    }
   }
 }
 

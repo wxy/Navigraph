@@ -57,6 +57,9 @@ export class SessionViewController {
       
       // 加载当前会话
       await this.loadCurrentSession();
+
+      // 获取最新会话ID (不需要单独加载，仅获取ID用于视觉区分)
+      await sessionServiceClient.loadLatestSession();
       
       logger.log("会话管理初始化完成");
     } catch (error) {
@@ -105,24 +108,24 @@ export class SessionViewController {
    */
   updateSessionSelector(sessionList?: any[]): void {
     logger.debug("更新会话选择器...");
-
+  
     try {
-      // 如果提供了会话列表，直接使用
-      if (sessionList) {
-        // 获取当前会话ID
-        const currentSession = sessionServiceClient.getCurrentSession();
-        const currentSessionId = currentSession ? currentSession.id : undefined;
-
-        this.uiManager.updateSessionSelector(sessionList, currentSessionId);
-        return;
-      }
-
-      // 否则从会话管理器同步获取
-      const availableSessionList = sessionServiceClient.getSessionList();
+      // 获取当前会话ID
       const currentSession = sessionServiceClient.getCurrentSession();
       const currentSessionId = currentSession ? currentSession.id : undefined;
-
-      this.uiManager.updateSessionSelector(availableSessionList, currentSessionId);
+      
+      // 获取最新会话ID - 仅用于视觉区分
+      const latestSessionId = sessionServiceClient.getLatestSessionId() || undefined;
+  
+      // 如果提供了会话列表，直接使用
+      if (sessionList) {
+        this.uiManager.updateSessionSelector(sessionList, currentSessionId, latestSessionId);
+        return;
+      }
+  
+      // 否则从会话管理器同步获取
+      const availableSessionList = sessionServiceClient.getSessionList();
+      this.uiManager.updateSessionSelector(availableSessionList, currentSessionId, latestSessionId);
     } catch (error) {
       logger.error("更新会话选择器失败", error);
     }
@@ -255,6 +258,9 @@ export class SessionViewController {
       await sessionServiceClient.loadSessionList();
       await sessionServiceClient.loadCurrentSession();
       
+      // 同时更新最新会话ID
+      await sessionServiceClient.loadLatestSession();
+
       logger.log("会话数据刷新完成");
     } catch (error) {
       logger.error("刷新会话数据失败:", error);
