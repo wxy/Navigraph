@@ -263,6 +263,35 @@ export namespace BackgroundMessages {
   export interface MarkSessionActivityRequest extends BaseMessage {
     action: 'markSessionActivity';
   }
+
+  /**
+   * 获取最新会话请求
+   */
+  export interface GetLatestSessionRequest extends BaseMessage {
+    type: 'getLatestSession';
+  }
+
+  /**
+   * 设置最新会话请求
+   */
+  export interface SetLatestSessionRequest extends BaseMessage {
+    type: 'setLatestSession';
+    sessionId: string | null;
+  }
+
+  /**
+   * 同步当前查看会话到最新会话请求
+   */
+  export interface SyncCurrentToLatestRequest extends BaseMessage {
+    type: 'syncCurrentToLatest';
+  }
+
+  /**
+   * 同步最新会话到当前查看会话请求
+   */
+  export interface SyncLatestToCurrentRequest extends BaseMessage {
+    type: 'syncLatestToCurrent';
+  }
 }
 
 // 对应的响应类型（省略实现细节）
@@ -447,6 +476,38 @@ export namespace BackgroundResponses {
   export interface MarkSessionActivityResponse extends BaseResponse {
     // 无额外字段
   }
+
+  /**
+   * 获取最新会话响应
+   */
+  export interface GetLatestSessionResponse extends BaseResponse {
+    session: BrowsingSession | null;
+    sessionId: string | null;
+  }
+
+  /**
+   * 设置最新会话响应
+   */
+  export interface SetLatestSessionResponse extends BaseResponse {
+    sessionId: string | null;
+    session: BrowsingSession | null;
+  }
+
+  /**
+   * 同步当前查看会话到最新会话响应
+   */
+  export interface SyncCurrentToLatestResponse extends BaseResponse {
+    success: boolean;
+    session: BrowsingSession | null;
+  }
+
+  /**
+   * 同步最新会话到当前查看会话响应
+   */
+  export interface SyncLatestToCurrentResponse extends BaseResponse {
+    success: boolean;
+    session: BrowsingSession | null;
+  }
 }
 
 /**
@@ -577,6 +638,26 @@ export interface BackgroundAPI {
     request: BackgroundMessages.MarkSessionActivityRequest;
     response: BackgroundResponses.MarkSessionActivityResponse;
   };
+
+  getLatestSession: {
+    request: BackgroundMessages.GetLatestSessionRequest;
+    response: BackgroundResponses.GetLatestSessionResponse;
+  };
+
+  setLatestSession: {
+    request: BackgroundMessages.SetLatestSessionRequest;
+    response: BackgroundResponses.SetLatestSessionResponse;
+  };
+
+  syncCurrentToLatest: {
+    request: BackgroundMessages.SyncCurrentToLatestRequest;
+    response: BackgroundResponses.SyncCurrentToLatestResponse;
+  };
+
+  syncLatestToCurrent: {
+    request: BackgroundMessages.SyncLatestToCurrentRequest;
+    response: BackgroundResponses.SyncLatestToCurrentResponse;
+  };
 }
 
 // 更新总类型
@@ -604,7 +685,11 @@ export type BackgroundRequest =
   | BackgroundMessages.GetCurrentSessionRequest
   | BackgroundMessages.DeleteSessionRequest
   | BackgroundMessages.GetSessionStatsRequest
-  | BackgroundMessages.MarkSessionActivityRequest;
+  | BackgroundMessages.MarkSessionActivityRequest
+  | BackgroundMessages.GetLatestSessionRequest
+  | BackgroundMessages.SetLatestSessionRequest
+  | BackgroundMessages.SyncCurrentToLatestRequest
+  | BackgroundMessages.SyncLatestToCurrentRequest;
 
 export type BackgroundResponse =
   | BackgroundResponses.GetSessionsResponse
@@ -630,4 +715,8 @@ export type BackgroundResponse =
   | BackgroundResponses.GetCurrentSessionResponse
   | BackgroundResponses.DeleteSessionResponse
   | BackgroundResponses.GetSessionStatsResponse
-  | BackgroundResponses.MarkSessionActivityResponse;
+  | BackgroundResponses.MarkSessionActivityResponse
+  | BackgroundResponses.GetLatestSessionResponse
+  | BackgroundResponses.SetLatestSessionResponse
+  | BackgroundResponses.SyncCurrentToLatestResponse
+  | BackgroundResponses.SyncLatestToCurrentResponse;
