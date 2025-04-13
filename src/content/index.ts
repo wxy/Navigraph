@@ -168,8 +168,12 @@
         lastActivityTime = now;
         logger.log(`检测到页面活动(${source})，触发刷新`);
         
-        if (window.visualizer && typeof window.visualizer.triggerRefresh === 'function') {
-          window.visualizer.triggerRefresh();
+        // 修改为只刷新视图，不重新加载会话数据
+        if (window.visualizer && typeof window.visualizer.refreshVisualization === 'function') {
+          window.visualizer.refreshVisualization(undefined, { 
+            skipSessionEvents: true,  // 防止触发会话事件
+            source: 'pageActivity'
+          });
         } else {
           logger.warn('可视化器实例不存在或没有刷新方法');
         }
@@ -177,7 +181,6 @@
         logger.debug(`页面活动(${source})距离上次时间过短(${now - lastActivityTime}ms)，忽略`);
       }
     } catch (error) {
-      // 页面活动触发失败不需要用户可见反馈，只记录
       logger.error(`处理页面活动(${source})失败:`, error);
     }
   }

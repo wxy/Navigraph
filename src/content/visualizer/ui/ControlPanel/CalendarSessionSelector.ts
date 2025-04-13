@@ -20,6 +20,7 @@ export class CalendarSessionSelector {
   private selectedSessionId: string | null = null;
   private monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
   private isLoading: boolean = false;
+  private lastUpdateHash: string | null = null;
   
   // 绑定this的事件处理函数
   private boundHandleCellClick = this.handleCellClick.bind(this);
@@ -177,27 +178,39 @@ export class CalendarSessionSelector {
   
   /**
    * 更新日历选择器
-   * @param sessions 会话列表
+   * @param sessionList 会话列表
    * @param currentSessionId 当前选中的会话ID
    */
-  public update(sessions: BrowsingSession[] = [], currentSessionId?: string): void {
+  public update(sessionList: any[] = [], currentSessionId?: string): void {
     if (!this.container) {
       logger.warn('日历容器不存在，无法更新');
       return;
     }
+    
+    // 创建当前更新的哈希值
+    const updateHash = `${sessionList.length}-${currentSessionId || 'null'}-${sessionList.map(s => s.id).join(',')}`;
+    
+    // 如果与上次更新相同，跳过更新
+    if (this.lastUpdateHash === updateHash) {
+      logger.debug('跳过重复的日历选择器更新');
+      return;
+    }
+    
+    this.lastUpdateHash = updateHash;
+    
+    logger.log(`更新日历选择器，会话数量: ${sessionList.length}`);
     
     // 显示加载指示器
     this.setLoading(true);
     
     // 不再嵌套两层异步，只使用一个
     requestAnimationFrame(() => {
-      logger.log(`更新日历选择器，会话数量: ${sessions.length}`);
-      this.sessions = sessions;
+      this.sessions = sessionList;
       this.selectedSessionId = currentSessionId || null;
       
       // 如果有当前选中会话，定位到会话所在月份
       if (currentSessionId) {
-        const selectedSession = sessions.find(s => s.id === currentSessionId);
+        const selectedSession = sessionList.find(s => s.id === currentSessionId);
         if (selectedSession) {
           const sessionDate = new Date(selectedSession.startTime);
           this.currentMonth = sessionDate.getMonth();
