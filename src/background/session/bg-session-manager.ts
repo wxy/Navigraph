@@ -23,6 +23,7 @@ import {
 } from "../../types/messages/background.js";
 import { getSettingsService } from '../../lib/settings/service.js';
 import { NavigraphSettings } from '../../lib/settings/types.js';
+import { UrlUtils } from '../navigation/utils/url-utils.js';
 
 const logger = new Logger('BackgroundSessionManager');
 
@@ -125,17 +126,22 @@ export class BackgroundSessionManager {
   
   /**
    * 检查节点状态一致性
+   * 确保节点的关闭状态与实际标签页状态一致
    */
   private async checkNodeStateConsistency(): Promise<void> {
     if (!this.currentSessionId) return;
     
     try {
-      logger.log('执行节点状态一致性检查...');
+      logger.groupCollapsed('执行节点状态一致性检查...');
       
-      // 1. 获取所有活跃标签页
+      // 1. 获取所有活跃标签页，过滤系统页面
       const tabs = await this.getAllActiveTabs();
-      const activeTabIds = new Set(tabs.map(tab => tab.id));
-      logger.log(`当前有 ${activeTabIds.size} 个活跃标签页`);
+      const activeTabIds = new Set(
+        tabs
+          .filter(tab => tab.id !== undefined && tab.url && !UrlUtils.isSystemPage(tab.url))
+          .map(tab => tab.id)
+      );
+      logger.log(`当前有 ${activeTabIds.size} 个活跃标签页（不含系统页面）`);
       
       // 2. 获取当前会话的所有未关闭节点
       const navStorage = getNavigationStorage();
@@ -146,10 +152,10 @@ export class BackgroundSessionManager {
         sessionId: this.currentSessionId
       });
       
-      // 过滤出活跃(未关闭)节点
-      const activeNodes = sessionNodes.filter(node => !node.isClosed);
+      // 过滤出活跃(未关闭)节点，考虑isClosed可能是可选的情况
+      const activeNodes = sessionNodes.filter(node => node.isClosed !== true);
       logger.log(`当前会话有 ${activeNodes.length} 个活跃节点`);
-      
+
       // 3. 找出标签页已关闭但节点未标记为关闭的节点
       const orphanedNodes = activeNodes.filter(node => 
         node.tabId !== undefined && !activeTabIds.has(node.tabId)
@@ -172,12 +178,40 @@ export class BackgroundSessionManager {
         logger.log('未发现需要更新状态的孤立节点');
       }
       
+      // 4. 记录未记录的活跃标签页（不创建节点，只记录日志）
+      const activeNodeTabIds = new Set(
+        activeNodes
+          .filter(node => node.tabId !== undefined)
+          .map(node => node.tabId)
+      );
+      
+      const missingTabs = [...activeTabIds].filter(tabId => 
+        tabId !== undefined && !activeNodeTabIds.has(tabId)
+      );
+      
+      if (missingTabs.length > 0) {
+        logger.warn(`发现 ${missingTabs.length} 个活跃标签页未在会话中记录，`+
+                  `可能是标签页创建事件未捕获，请检查相关事件处理器`);
+        
+        // 记录未被记录的标签详情，但不创建节点
+        for (const tabId of missingTabs) {
+          const tab = tabs.find(t => t.id === tabId);
+          // 这里也使用UrlUtils来检查系统页面
+          if (tab && tab.url && !UrlUtils.isSystemPage(tab.url)) {
+            logger.warn(`未记录标签: ID=${tabId}, URL=${tab.url}`);
+          }
+        }
+      } else {
+        logger.log('所有活跃标签页都已在会话中正确记录');
+      }
+      
       logger.log('节点状态一致性检查完成');
+      logger.groupEnd();
     } catch (error) {
       logger.error('节点状态一致性检查出错:', error);
     }
   }
-  
+
   /**
    * 获取所有活跃标签页
    */
