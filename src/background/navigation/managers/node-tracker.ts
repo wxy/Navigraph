@@ -846,4 +846,66 @@ export class NodeTracker {
       logger.error(`关联标签页到会话 ${sessionId} 失败:`, error);
     }
   }
+
+  /**
+   * 查询节点
+   * @param queryParams 查询参数
+   */
+  public async queryNodes(queryParams: any): Promise<NavNode[]> {
+    try {
+      return await this.navigationStorage.queryNodes(queryParams);
+    } catch (error) {
+      logger.error('查询节点失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 更新节点状态
+   * @param nodeId 节点ID
+   * @param updates 更新内容
+   */
+  public async updateNode(nodeId: string, updates: Partial<NavNode>): Promise<boolean> {
+    try {
+      await this.navigationStorage.updateNode(nodeId, updates);
+      return true; // 成功则返回true
+    } catch (error) {
+      logger.error(`更新节点 ${nodeId} 失败:`, error);
+      return false; // 失败返回false
+    }
+  }
+
+  /**
+   * 关闭与标签页关联的所有节点
+   * @param tabId 标签页ID
+   * @param sessionId 会话ID
+   */
+  public async closeNodesForTab(tabId: number, sessionId: string): Promise<void> {
+    try {
+      // 查找与此标签页相关的活跃节点
+      const activeNodes = await this.navigationStorage.queryNodes({
+        tabId: tabId,
+        sessionId: sessionId,
+        isClosed: false
+      });
+      
+      if (activeNodes.length === 0) {
+        return;
+      }
+      
+      const now = Date.now();
+      
+      // 更新这些节点为已关闭状态
+      for (const node of activeNodes) {
+        await this.navigationStorage.updateNode(node.id, {
+          isClosed: true,
+          closeTime: now
+        });
+      }
+      
+      logger.log(`已关闭标签页 ${tabId} 的 ${activeNodes.length} 个节点`);
+    } catch (error) {
+      logger.error(`关闭标签页 ${tabId} 节点失败:`, error);
+    }
+  }
 }

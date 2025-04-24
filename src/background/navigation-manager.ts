@@ -1,11 +1,13 @@
 import { Logger } from '../lib/utils/logger.js';
 import { NavigationStorage, getNavigationStorage } from './store/navigation-storage.js';
-import { SessionStorage, getSessionStorage } from './store/session-storage.js';
 import { BackgroundMessageService } from './messaging/bg-message-service.js';
 import { 
   BrowsingSession,
-  NavNode
+  NavNode,
+  NavLink
 } from '../types/session-types.js';
+
+import { getBackgroundSessionManager } from './session/bg-session-manager.js';
 
 import { TabStateManager } from './navigation/managers/tab-state-manager.js';
 import { NodeTracker } from './navigation/managers/node-tracker.js';
@@ -30,7 +32,6 @@ const logger = new Logger('NavigationManager');
 export class NavigationManager {
   // 存储引用
   private navigationStorage: NavigationStorage;
-  private sessionStorage: SessionStorage;
 
   // 会话ID
   private currentSessionId: string = '';
@@ -51,16 +52,13 @@ export class NavigationManager {
    * 构造函数 - 初始化导航管理器
    * @param messageService 消息服务实例
    * @param navigationStorage 导航存储实例（可选，用于依赖注入）
-   * @param sessionStorage 会话存储实例（可选，用于依赖注入）
    */
   constructor(
     private readonly messageService: BackgroundMessageService,
-    navigationStorage?: NavigationStorage,
-    sessionStorage?: SessionStorage
+    navigationStorage?: NavigationStorage
   ) {
     // 优先使用传入的实例，否则使用单例
     this.navigationStorage = navigationStorage || getNavigationStorage();
-    this.sessionStorage = sessionStorage || getSessionStorage();
   
     // 初始化标签页状态管理器
     this.tabStateManager = new TabStateManager(this.historyLimit);
@@ -138,23 +136,37 @@ export class NavigationManager {
    */
   private async initializeStorage(): Promise<void> {
     await this.navigationStorage.initialize();
-    await this.sessionStorage.initialize();
   }
 
   /**
    * 初始化会话管理
+   * 修改为从会话管理器获取当前会话
    */
   private async initializeSession(): Promise<void> {
-    const currentSession = await this.sessionStorage.getCurrentSession();
-    if (!currentSession) {
-      logger.log("未找到活跃会话，创建新的默认会话...");
-      const newSession = await this.sessionStorage.createSession({
-        title: `浏览会话 ${new Date().toLocaleString()}`,
-        makeActive: true
-      });
-      this.setCurrentSessionId(newSession.id);
-    } else {
-      this.setCurrentSessionId(currentSession.id);
+    try {
+      // 从会话管理器获取当前会话ID
+      const sessionManager = getBackgroundSessionManager();
+      const currentSessionId = sessionManager.getCurrentSessionId();
+      
+      if (currentSessionId) {
+        this.setCurrentSessionId(currentSessionId);
+        logger.log(`已从会话管理器获取当前会话ID: ${currentSessionId}`);
+      } else {
+        // 如果没有当前会话，则请求会话管理器创建一个新会话
+        logger.log("未找到活跃会话，请求会话管理器创建新会话...");
+        const newSession = await sessionManager.createAndActivateSession(
+          `浏览会话 ${new Date().toLocaleString()}`
+        );
+        if (newSession) {
+          this.setCurrentSessionId(newSession.id);
+        } else {
+          logger.error("无法创建新会话");
+          this.setCurrentSessionId('');
+        }
+      }
+    } catch (error) {
+      logger.error("获取或创建会话失败:", error);
+      this.setCurrentSessionId('');
     }
   }
 
@@ -198,10 +210,39 @@ export class NavigationManager {
 
   /**
    * 获取当前会话信息
+   * 修改为从会话管理器获取
    */
   public async getCurrentSession(): Promise<BrowsingSession | null> {
-    const currentSession = await this.sessionStorage.getCurrentSession();
-    return currentSession ? currentSession : null;
+    try {
+      const sessionManager = getBackgroundSessionManager();
+      return await sessionManager.getCurrentSession();
+    } catch (error) {
+      logger.error("从会话管理器获取当前会话失败:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取会话图数据
+   * 返回当前会话的节点和边数据
+   * @param sessionId 会话ID
+   * @returns 包含节点和边的对象
+   * @throws 错误信息
+   */
+  public async getSessionGraph(sessionId: string): Promise<{
+    nodes: NavNode[];
+    edges: NavLink[];
+  }> {
+    try {
+      // 获取节点和边
+      const nodes = await this.nodeTracker.queryNodes({ sessionId });
+      const edges = await this.edgeTracker.getEdgesForSession(sessionId);
+      
+      return { nodes, edges };
+    } catch (error) {
+      logger.error(`获取会话 ${sessionId} 图数据失败:`, error);
+      return { nodes: [], edges: [] };
+    }
   }
 
   //-------------------------------------------------------------------------
@@ -274,13 +315,6 @@ export class NavigationManager {
   }
 
   /**
-   * 获取会话存储实例
-   */
-  public getSessionStorage(): SessionStorage {
-    return this.sessionStorage;
-  }
-
-  /**
    * 获取记录总数
    */
   public async getNodeCount(): Promise<number> {
@@ -333,6 +367,33 @@ export class NavigationManager {
       return [];
     }
   }
+
+  /**
+   * 查询节点
+   * @param queryParams 查询参数
+   */
+  public async queryNodes(queryParams: any): Promise<NavNode[]> {
+    return this.nodeTracker.queryNodes(queryParams);
+  }
+
+  /**
+   * 更新节点状态
+   * @param nodeId 节点ID
+   * @param updates 更新内容
+   */
+  public async updateNode(nodeId: string, updates: Partial<NavNode>): Promise<boolean> {
+    return this.nodeTracker.updateNode(nodeId, updates);
+  }
+
+  /**
+   * 关闭与标签页关联的所有节点
+   * @param tabId 标签页ID
+   * @param sessionId 会话ID
+   */
+  public async closeNodesForTab(tabId: number, sessionId: string): Promise<void> {
+    return this.nodeTracker.closeNodesForTab(tabId, sessionId);
+  }
+
   /**
    * 关闭会话中的所有活跃节点
    * 由会话管理器在会话切换或关闭时调用
@@ -341,6 +402,7 @@ export class NavigationManager {
   public async closeAllNodesInSession(sessionId: string): Promise<void> {
     return this.nodeTracker.closeAllNodesInSession(sessionId);
   }
+
   /**
    * 将当前打开的标签页关联到指定会话
    * 由会话管理器在会话切换或创建新会话时调用

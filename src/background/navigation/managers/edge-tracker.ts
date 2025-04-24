@@ -282,7 +282,18 @@ export class EdgeTracker {
       };
     }
   }
-  
+  /**
+   * 获取会话的所有边
+   * @param sessionId 会话ID
+   */
+  public async getEdgesForSession(sessionId: string): Promise<NavLink[]> {
+    try {
+      return await this.navigationStorage.queryEdges({ sessionId });
+    } catch (error) {
+      logger.error(`获取会话 ${sessionId} 的边失败:`, error);
+      return [];
+    }
+  }
   /**
    * 重置状态
    */

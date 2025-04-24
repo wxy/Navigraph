@@ -5,9 +5,9 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { IdGenerator } from "../lib/id-generator.js";
 import { SessionStorage, getSessionStorage } from "../store/session-storage.js";
-import { NavigationStorage, getNavigationStorage } from "../store/navigation-storage.js";
 import { sessionEvents } from "./session-event-emitter.js";
 import { BackgroundMessageService } from "../messaging/bg-message-service.js";
+import { getNavigationManager } from "../navigation-manager.js";
 import {
   NavNode, 
   NavLink,
@@ -146,66 +146,45 @@ export class BackgroundSessionManager {
       );
       logger.log(`当前有 ${activeTabIds.size} 个活跃标签页（不含系统页面）`);
       
-      // 2. 获取当前会话的所有未关闭节点
-      const navStorage = getNavigationStorage();
-      await navStorage.initialize();
-      
-      // 查询当前会话的节点
-      const sessionNodes = await navStorage.queryNodes({
-        sessionId: this.latestSessionId
-      });
-      
-      // 过滤出活跃(未关闭)节点，考虑isClosed可能是可选的情况
-      const activeNodes = sessionNodes.filter(node => node.isClosed !== true);
-      logger.log(`当前会话有 ${activeNodes.length} 个活跃节点`);
+      try {
+        // 2. 获取导航管理器实例
+        const navManager = getNavigationManager();
+        
+        // 3. 查询当前会话的节点
+        const sessionNodes = await navManager.queryNodes({
+          sessionId: this.latestSessionId
+        });
+        
+        // 过滤出活跃(未关闭)节点
+        const activeNodes = sessionNodes.filter(node => node.isClosed !== true);
+        logger.log(`当前会话有 ${activeNodes.length} 个活跃节点`);
 
-      // 3. 找出标签页已关闭但节点未标记为关闭的节点
-      const orphanedNodes = activeNodes.filter(node => 
-        node.tabId !== undefined && !activeTabIds.has(node.tabId)
-      );
-      
-      if (orphanedNodes.length > 0) {
-        logger.log(`发现 ${orphanedNodes.length} 个孤立节点，标记为已关闭`);
+        // 4. 找出标签页已关闭但节点未标记为关闭的节点
+        const orphanedNodes = activeNodes.filter(node => 
+          node.tabId !== undefined && !activeTabIds.has(node.tabId)
+        );
         
-        const now = Date.now();
-        
-        // 更新这些节点状态
-        for (const node of orphanedNodes) {
-          logger.log(`标记节点 ${node.id} (tabId=${node.tabId}) 为已关闭`);
-          await navStorage.updateNode(node.id, {
-            isClosed: true,
-            closeTime: now
-          });
-        }
-      } else {
-        logger.log('未发现需要更新状态的孤立节点');
-      }
-      
-      // 4. 记录未记录的活跃标签页（不创建节点，只记录日志）
-      const activeNodeTabIds = new Set(
-        activeNodes
-          .filter(node => node.tabId !== undefined)
-          .map(node => node.tabId)
-      );
-      
-      const missingTabs = [...activeTabIds].filter(tabId => 
-        tabId !== undefined && !activeNodeTabIds.has(tabId)
-      );
-      
-      if (missingTabs.length > 0) {
-        logger.warn(`发现 ${missingTabs.length} 个活跃标签页未在会话中记录，`+
-                  `可能是标签页创建事件未捕获，请检查相关事件处理器`);
-        
-        // 记录未被记录的标签详情，但不创建节点
-        for (const tabId of missingTabs) {
-          const tab = tabs.find(t => t.id === tabId);
-          // 这里也使用UrlUtils来检查系统页面
-          if (tab && tab.url && !UrlUtils.isSystemPage(tab.url)) {
-            logger.warn(`未记录标签: ID=${tabId}, URL=${tab.url}`);
+        if (orphanedNodes.length > 0) {
+          logger.log(`发现 ${orphanedNodes.length} 个孤立节点，标记为已关闭`);
+          
+          const now = Date.now();
+          
+          // 更新这些节点状态
+          for (const node of orphanedNodes) {
+            logger.log(`标记节点 ${node.id} (tabId=${node.tabId}) 为已关闭`);
+            await navManager.updateNode(node.id, {
+              isClosed: true,
+              closeTime: now
+            });
           }
+        } else {
+          logger.log('未发现需要更新状态的孤立节点');
         }
-      } else {
-        logger.log('所有活跃标签页都已在会话中正确记录');
+        
+        // 其余代码...
+        
+      } catch (navError) {
+        logger.error('获取导航管理器失败:', navError);
       }
       
       logger.log('节点状态一致性检查完成');
@@ -292,38 +271,12 @@ export class BackgroundSessionManager {
       
       logger.log(`标签页 ${tabId} 已关闭，更新节点状态`);
       
-      // 获取导航存储实例
-      const navStorage = getNavigationStorage();
-      await navStorage.initialize();
-      
-      // 查找与此标签页相关的活跃节点
-      const activeNodes = await navStorage.queryNodes({
-        tabId: tabId,
-        sessionId: this.latestSessionId,
-        // 可以根据NavDataQueryOptions的定义添加其他查询条件
-      });
-      
-      const nodesToUpdate = activeNodes.filter(node => !node.isClosed);
-    
-      if (nodesToUpdate.length === 0) {
-        logger.log(`标签页 ${tabId} 没有需要更新状态的活跃节点`);
-        return;
-      }
-      
-      logger.log(`找到 ${activeNodes.length} 个与关闭标签相关的节点，正在更新状态`);
-      
-      // 更新这些节点为已关闭状态
-      for (const node of activeNodes) {
-        // 只更新未标记为关闭的节点
-        if (!node.isClosed) {
-          // 更新节点状态
-          await navStorage.updateNode(node.id, {
-            isClosed: true,
-            closeTime: Date.now()
-          });
-          
-          logger.log(`已将节点 ${node.id} 标记为关闭`);
-        }
+      try {
+        // 通过导航管理器关闭节点
+        const navManager = getNavigationManager();
+        await navManager.closeNodesForTab(tabId, this.latestSessionId);
+      } catch (error) {
+        logger.error('获取导航管理器或关闭节点失败:', error);
       }
     } catch (error) {
       logger.error('处理标签页关闭失败:', error);
@@ -764,24 +717,44 @@ export class BackgroundSessionManager {
 
   /**
    * 获取当前会话
-   * @returns 当前会话对象，如果没有则返回null
+   * 被NavigationManager调用，获取当前活跃会话
    */
   public async getCurrentSession(): Promise<BrowsingSession | null> {
     await this.ensureInitialized();
-
+  
     if (!this.currentSessionId) {
       return null;
     }
-
+    
     try {
       return await this.getSessionDetails(this.currentSessionId);
     } catch (error) {
       logger.error("获取当前会话失败:", error);
-      throw new Error(
-        `获取当前会话失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      return null;  // 返回null而不是抛出异常，适合作为API被其他管理器调用
+    }
+  }
+
+  /**
+   * 创建并激活新会话
+   * 被NavigationManager调用，在没有活跃会话时创建新会话
+   * @param title 会话标题
+   */
+  public async createAndActivateSession(title: string): Promise<BrowsingSession | null> {
+    try {
+      // 创建新会话
+      const newSession = await this.createSession({
+        title: title,
+        makeActive: true
+      });
+      
+      // 设置为当前会话和最新会话
+      await this.setCurrentSession(newSession.id);
+      await this.setLatestSession(newSession.id);
+      
+      return newSession;
+    } catch (error) {
+      logger.error("创建并激活新会话失败:", error);
+      return null;
     }
   }
 
@@ -991,13 +964,10 @@ export class BackgroundSessionManager {
     edges: Record<string, NavLink>;
     rootIds: string[];
   }> {
-    // 创建导航存储实例
-    const navStorage = getNavigationStorage();
-    await navStorage.initialize();
-
     try {
-      // 获取会话的所有节点和边
-      const { nodes, edges } = await navStorage.getSessionGraph(sessionId);
+      // 通过导航管理器获取图数据
+      const navManager = getNavigationManager();
+      const { nodes, edges } = await navManager.getSessionGraph(sessionId);
 
       // 转换为前端期望的格式
       const records: Record<string, NavNode> = {};
