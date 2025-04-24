@@ -348,6 +348,7 @@ export interface NavDataQueryOptions {
   // 节点相关
   tabId?: number;       // 标签页ID过滤
   url?: string;         // URL过滤
+  isClosed?: boolean;  // 是否已关闭
   
   // 边相关
   source?: string;      // 源节点ID

@@ -1770,14 +1770,15 @@ export class BackgroundSessionManager {
 }
 
 // 创建单例实例的工厂函数
-let instance: BackgroundSessionManager | null = null;
+let sessionManagerInstance: BackgroundSessionManager | null = null;
 
-/**
- * 获取后台会话管理器单例
- */
 export function getBackgroundSessionManager(): BackgroundSessionManager {
-  if (!instance) {
-    instance = new BackgroundSessionManager();
+  if (!sessionManagerInstance) {
+    throw new Error('BackgroundSessionManager实例未初始化');
   }
-  return instance;
+  return sessionManagerInstance;
+}
+
+export function setBackgroundSessionManager(instance: BackgroundSessionManager): void {
+  sessionManagerInstance = instance;
 }

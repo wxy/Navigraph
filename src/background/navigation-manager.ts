@@ -333,4 +333,33 @@ export class NavigationManager {
       return [];
     }
   }
+  /**
+   * 关闭会话中的所有活跃节点
+   * 由会话管理器在会话切换或关闭时调用
+   * @param sessionId 会话ID
+   */
+  public async closeAllNodesInSession(sessionId: string): Promise<void> {
+    return this.nodeTracker.closeAllNodesInSession(sessionId);
+  }
+  /**
+   * 将当前打开的标签页关联到指定会话
+   * 由会话管理器在会话切换或创建新会话时调用
+   * @param sessionId 目标会话ID
+   */
+  public async associateOpenTabsWithSession(sessionId: string): Promise<void> {
+    return this.nodeTracker.associateOpenTabsWithSession(sessionId);
+  }
+}
+// 单例模式
+let navigationManagerInstance: NavigationManager | null = null;
+
+export function getNavigationManager(): NavigationManager {
+  if (!navigationManagerInstance) {
+    throw new Error('NavigationManager实例未初始化');
+  }
+  return navigationManagerInstance;
+}
+
+export function setNavigationManager(instance: NavigationManager): void {
+  navigationManagerInstance = instance;
 }
