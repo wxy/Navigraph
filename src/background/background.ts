@@ -7,10 +7,13 @@ import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
 import { setupContextMenus } from './lib/context-menus.js';
 import { getBackgroundMessageService, registerAllBackgroundHandlers } from './messaging/bg-message-service.js';
-import { getBackgroundSessionManager, setBackgroundSessionManager } from './session/bg-session-manager.js';
+import { BackgroundSessionManager, getBackgroundSessionManager, setBackgroundSessionManager } from './session/bg-session-manager.js';
+import { Session } from 'inspector/promises';
+import { SessionMetadata } from '../types/session-types.js';
 
 // 声明但不立即初始化（模块级别变量）
 let settingsService: any;
+let sessionManager: BackgroundSessionManager
 let navigationManager: NavigationManager;
 let messageService: ReturnType<typeof getBackgroundMessageService>; // 使用泛型而非具体类型
 const logger = new Logger('Background');
@@ -42,20 +45,20 @@ async function initialize(): Promise<void> {
     settingsService = getSettingsService();
     await settingsService.initialize();
         
-    // 4. 创建并初始化导航管理器
-    logger.log('初始化导航管理器...');
-    navigationManager = new NavigationManager(messageService);    
-    // 导航管理器会在自己内部初始化所需的存储
-    await navigationManager.initialize();
-    setNavigationManager(navigationManager);
-
-    // 5. 初始化会话管理器
+    // 4. 会话管理器
     logger.log('初始化会话管理器...');
-    const sessionManager = getBackgroundSessionManager();
-    // 会话管理器会在自己内部初始化所需的存储
-    await sessionManager.initialize();
+    sessionManager = new BackgroundSessionManager();
     setBackgroundSessionManager(sessionManager);
 
+    // 5. 导航管理器
+    logger.log('初始化导航管理器...');
+    navigationManager = new NavigationManager(messageService);    
+    setNavigationManager(navigationManager);
+
+    // 初始化
+    await sessionManager.initialize();
+    await navigationManager.initialize();
+    
     // 6. 注册会话管理器的消息处理程序
     logger.log('注册会话管理器消息处理程序...');
     sessionManager.registerMessageHandlers(messageService);
