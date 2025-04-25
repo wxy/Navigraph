@@ -245,28 +245,45 @@ export class SessionServiceClient {
 
   /**
    * 加载当前会话
+   * 优先级：本地存储的ID > 最新活跃会话 > 会话列表中最后一个 > 会话列表中第一个
    */
   async loadCurrentSession(): Promise<any | null> {
+    // 1. 尝试使用存储的会话ID
     const sessionId = this.getCurrentSessionId();
-
-    if (!sessionId) {
-      try {
-        if (this.sessionList.length === 0) {
-          await this.loadSessionList();
-        }
-
-        if (this.sessionList.length > 0) {
-          return this.loadSession(this.sessionList[0].id);
-        }
-
-        return null;
-      } catch (error) {
-        logger.error('加载当前会话失败:', error);
-        throw error;
-      }
+    if (sessionId) {
+      return this.loadSession(sessionId);
     }
-
-    return this.loadSession(sessionId);
+    
+    try {
+      // 2. 尝试加载最新活跃会话
+      logger.log('尝试加载最新活跃会话');
+      const latestSession = await this.loadLatestSession();
+      if (latestSession) {
+        logger.log(`找到最新活跃会话: ${latestSession.id}，使用该会话`);
+        this.setCurrentSessionId(latestSession.id);
+        return this.loadSession(latestSession.id);
+      }
+      
+      // 3. 如果没有最新会话，尝试加载会话列表
+      if (this.sessionList.length === 0) {
+        await this.loadSessionList();
+      }
+      
+      // 4. 从会话列表中选择
+      if (this.sessionList.length > 0) {
+        // 选择最后一个会话（通常是最新的）
+        const lastSession = this.sessionList[this.sessionList.length - 1];
+        logger.log(`使用会话列表中最后一个会话: ${lastSession.id}`);
+        return this.loadSession(lastSession.id);
+      }
+      
+      // 5. 如果以上都失败，返回null
+      logger.log('没有找到可用的会话');
+      return null;
+    } catch (error) {
+      logger.error('加载当前会话失败:', error);
+      throw error;
+    }
   }
 
   /**
