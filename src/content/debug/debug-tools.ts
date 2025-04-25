@@ -6,6 +6,7 @@ import { Logger } from '../../lib/utils/logger.js';
 import type { Visualizer } from '../types/navigation.js';
 import { sendMessage, registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
 import { BaseMessage, BaseResponse } from '../../types/messages/common.js';
+import { isDev } from '../../lib/environment.js';
 
 const logger = new Logger('DebugTools');
 
@@ -20,6 +21,11 @@ export class DebugTools {
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
     
+    // 在非开发环境中，只初始化最基本的功能
+    if (!isDev()) {
+      logger.debug('生产环境，调试工具功能已禁用');
+      return; // 提前返回，不初始化调试功能
+    }
     // 检查URL调试参数（保留用于直接通过URL启动调试）
     this.checkUrlDebugParams();
     
@@ -92,6 +98,11 @@ export class DebugTools {
    * 处理调试命令
    */
   private handleDebugCommand(command: string): void {
+    // 在非开发环境中，忽略所有调试命令
+    if (!isDev()) {
+      logger.debug('非开发环境，忽略调试命令:', command);
+      return;
+    }
     switch (command) {
       case 'debug-check-data':
         this.checkData();

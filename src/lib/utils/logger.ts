@@ -3,6 +3,8 @@
  * 自动为不同模块分配艳丽颜色，精确显示源文件位置
  */
 
+import { isDev } from '../environment.js';
+
 // 日志级别枚举
 export enum LogLevel {
   DEBUG = 0,
@@ -38,182 +40,6 @@ const COLOR_PALETTE = [
 const moduleColorMap: Record<string, string> = {};
 
 /**
- * 为模块名生成一致的颜色
- */
-function getModuleColor(moduleName: string): string {
-  if (moduleColorMap[moduleName]) {
-    return moduleColorMap[moduleName];
-  }
-  
-  // 使用简单的字符串哈希算法
-  let hash = 0;
-  for (let i = 0; i < moduleName.length; i++) {
-    hash = ((hash << 5) - hash) + moduleName.charCodeAt(i);
-    hash |= 0; // 转换为32位整数
-  }
-  
-  // 选择颜色
-  const colorIndex = Math.abs(hash) % COLOR_PALETTE.length;
-  const color = COLOR_PALETTE[colorIndex];
-  
-  // 缓存结果
-  moduleColorMap[moduleName] = color;
-  return color;
-}
-
-/**
- * 检测完成消息并添加emoji
- */
-function addCompletionEmoji(message: string): string {
-  if (!config.useCompletion) return message;
-  
-  // 关键词到表情符的固定映射
-  const completionEmojiMap: Record<string, string> = {
-    // 基础状态
-    '完成': '✅',
-    '成功': '🎉',
-    '结束': '🏁',
-    '失败': '❌',
-    '错误': '❗️',
-    '警告': '⚠️',
-    
-    // 初始化相关
-    '已初始化': '🚀',
-    '初始化完成': '🚀',
-    '初始化成功': '🚀',
-    '启动完成': '🚀',
-    
-    // 数据相关
-    '已加载': '📦',
-    '加载完成': '📦',
-    '已保存': '💾',
-    '保存成功': '💾',
-    '已下载': '⬇️',
-    '已上传': '⬆️',
-    
-    // 注册与创建
-    '已创建': '🆕',
-    '已注册': '📝',
-    '已添加': '➕',
-    '已删除': '🗑️',
-    
-    // 设置与配置
-    '已设置': '⚙️',
-    '已配置': '⚙️',
-    '设置完成': '⚙️',
-    
-    // 运行状态
-    '已启动': '▶️',
-    '已停止': '⏹️',
-    '已暂停': '⏸️',
-    '已恢复': '⏯️',
-    '已就绪': '👌',
-    '已准备': '👍',
-
-    '...' : '⏳', // 省略号
-    '正在': '⏳', // 进行中的状态
-    '处理中': '⏳', // 处理中的状态
-    };
-  
-  // 检查消息中是否包含关键词
-  if (typeof message === 'string') {
-    for (const keyword in completionEmojiMap) {
-      if (message.includes(keyword)) {
-        return `${completionEmojiMap[keyword]} ${message}`;
-      }
-    }
-  }
-  
-  return message;
-}
-
-/**
- * 获取简化的时间戳（只包含分:秒.毫秒）
- */
-function getSimpleTimestamp(): string {
-  if (!config.showTimeStamp) return '';
-  
-  const now = new Date();
-  const mins = String(now.getMinutes()).padStart(2, '0');
-  const secs = String(now.getSeconds()).padStart(2, '0');
-  const ms = String(now.getMilliseconds()).padStart(3, '0');
-  
-  return `${mins}:${secs}.${ms}`;
-}
-
-/**
- * 获取调用者信息并转换为TypeScript文件路径
- */
-function getCallerInfo(): string {
-  if (!config.showFileInfo) return '';
-  
-  try {
-    const err = new Error();
-    const stackLines = err.stack?.split('\n') || [];
-    
-    // 查找非logger相关的调用
-    for (let i = 0; i < stackLines.length; i++) {
-      const line = stackLines[i];
-      
-      // 跳过logger相关的行
-      if (i === 0 || 
-          line.includes('/logger.') || 
-          line.includes('at Logger.') || 
-          !line.trim()) {
-        continue;
-      }
-      
-      // 提取文件名和行号
-      const match = line.match(/\(([^)]+):(\d+):\d+\)/) || 
-                   line.match(/at\s+([^(]+):(\d+):\d+/);
-      
-    if (match) {
-      const [, filePath, lineNumber] = match;
-
-      // 根据配置决定展示路径还是仅文件名
-      if (config.showModulePath) {
-        // 分割路径
-        const pathSegments = filePath.split(/[\/\\]/);
-
-        // 取最后几段（包含文件名）
-        const segments = pathSegments.slice(-1 - config.maxPathSegments);
-
-        // 构建简短路径
-        let shortPath = segments.join("/");
-
-        // 将.js替换为.ts
-        if (shortPath.endsWith(".js")) {
-          shortPath = shortPath.replace(/\.js$/, ".ts");
-        }
-
-        return `${shortPath}:${lineNumber}`;
-      } else {
-        // 仅提取文件名的原始逻辑
-        let fileName = filePath.split(/[\/\\]/).pop() || "unknown";
-        if (fileName.endsWith(".js")) {
-          fileName = fileName.replace(/\.js$/, ".ts");
-        }
-        return `${fileName}:${lineNumber}`;
-      }
-    }
-    }
-    
-    return 'unknown';
-  } catch (error) {
-    return 'error';
-  }
-}
-
-/**
- * 从文件路径中提取文件名
- */
-function extractFileName(path: string, lineNumber: string): string {
-  // 提取文件名 (移除路径)
-  const fileName = path.split(/[\/\\]/).pop() || path;
-  return `${fileName}:${lineNumber}`;
-}
-
-/**
  * 日志记录器类
  */
 export class Logger {
@@ -226,6 +52,18 @@ export class Logger {
   constructor(moduleName: string) {
     this.moduleName = moduleName || "unknown";
     this.moduleColor = getModuleColor(this.moduleName);
+    // 根据环境设置全局日志级别
+    if (!isDev()) {
+      // 生产环境只显示警告和错误
+      config.globalLevel = LogLevel.WARN;
+      
+      // 关闭一些增强功能
+      config.showFileInfo = false;  // 不显示文件信息
+      config.useCompletion = false; // 不使用emoji补全
+    } else {
+      // 开发环境显示所有日志
+      config.globalLevel = LogLevel.DEBUG;
+    }
   }
 
   /**
@@ -482,4 +320,180 @@ export class Logger {
       console.error("无法获取堆栈", e);
     }
   }
+}
+
+/**
+ * 为模块名生成一致的颜色
+ */
+function getModuleColor(moduleName: string): string {
+  if (moduleColorMap[moduleName]) {
+    return moduleColorMap[moduleName];
+  }
+  
+  // 使用简单的字符串哈希算法
+  let hash = 0;
+  for (let i = 0; i < moduleName.length; i++) {
+    hash = ((hash << 5) - hash) + moduleName.charCodeAt(i);
+    hash |= 0; // 转换为32位整数
+  }
+  
+  // 选择颜色
+  const colorIndex = Math.abs(hash) % COLOR_PALETTE.length;
+  const color = COLOR_PALETTE[colorIndex];
+  
+  // 缓存结果
+  moduleColorMap[moduleName] = color;
+  return color;
+}
+
+/**
+ * 检测完成消息并添加emoji
+ */
+function addCompletionEmoji(message: string): string {
+  if (!config.useCompletion) return message;
+  
+  // 关键词到表情符的固定映射
+  const completionEmojiMap: Record<string, string> = {
+    // 基础状态
+    '完成': '✅',
+    '成功': '🎉',
+    '结束': '🏁',
+    '失败': '❌',
+    '错误': '❗️',
+    '警告': '⚠️',
+    
+    // 初始化相关
+    '已初始化': '🚀',
+    '初始化完成': '🚀',
+    '初始化成功': '🚀',
+    '启动完成': '🚀',
+    
+    // 数据相关
+    '已加载': '📦',
+    '加载完成': '📦',
+    '已保存': '💾',
+    '保存成功': '💾',
+    '已下载': '⬇️',
+    '已上传': '⬆️',
+    
+    // 注册与创建
+    '已创建': '🆕',
+    '已注册': '📝',
+    '已添加': '➕',
+    '已删除': '🗑️',
+    
+    // 设置与配置
+    '已设置': '⚙️',
+    '已配置': '⚙️',
+    '设置完成': '⚙️',
+    
+    // 运行状态
+    '已启动': '▶️',
+    '已停止': '⏹️',
+    '已暂停': '⏸️',
+    '已恢复': '⏯️',
+    '已就绪': '👌',
+    '已准备': '👍',
+
+    '...' : '⏳', // 省略号
+    '正在': '⏳', // 进行中的状态
+    '处理中': '⏳', // 处理中的状态
+    };
+  
+  // 检查消息中是否包含关键词
+  if (typeof message === 'string') {
+    for (const keyword in completionEmojiMap) {
+      if (message.includes(keyword)) {
+        return `${completionEmojiMap[keyword]} ${message}`;
+      }
+    }
+  }
+  
+  return message;
+}
+
+/**
+ * 获取简化的时间戳（只包含分:秒.毫秒）
+ */
+function getSimpleTimestamp(): string {
+  if (!config.showTimeStamp) return '';
+  
+  const now = new Date();
+  const mins = String(now.getMinutes()).padStart(2, '0');
+  const secs = String(now.getSeconds()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  
+  return `${mins}:${secs}.${ms}`;
+}
+
+/**
+ * 获取调用者信息并转换为TypeScript文件路径
+ */
+function getCallerInfo(): string {
+  if (!config.showFileInfo) return '';
+  
+  try {
+    const err = new Error();
+    const stackLines = err.stack?.split('\n') || [];
+    
+    // 查找非logger相关的调用
+    for (let i = 0; i < stackLines.length; i++) {
+      const line = stackLines[i];
+      
+      // 跳过logger相关的行
+      if (i === 0 || 
+          line.includes('/logger.') || 
+          line.includes('at Logger.') || 
+          !line.trim()) {
+        continue;
+      }
+      
+      // 提取文件名和行号
+      const match = line.match(/\(([^)]+):(\d+):\d+\)/) || 
+                   line.match(/at\s+([^(]+):(\d+):\d+/);
+      
+    if (match) {
+      const [, filePath, lineNumber] = match;
+
+      // 根据配置决定展示路径还是仅文件名
+      if (config.showModulePath) {
+        // 分割路径
+        const pathSegments = filePath.split(/[\/\\]/);
+
+        // 取最后几段（包含文件名）
+        const segments = pathSegments.slice(-1 - config.maxPathSegments);
+
+        // 构建简短路径
+        let shortPath = segments.join("/");
+
+        // 将.js替换为.ts
+        if (shortPath.endsWith(".js")) {
+          shortPath = shortPath.replace(/\.js$/, ".ts");
+        }
+
+        return `${shortPath}:${lineNumber}`;
+      } else {
+        // 仅提取文件名的原始逻辑
+        let fileName = filePath.split(/[\/\\]/).pop() || "unknown";
+        if (fileName.endsWith(".js")) {
+          fileName = fileName.replace(/\.js$/, ".ts");
+        }
+        return `${fileName}:${lineNumber}`;
+      }
+    }
+    }
+    
+    return 'unknown';
+  } catch (error) {
+    return 'error';
+  }
+}
+
+/**
+ * 从文件路径中提取文件名
+ */
+function extractFileName(path: string, lineNumber: string): string {
+  // 提取文件名 (移除路径)
+  const fileName = path.split(/[\/\\]/).pop() || path;
+  return `${fileName}:${lineNumber}`;
 }

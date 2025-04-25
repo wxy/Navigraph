@@ -154,6 +154,9 @@ export class NavigationVisualizer implements Visualizer {
       // 初始化筛选器管理器 - 新增
       this.filterManager.initialize();
 
+      // 初始化调试工具
+      this.initDebugTools();
+
       // 第三阶段：数据加载与应用 - 使用会话视图控制器
       await this.sessionViewController.initialize();
 

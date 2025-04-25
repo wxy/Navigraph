@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Navigraph",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI-Powered Browsing Analytics",
   "icons": {
     "16": "images/logo-16.png",
