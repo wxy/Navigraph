@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Navigraph",
   "version": "1.0.2",
-  "description": "AI-Powered Browsing Analytics",
+  "description": "可视化浏览历史记录",
   "icons": {
     "16": "images/logo-16.png",
     "48": "images/logo-48.png",

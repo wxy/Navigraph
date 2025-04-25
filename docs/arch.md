@@ -50,29 +50,31 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 |                           |        |                            |
 | NavigationVisualizer      |        | NavigationManager          |
 |   - initialize()          |        |   - handleNavigationCommitted() |
-|   - renderVisualization() |        |   - handleRegularNavigation()  |
-|   - updateStatusBar()     |        |   - handleFormSubmitted()      |
-|                           |        |   - handleLinkClicked()        |
+|   - refreshVisualization()|        |   - handleRegularNavigation()  |
+|   - initDebugTools()      |        |   - trackNavigation()      |
 |                           |        |                            |
-| SessionManager (Content)  |        | BackgroundSessionManager   |
-|   - createNewSession()    |------->|   - createSession()        |
-|   - loadSession()         |        |   - getSessionDetails()    |
-|   - manageSessionsBySettings()     |   - updateSession()        |
+| SessionServiceClient      |        | BackgroundSessionManager   |
+|   - loadCurrentSession()  |------->|   - createSession()        |
+|   - loadLatestSession()   |        |   - markSessionActivity()  |
+|   - getSessionList()      |        |   - checkDayTransition()   |
 |                           |        |                            |
+| NodeManager               |        | SessionEventEmitter        |
+|   - processSessionData()  |        |   - emitSessionCreated()   |
+|   - processRecordsToNodes()|       |   - emitSessionActivated() |
 |                           |        |                            |
-| ContentTracking           |        | NavigationStorage          |
-|   - setupFormTracking()   |        |   - saveNode()             |
-|   - trackLinkClicks()     |        |   - saveEdge()             |
-|   - sendFormSubmit()      |        |   - getSessionGraph()      |
+| RenderingManager          |        | NodeTracker                |
+|   - renderTree()          |        |   - trackNavigation()      |
+|   - renderEmptySession()  |        |   - updateNode()           |
 +---------------------------+        +----------------------------+
-                                              |
-                                              v
-                                    +-------------------+
-                                    |  本地存储         |
-                                    |-------------------|
-                                    | - IndexedDB       |
-                                    | - LocalStorage    |
-                                    +-------------------+
+      |                                         |
+      v                                         v
++-------------------+               +----------------------+
+| 调试工具 (Dev)    |               | 环境配置系统         |
+|-------------------|               |----------------------|
+| DebugTools        |               | Environment          |
+|   - checkData()   |               |   - isDev()          |
+|   - checkDOM()    |               |   - isProd()         |
++-------------------+               +----------------------+
 ```
 
 ## 3. 主要组件说明
@@ -100,55 +102,73 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 
 ### 3.2 会话管理系统
 
-#### 3.2.1 SessionManager (Background)
+#### 3.2.1 BackgroundSessionManager
 
-**职责**：在后台脚本中管理会话的创建、结束和管理。
-
-**主要接口**：
-
-- `createSession(title?)`: 创建新会话
-- `updateSession(sessionId, updates): 更新会话信息`
-- `endSession(sessionId)`: 结束会话
-- `setCurrentSession(sessionId)`: 设置当前会话
-- `getSessionDetails(sessionId): 获取会话详细信息，包括节点和边`
-- `getSessionNavigationData(sessionId): 获取会话导航数据`
-
-#### 3.2.2 SessionManager (Content)
-
-**职责**：在内容脚本中提供会话管理功能。
+**职责**：在后台脚本中管理会话的创建、结束和管理，处理跨日转换和活动检测。
 
 **主要接口**：
 
-- `createNewSession(title?)`: 创建新会话
-- `loadSession(sessionId)`: 加载会话详情
-- `manageSessionsBySettings()`: 根据设置管理会话
+- `createSession(options?)`: 创建新会话
+- `markSessionActivity()`: 标记会话活动，检查是否需要创建新会话
+- `checkDayTransition()`: 检查是否跨越了工作日边界并需要创建新会话
+- `getSessionDetails(sessionId)`: 获取会话详细信息，包括节点和边
+- `getSessionNavigationData(sessionId)`: 获取会话导航数据
+- `getLatestSession()`: 获取最新活跃会话
+
+#### 3.2.2 SessionServiceClient
+
+**职责**：在内容脚本中提供会话管理功能，处理会话加载和缓存。
+
+**主要接口**：
+
+- `loadCurrentSession()`: 加载当前会话
+- `loadLatestSession()`: 加载最新活跃会话
+- `loadSessionList()`: 加载会话列表
+- `onSessionLoaded(callback)`: 注册会话加载监听器
+
+#### 3.2.3 SessionViewController
+
+**职责**：管理会话UI状态和视图更新。
+
+**主要接口**：
+
+- `initialize()`: 初始化会话控制器
+- `loadCurrentSession()`: 加载当前会话
+- `handleSessionLoaded(session)`: 处理会话加载完成事件
+- `handleSessionSelected(sessionId)`: 处理会话选择
 
 ### 3.3 导航管理系统
 
 #### 3.3.1 NavigationManager
 
-**职责**：管理导航记录和页面元数据。
+**职责**：管理导航记录和节点/边关系，协调相关子组件。
 
 **主要接口**：
 
-- `handleNavigationCommitted(tabId, url)`: 处理导航提交事件
-- `handleRegularNavigation(tabId, url)`: 处理常规导航事件
-- `handleFormSubmitted(tabId, formInfo)`: 处理表单提交事件
-- `handleLinkClicked(tabId, linkInfo)`: 处理链接点击事件
-- `handleJsNavigation(tabId, data)`: 处理JavaScript导航事件
-- `updatePageMetadata(tabId, metadata)`: 更新页面元数据 
+- `initialize()`: 初始化导航管理器
+- `queryNodes(queryParams)`: 查询符合条件的节点
+- `updateNode(nodeId, updates)`: 更新节点状态
+- `closeNodesForTab(tabId, sessionId)`: 关闭与标签页关联的节点
+- `getSessionGraph(sessionId)`: 获取会话的完整图形数据
 
-#### 3.3.2 NavigationVisualizer
+#### 3.3.2 NodeTracker
 
-职责：负责导航数据的可视化展示。
+职责：追踪导航节点创建和更新。
 
 主要接口：
 
-- `initialize()`: 初始化可视化器
-- `loadSession(sessionId)`: 加载并显示会话
-- `renderVisualization(options?)`: 渲染可视化图形
-- `updateStatusBar()`: 更新状态栏显示
-- `applyFilters(filters)`: 应用过滤器
+- `trackNavigation(details, metadata?)`: 跟踪导航事件
+- `updateNode(nodeId, updates)`: 更新节点信息
+- `queryNodes(queryParams)`: 查询节点
+
+#### 3.3.3 EdgeTracker
+
+**职责**：管理导航边的创建和查询。
+
+**主要接口**：
+
+- `trackEdge(sourceId, targetId, type)`: 记录导航边
+- `getEdgesForSession(sessionId)`: 获取会话的所有边
 
 ### 3.4 存储系统
 
@@ -177,6 +197,69 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 - `updateSession(sessionId, updates)`: 更新会话信息
 - `getCurrentSession()`: 获取当前会话
 - `setCurrentSession(sessionId)`: 设置当前会话
+
+### 3.5 可视化系统 (新增)
+
+#### 3.5.1 RenderingManager
+
+**职责**：协调不同渲染器，管理可视化的整体呈现。
+
+**主要接口**：
+
+- `renderVisualization(nodes, edges)`: 渲染可视化图形
+- `switchRenderer(rendererType)`: 切换渲染器类型
+- `renderEmptySession(session)`: 渲染空会话提示
+
+#### 3.5.2 TreeRenderer
+
+**职责**：将节点和边渲染为树状结构。
+
+**主要接口**：
+
+- `renderTreeLayout(nodes, edges, width, height)`: 渲染树形布局
+- `updateTreeLayout(nodes, edges)`: 更新树形布局
+
+#### 3.5.3 NodeManager (Content)
+
+**职责**：处理会话数据，构建内容脚本端的节点和边数据结构。
+
+**主要接口**：
+
+- `processSessionData(session)`: 处理会话数据，构建节点和边
+- `processRecordsToNodes(session)`: 将会话记录转换为节点
+- `processEdges(session)`: 处理会话边数据
+
+### 3.6 调试与环境系统 (新增)
+
+#### 3.6.1 DebugTools
+
+**职责**：提供开发阶段的调试功能。
+
+**主要接口**：
+
+- `checkData()`: 检查数据状态
+- `checkDOM()`: 检查DOM状态
+- `setupStorageListener()`: 设置存储变化监听器以接收调试命令
+
+#### 3.6.2 Environment
+
+**职责**：环境配置和检测，区分开发和生产环境。
+
+**主要接口**：
+
+- `isDev()`: 检查是否为开发环境
+- `isProd()`: 检查是否为生产环境
+
+#### 3.6.3 Logger
+
+**职责**：提供分级日志记录功能，根据环境调整日志输出级别。
+
+**主要接口**：
+
+- `log()`: 记录普通日志 (仅开发环境)
+- `debug()`: 记录调试日志 (仅开发环境)
+- `warn()`: 记录警告信息
+- `error()`: 记录错误信息
 
 ## 4. 数据流和关键流程
 
@@ -210,32 +293,36 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 | 页面活动检测      |    | 会话模式判断           |    | 会话创建/管理     |
 +-------------------+    +-----------------------+    +-------------------+
 | - 页面获得焦点    |    | - 每日工作模式         |    | - 创建新会话      |
-| - 用户点击        |--->| - 活动感知模式         |--->| - 结束当前会话    |
-| - 页面可见性变化  |    | - 智能混合模式         |    | - 更新会话活动    |
-| - 键盘输入        |    | - 手动模式             |    | - 加载会话数据    |
+| - 用户点击        |--->| - 空闲时间检测         |--->| - 标记活动时间    |
+| - 页面可见性变化  |    | - 工作日边界检查       |    | - 检查跨日转换    |
+| - 键盘输入        |    |                       |    | - 关闭标签页节点  |
 +-------------------+    +-----------------------+    +-------------------+
                                                              |
                                                              v
-                                               +---------------------------+
-                                               | 会话数据处理               |
-                                               +---------------------------+
-                                               | - 构建节点与连接           |
-                                               | - 会话统计与分析           |
-                                               | - 可视化图形更新           |
-                                               +---------------------------+
+                               +------------------------------------+
+                               | 会话事件系统                       |
+                               +------------------------------------+
+                               | SessionEventEmitter                |
+                               | - emitSessionCreated               |
+                               | - emitSessionActivated             |
+                               | - emitSessionUpdated               |
+                               | - emitSessionViewed                |
+                               +------------------------------------+
 ```
 
-会话管理是系统的核心业务流程：
+关键更新：
 
-1. 系统检测页面活动事件（焦点变化、可见性变化等）
-2. 根据用户设置的会话模式决定如何管理会话
-   - 每日工作模式：按日期自动创建会话
-   - 活动感知模式：根据用户活动间隔创建会话
-   - 智能混合模式：结合日期和活动模式
-   - 手动模式：由用户手动创建和管理会话
-3. 根据模式决定创建新会话、结束当前会话或更新活动时间
-4. 处理会话数据，构建节点和连接
-5. 更新可视化展示
+1. **每日会话模式的工作日检测**:
+   - 系统检查当前日期与会话日期是否跨越了工作日边界
+   - 如果跨越工作日且空闲时间超过配置的阈值，创建新会话
+
+2. **空闲时间监测**:
+   - 使用配置的 `idleTimeoutMinutes` 判断空闲时间
+   - 只有当空闲时间超过阈值，才检查是否需要创建新会话
+
+3. **会话事件通知系统**:
+   - 会话状态变化时通过 `SessionEventEmitter` 发出事件
+   - 其他组件可以订阅这些事件以响应会话变化
 
 ### 4.3 导航记录流程
 
@@ -287,24 +374,35 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 
 ```
 +---------------+     +-----------------+     +---------------+
-| Session       |     | NavigationNode  |     | NavigationLink|
+| Session       |     | NavNode         |     | NavLink       |
 +---------------+     +-----------------+     +---------------+
 | id            |     | id              |     | id            |
 | title         |     | url             |     | source        |
 | startTime     |     | title           |     | target        |
 | endTime       |<--->| favicon         |<--->| type          |
 | records       |     | timestamp       |     | timestamp     |
-| lastActivity  |     | type            |     | action        |
+| lastActivity  |     | isClosed        |     | sessionId     |
+| isActive      |     | closeTime       |     |               |
 +---------------+     +-----------------+     +---------------+
       |                      |                      |
+      |                      |                      |
       v                      v                      v
-+---------------+     +-----------------+     +---------------+
-| SessionManager|     | NodeManager     |     | VisualRenderer|
-+---------------+     +-----------------+     +---------------+
-| createSession |     | processData     |     | renderGraph   |
-| endSession    |     | buildTree       |     | updateLayout  |
-| manageByMode  |     | convertToNode   |     | applyFilters  |
-+---------------+     +-----------------+     +---------------+
++---------------------+  +----------------------+  +-------------------+
+| BackgroundSessionMgr|  | NodeTracker          |  | RenderingManager  |
++---------------------+  +----------------------+  +-------------------+
+| markSessionActivity |  | trackNavigation      |  | renderTree        |
+| checkDayTransition  |  | updateNode           |  | renderForce       |
+| getSessionGraph     |  | queryNodes           |  | applyFilters      |
++---------------------+  +----------------------+  +-------------------+
+      |                      |                      |
+      v                      v                      v
++---------------------+  +----------------------+  +-------------------+
+| SessionServiceClient|  | NodeManager(Content) |  | DebugTools        |
++---------------------+  +----------------------+  +-------------------+
+| loadCurrentSession  |  | processSessionData   |  | checkData         |
+| loadLatestSession   |  | processRecordsToNodes|  | checkDOM          |
+| loadSessionList     |  | getNodes/getEdges    |  | handleDebugCommand|
++---------------------+  +----------------------+  +-------------------+
 ```
 
 ### 5.2 关键数据模型
@@ -313,18 +411,16 @@ Navigraph 采用分层架构，将系统划分为多个层次，每个层次有�
 
 ```typescript
 interface BrowsingSession {
-  id: string;                  // 会话唯一标识符
+  id: string;                  // 会话唯一标识符 (现在使用日期格式: "session-YYYYMMDD-HHMMSS-XXX")
   title: string;               // 会话标题
   startTime: number;           // 开始时间戳
   endTime: number | null;      // 结束时间戳(null表示未结束)
   lastActivity: number;        // 最后活动时间
   nodeCount: number;           // 节点数量
-  tabCount: number;            // 标签页数量
+  isActive: boolean;           // 会话是否活跃
   records?: Record<string, NavNode>; // 会话中的节点记录
   edges?: Record<string, NavLink>;   // 会话中的边记录
   rootIds?: string[];          // 根节点ID列表
-  createdAt: number;           // 创建时间
-  updatedAt: number;           // 更新时间
 }
 ```
 
@@ -341,42 +437,30 @@ interface NavNode {
   type: NavigationType; // 节点类型
   tabId: number;        // 关联的标签页ID
   parentId?: string;    // 父节点ID
-  referrer?: string;    // 引用页URL
   isClosed: boolean;    // 是否已关闭
-  loadTime?: number;    // 页面加载时间
-  metadata?: {          // 元数据
-    description?: string; // 页面描述
-    keywords?: string;    // 页面关键词
-    openGraph?: any;      // OpenGraph数据
-  };
+  closeTime?: number;   // 关闭时间
+  isSelfLoop?: boolean; // 是否存在自循环
 }
 ```
 
-#### 5.2.3 NavLink
+#### 5.2.3 SessionEvent
 
 ```typescript
-interface NavLink {
-  id: string;            // 连接唯一标识符
-  sessionId: string;     // 所属会话ID
-  source: string;        // 源节点ID
-  target: string;        // 目标节点ID
-  type: NavigationType;  // 连接类型
-  timestamp: number;     // 创建时间戳
+interface SessionEvent {
+  type: SessionEventType;     // 事件类型
+  sessionId: string;          // 相关会话ID
+  timestamp: number;          // 事件时间戳
+  data?: any;                 // 事件相关数据
 }
-```
 
-#### 5.2.4 PendingNavigation 
-
-```typescript
-interface PendingNavigation {
-  type: "link_click" | "form_submit" | "js_navigation"; // 待处理导航类型
-  sourceNodeId: string;  // 源节点ID
-  sourceTabId: number;   // 源标签页ID
-  sourceUrl: string;     // 源URL
-  targetUrl: string;     // 目标URL
-  data: any;             // 相关数据
-  timestamp: number;     // 创建时间戳
-  expiresAt: number;     // 过期时间戳
+enum SessionEventType {
+  Created = 'session.created',
+  Updated = 'session.updated',
+  Activated = 'session.activated',
+  Deactivated = 'session.deactivated',
+  Viewed = 'session:viewed',
+  Ended = 'session.ended',
+  Deleted = 'session.deleted'
 }
 ```
 
@@ -410,6 +494,23 @@ interface PendingNavigation {
 - 后台脚本和内容脚本有明确的职责边界
 - 共享核心领域模型（如 Session, NavigationNode）
 
+### 6.5 环境感知设计
+
+系统实现了环境感知设计，通过版本号区分开发和生产环境：
+
+- 版本号格式用于区分环境：开发版本以0.开头 (如0.1.0.1)，生产版本不以0开头 (如1.0.1)
+- 根据环境自动调整功能和日志行为
+- 生产环境中禁用调试工具和非关键日志
+
+### 6.6 日志分级策略
+
+新的日志系统采用分级策略，根据环境自动调整：
+
+- 开发环境：显示所有级别 (DEBUG, INFO, WARN, ERROR)
+- 生产环境：仅显示警告和错误 (WARN, ERROR)
+- 支持按模块配置日志级别
+- 提供丰富的格式化选项和上下文信息
+
 ## 7. 未来扩展考虑
 
 ### 7.1 可扩展性考虑
@@ -427,6 +528,8 @@ interface PendingNavigation {
 
 ## 8. 总结
 
-Navigraph 系统架构采用了分层设计，通过内容脚本和后台脚本的协作，实现了完整的浏览导航记录与可视化功能。系统能够捕获各种导航事件（包括链接点击、表单提交、JS导航等），并通过消息通信机制在内容脚本和后台脚本间传递数据。
+Navigraph 系统架构采用了分层设计，通过内容脚本和后台脚本的协作，实现了完整的浏览导航记录与可视化功能。系统能够捕获各种导航事件，并通过消息通信机制在内容脚本和后台脚本间传递数据。
 
 核心功能包括会话管理、导航记录、导航关系构建、数据存储和可视化展示，这些功能通过不同的组件协同工作，为用户提供完整的浏览历史可视化体验。系统的设计遵循关注点分离、单一职责和依赖注入等设计原则，使代码结构清晰、可维护性强，并为未来的功能扩展提供了灵活的基础架构。
+
+系统现在能够更精确地处理跨日会话转换，根据环境自动调整行为，并通过事件系统实现更松散的组件耦合。这些改进使系统更加健壮、易于维护，并为开发人员提供了更好的调试工具和日志支持。
