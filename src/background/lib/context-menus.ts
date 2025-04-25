@@ -1,5 +1,5 @@
 import { Logger } from '../../lib/utils/logger.js';
-
+import { isDev } from '../../lib/environment.js';
 const logger = new Logger('ContextMenus');
 
 /**
@@ -7,12 +7,15 @@ const logger = new Logger('ContextMenus');
  */
 export function setupContextMenus(): void {
   // 添加调试上下文菜单
-  setupDebugContextMenu();
+  // 只在开发环境中设置调试菜单
+  if (isDev()) {
+    setupDebugContextMenu();
   
-  // 处理菜单点击事件
-  chrome.contextMenus.onClicked.addListener((info, tab) => {
-    handleContextMenuClicked(info, tab);
-  });
+    // 处理菜单点击事件
+    chrome.contextMenus.onClicked.addListener((info, tab) => {
+      handleContextMenuClicked(info, tab);
+    });
+  }
 }
 
 /**

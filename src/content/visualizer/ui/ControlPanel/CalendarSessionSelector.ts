@@ -17,9 +17,11 @@ export class CalendarSessionSelector {
   private currentMonth: number = new Date().getMonth();
   private currentYear: number = new Date().getFullYear();
   private sessions: BrowsingSession[] = [];
-  private selectedSessionId: string | null = null;
+  private selectedSessionId: string | null = null; // 当前会话ID
+  private latestSessionId: string | null = null;   // 最新会话ID - 新增
   private monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
   private isLoading: boolean = false;
+  private lastUpdateHash: string | null = null;
   
   // 绑定this的事件处理函数
   private boundHandleCellClick = this.handleCellClick.bind(this);
@@ -177,47 +179,57 @@ export class CalendarSessionSelector {
   
   /**
    * 更新日历选择器
-   * @param sessions 会话列表
+   * @param sessionList 会话列表
    * @param currentSessionId 当前选中的会话ID
+   * @param latestSessionId 最新活跃的会话ID
    */
-  public update(sessions: BrowsingSession[] = [], currentSessionId?: string): void {
+  public update(sessionList: any[] = [], currentSessionId?: string, latestSessionId?: string): void {
     if (!this.container) {
       logger.warn('日历容器不存在，无法更新');
       return;
     }
     
+    // 创建当前更新的哈希值，包含最新会话ID
+    const updateHash = `${sessionList.length}-${currentSessionId || 'null'}-${latestSessionId || 'null'}-${sessionList.map(s => s.id).join(',')}`;
+    
+    // 如果与上次更新相同，跳过更新
+    if (this.lastUpdateHash === updateHash) {
+      logger.debug('跳过重复的日历选择器更新');
+      return;
+    }
+    
+    this.lastUpdateHash = updateHash;
+    
+    logger.log(`更新日历选择器，会话数量: ${sessionList.length}`);
+    
     // 显示加载指示器
     this.setLoading(true);
     
-    // 使用requestAnimationFrame确保UI先更新
     requestAnimationFrame(() => {
-      // 处理会话数据（异步）
-      setTimeout(() => {
-        logger.log(`更新日历选择器，会话数量: ${sessions.length}`);
-        this.sessions = sessions;
-        this.selectedSessionId = currentSessionId || null;
-        
-        // 如果有当前选中会话，定位到会话所在月份
-        if (currentSessionId) {
-          const selectedSession = sessions.find(s => s.id === currentSessionId);
-          if (selectedSession) {
-            const sessionDate = new Date(selectedSession.startTime);
-            this.currentMonth = sessionDate.getMonth();
-            this.currentYear = sessionDate.getFullYear();
-          }
+      this.sessions = sessionList;
+      this.selectedSessionId = currentSessionId || null;
+      this.latestSessionId = latestSessionId || null; // 保存最新会话ID
+      
+      // 如果有当前选中会话，定位到会话所在月份
+      if (currentSessionId) {
+        const selectedSession = sessionList.find(s => s.id === currentSessionId);
+        if (selectedSession) {
+          const sessionDate = new Date(selectedSession.startTime);
+          this.currentMonth = sessionDate.getMonth();
+          this.currentYear = sessionDate.getFullYear();
         }
-        
-        // 强制确保日历结构存在
-        if (!this.container?.querySelector('.calendar-grid')) {
-          logger.warn('日历网格不存在，重新创建结构');
-          this.createCalendarStructure();
-        }
-        
-        this.renderCalendarDays();
-        this.setLoading(false); // 隐藏加载指示器
-        
-        logger.log('日历会话选择器更新完成');
-      }, 0);
+      }
+      
+      // 强制确保日历结构存在
+      if (!this.container?.querySelector('.calendar-grid')) {
+        logger.warn('日历网格不存在，重新创建结构');
+        this.createCalendarStructure();
+      }
+      
+      this.renderCalendarDays();
+      this.setLoading(false); // 隐藏加载指示器
+      
+      logger.log('日历会话选择器更新完成');
     });
   }
   
@@ -291,6 +303,11 @@ export class CalendarSessionSelector {
         className += ' selected-day';
       }
       
+      // 最新会话日期 - 新增
+      if (this.isLatestDate(date)) {
+        className += ' latest-day';
+      }
+
       // 创建并添加单元格
       const cell = this.createDayCell(day, className.trim(), dateStr);
       
@@ -328,7 +345,18 @@ export class CalendarSessionSelector {
     
     logger.log(`日历天数渲染完成，本月共${daysInMonth}天`);
   }
-  
+  /**
+   * 判断日期是否为最新会话的开始日期
+   */
+  private isLatestDate(date: Date): boolean {
+    if (!this.latestSessionId) return false;
+    
+    const latestSession = this.sessions.find(s => s.id === this.latestSessionId);
+    if (!latestSession) return false;
+    
+    const sessionDate = new Date(latestSession.startTime);
+    return this.dateToString(date) === this.dateToString(sessionDate);
+  }
   /**
    * 创建单个日期单元格
    */
@@ -344,10 +372,30 @@ export class CalendarSessionSelector {
     numberDiv.textContent = String(dayNumber);
     cell.appendChild(numberDiv);
     
-    // 为会话开始日添加额外的视觉指示
+    // 为会话开始日添加视觉指示
     if (className.includes('session-start')) {
       const indicator = document.createElement('div');
       indicator.className = 'session-indicator';
+  
+      // 为不同类型的会话添加不同的视觉效果
+      if (className.includes('selected-day') && className.includes('latest-day')) {
+        // 当前会话和最新会话是同一个
+        indicator.classList.add('current-latest-indicator');
+      } else if (className.includes('selected-day')) {
+        // 仅当前会话
+        indicator.classList.add('current-indicator');
+      } else if (className.includes('latest-day')) {
+        // 仅最新会话
+        indicator.classList.add('latest-indicator'); 
+      }
+      
+      if (className.includes('latest-day') && className.includes('selected-day')) {
+        cell.title = '当前查看会话 & 最新活跃会话';
+      } else if (className.includes('latest-day')) {
+        cell.title = '最新活跃会话';
+      } else if (className.includes('selected-day')) {
+        cell.title = '当前查看会话';
+      }
       cell.appendChild(indicator);
     }
     

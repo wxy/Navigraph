@@ -154,6 +154,9 @@ export class NavigationVisualizer implements Visualizer {
       // 初始化筛选器管理器 - 新增
       this.filterManager.initialize();
 
+      // 初始化调试工具
+      this.initDebugTools();
+
       // 第三阶段：数据加载与应用 - 使用会话视图控制器
       await this.sessionViewController.initialize();
 
@@ -319,7 +322,7 @@ export class NavigationVisualizer implements Visualizer {
     setTimeout(async () => {
       try {
         // 修改：通过会话处理器刷新数据，而不是直接调用sessionServiceClient
-        await this.sessionViewController.refreshData();
+        await this.sessionViewController.refreshSessionData();
         this.refreshVisualization();
         logger.log("页面活动触发的刷新完成");
       } catch (err) {
@@ -329,14 +332,26 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
-   * 刷新可视化 - 委托给渲染管理器
+   * 刷新可视化
    */
-  refreshVisualization(
-    data?: any,
-    options: { restoreTransform?: boolean } = {}
-  ): void {
-    this.renderingManager.refreshVisualization(data, options);
+  public refreshVisualization(data?: any, options: any = {}): void {
+    // 获取控制选项
+    const skipSessionEvents = options.skipSessionEvents === true;
+    
+    try {
+      this.renderingManager.refreshVisualization(data, options);
+    
+      // 触发会话相关事件的条件判断
+      if (!skipSessionEvents) {
+        // 可能触发会话加载的代码...
+      }
+      
+      logger.log("可视化刷新完成");
+    } catch (error) {
+      logger.error("可视化刷新失败:", error);
+    }
   }
+
   /**
    * 处理筛选器变化
    * 修改为使用FilterManager
@@ -617,7 +632,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handlePageLoaded(message: any): Promise<void> {
     try {
-      await this.sessionViewController.refreshData();
+      await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log("页面加载后刷新可视化完成");
     } catch (error) {
@@ -631,7 +646,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handleLinkClicked(message: any): Promise<void> {
     try {
-      await this.sessionViewController.refreshData();
+      await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log("基于链接点击刷新可视化完成");
     } catch (error) {
@@ -645,7 +660,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handleFormSubmitted(message: any): Promise<void> {
     try {
-      await this.sessionViewController.refreshData();
+      await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log("基于表单提交刷新可视化完成");
     } catch (error) {
@@ -659,7 +674,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async handleJsNavigation(message: any): Promise<void> {
     try {
-      await this.sessionViewController.refreshData();
+      await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log("基于JS导航刷新可视化完成");
     } catch (error) {
@@ -673,7 +688,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async refreshData(): Promise<void> {
     try {
-      await this.sessionViewController.refreshData();
+      await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log("刷新数据完成");
     } catch (error) {

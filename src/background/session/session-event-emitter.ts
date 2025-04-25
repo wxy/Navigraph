@@ -158,6 +158,15 @@ export class SessionEventEmitter {
   public emitSessionDeleted(sessionId: string, data?: any): void {
     this.emit(SessionEventType.Deleted, sessionId, data);
   }
+  /**
+   * 发出会话查看事件
+   * 当用户在UI中查看某个会话时触发
+   * @param sessionId 会话ID
+   * @param data 事件数据
+   */
+  public emitSessionViewed(sessionId: string, data?: any): void {
+    this.emit(SessionEventType.Viewed, sessionId, data);
+  }
 }
 
 // 创建单例实例

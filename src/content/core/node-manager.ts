@@ -36,6 +36,16 @@ export class NodeManager {
    */
   processSessionData(session: SessionDetails): void {
     if (!session) return;
+
+    // 检查是否有实际数据需要处理
+    const hasRecords = session.records && Object.keys(session.records).length > 0;
+    const hasEdges = session.edges && Object.keys(session.edges).length > 0;
+    
+    if (!hasRecords && !hasEdges) {
+      logger.log('会话不包含节点或边数据，跳过处理');
+      this.resetData();
+      return;
+    }
     
     logger.groupCollapsed('开始处理会话数据...');
     
@@ -368,7 +378,7 @@ export class NodeManager {
    * 设置默认深度值
    */
   private setDefaultDepths(): void {
-    logger.warn('没有找到根节点，设置所有节点深度为0');
+    logger.log('没有找到根节点，设置所有节点深度为0');
     this.nodes.forEach(node => {
       node.depth = 0;
     });

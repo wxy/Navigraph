@@ -129,10 +129,32 @@ export interface SessionMetadata {
  * 会话创建选项
  */
 export interface SessionCreationOptions {
-  title?: string;             // 会话标题
-  description?: string;       // 会话描述
-  metadata?: SessionMetadata; // 使用更明确的类型
-  makeActive?: boolean;       // 是否设为活跃会话(默认:true)
+  /**
+   * 会话标题
+   */
+  title?: string;
+
+  /**
+   * 会话描述
+   */
+  description?: string;
+
+  /**
+   * 是否设为活跃会话
+   */
+  makeActive?: boolean;
+
+  /**
+   * 是否同时更新当前查看会话
+   * 当makeActive=true时，此属性决定是否也将新会话设为当前查看会话
+   * 默认为true
+   */
+  updateCurrent?: boolean;
+
+  /**
+   * 会话元数据
+   */
+  metadata?: Record<string, any>;
 }
 
 /**
@@ -165,7 +187,7 @@ export interface SessionQueryOptions {
  */
 export interface SessionFilter {
   startAfter?: number;        // 开始时间晚于
-  startBefore?: number;       // 开始时间早于
+  startBefore?: number;        // 开始时间早于
   endAfter?: number;          // 结束时间晚于
   endBefore?: number;         // 结束时间早于
   title?: string;             // 标题包含
@@ -222,7 +244,8 @@ export enum SessionEventType {
   Ended = 'session.ended',
   Deleted = 'session.deleted',
   Activated = 'session.activated',
-  Deactivated = 'session.deactivated'
+  Deactivated = 'session.deactivated',
+  Viewed = 'session:viewed'
 }
 
 /**
@@ -282,7 +305,7 @@ export interface NavNode {
   
   // 访问信息
   firstVisit: number;        // 首次访问时间
-  lastVisit: number;         // 最近访问时间
+  lastVisit: number;        // 最近访问时间
   visitCount: number;        // 访问次数
   reloadCount: number;       // 重新加载次数
   loadTime?: number;         // 加载时间(毫秒)
@@ -325,6 +348,7 @@ export interface NavDataQueryOptions {
   // 节点相关
   tabId?: number;       // 标签页ID过滤
   url?: string;         // URL过滤
+  isClosed?: boolean;  // 是否已关闭
   
   // 边相关
   source?: string;      // 源节点ID

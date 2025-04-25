@@ -245,14 +245,42 @@ export class RenderingManager {
       .attr("text-anchor", "middle")
       .text(sessionTitle);
 
+    // 添加无数据提示，包含隐藏节点信息
+    let emptyMessage = "没有打开的浏览记录";
+    
+    // 检查当前会话中是否有已关闭节点
+    if (currentSession?.records) {
+      // 统计已关闭的节点数量
+      const closedNodesCount = Object.values(currentSession.records).filter(
+        node => node.isClosed === true
+      ).length;
+      
+      if (closedNodesCount > 0) {
+        emptyMessage = `没有打开的浏览记录 (${closedNodesCount} 个已关闭节点)`;
+      }
+    }
     // 添加无数据提示
     sessionNode
       .append("text")
       .attr("class", "empty-data-message")
       .attr("dy", 90)
       .attr("text-anchor", "middle")
-      .text("没有打开的浏览记录");
+      .text(emptyMessage);
 
+
+    // 如果有隐藏节点，添加一个交互提示
+    if (currentSession?.records && 
+      Object.values(currentSession.records).some(node => node.isClosed === true)) {
+    sessionNode
+      .append("text")
+      .attr("class", "empty-data-hint")
+      .attr("dy", 110)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "12px")
+      .attr("fill", "#4285f4")
+      .text("提示：点击筛选器显示已关闭节点");
+    }
+    
     // 为空会话节点添加闪烁动画
     this.addEmptySessionAnimation(sessionNode);
 

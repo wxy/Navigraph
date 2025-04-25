@@ -379,12 +379,12 @@ export class UIManager {
    * @param sessions 会话列表
    * @param currentSessionId 当前会话ID
    */
-  public updateSessionSelector(sessions: any[], currentSessionId?: string): void {
+  public updateSessionSelector(sessions: any[], currentSessionId?: string, latestSessionId?: string): void {
     // 显示加载状态
     this.setLoadingState(true);
     
     // 通过控制面板更新会话选择器
-    this.controlPanel.updateSessionSelector(sessions, currentSessionId);
+    this.controlPanel.updateSessionSelector(sessions, currentSessionId, latestSessionId);
     
     // 更新完成后隐藏加载状态
     setTimeout(() => {

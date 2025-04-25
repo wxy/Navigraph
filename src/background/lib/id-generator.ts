@@ -40,12 +40,28 @@ export class IdGenerator {
   
   /**
    * 生成会话ID
-   * @returns 唯一的会话标识符
+   * 使用更直观的日期格式，便于识别会话创建日期
+   * @returns 格式为 session-YYYYMMDD-HHMMSS-XXX 的会话ID
    */
-  public static generateSessionId(): string {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000000);
-    return `session-${timestamp}-${random.toString(36)}`;
+  static generateSessionId(): string {
+    const now = new Date();
+    
+    // 格式化日期部分: YYYYMMDD
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+    
+    // 格式化时间部分: HHMMSS
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timeStr = `${hours}${minutes}${seconds}`;
+    
+    // 添加随机后缀以确保唯一性
+    const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    
+    return `session-${dateStr}-${timeStr}-${randomSuffix}`;
   }
   
   /**

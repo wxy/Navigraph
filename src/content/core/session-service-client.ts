@@ -15,19 +15,28 @@ const logger = new Logger('SessionServiceClient');
  */
 export class SessionServiceClient {
   private static instance: SessionServiceClient | null = null;
-  // 会话列表和当前会话
-  // 使用私有变量存储会话列表和当前会话
-  private sessions: Session[] = [];
-  private currentSession: SessionDetails | null = null;
+  private sessionList: any[] = [];
+  private currentSession: any | null = null;
   private currentSessionId: string | null = null;
+
+  // 添加请求跟踪映射，用于防止重复请求
+  private pendingSessionRequests: Map<string, Promise<any>> = new Map();
+  private pendingListRequest: Promise<any[]> | null = null;
+
   private sessionLoadListeners: SessionEventCallback[] = [];
   private sessionsListLoadedListeners: ((sessions: Session[]) => void)[] = [];
+
+  // 添加最新会话相关属性和方法
+  private latestSession: any = null;
+  private latestSessionId: string | null = null;
+
+  private latestSessionLoadListeners: ((session: any | null) => void)[] = [];
 
   // 私有构造函数
   private constructor() {
     // 初始化代码
   }
-  
+
   /**
    * 获取SessionServiceClient实例
    */
@@ -37,23 +46,52 @@ export class SessionServiceClient {
     }
     return SessionServiceClient.instance;
   }
+
   // 添加监听器方法
   onSessionLoaded(callback: SessionEventCallback): void {
     this.sessionLoadListeners.push(callback);
   }
-  
+
   onSessionsListLoaded(callback: (sessions: Session[]) => void): void {
     this.sessionsListLoadedListeners.push(callback);
   }
 
+  onLatestSessionLoaded(callback: (session: any | null) => void): void {
+    this.latestSessionLoadListeners.push(callback);
+  }
+
   /**
-   * 加载所有可用会话
-   * @returns 会话列表
+   * 加载会话列表
+   * 实现请求去重，避免重复加载
    */
-  async loadSessions(): Promise<Session[]> {
+  async loadSessionList(): Promise<any[]> {
+    // 如果已有请求进行中，直接返回该请求
+    if (this.pendingListRequest) {
+      logger.debug('会话列表正在加载中，复用现有请求');
+      return this.pendingListRequest;
+    }
+
+    try {
+      // 创建新请求并存储
+      this.pendingListRequest = this.executeLoadSessionList();
+
+      // 等待请求完成并返回结果
+      const sessions = await this.pendingListRequest;
+      return sessions;
+    } finally {
+      // 无论成功或失败，都清除请求记录
+      this.pendingListRequest = null;
+    }
+  }
+
+  /**
+   * 执行实际的会话列表加载
+   * @private
+   */
+  private async executeLoadSessionList(): Promise<any[]> {
     try {
       logger.log('加载会话列表...');
-      
+
       const response = await sendMessage('getSessions', {}, {
         retry: true,             // 启用重试
         maxRetries: 5,           // 多次重试
@@ -62,20 +100,22 @@ export class SessionServiceClient {
         defaultValue: { sessions: [] }  // 重试失败后默认返回空数组        
       });
       logger.log('收到会话列表响应:', response);
-      
-      // 强化错误处理和类型检查
+
       if (response && response.success === true && Array.isArray(response.sessions)) {
-        this.sessions = response.sessions;
+        const sessions = response.sessions;
+        this.sessionList = sessions;
+
         // 通知监听器
         this.sessionsListLoadedListeners.forEach(callback => {
           try {
-            callback(this.sessions);
+            callback(sessions);
           } catch (err) {
             logger.error('会话列表加载监听器执行错误:', err);
           }
         });
-        logger.log(`成功加载${this.sessions.length}个会话`);
-        return this.sessions;
+
+        logger.log(`成功加载${sessions.length}个会话`);
+        return sessions;
       } else {
         logger.warn('会话响应格式不正确:', response);
         throw new Error(response?.error || '获取会话列表失败');
@@ -87,68 +127,38 @@ export class SessionServiceClient {
   }
 
   /**
-   * 加载当前会话或最近的会话
-   * @returns 当前会话详情
+   * 加载会话
+   * 实现请求去重，避免重复加载
    */
-  async loadCurrentSession(): Promise<SessionDetails | null> {
+  async loadSession(sessionId: string): Promise<any | null> {
+    // 如果已有同ID请求进行中，直接返回该请求
+    if (this.pendingSessionRequests.has(sessionId)) {
+      logger.debug(`会话 ${sessionId} 正在加载中，复用现有请求`);
+      return this.pendingSessionRequests.get(sessionId);
+    }
+
     try {
-      logger.log('加载当前会话或最近会话...');
-      
-      // 如果没有可用会话，先加载会话列表
-      if (this.sessions.length === 0) {
-        try {
-          await this.loadSessions();
-        } catch (err) {
-          logger.warn('自动加载会话列表失败:', err);
-        }
-        
-        if (this.sessions.length === 0) {
-          logger.warn('没有可用的会话');
-          return null;
-        }
-      }
-      
-      // 尝试从本地存储获取上次选择的会话ID
-      let savedSessionId: string | null = null;
-      try {
-        savedSessionId = localStorage.getItem('navigraph_current_session');
-      } catch (e) {
-        logger.warn('从本地存储读取会话ID失败:', e);
-      }
-      
-      // 如果有已保存的会话ID，且该会话在可用会话列表中，优先使用它
-      if (savedSessionId) {
-        logger.log(`检查本地存储中的会话ID: ${savedSessionId}`);
-        
-        // 检查此会话是否在会话列表中
-        const sessionExists = this.sessions.some(s => s.id === savedSessionId);
-        if (sessionExists) {
-          logger.log(`在会话列表中找到已保存的会话: ${savedSessionId}`);
-          return await this.loadSession(savedSessionId);
-        } else {
-          logger.warn(`已保存的会话ID ${savedSessionId} 不在可用列表中`);
-        }
-      }
-      
-      // 如果没有已保存会话或找不到已保存会话，加载最新的会话
-      logger.log('使用列表中的第一个会话');
-      return await this.loadSession(this.sessions[0].id);
-    } catch (error) {
-      logger.error('加载当前会话失败:', error);
-      throw error;
+      // 创建新请求并存储
+      const request = this.executeLoadSession(sessionId);
+      this.pendingSessionRequests.set(sessionId, request);
+
+      // 等待请求完成并返回结果
+      const session = await request;
+      return session;
+    } finally {
+      // 无论成功或失败，都清除请求记录
+      this.pendingSessionRequests.delete(sessionId);
     }
   }
 
   /**
-   * 加载指定ID的会话
-   * @param sessionId 会话ID
-   * @returns 会话详情
+   * 执行实际的会话加载
+   * @private
    */
-  async loadSession(sessionId: string): Promise<SessionDetails | null> {
+  private async executeLoadSession(sessionId: string): Promise<any | null> {
     try {
       logger.log(`尝试加载会话: ${sessionId}`);
-      
-      // 使用sendMessage函数
+
       const response = await sendMessage('getSessionDetails', { sessionId }, {
         retry: true,             // 启用重试
         maxRetries: 5,           // 多次重试
@@ -156,37 +166,35 @@ export class SessionServiceClient {
         factor: 1.5,             // 较小的退避因子
         defaultValue: { SessionDetails: null }  // 重试失败后默认返回空对象        
       });
-      
+
       logger.log('getSessionDetails响应:', response);
-      
+
       if (response && response.success && response.session) {
         logger.log('会话数据获取成功, 节点数:', 
                   response.session.records ? Object.keys(response.session.records).length : 0);
-        
-        this.currentSession = response.session;
+
+        const session = response.session;
+        this.currentSession = session;
         this.currentSessionId = sessionId;
-        
-        // 添加类型和空值检查
-        if (this.currentSession) {
+
+        if (session) {
           try {
-            // 处理会话数据
-            nodeManager.processSessionData(this.currentSession);
+            nodeManager.processSessionData(session);
           } catch (processError) {
-            // 捕获处理错误，但不中断流程
             logger.error('处理会话数据时出错:', processError);
           }
         }
-        
+
         // 通知监听器
         this.sessionLoadListeners.forEach(callback => {
           try {
-            callback(this.currentSession);
+            callback(session);
           } catch (err) {
             logger.error('会话加载监听器执行错误:', err);
           }
         });
-        
-        return this.currentSession;
+
+        return session;
       } else {
         logger.error('获取会话详情失败, 响应:', response);
         throw new Error(response && response.error ? response.error : '获取会话详情失败');
@@ -196,77 +204,120 @@ export class SessionServiceClient {
       throw error;
     }
   }
-  
+
   /**
-   * 切换到指定会话
-   * @param sessionId 要切换到的会话ID
-   * @returns 切换后的会话详情
+   * 加载最新活跃会话
    */
-  async switchSession(sessionId: string): Promise<SessionDetails | null> {
-    logger.log(`切换到会话: ${sessionId}`);
-    
-    // 如果已经是当前会话，无需重复加载
-    if (this.currentSessionId === sessionId && this.currentSession) {
-      logger.log('已经是当前会话，无需切换');
-      return this.currentSession;
+  async loadLatestSession(): Promise<any | null> {
+    try {
+      const response = await sendMessage('getLatestSession', {});
+      
+      if (response?.session) {
+        this.latestSession = response.session;
+        this.latestSessionId = response.session.id;
+        this.triggerLatestSessionLoaded(response.session);
+      } else {
+        this.latestSession = null;
+        this.latestSessionId = null;
+        this.triggerLatestSessionLoaded(null);
+      }
+      
+      return this.latestSession;
+    } catch (error) {
+      logger.error("加载最新会话失败:", error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取最新活跃会话ID
+   */
+  getLatestSessionId(): string | null {
+    return this.latestSessionId;
+  }
+
+  /**
+   * 获取最新活跃会话
+   */
+  getLatestSession(): any | null {
+    return this.latestSession;
+  }
+
+  /**
+   * 加载当前会话
+   * 优先级：本地存储的ID > 最新活跃会话 > 会话列表中最后一个 > 会话列表中第一个
+   */
+  async loadCurrentSession(): Promise<any | null> {
+    // 1. 尝试使用存储的会话ID
+    const sessionId = this.getCurrentSessionId();
+    if (sessionId) {
+      return this.loadSession(sessionId);
     }
     
     try {
-      // 通知后台服务切换当前会话
-      await sendMessage('setCurrentSession', { sessionId });
-      
-      // 保存会话ID到本地存储，以便刷新后保持选择
-      try {
-        localStorage.setItem('navigraph_current_session', sessionId);
-        logger.log(`已保存会话ID ${sessionId} 到本地存储`);
-      } catch (e) {
-        logger.warn('保存会话ID到本地存储失败:', e);
+      // 2. 尝试加载最新活跃会话
+      logger.log('尝试加载最新活跃会话');
+      const latestSession = await this.loadLatestSession();
+      if (latestSession) {
+        logger.log(`找到最新活跃会话: ${latestSession.id}，使用该会话`);
+        this.setCurrentSessionId(latestSession.id);
+        return this.loadSession(latestSession.id);
       }
       
-      // 加载会话详情
-      return await this.loadSession(sessionId);
+      // 3. 如果没有最新会话，尝试加载会话列表
+      if (this.sessionList.length === 0) {
+        await this.loadSessionList();
+      }
+      
+      // 4. 从会话列表中选择
+      if (this.sessionList.length > 0) {
+        // 选择最后一个会话（通常是最新的）
+        const lastSession = this.sessionList[this.sessionList.length - 1];
+        logger.log(`使用会话列表中最后一个会话: ${lastSession.id}`);
+        return this.loadSession(lastSession.id);
+      }
+      
+      // 5. 如果以上都失败，返回null
+      logger.log('没有找到可用的会话');
+      return null;
     } catch (error) {
-      logger.error('切换会话失败:', error);
+      logger.error('加载当前会话失败:', error);
       throw error;
     }
   }
 
   /**
-   * 清除所有会话数据
-   * 用于调试或重置应用
+   * 切换会话
+   * 区分设置ID和加载数据，避免重复加载
    */
-  async clearAllData(): Promise<boolean> {
+  async switchSession(sessionId: string): Promise<any | null> {
+    this.setCurrentSessionId(sessionId);
+    return this.loadSession(sessionId);
+  }
+
+  /**
+   * 设置当前会话ID（不加载数据）
+   */
+  setCurrentSessionId(sessionId: string): void {
+    this.currentSessionId = sessionId;
     try {
-      const response = await sendMessage('clearAllData', {
-        timestamp: Date.now() // 添加时间戳或其他所需参数
-      });
-      
-      if (response && response.success) {
-        // 重置本地状态
-        this.sessions = [];
-        this.currentSession = null;
-        this.currentSessionId = null;
-        return true;
-      } else {
-        throw new Error(response?.error || '清除数据失败');
-      }
-    } catch (error) {
-      logger.error('清除数据失败:', error);
-      throw error;
+      localStorage.setItem('navigraph_current_session', sessionId);
+    } catch (e) {
+      logger.warn('保存会话ID到本地存储失败:', e);
     }
   }
 
   /**
    * 获取会话列表
    */
-  getSessions(): Session[] {
-    return this.sessions;
+  getSessionList(): any[] {
+    return this.sessionList;
   }
 
   /**
    * 获取当前会话
    */
-  getCurrentSession(): SessionDetails | null {
+  getCurrentSession(): any | null {
     return this.currentSession;
   }
 
@@ -275,6 +326,17 @@ export class SessionServiceClient {
    */
   getCurrentSessionId(): string | null {
     return this.currentSessionId;
+  }
+
+  // 事件触发相关方法
+  private triggerLatestSessionLoaded(session: any | null): void {
+    for (const listener of this.latestSessionLoadListeners) {
+      try {
+        listener(session);
+      } catch (error) {
+        logger.error("调用最新会话加载监听器失败:", error);
+      }
+    }
   }
 }
 

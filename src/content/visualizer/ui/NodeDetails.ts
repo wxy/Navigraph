@@ -93,15 +93,19 @@ export class NodeDetails {
     this.addTableRow(table, "状态", node.isClosed ? "已关闭" : "活跃");
     if (this.visualizer.isTrackingPage(node))
       this.addTableRow(table, "跟踪页面", "是");
-
-    // 处理URL参数 (在表单数据之前)
-    if (node.url && node.url.includes("?")) {
-      this.addUrlParamsSection(content, node.url);
+      
+    // 添加打开时长信息（如果有）
+    if (node.visitDuration) {
+      this.addTableRow(table, "时长", this.formatDuration(node.visitDuration));
+    } else if (!node.isClosed && node.timestamp) {
+      // 如果页面还打开着，计算从打开到现在的时间
+      const duration = Date.now() - node.timestamp;
+      this.addTableRow(table, "时长", this.formatDuration(duration) + " ..." );
     }
-
-    // 检查是否存在表单数据
-    if (node.type === "form_submit" && node.formData) {
-      this.addFormDataSection(content, node.formData);
+    
+    // 添加打开次数（如果有）
+    if (node.visitCount) {
+      this.addTableRow(table, "次数", node.visitCount.toString());
     }
 
     // 添加技术详情(可折叠)
@@ -174,96 +178,32 @@ export class NodeDetails {
     value: string
   ): void {
     const row = document.createElement("tr");
-
+  
     const labelCell = document.createElement("td");
     labelCell.className = "detail-label";
     labelCell.textContent = label;
-
+  
     const valueCell = document.createElement("td");
     valueCell.className = "detail-value";
-
+    // 添加样式确保内容可以换行
+    valueCell.style.wordBreak = "break-word";
+    valueCell.style.maxWidth = "70%"; // 限制宽度防止表格被撑开
+  
     // 对于URL，创建可点击链接
     if (label === "URL") {
       const link = document.createElement("a");
       link.href = value;
       link.target = "_blank";
       link.textContent = value;
+      link.style.wordBreak = "break-word"; // 确保链接文字换行
       valueCell.appendChild(link);
     } else {
       valueCell.textContent = value;
     }
-
+  
     row.appendChild(labelCell);
     row.appendChild(valueCell);
     table.appendChild(row);
-  }
-
-  /**
-   * 添加表单数据部分
-   */
-  private addFormDataSection(
-    container: Element,
-    formData: Record<string, string>
-  ): void {
-    const formSection = document.createElement("div");
-    formSection.className = "form-data-section";
-
-    // 添加标题
-    const sectionTitle = document.createElement("h4");
-    sectionTitle.textContent = "表单数据";
-    formSection.appendChild(sectionTitle);
-
-    // 创建表单数据表格
-    const formTable = document.createElement("table");
-    formTable.className = "node-details-table form-data-table";
-
-    // 添加每个表单字段
-    Object.entries(formData).forEach(([key, value]) => {
-      this.addTableRow(formTable, key, value);
-    });
-
-    formSection.appendChild(formTable);
-    container.appendChild(formSection);
-  }
-
-  /**
-   * 添加新方法：解析和显示URL查询参数
-   */
-  private addUrlParamsSection(container: Element, url: string): void {
-    try {
-      const urlObj = new URL(url);
-      if (!urlObj.search || urlObj.search === "?") return;
-
-      const params = new URLSearchParams(urlObj.search);
-      if (!params.toString()) return;
-
-      const paramsObj: Record<string, string> = {};
-      params.forEach((value, key) => {
-        paramsObj[key] = value;
-      });
-
-      const paramsSection = document.createElement("div");
-      paramsSection.className = "url-params-section";
-
-      // 添加标题
-      const sectionTitle = document.createElement("h4");
-      sectionTitle.textContent = "URL参数";
-      paramsSection.appendChild(sectionTitle);
-
-      // 创建参数表格
-      const paramsTable = document.createElement("table");
-      paramsTable.className = "node-details-table url-params-table";
-
-      // 添加每个参数
-      Object.entries(paramsObj).forEach(([key, value]) => {
-        this.addTableRow(paramsTable, key, value);
-      });
-
-      paramsSection.appendChild(paramsTable);
-      container.appendChild(paramsSection);
-    } catch (e) {
-      logger.error("解析URL参数失败:", e);
-    }
   }
 
   /**
@@ -320,6 +260,36 @@ export class NodeDetails {
   private formatTimestamp(timestamp: number): string {
     const date = new Date(timestamp);
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  }
+
+  /**
+   * 格式化时长（毫秒转为人类可读格式）
+   */
+  private formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms}毫秒`;
+    
+    const seconds = Math.floor(ms / 1000) % 60;
+    const minutes = Math.floor(ms / (1000 * 60)) % 60;
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    
+    let result = '';
+    
+    if (days > 0) {
+      result += `${days}天`;
+    }
+    
+    if (hours > 0 || days > 0) {
+      result += `${hours}小时`;
+    }
+    
+    if (minutes > 0 || hours > 0 || days > 0) {
+      result += `${minutes}分钟`;
+    }
+    
+    result += `${seconds}秒`;
+    
+    return result;
   }
 
   /**

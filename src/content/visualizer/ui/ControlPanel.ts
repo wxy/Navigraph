@@ -238,20 +238,23 @@ export class ControlPanel {
 
   /**
    * 更新会话选择器
+   * @param sessions 会话列表
+   * @param currentSessionId 当前会话ID
+   * @param latestSessionId 最新会话ID - 新增参数
    */
-  public updateSessionSelector(sessions: any[], currentSessionId?: string): void {
+  public updateSessionSelector(sessions: any[], currentSessionId?: string, latestSessionId?: string): void {
     // 如果会话数量较多，使用优化的更新方式
     if (sessions.length > 0) {
       logger.log(`控制面板更新会话选择器，共 ${sessions.length} 个会话`);
       
       // 使用requestAnimationFrame确保UI渲染优先
       requestAnimationFrame(() => {
-        // 更新日历会话选择器
-        this.calendarSessionSelector.update(sessions, currentSessionId);
+        // 更新日历会话选择器，传递当前会话ID和最新会话ID
+        this.calendarSessionSelector.update(sessions, currentSessionId, latestSessionId);
       });
     } else {
-      // 无会话数据时直接更新
-      this.calendarSessionSelector.update(sessions, currentSessionId);
+      // 无会话数据时直接更新，同样传递当前会话ID和最新会话ID
+      this.calendarSessionSelector.update(sessions, currentSessionId, latestSessionId);
     }
   }
 

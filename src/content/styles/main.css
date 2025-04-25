@@ -361,6 +361,52 @@ body.loading-session #visualization-container::before {
   background-color: var(--session-start-hover-bg, rgba(74, 108, 247, 0.25));
 }
 
+/* 日历会话指示器样式 */
+.day-cell .session-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-color, #4a6cf7);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 当前会话指示器 */
+.day-cell .current-indicator {
+  background-color: var(--accent-color, #4285f4);
+}
+
+/* 最新会话指示器 */
+.day-cell .latest-indicator {
+  background-color: var(--success-color, #34a853);
+}
+
+/* 同时是当前和最新会话的指示器 */
+.day-cell .current-latest-indicator {
+  background: linear-gradient(to right, #4285f4 50%, #34a853 50%);
+}
+
+/* 当前会话日期 */
+.day-cell.selected-day {
+  background-color: rgba(66, 133, 244, 0.1);
+  border-left: 2px solid #4285f4;
+}
+
+/* 最新会话日期 */
+.day-cell.latest-day {
+  background-color: rgba(52, 168, 83, 0.1);
+  border-right: 2px solid #34a853;
+}
+
+/* 同时是当前和最新会话的日期 */
+.day-cell.selected-day.latest-day {
+  background-color: rgba(156, 39, 176, 0.1);
+  border-left: 2px solid #4285f4;
+  border-right: 2px solid #34a853;
+}
+
 /* 视图模式切换 */
 .view-mode {
   display: flex;
@@ -1018,6 +1064,13 @@ svg .node-label {
   color: var(--text-color) !important;
   margin: 0;
   flex-grow: 1;
+  word-break: break-word; /* 允许在任意字符间断行 */
+  overflow-wrap: break-word; /* 当单词太长时允许断行 */
+  max-width: 100%; /* 限制最大宽度 */
+  white-space: normal; /* 允许正常换行 */
+  text-overflow: ellipsis; /* 超出部分用省略号表示 */
+  max-height: 60px;
+  overflow: hidden;
 }
 
 /* 详情项容器 */
@@ -1311,6 +1364,40 @@ svg .node-label {
 .node.redirect text {
   font-style: italic;
   fill: #ff9800;
+}
+
+/* 树形视图会话节点样式 */
+.node.current-session {
+  opacity: 1;
+}
+
+.node.current-session circle {
+  stroke: var(--accent-color, #4285f4);
+  stroke-width: 2.5px;
+}
+
+.node.latest-session circle {
+  stroke: var(--success-color, #34a853);
+  stroke-width: 2.5px;
+}
+
+.node.current-latest-session circle {
+  stroke: var(--secondary-color, #9c27b0);
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 2px rgba(156, 39, 176, 0.5));
+}
+
+/* 节点标题样式增强 */
+.node.current-session .node-title {
+  font-weight: 500;
+}
+
+.node.latest-session .node-title {
+  font-weight: 500;
+}
+
+.node.current-latest-session .node-title {
+  font-weight: 600;
 }
 
 /* ========== 连接线类型样式 ========== */

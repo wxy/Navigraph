@@ -748,4 +748,164 @@ export class NodeTracker {
 
     logger.log("节点追踪器状态已重置");
   }
+
+  /**
+   * 关闭指定会话中的所有活跃节点
+   * @param sessionId 会话ID
+   */
+  public async closeAllNodesInSession(sessionId: string): Promise<void> {
+    try {
+      logger.log(`关闭会话 ${sessionId} 中的所有活跃节点`);
+      
+      // 查询此会话的所有活跃节点
+      const activeNodes = await this.navigationStorage.queryNodes({
+        sessionId,
+        isClosed: false
+      });
+      
+      if (activeNodes.length === 0) {
+        logger.log(`会话 ${sessionId} 中没有活跃节点`);
+        return;
+      }
+      
+      logger.log(`找到 ${activeNodes.length} 个活跃节点需要关闭`);
+      const now = Date.now();
+      
+      // 批量更新这些节点为已关闭状态
+      for (const node of activeNodes) {
+        await this.navigationStorage.updateNode(node.id, {
+          isClosed: true,
+          closeTime: now
+        });
+      }
+      
+      logger.log(`已将会话 ${sessionId} 中的 ${activeNodes.length} 个节点标记为关闭`);
+    } catch (error) {
+      logger.error(`关闭会话 ${sessionId} 中的活跃节点失败:`, error);
+    }
+  }
+
+  /**
+   * 将当前打开的标签页关联到指定会话
+   * @param sessionId 目标会话ID
+   */
+  public async associateOpenTabsWithSession(sessionId: string): Promise<void> {
+    try {
+      logger.log(`将当前打开的标签页关联到会话 ${sessionId}`);
+      
+      // 获取所有活跃标签页
+      const tabs = await chrome.tabs.query({});
+      const relevantTabs = tabs.filter(tab => 
+        tab.id !== undefined && tab.url && !UrlUtils.isSystemPage(tab.url)
+      );
+      
+      if (relevantTabs.length === 0) {
+        logger.log('没有需要关联的相关标签页');
+        return;
+      }
+      
+      logger.log(`找到 ${relevantTabs.length} 个标签页需要关联到会话`);
+      
+      // 为每个标签页创建节点
+      for (const tab of relevantTabs) {
+        if (tab.id !== undefined && tab.url) {
+          try {
+            // 使用现有的createNode方法
+            const nodeId = await this.createNode({
+              tabId: tab.id,
+              url: tab.url,
+              navigationType: "initial",
+              timestamp: Date.now()
+            });
+            
+            if (nodeId) {
+              // 更新节点元数据
+              await this.updateNodeMetadata(nodeId, {
+                title: tab.title || '',
+                favicon: tab.favIconUrl || ''
+              });
+              
+              // 如果传入的会话ID与当前会话ID不同，更新节点的会话ID
+              if (sessionId !== this.sessionId) {
+                await this.navigationStorage.updateNode(nodeId, {
+                  sessionId: sessionId,
+                  isClosed: false
+                });
+              }
+              
+              logger.log(`已将标签页 ${tab.id} (${tab.url}) 关联到会话 ${sessionId}`);
+            }
+          } catch (tabError) {
+            logger.error(`关联标签页 ${tab.id} 失败:`, tabError);
+          }
+        }
+      }
+      
+      logger.log(`完成标签页关联到会话 ${sessionId}`);
+    } catch (error) {
+      logger.error(`关联标签页到会话 ${sessionId} 失败:`, error);
+    }
+  }
+
+  /**
+   * 查询节点
+   * @param queryParams 查询参数
+   */
+  public async queryNodes(queryParams: any): Promise<NavNode[]> {
+    try {
+      return await this.navigationStorage.queryNodes(queryParams);
+    } catch (error) {
+      logger.error('查询节点失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 更新节点状态
+   * @param nodeId 节点ID
+   * @param updates 更新内容
+   */
+  public async updateNode(nodeId: string, updates: Partial<NavNode>): Promise<boolean> {
+    try {
+      await this.navigationStorage.updateNode(nodeId, updates);
+      return true; // 成功则返回true
+    } catch (error) {
+      logger.error(`更新节点 ${nodeId} 失败:`, error);
+      return false; // 失败返回false
+    }
+  }
+
+  /**
+   * 关闭与标签页关联的所有节点
+   * @param tabId 标签页ID
+   * @param sessionId 会话ID
+   */
+  public async closeNodesForTab(tabId: number, sessionId: string): Promise<void> {
+    try {
+      // 查找与此标签页相关的活跃节点
+      const activeNodes = await this.navigationStorage.queryNodes({
+        tabId: tabId,
+        sessionId: sessionId,
+        isClosed: false
+      });
+      
+      if (activeNodes.length === 0) {
+        return;
+      }
+      
+      const now = Date.now();
+      
+      // 更新这些节点为已关闭状态
+      for (const node of activeNodes) {
+        await this.navigationStorage.updateNode(node.id, {
+          isClosed: true,
+          closeTime: now
+        });
+      }
+      
+      logger.log(`已关闭标签页 ${tabId} 的 ${activeNodes.length} 个节点`);
+    } catch (error) {
+      logger.error(`关闭标签页 ${tabId} 节点失败:`, error);
+    }
+  }
 }
