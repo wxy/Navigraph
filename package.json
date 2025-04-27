@@ -9,7 +9,7 @@
     "copy-static-files": "mkdir -pv dist/content && cp -rv src/content/*.html src/content/*.js dist/content/ && mkdir -pv dist/content/styles && cp -rv src/content/styles/* dist/content/styles/ && mkdir -pv dist/options && cp -rv src/options/*.html dist/options/ && mkdir -pv dist/options/styles && cp -rv src/options/styles/*.css dist/options/styles/",
     "clean": "rm -rf dist",
     "watch": "npm run build -- --watch",
-    "package": "zip -r ../navigraph.zip * --exclude @.gitignore"
+    "package": "zip -r ../navigraph.zip manifest.json dist images LICENSE README.md -x \"**/node_modules/*\" \"**/.git/*\" \"**/src/*\" \"**/docs/*\""
   },
   "devDependencies": {
     "@types/chrome": "^0.0.250",
