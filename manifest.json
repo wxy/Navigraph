@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Navigraph",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "可视化浏览历史记录",
   "icons": {
     "16": "images/logo-16.png",

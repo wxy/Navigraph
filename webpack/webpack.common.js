@@ -94,7 +94,15 @@ module.exports = {
     }),
   ],
   output: {
-    filename: '[name]/[name].js',
+    // 使用函数根据入口名动态决定输出路径
+    filename: (pathData) => {
+      // 对于内容脚本特殊处理
+      if (pathData.chunk.name === 'navigraph') {
+        return 'content/navigraph.js';  // 将navigraph输出到content目录下
+      }
+      // 其他文件保持原有输出方式
+      return '[name]/[name].js';
+    },
     path: path.resolve(__dirname, '..', 'dist'),
     clean: true,
   },
