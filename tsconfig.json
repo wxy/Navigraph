@@ -19,7 +19,13 @@
     "inlineSources": true,  // 内联源映射
     "skipLibCheck": true,  // 跳过库文件检查
     "forceConsistentCasingInFileNames": true,  // 强制文件名一致性
-    "resolveJsonModule": true  // 允许导入JSON文件(如配置)
+    "resolveJsonModule": true,  // 允许导入JSON文件(如配置)
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@lib/*": ["src/lib/*"],
+      "@types/*": ["src/types/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.js"],  // 扩展包含文件类型
   "exclude": ["node_modules", "dist"]  // 明确排除目录

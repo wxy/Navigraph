@@ -1,23 +1,28 @@
 {
   "scripts": {
-    "build": "npm run clean && npm run copy-static-files && npm run build-types && npm run build-lib && npm run build-background && npm run build-content && npm run build-options",
-    "build-types": "esbuild src/types/*.ts --bundle=false --format=esm --outdir=dist/types",
-    "build-lib": "esbuild src/lib/*.ts src/lib/**/*.ts --bundle=false --format=esm --outdir=dist/lib",
-    "build-background": "esbuild src/background/*.ts src/background/**/*.ts src/background/**/**/*.ts --bundle=false --format=esm --outdir=dist/background",
-    "build-content": "esbuild src/content/*.ts src/content/**/*.ts src/content/**/**/*.ts src/content/**/**/**/*.ts --bundle=false  --format=esm --outdir=dist/content",
-    "build-options": "esbuild src/options/*.ts src/options/**/*.ts --bundle=false  --format=esm --outdir=dist/options",
-    "copy-static-files": "mkdir -pv dist/content && cp -rv src/content/*.html src/content/*.js dist/content/ && mkdir -pv dist/content/styles && cp -rv src/content/styles/* dist/content/styles/ && mkdir -pv dist/options && cp -rv src/options/*.html dist/options/ && mkdir -pv dist/options/styles && cp -rv src/options/styles/*.css dist/options/styles/",
+    "build": "webpack --config webpack/webpack.prod.js",
+    "build:dev": "webpack --config webpack/webpack.dev.js",
+    "dev": "webpack --config webpack/webpack.dev.js --watch",
     "clean": "rm -rf dist",
-    "watch": "npm run build -- --watch",
-    "package": "zip -r ../navigraph.zip manifest.json dist images LICENSE README.md -x \"**/node_modules/*\" \"**/.git/*\" \"**/src/*\" \"**/docs/*\""
+    "package": "npm run build && zip -r ../navigraph.zip manifest.json dist images LICENSE README.md -x \"**/node_modules/*\" \"**/.git/*\" \"**/src/*\" \"**/docs/*\""
   },
   "devDependencies": {
     "@types/chrome": "^0.0.250",
     "@types/d3": "^7.4.3",
     "@types/node": "^22.13.5",
     "@types/webextension-polyfill": "^0.12.2",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "css-loader": "^7.1.2",
     "esbuild": "^0.18.0",
-    "typescript": "^5.7.3"
+    "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.2",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.7",
+    "webpack-cli": "^6.0.1",
+    "webpack-merge": "^6.0.1"
   },
   "dependencies": {
     "d3": "^7.9.0",

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",  // 继承基础配置
+  "compilerOptions": {
+    "declaration": false,        // 禁用声明文件生成
+    "sourceMap": false,          // 禁用源映射
+    "inlineSources": false       // 禁用内联源码
+  }
+}
