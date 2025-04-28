@@ -1,5 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
-import { UrlUtils } from '../utils/url-utils.js';
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { 
   PendingNavigation, 
   JsNavigationRecord, 

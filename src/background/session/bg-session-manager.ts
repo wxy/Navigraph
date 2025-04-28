@@ -7,7 +7,7 @@ import { IdGenerator } from "../lib/id-generator.js";
 import { SessionStorage, getSessionStorage } from "../store/session-storage.js";
 import { sessionEvents } from "./session-event-emitter.js";
 import { BackgroundMessageService } from "../messaging/bg-message-service.js";
-import { getNavigationManager } from "../navigation-manager.js";
+import { getNavigationManager } from "../navigation/navigation-manager.js";
 import {
   NavNode, 
   NavLink,
@@ -23,7 +23,7 @@ import {
 } from "../../types/messages/background.js";
 import { getSettingsService } from '../../lib/settings/service.js';
 import { NavigraphSettings } from '../../lib/settings/types.js';
-import { UrlUtils } from '../navigation/utils/url-utils.js';
+import { UrlUtils } from '../../lib/utils/url-utils.js';
 
 const logger = new Logger('BackgroundSessionManager');
 

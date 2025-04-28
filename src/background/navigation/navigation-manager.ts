@@ -1,20 +1,20 @@
-import { Logger } from '../lib/utils/logger.js';
-import { NavigationStorage, getNavigationStorage } from './store/navigation-storage.js';
-import { BackgroundMessageService } from './messaging/bg-message-service.js';
+import { Logger } from '../../lib/utils/logger.js';
+import { NavigationStorage, getNavigationStorage } from '../store/navigation-storage.js';
+import { BackgroundMessageService } from '../messaging/bg-message-service.js';
 import { 
   BrowsingSession,
   NavNode,
   NavLink
-} from '../types/session-types.js';
+} from '../../types/session-types.js';
 
-import { getBackgroundSessionManager } from './session/bg-session-manager.js';
+import { getBackgroundSessionManager } from '../session/bg-session-manager.js';
 
-import { TabStateManager } from './navigation/managers/tab-state-manager.js';
-import { NodeTracker } from './navigation/managers/node-tracker.js';
-import { EdgeTracker } from './navigation/managers/edge-tracker.js';
-import { PendingNavigationTracker } from './navigation/managers/pending-navigation-tracker.js';
-import { NavigationEventHandler } from './navigation/managers/navigation-event-handler.js';
-import { NavigationMessageHandler } from './navigation/managers/navigation-message-handler.js';
+import { TabStateManager } from './managers/tab-state-manager.js';
+import { NodeTracker } from './managers/node-tracker.js';
+import { EdgeTracker } from './managers/edge-tracker.js';
+import { PendingNavigationTracker } from './managers/pending-navigation-tracker.js';
+import { NavigationEventHandler } from './managers/navigation-event-handler.js';
+import { NavigationMessageHandler } from './managers/navigation-message-handler.js';
 
 const logger = new Logger('NavigationManager');
 

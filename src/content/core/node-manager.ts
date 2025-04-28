@@ -5,6 +5,7 @@
 import { Logger } from '../../lib/utils/logger.js';
 import type { BrowsingSession, NavNode, NavLink } from '../../types/session-types.js';
 import type { NodeMetadata } from '../types/navigation.js';
+import { UrlUtils } from '../../lib/utils/url-utils.js';
 
 // 为方便代码迁移，定义类型别名
 type SessionDetails = BrowsingSession;
@@ -82,7 +83,7 @@ export class NodeManager {
   private processNavNode(record: NavNode): NavNode {
     // 处理必要字段默认值
     if (!record.title) {
-      record.title = this.extractTitle(record.url);
+      record.title = UrlUtils.extractTitle(record.url);
     }
     
     if (!record.type) {
@@ -572,71 +573,6 @@ export class NodeManager {
   }
   
   // ===== 辅助方法 =====
-  
-  /**
-   * 从URL中提取标题
-   * 当节点没有原始标题时，尝试从URL中提取有意义的信息作为标题
-   * @param url URL字符串
-   * @returns 提取的标题
-   */
-  private extractTitle(url: string): string {
-    try {
-      if (!url) return '未知页面';
-      
-      // 解析URL
-      let parsedUrl;
-      try {
-        parsedUrl = new URL(url);
-      } catch (e) {
-        // 处理无效URL
-        return url.substring(0, 30);
-      }
-      
-      // 获取不带www的主机名
-      const hostname = parsedUrl.hostname.replace(/^www\./, '');
-      
-      // 如果URL只有域名，直接返回
-      if (!parsedUrl.pathname || parsedUrl.pathname === '/') {
-        return hostname;
-      }
-      
-      // 尝试从路径中提取有意义的信息
-      const pathSegments = parsedUrl.pathname.split('/').filter(segment => segment);
-      
-      // 如果路径为空，返回域名
-      if (pathSegments.length === 0) {
-        return hostname;
-      }
-      
-      // 获取最后一个路径段，通常包含页面名称
-      let lastSegment = pathSegments[pathSegments.length - 1];
-      
-      // 清理最后一个段中的文件扩展名和其他内容
-      lastSegment = lastSegment
-        .replace(/\.(html|htm|php|aspx|jsp|asp)$/, '')  // 移除文件扩展名
-        .replace(/[-_]/g, ' ')  // 将连字符和下划线替换为空格
-        .replace(/\b\w/g, c => c.toUpperCase());  // 首字母大写
-      
-      // 如果段为空或只有数字，使用上一级路径
-      if (lastSegment.length === 0 || /^\d+$/.test(lastSegment)) {
-        if (pathSegments.length > 1) {
-          lastSegment = pathSegments[pathSegments.length - 2]
-            .replace(/[-_]/g, ' ')
-            .replace(/\b\w/g, c => c.toUpperCase());
-        }
-      }
-      
-      // 组合域名和路径段以创建描述性标题
-      if (lastSegment && lastSegment.length > 0 && lastSegment !== 'Index') {
-        return `${hostname} › ${lastSegment}`;
-      } else {
-        return hostname;
-      }
-    } catch (error) {
-      logger.error('提取标题失败:', error);
-      return url.substring(0, 30) || '未知页面';
-    }
-  }
   
   // ===== 数据访问方法 =====
   

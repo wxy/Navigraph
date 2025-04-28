@@ -2,7 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { IdGenerator } from '../../lib/id-generator.js';
 import { NavigationStorage } from '../../store/navigation-storage.js';
 import { TabStateManager } from './tab-state-manager.js';
-import { UrlUtils } from '../utils/url-utils.js';
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { NavNode, ExtendedCompletedDetails } from '../../../types/session-types.js';
 import { NodeCreationOptions, NodeMetadataOptions, MetadataSource, UpdateNodeResult } from '../types/node.js';
 
@@ -102,7 +102,7 @@ export class NodeTracker {
         favicon = tab.favIconUrl;
 
         if (!favicon) {
-          favicon = await this.getFavicon(url, tab.favIconUrl);
+          favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
         }
       } catch (e) {
         logger.warn("获取标签页信息失败:", e);
@@ -574,41 +574,6 @@ export class NodeTracker {
   }
 
   /**
-   * 获取favicon URL
-   * @param url 页面URL
-   * @param fallbackUrl 备选URL
-   * @returns favicon URL
-   */
-  private async getFavicon(url: string, fallbackUrl?: string): Promise<string> {
-    // 如果有回退URL且不是空字符串，直接使用
-    if (fallbackUrl && fallbackUrl.trim().length > 0) {
-      return fallbackUrl;
-    }
-
-    // 使用Google的favicon服务
-    try {
-      const urlObj = new URL(url);
-      return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=128`;
-    } catch (e) {
-      // 如果URL解析失败，返回一个默认图标
-      return "chrome://favicon/";
-    }
-  }
-
-  /**
-   * 获取页面的 favicon URL
-   * @param url 页面 URL
-   * @param fallbackUrl 备选 URL
-   * @returns favicon URL
-   */
-  public async getFaviconUrl(
-    url: string,
-    fallbackUrl?: string
-  ): Promise<string> {
-    return this.getFavicon(url, fallbackUrl);
-  }
-
-  /**
    * 处理导航完成事件
    * @param details 导航完成详情
    */
@@ -627,7 +592,7 @@ export class NodeTracker {
 
       // 获取增强版favicon
       const tab = await chrome.tabs.get(tabId);
-      const favicon = await this.getFaviconUrl(url, tab.favIconUrl);
+      const favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
 
       // 获取记录
       const record = await this.navigationStorage.getNode(nodeId);

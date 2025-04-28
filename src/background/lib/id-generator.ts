@@ -2,6 +2,8 @@
  * 统一的ID生成器
  */
 import { Logger } from '../../lib/utils/logger.js';
+import { UrlUtils } from '../../lib/utils/url-utils.js';
+
 const logger = new Logger('IdGenerator');
 
 export class IdGenerator {
@@ -13,7 +15,7 @@ export class IdGenerator {
    */
   public static generateNodeId(tabId: number, url: string): string {
     // 规范化URL
-    const normalizedUrl = this.normalizeUrl(url);
+    const normalizedUrl = UrlUtils.normalizeUrl(url);
     
     // 从URL中提取域名作为可读部分
     let domain = '';
@@ -62,30 +64,6 @@ export class IdGenerator {
     const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     
     return `session-${dateStr}-${timeStr}-${randomSuffix}`;
-  }
-  
-  /**
-   * 规范化URL
-   */
-  static normalizeUrl(url: string): string {
-    try {
-      // 移除片段标识符
-      url = url.split('#')[0];
-      
-      // 规范化URL
-      const urlObj = new URL(url);
-      
-      // 移除末尾斜线
-      let path = urlObj.pathname;
-      if (path.length > 1 && path.endsWith('/')) {
-        path = path.slice(0, -1);
-      }
-      
-      // 重建URL (省略某些参数如UTM等)
-      return `${urlObj.protocol}//${urlObj.host}${path}${urlObj.search}`;
-    } catch {
-      return url; // 如果解析失败，返回原始URL
-    }
   }
   
   /**
