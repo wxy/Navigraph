@@ -1,6 +1,7 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import { BackgroundMessageService } from '../bg-message-service.js';
 import { BackgroundMessages, BackgroundResponses } from '../../../types/messages/background.js';
+import { getSettingsService } from '../../../lib/settings/service.js';
 
 const logger = new Logger('SettingsHandlers');
 /**
@@ -14,12 +15,14 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     sendResponse: (response: BackgroundResponses.GetSettingsResponse) => void
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
-    
+    if (!ctx) {
+      logger.error('创建消息上下文失败');
+      return false;
+    }
+    const settingsService = getSettingsService();
     try {
-      const settingsService = require('../../lib/settings/service.js').getSettingsService();
-      
       // 使用现有的设置服务获取设置
-      settingsService.getAll()
+      settingsService.getSettings()
         .then((settings: Record<string, any>) => {
           // 确保始终返回一个对象，即使设置为空
           ctx.success({ settings: settings || {} });
@@ -43,6 +46,11 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     sendResponse: (response: BackgroundResponses.SaveSettingsResponse) => void
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
+    if (!ctx) {
+      logger.error('创建消息上下文失败');
+      return false;
+    }
+    const settingsService = getSettingsService();
     const { settings } = message;
     
     if (!settings) {
@@ -51,10 +59,8 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     }
     
     try {
-      const settingsService = require('../../lib/settings/service.js').getSettingsService();
-      
       // 使用现有的设置服务保存设置
-      settingsService.saveAll(settings)
+      settingsService.updateSettings(settings)
         .then(() => {
           ctx.success();
         })
@@ -77,23 +83,24 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     sendResponse: (response: BackgroundResponses.ResetSettingsResponse) => void
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
-    
-    try {
-      const settingsService = require('../../lib/settings/service.js').getSettingsService();
-      
-      // 使用现有的设置服务重置设置
-      settingsService.resetToDefaults()
-        .then(() => {
-          ctx.success();
-        })
-        .catch((error: Error) => {
-          logger.error('重置设置时出错:', error);
-          ctx.error(`重置设置失败: ${error.message}`);
-        });
-    } catch (error) {
-      logger.error('处理resetSettings请求时出错:', error);
-      ctx.error(`处理请求失败: ${error instanceof Error ? error.message : String(error)}`);
+    if (!ctx) {
+      logger.error('创建消息上下文失败');
+      return false;
     }
+    const settingsService = getSettingsService();
+    
+    if (!message) {
+      ctx.error('无效的请求');
+      return false;
+    }
+
+    // 移除外层try-catch，仅保留Promise错误处理
+    settingsService.resetSettings()
+      .then(() => ctx.success())
+      .catch(error => {
+        logger.error('重置设置时出错:', error);
+        ctx.error(`重置设置失败: ${error instanceof Error ? error.message : String(error)}`);
+      });
     
     return true; // 需要异步响应
   });
