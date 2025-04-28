@@ -1,5 +1,5 @@
 import { Logger } from '../../lib/utils/logger.js';
-import { NavigationManager } from '../navigation-manager.js';
+import { NavigationManager } from '../navigation/navigation-manager.js';
 
 const logger = new Logger('EventListeners');
 
