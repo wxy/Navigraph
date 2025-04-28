@@ -1,5 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
-import { UrlUtils } from '../utils/url-utils.js';
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { TabStateManager } from './tab-state-manager.js';
 import { NodeTracker } from './node-tracker.js';
 import { EdgeTracker } from './edge-tracker.js';

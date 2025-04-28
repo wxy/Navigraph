@@ -23,7 +23,7 @@ import {
 } from "../../types/messages/background.js";
 import { getSettingsService } from '../../lib/settings/service.js';
 import { NavigraphSettings } from '../../lib/settings/types.js';
-import { UrlUtils } from '../navigation/utils/url-utils.js';
+import { UrlUtils } from '../../lib/utils/url-utils.js';
 
 const logger = new Logger('BackgroundSessionManager');
 
