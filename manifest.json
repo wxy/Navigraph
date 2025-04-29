@@ -18,7 +18,7 @@
     "activeTab"
   ],
   "background": {
-    "service_worker": "dist/background/background.js",
+    "service_worker": "background/background.js",
     "type": "module"
   },
   "action": {
@@ -30,7 +30,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["dist/content/navigraph.js"],
+      "js": ["content/navigraph.js"],
       "type": "module",
       "run_at": "document_start"
     }
@@ -40,12 +40,12 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["dist/content/*", "dist/content/styles/*.css", "images/*"],
+      "resources": ["test.html","content/*", "content/styles/*.css", "images/*"],
       "matches": ["<all_urls>"]
     }
   ],
   "options_ui": {
-    "page": "dist/options/index.html",
+    "page": "options/index.html",
     "open_in_tab": true
   }
 }

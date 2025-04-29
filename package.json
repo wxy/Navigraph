@@ -4,7 +4,7 @@
     "build:dev": "webpack --config webpack/webpack.dev.js",
     "dev": "webpack --config webpack/webpack.dev.js --watch",
     "clean": "rm -rf dist",
-    "package": "npm run build && zip -r ../navigraph.zip manifest.json dist images LICENSE README.md -x \"**/node_modules/*\" \"**/.git/*\" \"**/src/*\" \"**/docs/*\""
+    "package": "npm run build && cd dist && zip -r ../../navigraph.zip *"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.250",
