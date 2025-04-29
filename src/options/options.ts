@@ -13,6 +13,9 @@ let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
   logger.log('DOM已加载，开始初始化选项页...');
   
+  // 初始化本地化字符串
+  applyI18n();
+  
   // 初始化通知元素
   const notification = document.getElementById('notification');
   if (notification) {
@@ -49,6 +52,48 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     showNotification('加载设置失败，请重试', 'error');
   }
 });
+
+/**
+ * 应用本地化字符串
+ * 查找所有带有 data-i18n 属性的元素并替换其内容
+ */
+function applyI18n(): void {
+  try {
+    logger.log('应用本地化字符串...');
+    
+    // 1. 处理页面标题
+    const titleElement = document.querySelector('title[data-i18n]');
+    if (titleElement) {
+      const key = titleElement.getAttribute('data-i18n');
+      if (key) {
+        document.title = chrome.i18n.getMessage(key) || document.title;
+      }
+    }
+    
+    // 2. 处理所有其他带有 data-i18n 属性的元素
+    const i18nElements = document.querySelectorAll('[data-i18n]');
+    i18nElements.forEach(element => {
+      const key = element.getAttribute('data-i18n');
+      if (key) {
+        const translated = chrome.i18n.getMessage(key);
+        if (translated) {
+          // 对于 option 和 placeholder，需要特殊处理
+          if (element.tagName === 'OPTION') {
+            (element as HTMLOptionElement).text = translated;
+          } else if (element.hasAttribute('placeholder')) {
+            element.setAttribute('placeholder', translated);
+          } else {
+            element.textContent = translated;
+          }
+        }
+      }
+    });
+    
+    logger.log('本地化字符串应用完成');
+  } catch (error) {
+    logger.error('应用本地化字符串时出错:', error);
+  }
+}
 
 /**
  * 初始化选项卡
