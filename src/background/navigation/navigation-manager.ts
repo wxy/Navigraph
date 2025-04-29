@@ -7,7 +7,7 @@ import {
   NavLink
 } from '../../types/session-types.js';
 
-import { getBackgroundSessionManager } from '../session/bg-session-manager.js';
+import { getSessionManager } from '../session/session-manager.js';
 
 import { TabStateManager } from './managers/tab-state-manager.js';
 import { NodeTracker } from './managers/node-tracker.js';
@@ -145,7 +145,7 @@ export class NavigationManager {
   private async initializeSession(): Promise<void> {
     try {
       // 从会话管理器获取当前会话ID
-      const sessionManager = getBackgroundSessionManager();
+      const sessionManager = getSessionManager();
       const currentSessionId = sessionManager.getCurrentSessionId();
       
       if (currentSessionId) {
@@ -214,7 +214,7 @@ export class NavigationManager {
    */
   public async getCurrentSession(): Promise<BrowsingSession | null> {
     try {
-      const sessionManager = getBackgroundSessionManager();
+      const sessionManager = getSessionManager();
       return await sessionManager.getCurrentSession();
     } catch (error) {
       logger.error("从会话管理器获取当前会话失败:", error);
