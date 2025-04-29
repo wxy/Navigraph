@@ -74,6 +74,12 @@ module.exports = {
           from: 'src/options/styles', 
           to: 'options/styles',
           noErrorOnMissing: true 
+        },
+        // 增加这一行，将 locales 文件夹原样拷贝到 dist
+        { 
+          from: '_locales', 
+          to: '_locales', 
+          noErrorOnMissing: true 
         }
       ]
     }),
