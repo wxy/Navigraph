@@ -1,4 +1,5 @@
 import { Logger } from '../lib/utils/logger.js';
+import { i18n } from '../lib/utils/i18n-utils.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
 import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
@@ -46,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     });
   } catch (error) {
     logger.error('初始化选项页面失败:', error);
-    showNotification('加载设置失败，请重试', 'error');
+    showNotification('options_load_failed', 'error');
   }
 });
 
@@ -87,10 +88,10 @@ function setupEventListeners(): void {
       
       // 立即更新主题设置
       settingsService.updateSettings({ theme })
-        .then(() => showNotification('主题已更新'))
+        .then(() => showNotification('options_theme_updated'))
         .catch(error => {
           logger.error('更新主题失败:', error);
-          showNotification('更新主题失败', 'error');
+          showNotification('options_update_theme_failed', 'error');
         });
     });
   }
@@ -177,7 +178,8 @@ function updateViewPreview(view: 'tree' | 'timeline'): void {
     previewContainer.className = `preview-box ${view}-preview`;
     
     // 添加数据属性以支持 ::before 伪元素的内容
-    previewContainer.setAttribute('data-view-type', view === 'tree' ? '树形图视图' : '时间线视图');
+    previewContainer.setAttribute('data-view-type', 
+      view === 'tree' ? i18n('options_tree_view_label') : i18n('options_timeline_view_label'));
   }
 }
 
@@ -195,7 +197,7 @@ async function loadSettings(): Promise<void> {
     logger.log('设置已加载', currentSettings);
   } catch (error) {
     logger.error('加载设置时出错:', error);
-    showNotification('加载设置失败', 'error');
+    showNotification('options_load_failed', 'error');
   }
 }
 
@@ -299,11 +301,11 @@ async function saveSettings(): Promise<void> {
     showSettingsSavedNotification(oldSettings, newSettings);
   } catch (error) {
     logger.error('保存设置时出错:', error);
-    showNotification('保存设置失败', 'error', 3000);
+    showNotification('options_save_failed', 'error', 3000);
   }
 }
 /**
- * 显示设置保存成功通知 - 简化版
+ * 显示设置保存成功通知 - 使用单独的本地化字符串
  */
 function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettings: NavigraphSettings): void {
   // 跟踪是否有任何设置发生变化
@@ -311,7 +313,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
   
   // 如果没有变化，显示信息并返回
   if (!hasChanges) {
-    showNotification('没有设置被更改', 'success', 2000);
+    showNotification('options_no_changes', 'success', 2000);
     return;
   }
   
@@ -325,13 +327,14 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     oldSettings.theme !== newSettings.theme ||
     oldSettings.defaultView !== newSettings.defaultView;
   
-  // 构建消息
-  let message = '设置已保存';
+  // 根据情况选择适当的本地化消息ID
+  let messageId: string;
   let type: 'success' | 'error' = 'success';
   let duration = 3000;
   
   if (affectsBackground) {
-    message += ' - 需要重新加载扩展才能完全生效';
+    // 使用完整的"需要重载"消息
+    messageId = 'options_settings_saved_reload';
     duration = 5000;
     
     // 带按钮的复杂通知
@@ -346,21 +349,23 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
         notification.style.cssText = 'display: block; opacity: 1; visibility: visible;';
         notification.innerHTML = '';
         
-        // 添加消息文本
+        // 添加消息文本，使用本地化字符串
         const msgElement = document.createElement('span');
-        msgElement.textContent = message;
+        const translatedMsg = chrome.i18n.getMessage(messageId);
+        msgElement.textContent = translatedMsg;
         notification.appendChild(msgElement);
         
-        // 添加重载按钮
+        // 添加重载按钮，使用单独的本地化字符串
         const reloadBtn = document.createElement('button');
         reloadBtn.className = 'notification-action';
-        reloadBtn.textContent = '立即重载';
+        const buttonText = chrome.i18n.getMessage('options_reload_now');
+        reloadBtn.textContent = buttonText;
         reloadBtn.onclick = () => {
           try {
             chrome.runtime.reload();
           } catch (e) {
             logger.error('重载扩展失败:', e);
-            showNotification('重载扩展失败，请手动刷新', 'error');
+            showNotification('options_reload_failed', 'error');
           }
         };
         notification.appendChild(reloadBtn);
@@ -382,12 +387,16 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
       logger.error('创建复杂通知失败，回退到标准通知:', e);
     }
   } else if (affectsFrontend) {
-    message += ' - 请刷新已打开的扩展页以应用新设置';
+    // 使用完整的"需要刷新"消息
+    messageId = 'options_settings_saved_refresh';
     duration = 4000;
+  } else {
+    // 基本的"设置已保存"消息
+    messageId = 'options_settings_saved';
   }
   
   // 标准通知
-  showNotification(message, type, duration);
+  showNotification(messageId, type, duration);
 }
 
 /**
@@ -395,7 +404,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
  */
 async function resetSettings(): Promise<void> {
   try {
-    if (confirm('确定要恢复所有默认设置吗？')) {
+    if (confirm(i18n('options_confirm_reset'))) {
       // 保存现有设置的副本用于比较
       const oldSettings = { ...currentSettings };
       
@@ -413,7 +422,7 @@ async function resetSettings(): Promise<void> {
     }
   } catch (error) {
     logger.error('重置设置时出错:', error);
-    showNotification('重置设置失败', 'error');
+    showNotification('options_reset_failed', 'error');
   }
 }
 
@@ -422,20 +431,20 @@ async function resetSettings(): Promise<void> {
  */
 async function clearAllData(): Promise<void> {
   try {
-    if (confirm('确定要清除所有导航数据吗？此操作无法撤销！')) {
+    if (confirm(i18n('options_confirm_clear_data'))) {
       const response = await chrome.runtime.sendMessage({
         action: 'clearAllData'
       });
       
       if (response && response.success) {
-        showNotification('所有数据已清除');
+        showNotification('options_data_cleared');
       } else {
         throw new Error(response?.error || '未知错误');
       }
     }
   } catch (error) {
     logger.error('清除数据时出错:', error);
-    showNotification('清除数据失败', 'error');
+    showNotification('options_clear_failed', 'error');
   }
 }
 
@@ -515,6 +524,7 @@ const notificationManager = {
 /**
  * 显示通知 - 简化版，使用通知管理器
  */
-function showNotification(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
+function showNotification(messageOrId: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
+  const message = i18n(messageOrId);
   notificationManager.show(message, type, duration);
 }

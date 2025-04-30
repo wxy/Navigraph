@@ -47,34 +47,26 @@ module.exports = {
     // 复制静态资源
     new CopyPlugin({
       patterns: [
+        // 1. 复制 manifest.json
         { from: 'manifest.json', to: 'manifest.json' },
-        { from: 'images', to: 'images' },
-        // 添加content目录下的HTML文件，排除index.html
+        // 2. 复制 images 目录
+        { from: 'images',      to: 'images'      },
+        // 3. 复制本地化文件夹
+        { from: '_locales',    to: '_locales'    },
+        // 4. 复制其他静态资源
+        { from: "README.md", to: "README.md" },
+        { from: "LICENSE", to: "./" },
+
+        // 保留原有 content/options 静态文件复制
         { 
           from: 'src/content/*.html', 
           to: 'content/[name][ext]',
           noErrorOnMissing: true,
-          globOptions: {
-            ignore: ['**/index.html'] // 排除index.html，让HtmlWebpackPlugin处理它
-          }
+          globOptions: { ignore: ['**/index.html'] }
         },
-        { 
-          from: 'src/content/*.js', 
-          to: 'content/[name][ext]',
-          noErrorOnMissing: true 
-        },
-        // 添加content/styles目录
-        { 
-          from: 'src/content/styles', 
-          to: 'content/styles',
-          noErrorOnMissing: true 
-        },
-        // 添加options/styles目录
-        { 
-          from: 'src/options/styles', 
-          to: 'options/styles',
-          noErrorOnMissing: true 
-        }
+        { from: 'src/content/*.js',       to: 'content/[name][ext]',  noErrorOnMissing: true },
+        { from: 'src/content/styles',     to: 'content/styles',       noErrorOnMissing: true },
+        { from: 'src/options/styles',     to: 'options/styles',       noErrorOnMissing: true },
       ]
     }),
     // 生成选项页面HTML

@@ -78,7 +78,7 @@ function handleContextMenuClicked(info: chrome.contextMenus.OnClickData, tab?: c
  */
 function handleDebugMenuAction(command: string): void {
   // 检查是否已经打开了扩展页面
-  chrome.tabs.query({ url: chrome.runtime.getURL('dist/content/index.html') + '*' }, (existingTabs) => {
+  chrome.tabs.query({ url: chrome.runtime.getURL('content/index.html') + '*' }, (existingTabs) => {
     if (existingTabs && existingTabs.length > 0) {
       // 找到现有标签页
       const tab = existingTabs[0];
@@ -109,7 +109,7 @@ function handleDebugMenuAction(command: string): void {
         'navigraph_debug_timestamp': Date.now()
       }, () => {
         chrome.tabs.create({
-          url: chrome.runtime.getURL('dist/content/index.html')
+          url: chrome.runtime.getURL('content/index.html')
         });
       });
     }

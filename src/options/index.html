@@ -1,23 +1,32 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Navigraph 设置</title>
-  <link rel="stylesheet" href="styles/options.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="options_head_title">Navigraph Settings</title>
+  <link rel="stylesheet" href="styles/options.css" />
+  <script type="module" src="options.js"></script>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Navigraph 导航图谱 - 设置</h1>
-      <p>自定义浏览历史可视化体验</p>
+      <h1 data-i18n="options_header">Settings</h1>
+      <p data-i18n="options_header_subtitle">Customize your browsing history visualization experience</p>
     </header>
 
     <div class="tabs">
-      <button class="tab-button active" data-tab="basic-settings">基本设置</button>
-      <button class="tab-button" data-tab="session-settings">会话管理</button>
-      <button class="tab-button" data-tab="data-settings">数据与隐私</button>
-      <button class="tab-button" data-tab="performance-settings">性能优化</button>
+      <button class="tab-button active" data-tab="basic-settings" data-i18n="options_tab_basic_settings">
+        Basic Settings
+      </button>
+      <button class="tab-button" data-tab="session-settings" data-i18n="options_tab_session_settings">
+        Session Management
+      </button>
+      <button class="tab-button" data-tab="data-settings" data-i18n="options_tab_data_settings">
+        Data & Privacy
+      </button>
+      <button class="tab-button" data-tab="performance-settings" data-i18n="options_tab_performance_settings">
+        Performance
+      </button>
     </div>
 
     <main>
@@ -25,26 +34,24 @@
       <div id="basic-settings" class="tab-pane active">
         <div class="card">
           <div class="card-header">
-            <h2>界面设置</h2>
+            <h2 data-i18n="options_basic_group_title">Interface Settings</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="theme">主题模式：</label>
+              <label for="theme" data-i18n="options_label_theme_mode">Theme Mode:</label>
               <select id="theme">
-                <option value="light">明亮模式</option>
-                <option value="dark">暗黑模式</option>
-                <option value="system">跟随系统</option>
+                <option value="light" data-i18n="options_option_light">Light Mode</option>
+                <option value="dark" data-i18n="options_option_dark">Dark Mode</option>
+                <option value="system" data-i18n="options_option_system">System Default</option>
               </select>
             </div>
-
             <div class="setting-group">
-              <label for="default-view">默认视图：</label>
+              <label for="default-view" data-i18n="options_label_default_view">Default View:</label>
               <select id="default-view">
-                <option value="tree">树形图</option>
-                <option value="timeline">时间线</option>
+                <option value="tree" data-i18n="options_option_tree">Tree View</option>
+                <option value="timeline" data-i18n="options_option_timeline">Timeline View</option>
               </select>
-              <div id="view-preview" class="preview-box tree-preview">
-              </div>
+              <div id="view-preview" class="preview-box tree-preview"></div>
             </div>
           </div>
         </div>
@@ -54,29 +61,42 @@
       <div id="session-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2>会话管理</h2>
+            <h2 data-i18n="options_session_group_title">Session Management</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="session-mode">会话模式：</label>
+              <label for="session-mode" data-i18n="options_label_session_mode">Session Mode:</label>
               <select id="session-mode">
-                <option value="daily">工作日模式 (推荐)</option>
-                <option value="manual">手动模式</option>
+                <option value="daily" data-i18n="options_option_daily">Daily Mode (Recommended)</option>
+                <option value="manual" data-i18n="options_option_manual">Manual Mode</option>
               </select>
               <div class="description">
-                <p><strong>工作日模式</strong>：每天自动创建新会话，并在空闲一段时间后结束当前会话</p>
-                <p><strong>手动模式</strong>：需要手动创建和结束会话</p>
+                <p>
+                  <strong data-i18n="options_option_daily">Daily Mode (Recommended)</strong>:
+                  <span data-i18n="options_desc_daily">Automatically creates a new session each day and ends the current session after a period of inactivity</span>
+                </p>
+                <p>
+                  <strong data-i18n="options_option_manual">Manual Mode</strong>:
+                  <span data-i18n="options_desc_manual">Requires manually creating and ending sessions</span>
+                </p>
               </div>
             </div>
-            
-            <!-- 高级会话设置部分 -->
             <div id="advanced-session-settings" class="setting-nested-group">
               <div class="setting-group">
-                <label for="idle-timeout">会话空闲超时时间（小时）</label>
+                <label for="idle-timeout" data-i18n="options_label_idle_timeout">Session Idle Timeout (hours):</label>
                 <div class="input-group">
-                  <input type="number" id="idle-timeout" min="1" max="24" step="1" value="6">
+                  <input
+                    type="number"
+                    id="idle-timeout"
+                    min="1"
+                    max="24"
+                    step="1"
+                    value="6"
+                  />
                 </div>
-                <small class="form-text">空闲多长时间后自动结束当前会话并在下次浏览时创建新会话</small>
+                <small class="form-text" data-i18n="options_idle_timeout_help">
+                  How long to wait before ending the current session and creating a new one when browsing resumes
+                </small>
               </div>
             </div>
           </div>
@@ -87,36 +107,37 @@
       <div id="data-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2>数据保留</h2>
+            <h2 data-i18n="options_data_retention_group_title">Data Retention</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="data-retention">保留浏览历史数据：</label>
+              <label for="data-retention" data-i18n="options_label_data_retention">Keep browsing history data for:</label>
               <select id="data-retention">
-                <option value="7">7天</option>
-                <option value="14">14天</option>
-                <option value="30">30天</option>
-                <option value="90">90天</option>
-                <option value="180">180天</option>
-                <option value="365">1年</option>
-                <option value="0">永久保留</option>
+                <option value="7" data-i18n="options_option_7">7 days</option>
+                <option value="14" data-i18n="options_option_14">14 days</option>
+                <option value="30" data-i18n="options_option_30">30 days</option>
+                <option value="90" data-i18n="options_option_90">90 days</option>
+                <option value="180" data-i18n="options_option_180">180 days</option>
+                <option value="365" data-i18n="options_option_365">1 year</option>
+                <option value="0" data-i18n="options_option_forever">Keep forever</option>
               </select>
-              <div class="description">
-                超过此时间的历史数据将被自动清除
+              <div class="description" data-i18n="options_data_retention_help">
+                Older navigation data will be automatically deleted
               </div>
             </div>
           </div>
         </div>
-
         <div class="card">
           <div class="card-header">
-            <h2>数据管理</h2>
+            <h2 data-i18n="options_performance_group_title">Performance Settings</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <button id="clear-data-btn" class="btn danger">清除所有导航数据</button>
-              <div class="description warning">
-                此操作将永久删除所有收集的浏览历史数据，无法恢复
+              <button id="clear-data-btn" class="btn danger" data-i18n="options_btn_clear_data">
+                Clear All Navigation Data
+              </button>
+              <div class="description warning" data-i18n="options_warn_clear_data">
+                This will permanently delete all collected browsing history data and cannot be undone
               </div>
             </div>
           </div>
@@ -127,24 +148,32 @@
       <div id="performance-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2>性能设置</h2>
-            <div class="coming-soon-badge">即将推出</div>
+            <h2 data-i18n="options_performance_group_title">Performance Settings</h2>
+            <div class="coming-soon-badge" data-i18n="options_badge_coming_soon">
+              Coming Soon
+            </div>
           </div>
           <div class="card-body">
-            <p class="placeholder-text">性能优化选项将在后续更新中添加</p>
+            <p class="placeholder-text" data-i18n="options_placeholder_performance">
+              Performance optimization options will be added in a future update
+            </p>
           </div>
         </div>
       </div>
     </main>
 
     <footer>
-      <button id="save-btn" class="btn primary">保存设置</button>
-      <button id="reset-btn" class="btn secondary">恢复默认值</button>
+      <button id="save-btn" class="btn primary" data-i18n="options_btn_save">
+        Save Settings
+      </button>
+      <button id="reset-btn" class="btn secondary" data-i18n="options_btn_reset">
+        Reset to Defaults
+      </button>
     </footer>
 
-    <div id="notification" class="notification hidden">设置已保存</div>
+    <div id="notification" class="notification hidden" data-i18n="options_notify_saved">
+      Settings Saved
+    </div>
   </div>
-  
-  <script type="module" src="options.js"></script>
 </body>
 </html>
