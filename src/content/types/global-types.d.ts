@@ -15,12 +15,6 @@ declare global {
     
     // 构造函数类型
     NavigationVisualizer: new () => NavigationVisualizerType;
-    
-    __moduleLoader?: {
-      loadModule: (path: string) => Promise<any>;
-      preloadModules?: (paths: string[]) => Promise<any[]>;
-      [key: string]: any;
-    };
   }
 
   // 为 d3 添加一个基本的全局命名空间定义
