@@ -6,6 +6,7 @@ import {
   NavNode,
   NavLink
 } from '../../types/session-types.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
 
 import { getSessionManager } from '../session/session-manager.js';
 
@@ -127,7 +128,10 @@ export class NavigationManager {
       logger.log("导航管理器初始化完成");
     } catch (error) {
       logger.error("导航管理器初始化失败:", error);
-      throw new Error(`导航管理器初始化失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new I18nError(
+        "background_navigation_manager_init_failed", 
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 
@@ -160,12 +164,12 @@ export class NavigationManager {
         if (newSession) {
           this.setCurrentSessionId(newSession.id);
         } else {
-          logger.error("无法创建新会话");
+          logger.error(i18n("background_create_session_failed"));
           this.setCurrentSessionId('');
         }
       }
     } catch (error) {
-      logger.error("获取或创建会话失败:", error);
+      logger.error(i18n("background_get_create_session_failed"), error);
       this.setCurrentSessionId('');
     }
   }
@@ -217,7 +221,7 @@ export class NavigationManager {
       const sessionManager = getSessionManager();
       return await sessionManager.getCurrentSession();
     } catch (error) {
-      logger.error("从会话管理器获取当前会话失败:", error);
+      logger.error(i18n("background_get_current_session_failed"), error);
       return null;
     }
   }
@@ -240,7 +244,7 @@ export class NavigationManager {
       
       return { nodes, edges };
     } catch (error) {
-      logger.error(`获取会话 ${sessionId} 图数据失败:`, error);
+      logger.error(i18n("background_get_session_graph_failed", sessionId), error);
       return { nodes: [], edges: [] };
     }
   }
@@ -292,7 +296,7 @@ export class NavigationManager {
     try {
       await this.nodeTracker.cleanupCache();
     } catch (error) {
-      logger.error("清理待更新列表失败:", error);
+      logger.error(i18n("background_cleanup_pending_updates_failed"), error);
     }
   }
 
@@ -326,7 +330,7 @@ export class NavigationManager {
       
       return nodes.length;
     } catch (error) {
-      logger.error('获取记录数量失败:', error);
+      logger.error(i18n('background_get_node_count_failed'), error);
       return 0;
     }
   }
@@ -363,7 +367,7 @@ export class NavigationManager {
 
       return records;
     } catch (error) {
-      logger.error(`获取标签页[${tabId}]历史失败:`, error);
+      logger.error(i18n('background_get_tab_history_failed', tabId.toString()), error);
       return [];
     }
   }
@@ -417,7 +421,7 @@ let navigationManagerInstance: NavigationManager | null = null;
 
 export function getNavigationManager(): NavigationManager {
   if (!navigationManagerInstance) {
-    throw new Error('NavigationManager实例未初始化');
+    throw new I18nError("background_instance_not_initialized");
   }
   return navigationManagerInstance;
 }

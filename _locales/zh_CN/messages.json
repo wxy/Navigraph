@@ -252,12 +252,20 @@
     "description": "页面标题文本 @src/content/index.html"
   },
   "content_tree_view": {
-    "message": "树形视图",
-    "description": "树形视图按钮文本 @src/content/index.html"
+    "message": "树形图",
+    "description": "树形图视图按钮文本 @src/content/utils/state-manager.ts"
   },
   "content_timeline_view": {
-    "message": "时间线视图",
-    "description": "时间线视图按钮文本 @src/content/index.html"
+    "message": "时间线",
+    "description": "时间线视图按钮文本 @src/content/utils/state-manager.ts"
+  },
+  "content_reset_view": {
+    "message": "重置视图",
+    "description": "重置视图按钮文本 @src/content/utils/state-manager.ts"
+  },
+  "content_show_all": {
+    "message": "显示全部",
+    "description": "显示全部按钮文本 @src/content/utils/state-manager.ts"
   },
   "content_prev_month_title": {
     "message": "上一月",
@@ -361,7 +369,7 @@
   },
   "content_close": {
     "message": "关闭",
-    "description": "关闭按钮 @src/content/index.html"
+    "description": "关闭按钮 @src/content/index.html @src/content/visualizer/ui/ErrorNotification.ts"
   },
   "content_tech_details": {
     "message": "技术细节",
@@ -395,17 +403,33 @@
     "message": "缩放",
     "description": "底部状态栏缩放标签 @src/content/index.html"
   },
+  "content_config_init_failed": {
+    "message": "配置管理初始化失败",
+    "description": "配置管理初始化失败日志 @src/content/index.ts"
+  },
   "content_config_load_failed": {
-    "message": "配置加载失败:",
-    "description": "配置加载失败错误消息 @src/content/index.ts"
+    "message": "配置加载失败: {0}",
+    "description": "配置加载失败错误 @src/content/index.ts"
+  },
+  "content_init_msg_service": {
+    "message": "初始化消息服务...",
+    "description": "初始化消息服务日志 @src/content/index.ts"
+  },
+  "content_msg_service_initialized": {
+    "message": "消息服务初始化完成",
+    "description": "消息服务初始化完成日志 @src/content/index.ts"
+  },
+  "content_message_service_init_failed": {
+    "message": "消息服务初始化失败: {0}",
+    "description": "消息服务初始化失败错误 @src/content/index.ts"
+  },
+  "content_visualizer_init_failed": {
+    "message": "可视化器初始化失败: {0}",
+    "description": "可视化器初始化失败错误 @src/content/index.ts"
   },
   "content_message_system_failed": {
     "message": "消息系统初始化失败:",
     "description": "消息系统初始化失败错误消息 @src/content/index.ts"
-  },
-  "content_visualizer_init_failed": {
-    "message": "可视化器初始化失败",
-    "description": "可视化器初始化失败错误消息 @src/content/index.ts"
   },
   "content_init_failed": {
     "message": "初始化失败:",
@@ -441,7 +465,7 @@
   },
   "content_view_switch_failed": {
     "message": "切换视图失败",
-    "description": "视图切换失败 @src/content/core/navigation-visualizer.ts"
+    "description": "切换视图失败 @src/content/core/navigation-visualizer.ts @src/content/visualizer/state/ViewStateManager.ts"
   },
   "content_error_prefix": {
     "message": "Navigraph错误",
@@ -490,6 +514,30 @@
   "content_session_data_processing_failed": {
     "message": "处理会话数据失败",
     "description": "会话数据处理失败错误消息 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "content_filter_url_load_failed": {
+    "message": "从URL加载筛选器配置失败",
+    "description": "筛选器URL加载失败 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "content_filter_unknown_id": {
+    "message": "未知筛选器ID: {0}",
+    "description": "未知筛选器ID警告 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "content_zoom_setup_failed_no_svg": {
+    "message": "无法设置缩放：SVG不存在",
+    "description": "SVG不存在导致无法设置缩放 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "content_transform_apply_failed_missing_components": {
+    "message": "无法应用变换：缺少必要组件",
+    "description": "缺少必要组件导致无法应用变换 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "content_zoom_setup_failed": {
+    "message": "设置缩放功能失败",
+    "description": "设置缩放功能失败 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "content_transform_apply_failed": {
+    "message": "无法应用变换状态",
+    "description": "无法应用变换状态 @src/content/visualizer/state/ViewStateManager.ts"
   },
   "content_unnamed_page": {
     "message": "未命名页面",
@@ -650,6 +698,294 @@
   "content_view_timeline": {
     "message": "时间线",
     "description": "时间线视图类型 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_error_occurred": {
+    "message": "发生错误: {0}",
+    "description": "错误日志消息前缀 @src/content/visualizer/ui/ErrorNotification.ts"
+  },
+  "content_error_ui_missing": {
+    "message": "找不到必要的错误UI元素",
+    "description": "错误UI元素缺失消息 @src/content/visualizer/ui/ErrorNotification.ts"
+  },
+  "content_error_default_title": {
+    "message": "错误",
+    "description": "默认错误标题 @src/content/visualizer/ui/ErrorNotification.ts"
+  },
+  "content_refresh": {
+    "message": "刷新",
+    "description": "刷新按钮文本 @src/content/visualizer/ui/ErrorNotification.ts"
+  },
+  "background_navigation_manager_init_failed": {
+    "message": "导航管理器初始化失败: {0}",
+    "description": "导航管理器初始化失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_instance_not_initialized": {
+    "message": "NavigationManager实例未初始化",
+    "description": "NavigationManager实例未初始化错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_storage_init_failed": {
+    "message": "初始化导航存储失败: {0}",
+    "description": "导航存储初始化失败错误 @src/background/store/navigation-storage.ts"
+  },
+  "background_tab_info_failed": {
+    "message": "获取标签页信息失败",
+    "description": "获取标签页信息失败警告 @src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_node_metadata_invalid_id": {
+    "message": "更新元数据失败: 无效的节点ID",
+    "description": "无效节点ID错误 @src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_node_not_found": {
+    "message": "未找到节点 {0}，无法更新元数据",
+    "description": "节点未找到错误 @src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_title_update": {
+    "message": "更新标题: {0} -> {1}",
+    "description": "标题更新日志 @src/background/navigation/managers/node-tracker.ts"
+  },
+  "settings_service_init_failed": {
+    "message": "设置服务初始化失败",
+    "description": "设置服务初始化失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_cache_load_failed": {
+    "message": "从缓存加载设置失败",
+    "description": "从缓存加载设置失败警告 @src/lib/settings/service.ts"
+  },
+  "settings_storage_load_failed": {
+    "message": "从存储加载设置失败",
+    "description": "从存储加载设置失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_storage_save_failed": {
+    "message": "保存设置到存储失败",
+    "description": "保存设置到存储失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_cache_update_failed": {
+    "message": "更新设置缓存失败",
+    "description": "更新设置缓存失败警告 @src/lib/settings/service.ts"
+  },
+  "settings_update_failed": {
+    "message": "更新设置失败",
+    "description": "更新设置失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_reset_failed": {
+    "message": "重置设置失败",
+    "description": "重置设置失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_refresh_failed": {
+    "message": "刷新设置失败",
+    "description": "刷新设置失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_listener_call_failed": {
+    "message": "调用设置监听器失败",
+    "description": "调用设置监听器失败错误 @src/lib/settings/service.ts"
+  },
+  "settings_listener_notify_failed": {
+    "message": "通知设置监听器时出错",
+    "description": "通知设置监听器出错 @src/lib/settings/service.ts"
+  },
+  "background_create_session_failed": {
+    "message": "无法创建新会话",
+    "description": "无法创建新会话错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_get_create_session_failed": {
+    "message": "获取或创建会话失败",
+    "description": "获取或创建会话失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_get_current_session_failed": {
+    "message": "从会话管理器获取当前会话失败",
+    "description": "获取当前会话失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_get_session_graph_failed": {
+    "message": "获取会话 {0} 图数据失败",
+    "description": "获取会话图数据失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_cleanup_pending_updates_failed": {
+    "message": "清理待更新列表失败",
+    "description": "清理待更新列表失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_get_node_count_failed": {
+    "message": "获取记录数量失败",
+    "description": "获取记录数量失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_get_tab_history_failed": {
+    "message": "获取标签页[{0}]历史失败",
+    "description": "获取标签页历史失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_message_service_not_initialized": {
+    "message": "MessageService 尚未初始化",
+    "description": "消息服务未初始化错误 @src/background/background.ts"
+  },
+  "background_init_failed": {
+    "message": "导航图谱后台初始化失败",
+    "description": "后台初始化失败错误 @src/background/background.ts"
+  },
+  "background_session_create_failed": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "background_session_manager_init_failed": {
+    "message": "会话管理器初始化失败: {0}",
+    "description": "会话管理器初始化失败错误 @src/background/session/session-manager.ts"
+  },
+  "background_db_open_failed": {
+    "message": "打开数据库失败: {0}",
+    "description": "打开数据库失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_init_failed": {
+    "message": "初始化数据库失败: {0}",
+    "description": "初始化数据库失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_open_success": {
+    "message": "成功打开数据库 {0} (版本 {1})",
+    "description": "数据库打开成功日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_upgrade_failed": {
+    "message": "数据库升级失败",
+    "description": "数据库升级失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_unknown_error": {
+    "message": "未知错误",
+    "description": "未知错误消息 @src/background/store/indexed-db.ts"
+  },
+  "background_db_new_instance": {
+    "message": "创建新的数据库实例: {0}",
+    "description": "创建新数据库实例日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_closed": {
+    "message": "数据库 {0} v{1} 已关闭",
+    "description": "数据库关闭日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_upgrade": {
+    "message": "数据库升级: {0} -> {1}",
+    "description": "数据库版本升级日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_upgrade_complete": {
+    "message": "数据库结构升级完成",
+    "description": "数据库结构升级完成日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_store_deleted": {
+    "message": "删除已存在的存储: {0}",
+    "description": "删除已存在存储日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_store_created": {
+    "message": "创建存储: {0}",
+    "description": "创建存储日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_index_created": {
+    "message": "创建索引: {0}",
+    "description": "创建索引日志 @src/background/store/indexed-db.ts"
+  },
+  "background_db_add_failed": {
+    "message": "添加数据到 {0} 失败",
+    "description": "添加数据失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_put_failed": {
+    "message": "更新数据到 {0} 失败",
+    "description": "更新数据失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_get_failed": {
+    "message": "获取 {0} 中的数据失败",
+    "description": "获取数据失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_get_all_failed": {
+    "message": "获取 {0} 中的所有数据失败",
+    "description": "获取所有数据失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_transaction_error": {
+    "message": "事务错误: {0}",
+    "description": "数据库事务错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_index_not_found": {
+    "message": "索引 {0} 不存在于 {1}",
+    "description": "索引不存在错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_get_by_index_failed": {
+    "message": "通过索引 {0} 获取数据失败",
+    "description": "通过索引获取数据失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_delete_failed": {
+    "message": "删除 {0} 中的数据失败",
+    "description": "删除数据失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_clear_failed": {
+    "message": "清空 {0} 失败",
+    "description": "清空存储失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_iterate_failed": {
+    "message": "遍历 {0} 失败",
+    "description": "遍历存储失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_count_failed": {
+    "message": "获取 {0} 记录数失败",
+    "description": "获取记录数失败错误 @src/background/store/indexed-db.ts"
+  },
+  "background_db_exists_failed": {
+    "message": "检查 {0} 中的数据是否存在失败",
+    "description": "检查数据存在失败错误 @src/background/store/indexed-db.ts"
+  },
+  "content_current_session": {
+    "message": "当前会话",
+    "description": "当前会话标题 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "content_no_open_records": {
+    "message": "没有打开的浏览记录",
+    "description": "没有打开记录消息 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "content_no_open_records_with_closed": {
+    "message": "没有打开的浏览记录 ({0} 个已关闭节点)",
+    "description": "带有关闭节点计数的无打开记录消息 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "content_filter_show_closed_hint": {
+    "message": "提示：点击筛选器显示已关闭节点",
+    "description": "显示已关闭节点的提示 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "session_storage_init_failed": {
+    "message": "初始化会话存储失败: {0}",
+    "description": "SessionStorage 初始化失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_save_failed": {
+    "message": "保存会话失败: {0}",
+    "description": "SessionStorage 保存会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_get_failed": {
+    "message": "获取会话失败: {0}",
+    "description": "SessionStorage 获取单个会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_get_list_failed": {
+    "message": "获取会话列表失败: {0}",
+    "description": "SessionStorage 获取会话列表失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_delete_failed": {
+    "message": "删除会话失败: {0}",
+    "description": "SessionStorage 删除会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_failed": {
+    "message": "清除会话数据失败: {0}",
+    "description": "SessionStorage 清除所有会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_count_failed": {
+    "message": "获取会话数量失败: {0}",
+    "description": "SessionStorage 获取会话计数失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_manager_init_failed": {
+    "message": "会话管理器初始化失败: {0}",
+    "description": "SessionManager 初始化失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_load_active_failed": {
+    "message": "加载活跃会话失败: {0}",
+    "description": "SessionManager 加载活跃会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_handler_context_failed": {
+    "message": "创建消息上下文失败",
+    "description": "SessionMessageHandler 创建消息上下文失败日志 @src/background/session/handlers/session-handlers.ts"
+  },
+  "session_handler_id_empty": {
+    "message": "会话ID不能为空",
+    "description": "SessionMessageHandler 会话ID为空错误 @src/background/session/handlers/session-handlers.ts"
+  },
+  "session_handler_get_sessions_failed": {
+    "message": "获取会话列表失败: {0}",
+    "description": "SessionMessageHandler 获取会话列表失败错误 @src/background/session/handlers/session-handlers.ts"
   },
   "_": {
     "message": "_",

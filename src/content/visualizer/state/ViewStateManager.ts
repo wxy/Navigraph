@@ -2,6 +2,7 @@
  * 视图状态管理器 - 处理视图类型和缩放状态
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import type { Visualizer } from '../../types/navigation.js';
 
 const d3 = window.d3;
@@ -84,7 +85,7 @@ export class ViewStateManager {
    */
   setupBasicZoom(): void {
     if (!this._svg) {
-      logger.warn('无法设置缩放：SVG不存在');
+      logger.warn(i18n('content_zoom_setup_failed_no_svg'));
       return;
     }
 
@@ -109,7 +110,7 @@ export class ViewStateManager {
       
       logger.debug('基本缩放功能已设置');
     } catch (error) {
-      logger.error('设置缩放功能失败:', error);
+      logger.error(i18n('content_zoom_setup_failed'), error);
     }
   }
   /**
@@ -147,7 +148,7 @@ export class ViewStateManager {
       
       // 返回视图已切换，但不做实际渲染（由调用者处理）
     } catch (error) {
-      logger.error("切换视图失败:", error);
+      logger.error(i18n("content_view_switch_failed"), error);
 
       // 恢复到先前的视图
       this._currentView = previousView;
@@ -190,7 +191,7 @@ export class ViewStateManager {
    */
   applyTransform(transform: any): void {
     if (!transform || !this._svg || !this._zoom) {
-      logger.warn('无法应用变换：缺少必要组件');
+      logger.warn(i18n('content_transform_apply_failed_missing_components'));
       return;
     }
 
@@ -203,7 +204,7 @@ export class ViewStateManager {
       }, 100);
       logger.debug('已应用变换状态');
     } catch (e) {
-      logger.warn("无法应用变换状态", e);
+      logger.warn(i18n("content_transform_apply_failed"), e);
       this._isRestoringTransform = false;
     }
   }

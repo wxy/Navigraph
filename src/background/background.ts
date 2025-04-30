@@ -2,6 +2,7 @@
  * 主要的后台脚本，负责初始化和协调各个组件
  */
 import { Logger } from '../lib/utils/logger.js';
+import { i18n, I18nError } from '../lib/utils/i18n-utils.js';
 import { NavigationManager, setNavigationManager } from './navigation/navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
@@ -18,7 +19,7 @@ const logger = new Logger('Background');
 
 export function getMessageService() {
   if (!messageService) {
-    throw new Error('MessageService 尚未初始化');
+    throw new I18nError('background_message_service_not_initialized');
   }
   return messageService;
 }
@@ -67,7 +68,7 @@ async function initialize(): Promise<void> {
 
     logger.log('导航图谱后台初始化成功');
   } catch (error) {
-    logger.error('导航图谱后台初始化失败:', error);
+    logger.error(i18n('background_init_failed'), error);
   }
 }
 

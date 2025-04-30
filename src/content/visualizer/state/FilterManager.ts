@@ -3,6 +3,7 @@
  * 负责管理筛选器配置和状态，以及应用筛选器逻辑
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import { 
   FilterConfig, 
   FilterStates, 
@@ -84,7 +85,7 @@ export class FilterManager {
         }
       }
     } catch (error) {
-      logger.warn("从URL加载筛选器配置失败:", error);
+      logger.warn(i18n("content_filter_url_load_failed"), error);
     }
   }
   
@@ -128,7 +129,7 @@ export class FilterManager {
     // 查找对应的筛选器配置
     const filter = this.filterConfigs.find(f => f.id === filterId);
     if (!filter) {
-      logger.warn(`未知筛选器ID: ${filterId}`);
+      logger.warn(i18n("content_filter_unknown_id", filterId));
       return;
     }
     

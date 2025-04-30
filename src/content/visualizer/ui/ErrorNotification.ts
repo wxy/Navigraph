@@ -22,7 +22,7 @@ export class ErrorNotification {
     this.toastElement = document.getElementById('navigraph-toast');
 
     if (!this.simpleErrorElement || !this.detailedErrorElement || !this.toastElement) {
-      logger.error('找不到必要的错误UI元素');
+      logger.error(i18n('content_error_ui_missing'));
     }
 
     logger.log('错误通知组件已初始化');
@@ -39,13 +39,25 @@ export class ErrorNotification {
     }
     const message = i18n(messageId);
 
-    logger.error(message);
+    logger.error(i18n("content_error_occurred", message));
 
     if (this.simpleErrorElement) {
       // 设置错误消息
       const messageElement = this.simpleErrorElement.querySelector('.error-message');
       if (messageElement) {
         messageElement.textContent = message;
+      }
+      
+      // 本地化关闭按钮
+      const closeButton = this.simpleErrorElement.querySelector('.close-button');
+      if (closeButton) {
+        closeButton.setAttribute('title', i18n('content_close'));
+      }
+
+      // 本地化刷新按钮（如果存在）
+      const refreshButton = this.simpleErrorElement.querySelector('.refresh-button');
+      if (refreshButton) {
+        refreshButton.textContent = i18n('content_refresh');
       }
 
       // 显示元素
@@ -102,7 +114,7 @@ export class ErrorNotification {
       // 设置错误标题
       const titleElement = this.detailedErrorElement.querySelector('.error-title');
       if (titleElement) {
-        titleElement.textContent = title || '错误';
+        titleElement.textContent = title || i18n('content_error_default_title');
       }
 
       // 设置错误消息
@@ -115,6 +127,12 @@ export class ErrorNotification {
       const stackElement = this.detailedErrorElement.querySelector('.error-stack');
       if (stackElement && stack) {
         stackElement.textContent = stack;
+      }
+      
+      // 本地化关闭按钮
+      const closeButton = this.detailedErrorElement.querySelector('.close-button');
+      if (closeButton) {
+        closeButton.setAttribute('title', i18n('content_close'));
       }
 
       // 显示元素

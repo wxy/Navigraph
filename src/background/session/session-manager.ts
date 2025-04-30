@@ -9,6 +9,7 @@ import { getSettingsService } from '../../lib/settings/service.js';
 import { NavigraphSettings } from '../../lib/settings/types.js';
 import { getNavigationManager } from "../navigation/navigation-manager.js";
 import { BackgroundMessageService } from '../messaging/bg-message-service.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
 
 import { sessionEvents } from "./session-event-emitter.js";
 import { SessionMessageHandler } from './handlers/session-handlers.js';
@@ -94,11 +95,10 @@ export class SessionManager {
       
       logger.log("会话管理器初始化完成");
     } catch (error) {
-      logger.error("会话管理器初始化失败:", error);
-      throw new Error(
-        `会话管理器初始化失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+      logger.error(i18n('session_manager_init_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_manager_init_failed',
+        error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -219,8 +219,11 @@ export class SessionManager {
       this.currentSessionId = newSession.id;
       this.latestSessionId = newSession.id;
     } catch (error) {
-      logger.error("加载活跃会话失败:", error);
-      throw new Error(`加载活跃会话失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_manager_load_active_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_manager_load_active_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 
@@ -417,11 +420,10 @@ export class SessionManager {
   
       return newSession;
     } catch (error) {
-      logger.error("创建会话失败:", error);
-      throw new Error(
-        `创建会话失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+      logger.error(i18n('background_session_create_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'background_session_create_failed',
+        error instanceof Error ? error.message : String(error)
       );
     }
   }

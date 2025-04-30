@@ -5,6 +5,7 @@ import { TabStateManager } from './tab-state-manager.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { NavNode, ExtendedCompletedDetails } from '../../../types/session-types.js';
 import { NodeCreationOptions, NodeMetadataOptions, MetadataSource, UpdateNodeResult } from '../types/node.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('NodeTracker');
 
@@ -105,7 +106,8 @@ export class NodeTracker {
           favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
         }
       } catch (e) {
-        logger.warn("获取标签页信息失败:", e);
+        // 修改为使用本地化消息
+        logger.warn(i18n("background_tab_info_failed"), e);
       }
 
       // 创建导航记录
@@ -138,6 +140,7 @@ export class NodeTracker {
       return null;
     }
   }
+
   /**
    * 添加标签页节点缓存
    * @param tabId 标签页ID
@@ -157,6 +160,7 @@ export class NodeTracker {
   public getTabNodeCache(tabId: number, url: string): string | undefined {
     return this.tabNodeIdCache.get(`${tabId}-${url}`);
   }
+
   /**
    * 获取或创建URL对应的节点
    * @param url 页面URL
@@ -264,16 +268,18 @@ export class NodeTracker {
     source: MetadataSource = "chrome_api"
   ): Promise<UpdateNodeResult> {
     if (!nodeId) {
-      logger.warn("更新元数据失败: 无效的节点ID");
-      return { success: false, error: "无效的节点ID" };
+      // 使用本地化警告消息
+      logger.warn(i18n("background_node_metadata_invalid_id"));
+      return { success: false, error: i18n("background_node_metadata_invalid_id") };
     }
 
     try {
       // 获取现有记录
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) {
-        logger.warn(`未找到节点 ${nodeId}，无法更新元数据`);
-        return { success: false, error: `未找到节点 ${nodeId}` };
+        // 使用本地化警告消息
+        logger.warn(i18n("background_node_not_found", nodeId));
+        return { success: false, error: i18n("background_node_not_found", nodeId) };
       }
 
       // 准备更新对象
@@ -304,8 +310,12 @@ export class NodeTracker {
           updatedFields.push("title");
         }
 
+        // 标题处理时使用本地化的日志消息
         if (updates.title) {
-          logger.log(`更新标题: ${record.title || "无"} -> ${updates.title}`);
+          logger.log(i18n("background_title_update", 
+            record.title || i18n("content_unnamed_page"), 
+            updates.title)
+          );
         }
       }
 

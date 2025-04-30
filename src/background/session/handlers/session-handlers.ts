@@ -5,6 +5,7 @@ import {
   BackgroundMessages,
   BackgroundResponses,
 } from "../../../types/messages/background.js";
+import { i18n } from "../../../lib/utils/i18n-utils.js";
 
 const logger = new Logger("SessionMessageHandler");
 
@@ -60,7 +61,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
@@ -83,11 +84,18 @@ export class SessionMessageHandler {
             });
           })
           .catch((error) => {
-            logger.error("获取会话列表失败:", error);
-            ctx.error(
-              `获取会话列表失败: ${
+            logger.error(
+              i18n(
+                "session_handler_get_sessions_failed",
                 error instanceof Error ? error.message : String(error)
-              }`
+              ),
+              error
+            );
+            ctx.error(
+              i18n(
+                "session_handler_get_sessions_failed",
+                error instanceof Error ? error.message : String(error)
+              )
             );
           });
 
@@ -117,12 +125,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error("会话ID不能为空");
+          ctx.error(i18n("session_handler_id_empty"));
           return false;
         }
 
@@ -171,7 +179,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
@@ -220,7 +228,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
@@ -270,7 +278,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
@@ -315,12 +323,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error("会话ID不能为空");
+          ctx.error(i18n("session_handler_id_empty"));
           return false;
         }
 
@@ -369,12 +377,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error("会话ID不能为空");
+          ctx.error(i18n("session_handler_id_empty"));
           return false;
         }
 
@@ -421,12 +429,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error("会话ID不能为空");
+          ctx.error(i18n("session_handler_id_empty"));
           return false;
         }
 
@@ -470,7 +478,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 
@@ -528,7 +536,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error("创建消息上下文失败");
+          logger.error(i18n("session_handler_context_failed"));
           return false;
         }
 

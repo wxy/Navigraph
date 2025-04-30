@@ -6,6 +6,8 @@ import { Logger } from '../../lib/utils/logger.js';
 import { IndexedDBStorage } from './indexed-db.js';
 import { NavigraphDBSchema } from './storage-schema.js';
 import { NavNode, NavLink, NavDataQueryOptions } from '../../types/session-types.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+
 const logger = new Logger('NavigationStorage');
 
 /**
@@ -67,7 +69,10 @@ export class NavigationStorage {
       logger.log('导航存储已初始化');
     } catch (error) {
       logger.error('初始化导航存储失败:', error);
-      throw new Error(`初始化导航存储失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new I18nError(
+        "background_storage_init_failed", 
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   

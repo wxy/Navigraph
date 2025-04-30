@@ -48,7 +48,7 @@ export class I18nUtils {
         const response = await fetch(`../_locales/${this.forcedLocale}/messages.json`);
         
         if (!response.ok) {
-          throw new Error(`无法加载指定语言文件: ${response.status}`);
+          throw new Error(`Unable to load specified language file: ${response.status}`);
         }
         
         this.loadedMessages = await response.json();

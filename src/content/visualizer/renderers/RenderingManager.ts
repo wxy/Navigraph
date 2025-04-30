@@ -3,6 +3,7 @@
  * 负责协调和管理所有渲染相关操作
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import { RendererFactory } from './RendererFactory.js';
 import type { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
 import type { ViewStateManager } from '../state/ViewStateManager.js';
@@ -236,8 +237,8 @@ export class RenderingManager {
       .attr("height", 32)
       .attr("href", chrome.runtime.getURL("images/logo-48.png"));
 
-    // 添加提示文字
-    const sessionTitle = currentSession?.title || "当前会话";
+    // 添加提示文字 - 本地化
+    const sessionTitle = currentSession?.title || i18n("content_current_session");
     sessionNode
       .append("text")
       .attr("class", "node-label empty-node-label")
@@ -245,8 +246,8 @@ export class RenderingManager {
       .attr("text-anchor", "middle")
       .text(sessionTitle);
 
-    // 添加无数据提示，包含隐藏节点信息
-    let emptyMessage = "没有打开的浏览记录";
+    // 添加无数据提示，包含隐藏节点信息 - 本地化
+    let emptyMessage = i18n("content_no_open_records");
     
     // 检查当前会话中是否有已关闭节点
     if (currentSession?.records) {
@@ -256,7 +257,7 @@ export class RenderingManager {
       ).length;
       
       if (closedNodesCount > 0) {
-        emptyMessage = `没有打开的浏览记录 (${closedNodesCount} 个已关闭节点)`;
+        emptyMessage = i18n("content_no_open_records_with_closed", closedNodesCount.toString());
       }
     }
     // 添加无数据提示
@@ -267,18 +268,17 @@ export class RenderingManager {
       .attr("text-anchor", "middle")
       .text(emptyMessage);
 
-
-    // 如果有隐藏节点，添加一个交互提示
+    // 如果有隐藏节点，添加一个交互提示 - 本地化
     if (currentSession?.records && 
       Object.values(currentSession.records).some(node => node.isClosed === true)) {
-    sessionNode
-      .append("text")
-      .attr("class", "empty-data-hint")
-      .attr("dy", 110)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("fill", "#4285f4")
-      .text("提示：点击筛选器显示已关闭节点");
+      sessionNode
+        .append("text")
+        .attr("class", "empty-data-hint")
+        .attr("dy", 110)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "12px")
+        .attr("fill", "#4285f4")
+        .text(i18n("content_filter_show_closed_hint"));
     }
     
     // 为空会话节点添加闪烁动画

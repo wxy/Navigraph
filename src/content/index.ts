@@ -12,7 +12,7 @@
   const { Logger } = await import('../lib/utils/logger.js');
   const logger = new Logger('ContentScript');
 
-  const { I18nUtils, i18n } = await import('../lib/utils/i18n-utils.js');
+  const { I18nUtils, i18n, I18nError } = await import('../lib/utils/i18n-utils.js');
 
   /**
    * 初始化函数
@@ -31,9 +31,12 @@
         window.navigraphSettings = settingsService.getSettings();
         logger.log('全局设置已加载:', window.navigraphSettings);
       } catch (error) {
-        // 配置加载失败是关键错误，需要显示给用户
-        logger.error('配置管理初始化失败:', error);
-        throw new Error('配置加载失败: ' + (error instanceof Error ? error.message : String(error)));
+        logger.error(i18n('content_config_init_failed'), error);
+        // 使用 I18nError 抛出本地化错误
+        throw new I18nError(
+          'content_config_load_failed',
+          error instanceof Error ? error.message : String(error)
+        );
       }
 
       // 初始化消息服务
@@ -45,9 +48,12 @@
         handlerModule.registerContentMessageHandlers();
         logger.log('消息服务初始化完成');
       } catch (error) {
-        // 消息服务初始化失败是关键错误，需要显示给用户
-        logger.error('消息服务初始化失败:', error);
-        throw new Error('消息系统初始化失败: ' + (error instanceof Error ? error.message : String(error)));
+        logger.error(i18n('content_message_service_init_failed'), error);
+        // 使用 I18nError 抛出本地化错误
+        throw new I18nError(
+          'content_message_service_init_failed',
+          error instanceof Error ? error.message : String(error)
+        );
       }
     
       // 初始化主题管理器
@@ -80,10 +86,13 @@
         
         logger.log('Navigraph 可视化器初始化成功');
       } catch (error) {
-        // 可视化器初始化失败是关键错误，需要显示给用户
-        logger.error('可视化器初始化失败:', error);
+        logger.error(i18n('content_visualizer_init_failed'), error);
         showDetailedErrorMessage('content_visualizer_init_failed', error);
-        throw error; // 重新抛出以确保后续代码不执行
+        // 使用 I18nError 抛出本地化错误
+        throw new I18nError(
+          'content_visualizer_init_failed',
+          error instanceof Error ? error.message : String(error)
+        );
       }
       
       // 设置页面活动监听器

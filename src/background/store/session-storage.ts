@@ -7,6 +7,7 @@ import { BrowsingSession, SessionQueryOptions, SessionCreationOptions } from '..
 import { IndexedDBStorage } from './indexed-db.js';
 import { NavigraphDBSchema } from './storage-schema.js';
 import { IdGenerator } from '../lib/id-generator.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';  // 增加
 const logger = new Logger('SessionStorage');
 /**
  * 会话存储类
@@ -65,8 +66,11 @@ export class SessionStorage {
       this.initialized = true;
       logger.log('会话存储已初始化');
     } catch (error) {
-      logger.error('初始化会话存储失败:', error);
-      throw new Error(`初始化会话存储失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_init_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_init_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
@@ -88,10 +92,12 @@ export class SessionStorage {
     
     try {
       await this.db.put(this.STORE_NAME, session);
-      logger.log(`会话已保存: ${session.id}`);
     } catch (error) {
-      logger.error('保存会话失败:', error);
-      throw new Error(`保存会话失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_save_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_save_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
@@ -107,8 +113,11 @@ export class SessionStorage {
       const session = await this.db.get<BrowsingSession>(this.STORE_NAME, sessionId);
       return session || null;
     } catch (error) {
-      logger.error(`获取会话 ${sessionId} 失败:`, error);
-      throw new Error(`获取会话失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_get_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_get_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
@@ -191,8 +200,11 @@ export class SessionStorage {
       
       return sessions;
     } catch (error) {
-      logger.error('获取会话列表失败:', error);
-      throw new Error(`获取会话列表失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_get_list_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_get_list_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
@@ -216,8 +228,11 @@ export class SessionStorage {
       logger.log(`会话已删除: ${sessionId}`);
       return true;
     } catch (error) {
-      logger.error(`删除会话 ${sessionId} 失败:`, error);
-      throw new Error(`删除会话失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_delete_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_delete_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
@@ -231,8 +246,11 @@ export class SessionStorage {
       await this.db.clear(this.STORE_NAME);
       logger.log('所有会话数据已清除');
     } catch (error) {
-      logger.error('清除会话数据失败:', error);
-      throw new Error(`清除会话数据失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_clear_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_clear_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
@@ -254,8 +272,11 @@ export class SessionStorage {
     try {
       return await this.db.count(this.STORE_NAME);
     } catch (error) {
-      logger.error('获取会话数量失败:', error);
-      throw new Error(`获取会话数量失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(i18n('session_storage_count_failed', error instanceof Error ? error.message : String(error)), error);
+      throw new I18nError(
+        'session_storage_count_failed',
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
   
