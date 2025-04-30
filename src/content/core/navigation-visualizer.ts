@@ -2,6 +2,7 @@
  * 导航图谱可视化器核心类
  */
 import { Logger } from '../../lib/utils/logger.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
 import { DebugTools } from '../debug/debug-tools.js';
 import type { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 import type { SessionDetails } from '../types/session.js';
@@ -98,7 +99,7 @@ export class NavigationVisualizer implements Visualizer {
     // 检查d3是否已加载
     if (typeof window.d3 === "undefined") {
       logger.error("d3 库未加载，可视化功能将不可用");
-      alert("d3 库未加载，可视化功能将不可用。请确保已包含d3.js库。");
+      alert(i18n("content_d3_lib_missing"));
     } else {
       logger.log("d3 库已加载:", window.d3.version);
     }
@@ -163,7 +164,7 @@ export class NavigationVisualizer implements Visualizer {
       logger.log("NavigationVisualizer 初始化完成");
     } catch (error) {
       this.showError(
-        "初始化失败: " +
+        i18n("content_init_failed") + ": " +
           (error instanceof Error ? error.message : String(error))
       );
     }
@@ -209,7 +210,7 @@ export class NavigationVisualizer implements Visualizer {
       // 使用渲染管理器配置SVG
       this.renderingManager.setupSvg(svg);
     } else {
-      throw new Error("初始化失败：无法创建SVG元素");
+      throw new I18nError("content_svg_create_failed");
     }
   }
 
@@ -377,14 +378,14 @@ export class NavigationVisualizer implements Visualizer {
         // 使用渲染管理器配置SVG
         this.renderingManager.setupSvg(svg);
       } else {
-        throw new Error("无法创建SVG元素");
+        throw new I18nError("content_svg_missing");
       }
 
       // 使用渲染管理器重新渲染
       this.refreshVisualization(undefined, { restoreTransform: true });
     } catch (error) {
       logger.error("重新初始化视图失败:", error);
-      this.showError("切换视图失败: " + (error instanceof Error ? error.message : String(error)));
+      this.showError(i18n("content_view_switch_failed") + ": " + (error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -438,118 +439,6 @@ export class NavigationVisualizer implements Visualizer {
     stack?: string
   ): void {
     this.uiManager.showDetailedError(title, message, stack);
-  }
-  /**
-   * 使元素可拖拽
-   */
-  private makeDraggable(element: HTMLElement): void {
-    // 状态变量
-    let isDragging = false;
-    let dragStartX = 0,
-      dragStartY = 0;
-    let originalLeft = 0,
-      originalTop = 0;
-
-    // 设置初始位置 - 放置在右上角
-    element.style.position = "absolute";
-    element.style.right = "auto";
-    element.style.bottom = "auto";
-
-    // 设置右上角位置
-    const containerRect = this.container
-      ? this.container.getBoundingClientRect()
-      : {
-          left: 0,
-          top: 0,
-          width: window.innerWidth,
-          height: window.innerHeight,
-        };
-
-    // 初始位置：右上角，距离右侧20px，距离顶部70px
-    element.style.left = `${containerRect.width - 320}px`;
-    element.style.top = "70px";
-
-    // 创建拖拽手柄
-    const handle = document.createElement("div");
-    handle.className = "drag-handle";
-    element.appendChild(handle);
-
-    // 标题也可以用来拖动
-    const title = element.querySelector(".node-details-title");
-    if (title) {
-      (title as HTMLElement).style.cursor = "move";
-    }
-
-    // 拖动开始处理函数
-    const onDragStart = (e: MouseEvent) => {
-      // 只响应鼠标左键
-      if (e.button !== 0) return;
-
-      // 检查目标元素是否为手柄或标题
-      const target = e.target as HTMLElement;
-      if (!(target === handle || target === title)) return;
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      // 记录开始拖动时的状态
-      isDragging = true;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-
-      // 记录元素原始位置
-      originalLeft = parseInt(element.style.left || "0", 10);
-      originalTop = parseInt(element.style.top || "0", 10);
-
-      // 添加拖动中的样式
-      element.classList.add("dragging");
-
-      // 添加文档级事件监听
-      document.addEventListener("mousemove", onDragMove);
-      document.addEventListener("mouseup", onDragEnd);
-    };
-
-    // 拖动过程处理函数
-    const onDragMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-
-      e.preventDefault();
-
-      // 计算拖动距离
-      const deltaX = e.clientX - dragStartX;
-      const deltaY = e.clientY - dragStartY;
-
-      // 计算新位置（基于原始位置）
-      const newLeft = originalLeft + deltaX;
-      const newTop = originalTop + deltaY;
-
-      // 限制在容器内
-      const maxX = containerRect.width - element.offsetWidth;
-      const maxY = containerRect.height - element.offsetHeight;
-
-      // 应用新位置
-      element.style.left = `${Math.max(0, Math.min(newLeft, maxX))}px`;
-      element.style.top = `${Math.max(0, Math.min(newTop, maxY))}px`;
-    };
-
-    // 拖动结束处理函数
-    const onDragEnd = () => {
-      if (!isDragging) return;
-
-      // 清理状态
-      isDragging = false;
-      element.classList.remove("dragging");
-
-      // 移除文档级事件监听
-      document.removeEventListener("mousemove", onDragMove);
-      document.removeEventListener("mouseup", onDragEnd);
-    };
-
-    // 添加拖动开始事件监听
-    handle.addEventListener("mousedown", onDragStart);
-    if (title) {
-      handle.addEventListener("mousedown", onDragStart);
-    }
   }
 
   /**

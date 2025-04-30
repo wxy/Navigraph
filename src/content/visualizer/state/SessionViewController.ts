@@ -64,7 +64,7 @@ export class SessionViewController {
       logger.log("会话管理初始化完成");
     } catch (error) {
       logger.error("会话管理初始化失败:", error);
-      this.uiManager.showError("会话管理初始化失败");
+      this.uiManager.showError("content_session_load_failed");
       throw error;
     }
   }
@@ -84,7 +84,7 @@ export class SessionViewController {
       return sessionList;
     } catch (error) {
       logger.error("加载会话列表失败:", error);
-      this.uiManager.showError("加载会话列表失败");
+      this.uiManager.showError("content_session_list_load_failed");
       throw error;
     }
   }
@@ -146,7 +146,7 @@ export class SessionViewController {
       logger.log("会话切换成功");
     } catch (error) {
       logger.error("选择会话失败:", error);
-      this.uiManager.showError("选择会话失败");
+      this.uiManager.showError("content_session_selection_failed");
     }
   }
   
@@ -165,7 +165,7 @@ export class SessionViewController {
       return session;
     } catch (error) {
       logger.error("加载当前会话失败:", error);
-      this.uiManager.showError("加载当前会话失败");
+      this.uiManager.showError("content_current_session_load_failed");
       throw error;
     }
   }
@@ -188,7 +188,7 @@ export class SessionViewController {
       document.body.classList.remove("loading-session");
 
       if (!session) {
-        this.uiManager.showError("会话加载失败或无可用会话");
+        this.uiManager.showError("content_session_load_failed_or_unavailable");
         return;
       }
 
@@ -220,7 +220,7 @@ export class SessionViewController {
       });
     } catch (error) {
       logger.error("处理会话加载失败:", error);
-      this.uiManager.showError("处理会话数据失败");
+      this.uiManager.showError("content_session_data_processing_failed");
     } finally {
       // 确保标志被重置
       this.isHandlingSessionLoaded = false;

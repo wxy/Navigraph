@@ -260,44 +260,44 @@
     "description": "时间线视图按钮文本 @src/content/index.html"
   },
   "content_prev_month_title": {
-    "message": "上个月",
-    "description": "上个月按钮提示 @src/content/index.html"
+    "message": "上一月",
+    "description": "上一月按钮提示文本 @src/content/index.html"
   },
   "content_next_month_title": {
-    "message": "下个月",
-    "description": "下个月按钮提示 @src/content/index.html"
+    "message": "下一月",
+    "description": "下一月按钮提示文本 @src/content/index.html"
   },
   "content_sunday": {
     "message": "日",
-    "description": "周日简写 @src/content/index.html"
+    "description": "星期日 @src/content/index.html"
   },
   "content_monday": {
     "message": "一",
-    "description": "周一简写 @src/content/index.html"
+    "description": "星期一 @src/content/index.html"
   },
   "content_tuesday": {
     "message": "二",
-    "description": "周二简写 @src/content/index.html"
+    "description": "星期二 @src/content/index.html"
   },
   "content_wednesday": {
     "message": "三",
-    "description": "周三简写 @src/content/index.html"
+    "description": "星期三 @src/content/index.html"
   },
   "content_thursday": {
     "message": "四",
-    "description": "周四简写 @src/content/index.html"
+    "description": "星期四 @src/content/index.html"
   },
   "content_friday": {
     "message": "五",
-    "description": "周五简写 @src/content/index.html"
+    "description": "星期五 @src/content/index.html"
   },
   "content_saturday": {
     "message": "六",
-    "description": "周六简写 @src/content/index.html"
+    "description": "星期六 @src/content/index.html"
   },
   "content_select_session": {
     "message": "选择会话",
-    "description": "会话选择标题 @src/content/index.html"
+    "description": "选择会话标题 @src/content/index.html"
   },
   "content_filters": {
     "message": "筛选器",
@@ -305,47 +305,47 @@
   },
   "content_navigation_type": {
     "message": "导航类型",
-    "description": "导航类型分类标题 @src/content/index.html"
+    "description": "导航类型分类 @src/content/index.html"
   },
   "content_link_click": {
     "message": "链接点击",
-    "description": "链接点击筛选项 @src/content/index.html"
+    "description": "链接点击类型 @src/content/index.html"
   },
   "content_address_bar": {
-    "message": "地址栏输入",
-    "description": "地址栏输入筛选项 @src/content/index.html"
+    "message": "地址栏",
+    "description": "地址栏类型 @src/content/index.html"
   },
   "content_form_submit": {
     "message": "表单提交",
-    "description": "表单提交筛选项 @src/content/index.html"
+    "description": "表单提交类型 @src/content/index.html"
   },
   "content_js_redirect": {
     "message": "JavaScript/重定向",
-    "description": "JavaScript/重定向筛选项 @src/content/index.html"
+    "description": "JavaScript重定向类型 @src/content/index.html"
   },
   "content_navigation_behavior": {
     "message": "导航行为",
-    "description": "导航行为分类标题 @src/content/index.html"
+    "description": "导航行为分类 @src/content/index.html"
   },
   "content_show_reload": {
-    "message": "显示页面刷新",
-    "description": "显示页面刷新筛选项 @src/content/index.html"
+    "message": "显示页面重载",
+    "description": "页面重载选项 @src/content/index.html"
   },
   "content_show_history": {
     "message": "显示历史导航",
-    "description": "显示历史导航筛选项 @src/content/index.html"
+    "description": "历史导航选项 @src/content/index.html"
   },
   "content_page_status": {
     "message": "页面状态",
-    "description": "页面状态分类标题 @src/content/index.html"
+    "description": "页面状态分类 @src/content/index.html"
   },
   "content_show_closed": {
     "message": "显示已关闭页面",
-    "description": "显示已关闭页面筛选项 @src/content/index.html"
+    "description": "显示已关闭页面选项 @src/content/index.html"
   },
   "content_show_tracking": {
     "message": "显示跟踪页面",
-    "description": "显示跟踪页面筛选项 @src/content/index.html"
+    "description": "显示跟踪页面选项 @src/content/index.html"
   },
   "content_loading": {
     "message": "正在加载数据...",
@@ -422,6 +422,234 @@
   "content_script_execution_failed": {
     "message": "内容脚本执行失败:",
     "description": "脚本执行失败错误消息 @src/content/index.ts"
+  },
+  "content_visualizer_component_init_failed": {
+    "message": "可视化组件初始化失败",
+    "description": "可视化组件初始化失败错误消息 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_d3_lib_missing": {
+    "message": "d3 库未加载，可视化功能将不可用。请确保已包含d3.js库。",
+    "description": "D3库缺失错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_svg_create_failed": {
+    "message": "无法创建SVG元素",
+    "description": "SVG元素创建失败 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_svg_missing": {
+    "message": "SVG元素不存在",
+    "description": "SVG元素不存在 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_view_switch_failed": {
+    "message": "切换视图失败",
+    "description": "视图切换失败 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_error_prefix": {
+    "message": "Navigraph错误",
+    "description": "错误消息前缀 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "content_timeline_view_short": {
+    "message": "时间线",
+    "description": "时间线视图短名称 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "content_no_data_available": {
+    "message": "没有可用数据",
+    "description": "没有数据提示 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_ui_initialization_failed": {
+    "message": "UI初始化失败",
+    "description": "UI初始化失败错误消息 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "content_session_list_load_failed": {
+    "message": "加载会话列表失败",
+    "description": "加载会话列表失败消息 @src/content/core/session-view-controller.ts"
+  },
+  "content_session_load_failed": {
+    "message": "会话数据加载失败",
+    "description": "会话数据加载失败消息 @src/content/core/session-view-controller.ts"
+  },
+  "content_empty_session": {
+    "message": "当前会话为空",
+    "description": "空会话提示 @src/content/core/session-view-controller.ts"
+  },
+  "content_drag_handle": {
+    "message": "拖动",
+    "description": "拖动手柄文本 @src/content/core/navigation-visualizer.ts"
+  },
+  "content_session_selection_failed": {
+    "message": "选择会话失败",
+    "description": "会话选择失败错误消息 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "content_current_session_load_failed": {
+    "message": "加载当前会话失败",
+    "description": "当前会话加载失败错误消息 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "content_session_load_failed_or_unavailable": {
+    "message": "会话加载失败或无可用会话",
+    "description": "会话加载失败或无可用会话错误消息 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "content_session_data_processing_failed": {
+    "message": "处理会话数据失败",
+    "description": "会话数据处理失败错误消息 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "content_unnamed_page": {
+    "message": "未命名页面",
+    "description": "未命名页面标题 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_url_label": {
+    "message": "URL",
+    "description": "URL标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_type_label": {
+    "message": "类型",
+    "description": "类型标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_time_label": {
+    "message": "时间",
+    "description": "时间标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_status_label": {
+    "message": "状态",
+    "description": "状态标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_tracking_page_label": {
+    "message": "跟踪页面",
+    "description": "跟踪页面标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_yes": {
+    "message": "是",
+    "description": "是 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_duration_label": {
+    "message": "时长",
+    "description": "时长标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_count_label": {
+    "message": "次数",
+    "description": "次数标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_technical_details": {
+    "message": "技术详情",
+    "description": "技术详情标题 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_tab_id_label": {
+    "message": "标签ID",
+    "description": "标签ID标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_node_id_label": {
+    "message": "节点ID",
+    "description": "节点ID标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_parent_id_label": {
+    "message": "父节点ID",
+    "description": "父节点ID标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_referrer_label": {
+    "message": "引用来源",
+    "description": "引用来源标签 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_status_closed": {
+    "message": "已关闭",
+    "description": "已关闭状态 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_status_active": {
+    "message": "活跃",
+    "description": "活跃状态 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_initial": {
+    "message": "外部打开",
+    "description": "外部打开导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_link_click": {
+    "message": "链接点击",
+    "description": "链接点击导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_address_bar": {
+    "message": "地址栏输入",
+    "description": "地址栏输入导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_history_back": {
+    "message": "历史后退",
+    "description": "历史后退导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_history_forward": {
+    "message": "历史前进",
+    "description": "历史前进导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_reload": {
+    "message": "页面刷新",
+    "description": "页面刷新导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_javascript": {
+    "message": "JavaScript导航",
+    "description": "JavaScript导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nav_type_redirect": {
+    "message": "重定向",
+    "description": "重定向导航类型 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_unit_millisecond": {
+    "message": "毫秒",
+    "description": "毫秒时间单位 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_unit_second": {
+    "message": "秒",
+    "description": "秒时间单位 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_unit_minute": {
+    "message": "分钟",
+    "description": "分钟时间单位 @src/content/visualizer/ui/NodeDetails.ts @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_unit_hour": {
+    "message": "小时",
+    "description": "小时时间单位 @src/content/visualizer/ui/NodeDetails.ts @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_unit_day": {
+    "message": "天",
+    "description": "天时间单位 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_drag_handle_missing": {
+    "message": "找不到拖动把手，无法使元素可拖拽",
+    "description": "拖动把手缺失错误 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_drag_panel": {
+    "message": "拖动移动此面板",
+    "description": "拖动面板提示 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "content_nodes_count": {
+    "message": "节点: {0}",
+    "description": "节点数量状态项 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_hidden_count": {
+    "message": "已隐藏: {0}",
+    "description": "已隐藏节点数量状态项 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_session_date_label": {
+    "message": "日期: {0}",
+    "description": "会话日期状态项 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_session_duration_label": {
+    "message": "时长: {0}",
+    "description": "时长状态项 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_view_label": {
+    "message": "视图: {0}",
+    "description": "视图类型状态项 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_zoom_label": {
+    "message": "缩放: {0}%",
+    "description": "缩放状态项 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_view_tree": {
+    "message": "树形图",
+    "description": "树形图视图类型 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_view_timeline": {
+    "message": "时间线",
+    "description": "时间线视图类型 @src/content/visualizer/ui/StatusBar.ts"
   },
   "_": {
     "message": "_",

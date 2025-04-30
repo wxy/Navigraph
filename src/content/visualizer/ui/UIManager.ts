@@ -225,41 +225,41 @@ export class UIManager {
 
   /**
    * 显示错误通知
-   * @param message 错误消息
+   * @param messageId 通知消息ID
    * @param duration 显示时间(毫秒)，默认5秒，0表示不自动关闭
    */
-  public showError(message: string, duration: number = 5000): void {
-    this.errorNotification.show(message, duration);
+  public showError(messageId: string, duration: number = 5000): void {
+    this.errorNotification.show(messageId, duration);
   }
 
   /**
    * 显示详细错误通知
-   * @param title 错误标题
-   * @param message 错误消息
+   * @param titleId 错误标题ID
+   * @param messageId 通知消息ID
    * @param stack 错误堆栈
    */
   public showDetailedError(
-    title: string,
-    message: string,
+    titleId: string,
+    messageId: string,
     stack?: string
   ): void {
     // 确保 ErrorNotification 类中有此方法
     if (typeof this.errorNotification.showDetailed === "function") {
-      this.errorNotification.showDetailed(title, message, stack);
+      this.errorNotification.showDetailed(titleId, messageId, stack);
     } else {
       // 降级处理，如果没有详细错误方法
-      this.errorNotification.show(`${title}: ${message}`, 0);
-      logger.error(`${title}: ${message}`, stack);
+      this.errorNotification.show(`${titleId}: ${messageId}`, 0);
+      logger.error(`${titleId}: ${messageId}`, stack);
     }
   }
 
   /**
    * 显示简短通知
-   * @param message 通知消息
+   * @param messageId 通知消息ID
    * @param duration 显示时间(毫秒)，默认3秒
    */
-  public showToast(message: string, duration: number = 3000): void {
-    this.errorNotification.showToast(message, duration);
+  public showToast(messageId: string, duration: number = 3000): void {
+    this.errorNotification.showToast(messageId, duration);
   }
 
   /**

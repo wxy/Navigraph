@@ -152,9 +152,82 @@ export class I18nUtils {
   }
 }
 
-// 创建简单的全局函数，用于快速访问
-export function i18n(messageId: string, defaultValue?: string): string {
-  return I18nUtils.getInstance().getMessage(messageId, defaultValue);
+/**
+ * 本地化错误类
+ */
+export class I18nError extends Error {
+  public readonly messageId: string;
+  public readonly technical?: string; // 更明确的名称
+  
+  /**
+   * 构造函数
+   * @param messageId 错误消息ID (必须以'content_'开头的本地化ID)
+   * @param technical 技术细节，不会被本地化 (可选)
+   * @param defaultMessage 当消息ID无法解析时的默认消息 (可选)
+   */
+  constructor(messageId: string, technical?: string, defaultMessage?: string) {
+    // 使用本地化的消息作为错误消息，如果解析失败则使用默认消息
+    super(I18nUtils.getInstance().getMessage(messageId, defaultMessage));
+    
+    this.messageId = messageId;
+    this.technical = technical;
+    
+    // 修复原型链
+    Object.setPrototypeOf(this, I18nError.prototype);
+    
+    // 保留原始堆栈
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, I18nError);
+    }
+  }
+  
+  /**
+   * 获取完整错误信息
+   */
+  getFullMessage(): string {
+    if (this.technical) {
+      return `${this.message} (${this.technical})`;
+    }
+    return this.message;
+  }
+}
+
+/**
+ * 获取本地化字符串并支持参数替换
+ * @param messageId 消息ID
+ * @param args 用于替换消息中的{0}, {1}等占位符的参数
+ * @returns 本地化后的字符串
+ */
+export function i18n(messageId: string, ...args: string[]): string {
+  // 首先获取基本消息字符串
+  const message = I18nUtils.getInstance().getMessage(messageId);
+  
+  // 如果没有参数需要替换，直接返回
+  if (!args || args.length === 0) {
+    return message;
+  }
+  
+  // 替换所有 {0}, {1}, {2} 等占位符
+  let result = message;
+  for (let i = 0; i < args.length; i++) {
+    result = result.replace(new RegExp('\\{' + i + '\\}', 'g'), args[i]);
+  }
+  
+  return result;
+}
+
+/**
+ * 创建本地化错误
+ * @param messageId 错误消息ID
+ * @param technical 技术细节 (不会被本地化)
+ * @param defaultMessage 当消息ID无法解析时的默认消息
+ */
+export function i18nError(
+  messageId: string, 
+  technical?: string, 
+  defaultMessage?: string
+): I18nError {
+  return new I18nError(messageId, technical, defaultMessage);
 }
 
 // 自动初始化处理

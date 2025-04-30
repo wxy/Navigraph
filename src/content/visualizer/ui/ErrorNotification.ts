@@ -1,4 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('ErrorNotification');
 
@@ -29,13 +30,14 @@ export class ErrorNotification {
 
   /**
    * 显示简单错误消息
-   * @param message 错误消息
+   * @param messageId 错误消息ID
    * @param duration 显示时长(毫秒)，0表示不自动隐藏
    */
-  public show(message: string, duration: number = 5000): void {
+  public show(messageId: string, duration: number = 5000): void {
     if (!this.simpleErrorElement) {
       this.initialize();
     }
+    const message = i18n(messageId);
 
     logger.error(message);
 
@@ -79,14 +81,17 @@ export class ErrorNotification {
 
   /**
    * 显示详细错误消息
-   * @param title 错误标题
-   * @param message 错误消息
+   * @param titleId 错误标题ID
+   * @param messageId 错误消息ID
    * @param stack 错误堆栈
    */
-  public showDetailed(title: string, message: string, stack?: string): void {
+  public showDetailed(titleId: string, messageId: string, stack?: string): void {
     if (!this.detailedErrorElement) {
       this.initialize();
     }
+
+    const title = i18n(titleId);
+    const message = i18n(messageId);
 
     logger.error(`${title}: ${message}`);
     if (stack) {

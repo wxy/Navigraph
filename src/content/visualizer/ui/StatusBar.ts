@@ -1,4 +1,5 @@
 import { Logger } from "../../../lib/utils/logger.js";
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import type { Visualizer } from "../../types/navigation.js";
 
 const logger = new Logger("StatusBar");
@@ -38,7 +39,7 @@ export class StatusBar {
     if (!this.statusBarElement) return;
 
     // 在处理前添加更详细的日志，帮助定位问题
-    logger.debug("状态栏更新开始...");
+    logger.debug(i18n("content_status_bar_update_start"));
 
     try {
       // 获取当前状态数据 - 使用可视化器的属性
@@ -63,14 +64,14 @@ export class StatusBar {
       // 更新节点计数
       const nodeCountElement = document.getElementById("status-nodes");
       if (nodeCountElement) {
-        nodeCountElement.textContent = `节点: ${nodeCount}`;
+        nodeCountElement.textContent = i18n("content_nodes_count", nodeCount.toString());
       }
 
       // 更新已过滤节点计数
       const filteredElement = document.getElementById("status-filtered");
       if (filteredElement) {
         const filteredCount = Math.max(0, allNodesCount - nodeCount);
-        filteredElement.textContent = `已隐藏: ${filteredCount}`;
+        filteredElement.textContent = i18n("content_hidden_count", filteredCount.toString());
       }
 
       // 更新会话日期
@@ -80,7 +81,7 @@ export class StatusBar {
         const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
           .toString()
           .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
-        dateElement.textContent = `日期: ${formattedDate}`;
+        dateElement.textContent = i18n("content_session_date_label", formattedDate);
       }
 
       // 更新会话时长
@@ -97,26 +98,31 @@ export class StatusBar {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
 
-        durationElement.textContent = `时长: ${
-          hours > 0 ? `${hours}小时` : ""
-        }${mins}分钟`;
+        const durationText = hours > 0 ? 
+          `${hours}${i18n("content_unit_hour")}${mins}${i18n("content_unit_minute")}` : 
+          `${mins}${i18n("content_unit_minute")}`;
+        
+        durationElement.textContent = i18n("content_session_duration_label", durationText);
       }
 
       // 更新视图类型
       const viewElement = document.getElementById("status-view");
       if (viewElement) {
-        viewElement.textContent = `视图: ${
-          currentView === "tree" ? "树形图" : "时间线"
-        }`;
+        const viewTypeName = currentView === "tree" ? 
+          i18n("content_view_tree") : 
+          i18n("content_view_timeline");
+        
+        viewElement.textContent = i18n("content_view_label", viewTypeName);
       }
+      
       // 缩放信息更新
       const zoomElement = document.getElementById("status-zoom");
       if (zoomElement) {
         // 尝试从可视化器获取当前缩放级别
         const zoom = visualizer.currentTransform?.k || 1;
-        zoomElement.textContent = `缩放: ${(100 * zoom).toFixed(0)}%`;
+        zoomElement.textContent = i18n("content_zoom_label", (100 * zoom).toFixed(0));
       }
-      logger.debug("状态栏更新完成");
+            logger.debug("状态栏更新完成");
     } catch (error) {
       logger.error("状态栏更新过程中出错:", error);
     }
