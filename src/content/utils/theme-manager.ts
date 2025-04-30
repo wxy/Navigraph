@@ -192,7 +192,7 @@ export class ThemeManager {
       // 创建链接元素
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = chrome.runtime.getURL("dist/content/styles/themes.css");
+      link.href = chrome.runtime.getURL("content/styles/themes.css");
       document.head.appendChild(link);
       logger.log("已添加主题样式表");
     }

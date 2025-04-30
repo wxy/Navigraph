@@ -12,6 +12,7 @@ export class I18nUtils {
   private static instance: I18nUtils;
   private loadedMessages: Record<string, {message: string, description?: string}> = {};
   private forcedLocale: string | null = null;
+  private hasInitialized: boolean = false;
 
   /**
    * 获取单例实例
@@ -24,10 +25,19 @@ export class I18nUtils {
   }
 
   /**
-   * 初始化本地化工具
-   * 检查URL参数并可能加载特定的本地化文件
+   * 初始化本地化工具并应用到页面
+   * 集成了初始化和应用到页面两个步骤
+   * 该方法可以安全地多次调用，只会执行一次初始化和应用
    */
-  public async initialize(): Promise<void> {
+  public async apply(): Promise<void> {
+    // 如果已经初始化过，不再重复执行
+    if (this.hasInitialized) {
+      logger.debug('本地化工具已初始化，跳过重复操作');
+      return;
+    }
+    
+    this.hasInitialized = true;
+    
     // 获取 URL 查询参数中的本地化设置
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -48,11 +58,21 @@ export class I18nUtils {
       logger.error(`加载本地化文件失败:`, error);
       this.forcedLocale = null;
     }
+    
+    // 如果DOM已就绪，立即应用本地化
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        // DOM仍在加载，等待完成后应用
+        document.addEventListener('DOMContentLoaded', () => this.applyToPage());
+      } else {
+        // DOM已就绪，立即应用
+        this.applyToPage();
+      }
+    }
   }
 
   /**
    * 获取本地化字符串
-   * 优先使用强制指定的本地化，如果未找到则使用Chrome本地化API
    */
   public getMessage(messageId: string, defaultValue?: string): string {
     // 强制本地化
@@ -72,11 +92,12 @@ export class I18nUtils {
 
   /**
    * 对DOM元素应用本地化
-   * 查找带有data-i18n属性的元素并替换内容
+   * 该方法安全地处理多次调用
    */
   public applyToPage(): void {
     if (typeof document === 'undefined') return;
-
+    
+    // 只要DOM就绪，就可以应用本地化
     // 处理页面标题
     const titleElement = document.querySelector('title[data-i18n]');
     if (titleElement) {
@@ -97,10 +118,12 @@ export class I18nUtils {
         }
       }
     });
+    
+    logger.debug('页面本地化应用完成');
   }
 
-  /**
-   * 根据元素类型设置本地化内容
+  /** 
+   * 设置元素内容方法保持不变
    */
   private setElementContent(element: Element, message: string): void {
     switch (element.tagName) {
@@ -134,11 +157,8 @@ export function i18n(messageId: string, defaultValue?: string): string {
   return I18nUtils.getInstance().getMessage(messageId, defaultValue);
 }
 
-// 在DOM就绪后自动应用本地化
+// 自动初始化处理
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', async () => {
-    const i18nUtils = I18nUtils.getInstance();
-    await i18nUtils.initialize();
-    i18nUtils.applyToPage();
-  });
+  // 使用新的合并方法
+  I18nUtils.getInstance().apply();
 }

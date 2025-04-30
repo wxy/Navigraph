@@ -9,8 +9,11 @@
   let lastActivityTime = 0;
   const MIN_ACTIVITY_INTERVAL = 5000; // 最少5秒触发一次
 
-  const loggerModule = await import('../lib/utils/logger.js');
-  const logger = new loggerModule.Logger('ContentScript');
+  const { Logger } = await import('../lib/utils/logger.js');
+  const logger = new Logger('ContentScript');
+
+  const { I18nUtils, i18n } = await import('../lib/utils/i18n-utils.js');
+
   /**
    * 初始化函数
    */
@@ -79,7 +82,7 @@
       } catch (error) {
         // 可视化器初始化失败是关键错误，需要显示给用户
         logger.error('可视化器初始化失败:', error);
-        showDetailedErrorMessage('可视化器初始化失败', error);
+        showDetailedErrorMessage('content_visualizer_init_failed', error);
         throw error; // 重新抛出以确保后续代码不执行
       }
       
@@ -89,7 +92,7 @@
       logger.log('所有初始化逻辑完成');
     } catch (error) {
       logger.error('初始化过程中发生错误:', error);
-      showErrorMessage('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
+      showErrorMessage('content_init_failed', (error instanceof Error ? error.message : String(error)));
       
       // 记录更详细的错误信息用于调试
       if (error instanceof Error && error.stack) {
@@ -192,39 +195,46 @@
   const ErrorUIManager = {
     /**
      * 显示标准错误消息
-     * @param message 错误消息文本
+     * @param messageId 错误消息ID
+     * @param params 消息替换参数
      */
-    showErrorMessage(message: string): void {
+    showErrorMessage(messageId: string, ...params: string[]): void {
       try {
+        // 获取本地化消息
+        const message = i18n(messageId);
+        const formattedMessage = this.formatMessage(message, params);
+        
         const errorContainer = document.getElementById('navigraph-error');
         if (!errorContainer) {
           logger.error('找不到错误UI容器，降级到alert');
-          alert('Navigraph 扩展错误: ' + message);
+          this.showNativeAlert('content_extension_error', formattedMessage);
           return;
         }
         
         const messageEl = errorContainer.querySelector('.error-message');
         if (messageEl) {
-          messageEl.textContent = message;
+          messageEl.textContent = formattedMessage;
         }
         
         errorContainer.style.display = 'block';
       } catch (err) {
         logger.error('显示错误UI失败:', err);
-        alert('Navigraph 扩展错误: ' + message);
+        alert(messageId); // 直接显示消息ID，以便快速发现问题
       }
     },
     
     /**
      * 显示详细的错误消息
-     * @param title 错误标题
+     * @param titleId 标题消息ID
      * @param error 错误对象
      */
-    showDetailedErrorMessage(title: string, error: any): void {
+    showDetailedErrorMessage(titleId: string, error: any): void {
       try {
+        const title = i18n(titleId);
+        
         const errorContainer = document.getElementById('navigraph-error-detailed');
         if (!errorContainer) {
-          this.showErrorMessage(title + ': ' + (error instanceof Error ? error.message : String(error)));
+          this.showErrorMessage(titleId, (error instanceof Error ? error.message : String(error)));
           return;
         }
         
@@ -265,21 +275,25 @@
         errorContainer.style.display = 'block';
       } catch (err) {
         logger.error('显示详细错误UI失败:', err);
-        this.showErrorMessage(title + ': ' + (error instanceof Error ? error.message : String(error)));
+        this.showErrorMessage(titleId, (error instanceof Error ? error.message : String(error)));
       }
     },
     
     /**
      * 显示通知消息
-     * @param message 通知消息
+     * @param messageId 通知消息ID
      * @param duration 显示时长（毫秒）
+     * @param params 消息替换参数
      */
-    showToast(message: string, duration: number = 5000): void {
+    showToast(messageId: string, duration: number = 5000, ...params: string[]): void {
       try {
+        const message = i18n(messageId);
+        const formattedMessage = this.formatMessage(message, params);
+        
         const toastEl = document.getElementById('navigraph-toast');
         if (!toastEl) return;
         
-        toastEl.textContent = message;
+        toastEl.textContent = formattedMessage;
         toastEl.style.display = 'block';
         
         // 设置自动隐藏
@@ -291,28 +305,70 @@
       } catch (err) {
         logger.error('显示通知消息失败:', err);
       }
+    },
+
+    /**
+     * 显示系统原生警告框
+     * @param prefixId 前缀消息ID
+     * @param message 消息内容
+     */
+    showNativeAlert(prefixId: string, message: string): void {
+      const prefix = i18n(prefixId);
+      alert(`${prefix} ${message}`);
+    },
+
+    /**
+     * 格式化消息，替换参数标记
+     * @param message 消息模板
+     * @param params 替换参数
+     * @returns 格式化后的消息
+     */
+    formatMessage(message: string, params: string[] = []): string {
+      if (!params || params.length === 0) return message;
+      
+      let result = message;
+      for (let i = 0; i < params.length; i++) {
+        result = result.replace(new RegExp(`\\{${i}\\}`, 'g'), params[i]);
+      }
+      return result;
     }
   };
 
   /**
    * 显示标准错误消息（便捷方法）
+   * @param messageId 错误消息ID
+   * @param params 消息替换参数
    */
-  function showErrorMessage(message: string): void {
-    ErrorUIManager.showErrorMessage(message);
+  function showErrorMessage(messageId: string, ...params: string[]): void {
+    ErrorUIManager.showErrorMessage(messageId, ...params);
   }
 
   /**
    * 显示详细的错误消息（便捷方法）
+   * @param titleId 标题消息ID
+   * @param error 错误对象
    */
-  function showDetailedErrorMessage(title: string, error: any): void {
-    ErrorUIManager.showDetailedErrorMessage(title, error);
+  function showDetailedErrorMessage(titleId: string, error: any): void {
+    ErrorUIManager.showDetailedErrorMessage(titleId, error);
   }
 
   /**
    * 显示通知消息（便捷方法）
+   * @param messageId 通知消息ID
+   * @param duration 显示时长（毫秒）
+   * @param params 消息替换参数
    */
-  function showToast(message: string, duration?: number): void {
-    ErrorUIManager.showToast(message, duration);
+  function showToast(messageId: string, duration?: number, ...params: string[]): void {
+    ErrorUIManager.showToast(messageId, duration || 5000, ...params);
+  }
+
+  /**
+   * 显示系统原生警告框（便捷方法）
+   * @param prefixId 前缀消息ID
+   * @param message 消息内容
+   */
+  function showNativeAlert(prefixId: string, message: string): void {
+    ErrorUIManager.showNativeAlert(prefixId, message);
   }
 
   // 启动初始化流程
@@ -322,19 +378,20 @@
       document.addEventListener('DOMContentLoaded', initialize);
     } else {
       // 如果 DOM 已加载完成，直接初始化
+      await I18nUtils.getInstance().apply();
       await initialize();
     }
   } catch (error) {
     logger.error('启动初始化过程失败:', error);
     // 尝试显示错误，即使在DOM加载前
-    setTimeout(() => showErrorMessage('启动失败: ' + (error instanceof Error ? error.message : String(error))), 500);
+    setTimeout(() => showErrorMessage('content_startup_error', (error instanceof Error ? error.message : String(error))), 500);
   }
 })().catch(error => {
   // 捕获闭包函数本身可能抛出的任何错误
-  console.error('Navigraph 内容脚本执行失败:', error);
+  console.error('Critical error in content script:', error);
   // 尝试提供可见的错误反馈
   try {
-    const msg = '内容脚本执行失败: ' + (error instanceof Error ? error.message : String(error));
+    const msg = 'Navigraph extension error: ' + (error instanceof Error ? error.message : String(error));
     if (document.body) {
       const container = document.createElement('div');
       container.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:10px;border-radius:5px;z-index:100000;';
@@ -351,6 +408,6 @@
     }
   } catch (e) {
     // 最后的后备方案 - 至少显示一个警告
-    setTimeout(() => alert('Navigraph 扩展错误: ' + (error instanceof Error ? error.message : String(error))), 1000);
+    setTimeout(() => alert('Navigraph extension error: ' + (error instanceof Error ? error.message : String(error))), 1000);
   }
 });

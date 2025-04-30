@@ -239,7 +239,190 @@
     "message": "清除数据失败",
     "description": "数据清除失败通知 @src/options/options.ts"
   },
-  
+  "content_title": {
+    "message": "导航图谱",
+    "description": "页面标题 @src/content/index.html"
+  },
+  "content_logo_alt": {
+    "message": "导航图谱",
+    "description": "Logo图片替代文本 @src/content/index.html"
+  },
+  "content_heading": {
+    "message": "导航图谱",
+    "description": "页面标题文本 @src/content/index.html"
+  },
+  "content_tree_view": {
+    "message": "树形视图",
+    "description": "树形视图按钮文本 @src/content/index.html"
+  },
+  "content_timeline_view": {
+    "message": "时间线视图",
+    "description": "时间线视图按钮文本 @src/content/index.html"
+  },
+  "content_prev_month_title": {
+    "message": "上个月",
+    "description": "上个月按钮提示 @src/content/index.html"
+  },
+  "content_next_month_title": {
+    "message": "下个月",
+    "description": "下个月按钮提示 @src/content/index.html"
+  },
+  "content_sunday": {
+    "message": "日",
+    "description": "周日简写 @src/content/index.html"
+  },
+  "content_monday": {
+    "message": "一",
+    "description": "周一简写 @src/content/index.html"
+  },
+  "content_tuesday": {
+    "message": "二",
+    "description": "周二简写 @src/content/index.html"
+  },
+  "content_wednesday": {
+    "message": "三",
+    "description": "周三简写 @src/content/index.html"
+  },
+  "content_thursday": {
+    "message": "四",
+    "description": "周四简写 @src/content/index.html"
+  },
+  "content_friday": {
+    "message": "五",
+    "description": "周五简写 @src/content/index.html"
+  },
+  "content_saturday": {
+    "message": "六",
+    "description": "周六简写 @src/content/index.html"
+  },
+  "content_select_session": {
+    "message": "选择会话",
+    "description": "会话选择标题 @src/content/index.html"
+  },
+  "content_filters": {
+    "message": "筛选器",
+    "description": "筛选器标题 @src/content/index.html"
+  },
+  "content_navigation_type": {
+    "message": "导航类型",
+    "description": "导航类型分类标题 @src/content/index.html"
+  },
+  "content_link_click": {
+    "message": "链接点击",
+    "description": "链接点击筛选项 @src/content/index.html"
+  },
+  "content_address_bar": {
+    "message": "地址栏输入",
+    "description": "地址栏输入筛选项 @src/content/index.html"
+  },
+  "content_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交筛选项 @src/content/index.html"
+  },
+  "content_js_redirect": {
+    "message": "JavaScript/重定向",
+    "description": "JavaScript/重定向筛选项 @src/content/index.html"
+  },
+  "content_navigation_behavior": {
+    "message": "导航行为",
+    "description": "导航行为分类标题 @src/content/index.html"
+  },
+  "content_show_reload": {
+    "message": "显示页面刷新",
+    "description": "显示页面刷新筛选项 @src/content/index.html"
+  },
+  "content_show_history": {
+    "message": "显示历史导航",
+    "description": "显示历史导航筛选项 @src/content/index.html"
+  },
+  "content_page_status": {
+    "message": "页面状态",
+    "description": "页面状态分类标题 @src/content/index.html"
+  },
+  "content_show_closed": {
+    "message": "显示已关闭页面",
+    "description": "显示已关闭页面筛选项 @src/content/index.html"
+  },
+  "content_show_tracking": {
+    "message": "显示跟踪页面",
+    "description": "显示跟踪页面筛选项 @src/content/index.html"
+  },
+  "content_loading": {
+    "message": "正在加载数据...",
+    "description": "加载提示 @src/content/index.html"
+  },
+  "content_error": {
+    "message": "错误",
+    "description": "错误标题 @src/content/index.html"
+  },
+  "content_refresh_page": {
+    "message": "刷新页面",
+    "description": "刷新页面按钮 @src/content/index.html"
+  },
+  "content_close": {
+    "message": "关闭",
+    "description": "关闭按钮 @src/content/index.html"
+  },
+  "content_tech_details": {
+    "message": "技术细节",
+    "description": "技术细节标签 @src/content/index.html"
+  },
+  "content_session_date": {
+    "message": "会话日期",
+    "description": "底部状态栏会话日期标签 @src/content/index.html"
+  },
+  "content_duration": {
+    "message": "时长",
+    "description": "底部状态栏时长标签 @src/content/index.html"
+  },
+  "content_nodes": {
+    "message": "节点",
+    "description": "底部状态栏节点标签 @src/content/index.html"
+  },
+  "content_hidden": {
+    "message": "已隐藏",
+    "description": "底部状态栏已隐藏标签 @src/content/index.html"
+  },
+  "content_view": {
+    "message": "视图",
+    "description": "底部状态栏视图标签 @src/content/index.html"
+  },
+  "content_tree_view_short": {
+    "message": "树形图",
+    "description": "底部状态栏树形视图简称 @src/content/index.html"
+  },
+  "content_zoom": {
+    "message": "缩放",
+    "description": "底部状态栏缩放标签 @src/content/index.html"
+  },
+  "content_config_load_failed": {
+    "message": "配置加载失败:",
+    "description": "配置加载失败错误消息 @src/content/index.ts"
+  },
+  "content_message_system_failed": {
+    "message": "消息系统初始化失败:",
+    "description": "消息系统初始化失败错误消息 @src/content/index.ts"
+  },
+  "content_visualizer_init_failed": {
+    "message": "可视化器初始化失败",
+    "description": "可视化器初始化失败错误消息 @src/content/index.ts"
+  },
+  "content_init_failed": {
+    "message": "初始化失败:",
+    "description": "一般初始化失败错误消息 @src/content/index.ts"
+  },
+  "content_extension_error": {
+    "message": "Navigraph 扩展错误:",
+    "description": "扩展错误通用前缀 @src/content/index.ts"
+  },
+  "content_startup_error": {
+    "message": "启动失败:",
+    "description": "启动过程失败错误消息 @src/content/index.ts"
+  },
+  "content_script_execution_failed": {
+    "message": "内容脚本执行失败:",
+    "description": "脚本执行失败错误消息 @src/content/index.ts"
+  },
   "_": {
     "message": "_",
     "description": "空白消息"
