@@ -35,140 +35,213 @@
     "message": "性能优化",
     "description": "选项卡按钮文本 @src/options/index.html"
   },
-  "basic_group_title": {
+  "options_basic_group_title": {
     "message": "界面设置",
     "description": "分组标题 <h2> 文本 @src/options/index.html"
   },
-  "label_theme_mode": {
+  "options_label_theme_mode": {
     "message": "主题模式：",
     "description": "标签文本 <label> 文本 @src/options/index.html"
   },
-  "option_light": {
+  "options_option_light": {
     "message": "明亮模式",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_dark": {
+  "options_option_dark": {
     "message": "暗黑模式",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_system": {
+  "options_option_system": {
     "message": "跟随系统",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "label_default_view": {
+  "options_label_default_view": {
     "message": "默认视图：",
     "description": "标签文本 <label> 文本 @src/options/index.html"
   },
-  "option_tree": {
+  "options_option_tree": {
     "message": "树形图",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_timeline": {
+  "options_option_timeline": {
     "message": "时间线",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "session_group_title": {
+  "options_session_group_title": {
     "message": "会话管理",
     "description": "分组标题 <h2> 文本 @src/options/index.html"
   },
-  "label_session_mode": {
+  "options_label_session_mode": {
     "message": "会话模式：",
     "description": "标签文本 <label> 文本 @src/options/index.html"
   },
-  "option_daily": {
+  "options_option_daily": {
     "message": "工作日模式 (推荐)",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_manual": {
+  "options_option_manual": {
     "message": "手动模式",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "desc_daily": {
+  "options_desc_daily": {
     "message": "每天自动创建新会话，并在空闲一段时间后结束当前会话",
     "description": "说明文本 <p> 文本 @src/options/index.html"
   },
-  "desc_manual": {
+  "options_desc_manual": {
     "message": "需要手动创建和结束会话",
     "description": "说明文本 <p> 文本 @src/options/index.html"
   },
-  "label_idle_timeout": {
+  "options_label_idle_timeout": {
     "message": "会话空闲超时时间（小时）",
     "description": "标签文本 <label> 文本 @src/options/index.html"
   },
-  "idle_timeout_help": {
+  "options_idle_timeout_help": {
     "message": "空闲多长时间后自动结束当前会话并在下次浏览时创建新会话",
     "description": "帮助文本 <small> 文本 @src/options/index.html"
   },
-  "data_retention_group_title": {
+  "options_data_retention_group_title": {
     "message": "数据保留",
     "description": "分组标题 <h2> 文本 @src/options/index.html"
   },
-  "label_data_retention": {
+  "options_label_data_retention": {
     "message": "保留浏览历史数据：",
     "description": "标签文本 <label> 文本 @src/options/index.html"
   },
-  "option_7": {
+  "options_option_7": {
     "message": "7天",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_14": {
+  "options_option_14": {
     "message": "14天",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_30": {
+  "options_option_30": {
     "message": "30天",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_90": {
+  "options_option_90": {
     "message": "90天",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_180": {
+  "options_option_180": {
     "message": "180天",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_365": {
+  "options_option_365": {
     "message": "1年",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "option_forever": {
+  "options_option_forever": {
     "message": "永久保留",
     "description": "下拉选项文本 <option> 文本 @src/options/index.html"
   },
-  "btn_clear_data": {
+  "options_btn_clear_data": {
     "message": "清除所有导航数据",
     "description": "按钮文本 @src/options/index.html"
   },
-  "warn_clear_data": {
+  "options_warn_clear_data": {
     "message": "此操作将永久删除所有收集的浏览历史数据，无法恢复",
     "description": "警告文本 @src/options/index.html"
   },
-  "data_retention_help": {
+  "options_data_retention_help": {
     "message": "较旧的浏览历史数据将被自动删除",
     "description": "数据保留说明文本 @src/options/index.html"
   },
-  "performance_group_title": {
+  "options_performance_group_title": {
     "message": "性能设置",
     "description": "分组标题 <h2> 文本 @src/options/index.html"
   },
-  "badge_coming_soon": {
+  "options_badge_coming_soon": {
     "message": "即将推出",
     "description": "徽章文本 @src/options/index.html"
   },
-  "placeholder_performance": {
+  "options_placeholder_performance": {
     "message": "性能优化选项将在后续更新中添加",
     "description": "占位文本 <p> 文本 @src/options/index.html"
   },
-  "btn_save": {
+  "options_btn_save": {
     "message": "保存设置",
     "description": "底部按钮文本 @src/options/index.html"
   },
-  "btn_reset": {
+  "options_btn_reset": {
     "message": "恢复默认值",
     "description": "底部按钮文本 @src/options/index.html"
   },
-  "notify_saved": {
+  "options_notify_saved": {
     "message": "设置已保存",
     "description": "通知文本 @src/options/index.html"
+  },
+  "options_tree_view_label": {
+    "message": "树形图视图",
+    "description": "树形图视图标签 @src/options/options.ts"
+  },
+  "options_timeline_view_label": {
+    "message": "时间线视图",
+    "description": "时间线视图标签 @src/options/options.ts"
+  },
+  "options_load_failed": {
+    "message": "加载设置失败，请重试",
+    "description": "加载设置失败通知 @src/options/options.ts"
+  },
+  "options_theme_updated": {
+    "message": "主题已更新",
+    "description": "主题更新通知 @src/options/options.ts"
+  },
+  "options_update_theme_failed": {
+    "message": "更新主题失败",
+    "description": "主题更新失败通知 @src/options/options.ts"
+  },
+  "options_save_failed": {
+    "message": "保存设置失败",
+    "description": "保存设置失败通知 @src/options/options.ts"
+  },
+  "options_no_changes": {
+    "message": "没有设置被更改",
+    "description": "无变更通知 @src/options/options.ts"
+  },
+  "options_settings_saved": {
+    "message": "设置已保存",
+    "description": "设置保存成功通知 @src/options/options.ts"
+  },
+  "options_settings_saved_reload": {
+    "message": "设置已保存 - 需要重新加载扩展才能完全生效",
+    "description": "需要重载扩展通知 @src/options/options.ts"
+  },
+  "options_settings_saved_refresh": {
+    "message": "设置已保存 - 请刷新已打开的扩展页以应用新设置",
+    "description": "需要刷新页面通知 @src/options/options.ts"
+  },
+  "options_reload_now": {
+    "message": "立即重载",
+    "description": "重载扩展按钮 @src/options/options.ts"
+  },
+  "options_reload_failed": {
+    "message": "重载扩展失败，请手动刷新",
+    "description": "扩展重载失败通知 @src/options/options.ts"
+  },
+  "options_confirm_reset": {
+    "message": "确定要恢复所有默认设置吗？",
+    "description": "重置设置确认对话框 @src/options/options.ts"
+  },
+  "options_reset_failed": {
+    "message": "重置设置失败",
+    "description": "设置重置失败通知 @src/options/options.ts"
+  },
+  "options_confirm_clear_data": {
+    "message": "确定要清除所有导航数据吗？此操作无法撤销！",
+    "description": "清除数据确认对话框 @src/options/options.ts"
+  },
+  "options_data_cleared": {
+    "message": "所有数据已清除",
+    "description": "数据清除成功通知 @src/options/options.ts"
+  },
+  "options_clear_failed": {
+    "message": "清除数据失败",
+    "description": "数据清除失败通知 @src/options/options.ts"
+  },
+  
+  "_": {
+    "message": "_",
+    "description": "空白消息"
   }
 }

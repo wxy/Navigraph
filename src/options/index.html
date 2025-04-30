@@ -34,22 +34,22 @@
       <div id="basic-settings" class="tab-pane active">
         <div class="card">
           <div class="card-header">
-            <h2 data-i18n="basic_group_title">Interface Settings</h2>
+            <h2 data-i18n="options_basic_group_title">Interface Settings</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="theme" data-i18n="label_theme_mode">Theme Mode:</label>
+              <label for="theme" data-i18n="options_label_theme_mode">Theme Mode:</label>
               <select id="theme">
-                <option value="light" data-i18n="option_light">Light Mode</option>
-                <option value="dark" data-i18n="option_dark">Dark Mode</option>
-                <option value="system" data-i18n="option_system">System Default</option>
+                <option value="light" data-i18n="options_option_light">Light Mode</option>
+                <option value="dark" data-i18n="options_option_dark">Dark Mode</option>
+                <option value="system" data-i18n="options_option_system">System Default</option>
               </select>
             </div>
             <div class="setting-group">
-              <label for="default-view" data-i18n="label_default_view">Default View:</label>
+              <label for="default-view" data-i18n="options_label_default_view">Default View:</label>
               <select id="default-view">
-                <option value="tree" data-i18n="option_tree">Tree View</option>
-                <option value="timeline" data-i18n="option_timeline">Timeline View</option>
+                <option value="tree" data-i18n="options_option_tree">Tree View</option>
+                <option value="timeline" data-i18n="options_option_timeline">Timeline View</option>
               </select>
               <div id="view-preview" class="preview-box tree-preview"></div>
             </div>
@@ -61,29 +61,29 @@
       <div id="session-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2 data-i18n="session_group_title">Session Management</h2>
+            <h2 data-i18n="options_session_group_title">Session Management</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="session-mode" data-i18n="label_session_mode">Session Mode:</label>
+              <label for="session-mode" data-i18n="options_label_session_mode">Session Mode:</label>
               <select id="session-mode">
-                <option value="daily" data-i18n="option_daily">Daily Mode (Recommended)</option>
-                <option value="manual" data-i18n="option_manual">Manual Mode</option>
+                <option value="daily" data-i18n="options_option_daily">Daily Mode (Recommended)</option>
+                <option value="manual" data-i18n="options_option_manual">Manual Mode</option>
               </select>
               <div class="description">
                 <p>
-                  <strong data-i18n="option_daily">Daily Mode (Recommended)</strong>:
-                  <span data-i18n="desc_daily">Automatically creates a new session each day and ends the current session after a period of inactivity</span>
+                  <strong data-i18n="options_option_daily">Daily Mode (Recommended)</strong>:
+                  <span data-i18n="options_desc_daily">Automatically creates a new session each day and ends the current session after a period of inactivity</span>
                 </p>
                 <p>
-                  <strong data-i18n="option_manual">Manual Mode</strong>:
-                  <span data-i18n="desc_manual">Requires manually creating and ending sessions</span>
+                  <strong data-i18n="options_option_manual">Manual Mode</strong>:
+                  <span data-i18n="options_desc_manual">Requires manually creating and ending sessions</span>
                 </p>
               </div>
             </div>
             <div id="advanced-session-settings" class="setting-nested-group">
               <div class="setting-group">
-                <label for="idle-timeout" data-i18n="label_idle_timeout">Session Idle Timeout (hours):</label>
+                <label for="idle-timeout" data-i18n="options_label_idle_timeout">Session Idle Timeout (hours):</label>
                 <div class="input-group">
                   <input
                     type="number"
@@ -94,7 +94,7 @@
                     value="6"
                   />
                 </div>
-                <small class="form-text" data-i18n="idle_timeout_help">
+                <small class="form-text" data-i18n="options_idle_timeout_help">
                   How long to wait before ending the current session and creating a new one when browsing resumes
                 </small>
               </div>
@@ -107,21 +107,21 @@
       <div id="data-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2 data-i18n="data_retention_group_title">Data Retention</h2>
+            <h2 data-i18n="options_data_retention_group_title">Data Retention</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <label for="data-retention" data-i18n="label_data_retention">Keep browsing history data for:</label>
+              <label for="data-retention" data-i18n="options_label_data_retention">Keep browsing history data for:</label>
               <select id="data-retention">
-                <option value="7" data-i18n="option_7">7 days</option>
-                <option value="14" data-i18n="option_14">14 days</option>
-                <option value="30" data-i18n="option_30">30 days</option>
-                <option value="90" data-i18n="option_90">90 days</option>
-                <option value="180" data-i18n="option_180">180 days</option>
-                <option value="365" data-i18n="option_365">1 year</option>
-                <option value="0" data-i18n="option_forever">Keep forever</option>
+                <option value="7" data-i18n="options_option_7">7 days</option>
+                <option value="14" data-i18n="options_option_14">14 days</option>
+                <option value="30" data-i18n="options_option_30">30 days</option>
+                <option value="90" data-i18n="options_option_90">90 days</option>
+                <option value="180" data-i18n="options_option_180">180 days</option>
+                <option value="365" data-i18n="options_option_365">1 year</option>
+                <option value="0" data-i18n="options_option_forever">Keep forever</option>
               </select>
-              <div class="description" data-i18n="data_retention_help">
+              <div class="description" data-i18n="options_data_retention_help">
                 Older navigation data will be automatically deleted
               </div>
             </div>
@@ -129,14 +129,14 @@
         </div>
         <div class="card">
           <div class="card-header">
-            <h2 data-i18n="performance_group_title">Performance Settings</h2>
+            <h2 data-i18n="options_performance_group_title">Performance Settings</h2>
           </div>
           <div class="card-body">
             <div class="setting-group">
-              <button id="clear-data-btn" class="btn danger" data-i18n="btn_clear_data">
+              <button id="clear-data-btn" class="btn danger" data-i18n="options_btn_clear_data">
                 Clear All Navigation Data
               </button>
-              <div class="description warning" data-i18n="warn_clear_data">
+              <div class="description warning" data-i18n="options_warn_clear_data">
                 This will permanently delete all collected browsing history data and cannot be undone
               </div>
             </div>
@@ -148,13 +148,13 @@
       <div id="performance-settings" class="tab-pane">
         <div class="card">
           <div class="card-header">
-            <h2 data-i18n="performance_group_title">Performance Settings</h2>
-            <div class="coming-soon-badge" data-i18n="badge_coming_soon">
+            <h2 data-i18n="options_performance_group_title">Performance Settings</h2>
+            <div class="coming-soon-badge" data-i18n="options_badge_coming_soon">
               Coming Soon
             </div>
           </div>
           <div class="card-body">
-            <p class="placeholder-text" data-i18n="placeholder_performance">
+            <p class="placeholder-text" data-i18n="options_placeholder_performance">
               Performance optimization options will be added in a future update
             </p>
           </div>
@@ -163,15 +163,15 @@
     </main>
 
     <footer>
-      <button id="save-btn" class="btn primary" data-i18n="btn_save">
+      <button id="save-btn" class="btn primary" data-i18n="options_btn_save">
         Save Settings
       </button>
-      <button id="reset-btn" class="btn secondary" data-i18n="btn_reset">
+      <button id="reset-btn" class="btn secondary" data-i18n="options_btn_reset">
         Reset to Defaults
       </button>
     </footer>
 
-    <div id="notification" class="notification hidden" data-i18n="notify_saved">
+    <div id="notification" class="notification hidden" data-i18n="options_notify_saved">
       Settings Saved
     </div>
   </div>
