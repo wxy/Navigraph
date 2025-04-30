@@ -27,7 +27,7 @@ function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): voi
     
     // 显示欢迎页面或教程
     chrome.tabs.create({
-      url: chrome.runtime.getURL('dist/content/index.html'),
+      url: chrome.runtime.getURL('content/index.html'),
       active: true
     });
   } else if (details.reason === 'update') {
@@ -46,7 +46,7 @@ async function handleActionClicked(): Promise<void> {
     const tabs = await chrome.tabs.query({});
     
     // 检查是否已经打开了导航树页面
-    const indexUrl = chrome.runtime.getURL('dist/content/index.html');
+    const indexUrl = chrome.runtime.getURL('content/index.html');
     const existingTab = tabs.find(tab => tab.url?.startsWith(indexUrl));
     
     if (existingTab && existingTab.id) {
