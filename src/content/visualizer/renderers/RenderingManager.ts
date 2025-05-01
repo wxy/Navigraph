@@ -29,21 +29,21 @@ export class RenderingManager {
     this.visualizer = visualizer;
     this.viewStateManager = viewStateManager;
     this.uiManager = uiManager;
-    logger.log('渲染管理器初始化');
+    logger.log('rendering_manager_init');
   }
   
   /**
    * 初始化渲染管理器
    */
   initialize(container: HTMLElement): void {
-    logger.log("初始化渲染管理器...");
+    logger.log("rendering_manager_init_start");
     
     this.container = container;
     
     // 更新容器大小
     this.updateContainerSize();
     
-    logger.log("渲染管理器初始化完成");
+    logger.log("rendering_manager_init_complete");
   }
   
   /**
@@ -55,7 +55,7 @@ export class RenderingManager {
     data?: any,
     options: { restoreTransform?: boolean } = {}
   ): void {
-    logger.log("执行刷新可视化...", data ? "使用提供的数据" : "使用现有数据");
+    logger.log("visualization_refresh_start", data ? i18n("using_provided_data") : i18n("using_existing_data"));
 
     try {
       // 如果提供了新数据，通知可视化器更新数据
@@ -76,10 +76,10 @@ export class RenderingManager {
       // 更新URL和状态栏
       this.updateUrlAndUI();
 
-      logger.log("可视化刷新完成");
+      logger.log("visualization_refresh_complete");
     } catch (error) {
       this.uiManager.showError(
-        "刷新失败: " + (error instanceof Error ? error.message : String(error))
+        i18n("refresh_failed", error instanceof Error ? error.message : String(error))
       );
     }
   }
@@ -114,9 +114,9 @@ export class RenderingManager {
       // 不触发页面刷新的情况下更新URL
       window.history.replaceState(null, "", url);
 
-      logger.log("已更新URL以反映当前视图和筛选状态");
+      logger.log("url_updated_for_view_filters");
     } catch (error) {
-      logger.warn("更新URL失败:", error);
+      logger.warn("url_update_failed", error);
     }
   }
   
@@ -125,7 +125,7 @@ export class RenderingManager {
    */
   renderVisualization(options: { restoreTransform?: boolean } = {}): void {
     if (!this.container || !this.viewStateManager.svg) {
-      logger.error("无法渲染可视化：容器或SVG不存在");
+      logger.error("render_failed_no_container_svg");
       return;
     }
 
@@ -154,9 +154,11 @@ export class RenderingManager {
       const hasData = nodes && nodes.length > 0;
 
       logger.log(
-        `开始渲染${this.viewStateManager.currentView}视图, 节点数: ${
-          hasData ? nodes.length : 0
-        }, 边数: ${hasData ? edges.length : 0}, 尺寸: ${width}x${height}`
+        "visualization_render_start",
+        this.viewStateManager.currentView,
+        String(hasData ? nodes.length : 0),
+        String(hasData ? edges.length : 0),
+        `${width}x${height}`
       );
 
       // 如果没有数据，创建一个会话节点
@@ -194,14 +196,14 @@ export class RenderingManager {
       // 更新状态栏
       this.uiManager.updateStatusBar();
 
-      logger.log("可视化渲染完成", {
+      logger.log("visualization_render_complete", {
         view: this.viewStateManager.currentView,
         zoom: this.viewStateManager.zoom ? "已设置" : "未设置",
         hasData,
       });
     } catch (error) {
       this.uiManager.showError(
-        "渲染失败: " + (error instanceof Error ? error.message : String(error))
+        i18n("render_failed", error instanceof Error ? error.message : String(error))
       );
     }
   }
@@ -354,12 +356,12 @@ export class RenderingManager {
    * @param svgElement 由UIManager创建的原生SVG元素
    */
   setupSvg(svgElement: SVGElement): void {
-    logger.log("配置SVG元素...");
+    logger.log("svg_setup_start");
 
     try {
       // 确保有效的SVG元素
       if (!svgElement) {
-        throw new Error("SVG元素为空");
+        throw new Error(i18n("svg_element_empty"));
       }
       
       // 将原生SVG元素转换为D3选择集
@@ -381,9 +383,9 @@ export class RenderingManager {
       // 使用视图状态管理器设置缩放行为
       this.viewStateManager.setupBasicZoom();
 
-      logger.log("SVG配置成功");
+      logger.log("svg_setup_complete");
     } catch (error) {
-      logger.error("配置SVG元素失败:", error);
+      logger.error("svg_setup_failed", error);
       throw error;
     }
   }
@@ -420,7 +422,7 @@ export class RenderingManager {
       Math.abs(width - oldWidth) > threshold ||
       Math.abs(height - oldHeight) > threshold
     ) {
-      logger.log(`更新容器大小: ${width}x${height}`);
+      logger.log("container_size_updated", `${width}x${height}`);
 
       // 应用尺寸
       this.container.style.width = `${width}px`;
@@ -435,7 +437,7 @@ export class RenderingManager {
 
       return true;
     } else {
-      logger.log("容器大小变化不显著，跳过更新");
+      logger.log("container_size_change_insignificant");
       return false;
     }
   }
@@ -457,7 +459,7 @@ export class RenderingManager {
    * 清理资源
    */
   cleanup(): void {
-    logger.log("清理渲染管理器资源...");
+    logger.log("rendering_manager_cleanup");
     // 当前没有需要特别清理的资源
   }
 }

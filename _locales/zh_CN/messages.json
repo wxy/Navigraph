@@ -1527,6 +1527,286 @@
     "message": "更新会话 {0} 的属性失败: {1}",
     "description": "更新会话属性失败错误 @src/background/store/session-storage.ts"
   },
+  "timeline_renderer_initialized": {
+    "message": "时间线渲染器已初始化",
+    "description": "时间线渲染器初始化完成日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_renderer_no_container": {
+    "message": "无法渲染：SVG或容器未初始化",
+    "description": "时间线渲染器容器未初始化错误 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_renderer_cleaned_up": {
+    "message": "时间线渲染器已清理",
+    "description": "时间线渲染器资源清理日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "using_modular_timeline_renderer": {
+    "message": "使用模块化时间线渲染器",
+    "description": "模块化时间线渲染器使用日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_saved_state_detected": {
+    "message": "检测到保存的时间线状态: {0}",
+    "description": "检测到时间线保存状态日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_zoom_setup_start": {
+    "message": "为时间线视图设置缩放行为",
+    "description": "时间线缩放设置开始日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_invalid_transform_detected": {
+    "message": "检测到无效变换: {0}，恢复到安全状态",
+    "description": "检测到无效变换警告 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_zoom_setup_complete": {
+    "message": "已设置时间线缩放行为",
+    "description": "时间线缩放设置完成日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_zoom_setup_failed": {
+    "message": "设置时间线缩放失败: {0}",
+    "description": "时间线缩放设置失败错误 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_restore_transform": {
+    "message": "恢复时间线保存的变换状态: {0}",
+    "description": "恢复时间线变换状态日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_apply_transform_failed": {
+    "message": "应用变换失败: {0}",
+    "description": "应用变换失败错误 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_render_error": {
+    "message": "时间线渲染过程中出错: {0}",
+    "description": "时间线渲染错误日志 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_render_error_message": {
+    "message": "时间线渲染错误: {0}",
+    "description": "时间线渲染错误信息 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_no_data": {
+    "message": "无时间数据可显示",
+    "description": "时间线无数据提示 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_title": {
+    "message": "时间线",
+    "description": "时间线标题 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_date_range_same_day": {
+    "message": "时间线 - {0} {1} 至 {2}",
+    "description": "同一天时间线日期范围格式 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "timeline_date_range_different_days": {
+    "message": "时间线 - {0} {1} 至 {2} {3}",
+    "description": "不同天时间线日期范围格式 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "unknown_error": {
+    "message": "未知错误",
+    "description": "未知错误通用消息 @src/content/visualizer/renderers/TimelineRenderer.ts"
+  },
+  "rendering_manager_init": {
+    "message": "渲染管理器已创建",
+    "description": "渲染管理器初始化日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "rendering_manager_init_start": {
+    "message": "开始初始化渲染管理器",
+    "description": "渲染管理器初始化开始日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "rendering_manager_init_complete": {
+    "message": "渲染管理器初始化完成",
+    "description": "渲染管理器初始化完成日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "visualization_refresh_start": {
+    "message": "开始刷新可视化 {0}",
+    "description": "可视化刷新开始日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "using_provided_data": {
+    "message": "使用提供的数据",
+    "description": "使用提供数据日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "using_existing_data": {
+    "message": "使用现有数据",
+    "description": "使用现有数据日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "refresh_failed": {
+    "message": "刷新可视化失败: {0}",
+    "description": "刷新可视化失败错误 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "url_updated_for_view_filters": {
+    "message": "已更新URL以反映当前视图和筛选器状态",
+    "description": "URL更新日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "url_update_failed": {
+    "message": "更新URL失败: {0}",
+    "description": "URL更新失败警告 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "render_failed_no_container_svg": {
+    "message": "渲染失败：容器或SVG不存在",
+    "description": "渲染失败错误 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "visualization_render_start": {
+    "message": "开始渲染可视化: 视图={0}，节点数={1}，边数={2}，大小={3}",
+    "description": "可视化渲染开始日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "visualization_render_complete": {
+    "message": "可视化渲染完成",
+    "description": "可视化渲染完成日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "render_failed": {
+    "message": "渲染失败: {0}",
+    "description": "渲染失败错误 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "svg_setup_start": {
+    "message": "开始设置SVG元素",
+    "description": "SVG设置开始日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "svg_element_empty": {
+    "message": "SVG元素为空",
+    "description": "SVG元素为空错误 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "svg_setup_complete": {
+    "message": "SVG设置完成",
+    "description": "SVG设置完成日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "svg_setup_failed": {
+    "message": "SVG设置失败: {0}",
+    "description": "SVG设置失败错误 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "container_size_updated": {
+    "message": "容器大小已更新: {0}",
+    "description": "容器大小更新日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "container_size_change_insignificant": {
+    "message": "容器大小变化不显著，跳过更新",
+    "description": "容器大小变化不显著日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "rendering_manager_cleanup": {
+    "message": "清理渲染管理器资源",
+    "description": "渲染管理器清理日志 @src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "tree_renderer_initialized": {
+    "message": "树形图渲染器已初始化",
+    "description": "树形图渲染器初始化完成日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "renderer_cannot_render_no_container": {
+    "message": "无法渲染：SVG或容器未初始化",
+    "description": "渲染器容器未初始化错误 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_renderer_cleaned_up": {
+    "message": "树形图渲染器已清理",
+    "description": "树形图渲染器资源清理日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "using_modular_tree_renderer": {
+    "message": "使用模块化树形图渲染器",
+    "description": "模块化树形图渲染器使用日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_state_detected": {
+    "message": "检测到保存的树形图状态: {0}",
+    "description": "检测到树形图保存状态日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "links_normalized_to_string_ids": {
+    "message": "链接已规范化为字符串ID",
+    "description": "链接规范化日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "creating_main_view_group": {
+    "message": "创建主视图组",
+    "description": "创建主视图组日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_view_zoom_setup_start": {
+    "message": "为树形图视图设置缩放行为",
+    "description": "树形图缩放设置开始日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_view_zoom_setup_complete": {
+    "message": "已设置树形图缩放行为",
+    "description": "树形图缩放设置完成日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_view_zoom_setup_failed": {
+    "message": "设置树形图缩放失败: {0}",
+    "description": "树形图缩放设置失败错误 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "found_root_and_self_loop_nodes": {
+    "message": "找到根节点和自循环节点: {0}, {1}",
+    "description": "找到根节点和自循环节点日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "no_root_nodes_found": {
+    "message": "未找到根节点",
+    "description": "未找到根节点警告 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "detected_redirect_nodes": {
+    "message": "检测到重定向节点: {0}",
+    "description": "检测到重定向节点日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "removed_cycle_links": {
+    "message": "移除了 {0} 个导致循环的链接",
+    "description": "移除循环链接日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "fixed_cycle_connections": {
+    "message": "已移除 {0} 个循环连接",
+    "description": "修复循环连接提示 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "balancing_root_nodes": {
+    "message": "平衡根节点: {0}",
+    "description": "平衡根节点日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "root_nodes_distribution": {
+    "message": "根节点分布: 左={0}，右={1}",
+    "description": "根节点分布日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_layout_calculation_failed": {
+    "message": "树形图布局计算失败: {0}",
+    "description": "树形图布局计算失败错误 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "tree_layout_calculation_failed_msg": {
+    "message": "无法计算树形图布局",
+    "description": "树形图布局计算失败消息 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "unresolvable_cyclic_dependency": {
+    "message": "无法解决的循环依赖",
+    "description": "无法解决的循环依赖错误 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "cannot_render_tree_cyclic_dependency": {
+    "message": "由于存在循环依赖，无法渲染树形图",
+    "description": "循环依赖无法渲染提示 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "try_timeline_view_or_filter_nodes": {
+    "message": "尝试使用时间线视图或筛选节点",
+    "description": "建议使用时间线视图提示 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "click_to_switch_to_timeline": {
+    "message": "点击切换到时间线视图",
+    "description": "切换到时间线视图提示 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "left_tree_link_not_found": {
+    "message": "左侧树链接未找到: {0} -> {1}",
+    "description": "左侧树链接未找到日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "left_tree_missing_links": {
+    "message": "左侧树缺失 {0} 个链接",
+    "description": "左侧树缺失链接警告 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "right_tree_link_not_found": {
+    "message": "右侧树链接未找到: {0} -> {1}",
+    "description": "右侧树链接未找到日志 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "right_tree_missing_links": {
+    "message": "右侧树缺失 {0} 个链接",
+    "description": "右侧树缺失链接警告 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "unnamed_node": {
+    "message": "未命名节点",
+    "description": "未命名节点占位文本 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "contains_filtered_nodes": {
+    "message": "包含 {0} 个已过滤节点",
+    "description": "包含过滤节点提示 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "page_has_self_refresh": {
+    "message": "页面存在自我刷新",
+    "description": "自循环节点提示 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "session_date": {
+    "message": "会话日期: {0}",
+    "description": "会话日期格式 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "current_session": {
+    "message": "当前会话",
+    "description": "当前会话文本 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
   "_": {
     "message": "_",
     "description": "空白消息"
