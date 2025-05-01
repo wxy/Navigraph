@@ -29,28 +29,28 @@ export function getMessageService() {
  */
 async function initialize(): Promise<void> {
   try {
-    logger.log('Navigraph 扩展已启动');
-    logger.log('导航图谱后台初始化开始...');
+    logger.log('background_startup_begin');
+    logger.log('background_init_start');
     
     // 1. 首先创建消息服务实例
-    logger.log('初始化消息服务...');
+    logger.log('background_message_service_init_start');
     messageService = getBackgroundMessageService();    
     // 2. 注册基础消息处理程序（tab和settings相关）
-    logger.log('注册基础消息处理程序...');
+    logger.log('background_register_base_handlers_start');
     registerAllBackgroundHandlers();
     
     // 3. 然后创建设置服务
-    logger.log('初始化设置服务...');
+    logger.log('background_settings_service_init_start');
     settingsService = getSettingsService();
     await settingsService.initialize();
         
     // 4. 会话管理器
-    logger.log('初始化会话管理器...');
+    logger.log('background_session_manager_init_start');
     sessionManager = new SessionManager();
     setSessionManager(sessionManager);
 
     // 5. 导航管理器
-    logger.log('初始化导航管理器...');
+    logger.log('background_nav_manager_init_start');
     navigationManager = new NavigationManager(messageService);    
     setNavigationManager(navigationManager);
 
@@ -59,14 +59,14 @@ async function initialize(): Promise<void> {
     await navigationManager.initialize();
 
     // 6. 注册会话管理器消息处理程序
-    logger.log('注册会话管理器消息处理程序...');
+    logger.log('background_register_session_handlers_start');
     sessionManager.registerMessageHandlers(messageService);
     
     // 7. 设置事件监听器和上下文菜单
     setupEventListeners();
     setupContextMenus();
 
-    logger.log('导航图谱后台初始化成功');
+    logger.log('background_init_complete');
   } catch (error) {
     logger.error(i18n('background_init_failed'), error);
   }

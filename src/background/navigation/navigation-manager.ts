@@ -111,7 +111,7 @@ export class NavigationManager {
    */
   public async initialize(): Promise<void> {
     try {
-      logger.log("初始化导航管理器...");
+      logger.log('navigation_manager_init_start');
       
       // 初始化存储
       await this.initializeStorage();
@@ -125,11 +125,11 @@ export class NavigationManager {
       // 注册事件和消息处理程序
       this.registerHandlers();
       
-      logger.log("导航管理器初始化完成");
+      logger.log('navigation_manager_init_complete');
     } catch (error) {
-      logger.error("导航管理器初始化失败:", error);
+      logger.error('navigation_manager_init_failed', error);
       throw new I18nError(
-        "background_navigation_manager_init_failed", 
+        "navigation_manager_init_error", 
         error instanceof Error ? error.message : String(error)
       );
     }
@@ -154,12 +154,12 @@ export class NavigationManager {
       
       if (currentSessionId) {
         this.setCurrentSessionId(currentSessionId);
-        logger.log(`已从会话管理器获取当前会话ID: ${currentSessionId}`);
+        logger.log('navigation_manager_session_id_retrieved', currentSessionId);
       } else {
         // 如果没有当前会话，则请求会话管理器创建一个新会话
-        logger.log("未找到活跃会话，请求会话管理器创建新会话...");
+        logger.log('navigation_manager_create_session_start');
         const newSession = await sessionManager.createAndActivateSession(
-          `浏览会话 ${new Date().toLocaleString()}`
+          i18n('navigation_manager_session_name', new Date().toLocaleString())
         );
         if (newSession) {
           this.setCurrentSessionId(newSession.id);
@@ -187,11 +187,11 @@ export class NavigationManager {
    */
   private registerHandlers(): void {
     // 注册消息处理程序
-    logger.log('注册导航相关消息处理程序...');
+    logger.log('navigation_manager_register_message_handlers_start');
     this.navigationMessageHandler.registerMessageHandlers();
 
     // 设置事件监听器
-    logger.log('设置导航相关事件监听器...');
+    logger.log('navigation_manager_setup_event_listeners_start');
     this.navigationEventHandler.setupEventListeners();
   }
 
@@ -209,7 +209,7 @@ export class NavigationManager {
     this.edgeTracker.setSessionId(sessionId);
     this.navigationEventHandler.setCurrentSessionId(sessionId);
     
-    logger.log(`已切换到会话: ${sessionId}`);
+    logger.log('navigation_manager_session_changed', sessionId);
   }
 
   /**
@@ -266,7 +266,7 @@ export class NavigationManager {
     // 重置内部状态
     this.resetNavigationState();
     
-    logger.log('导航管理器资源已清理');
+    logger.log('navigation_manager_resources_cleaned');
   }
 
   /**
@@ -282,7 +282,7 @@ export class NavigationManager {
     
     // 注意：不重置currentSessionId，因为这可能会在后续的操作中需要
     
-    logger.log('已重置导航管理器内部状态');
+    logger.log('navigation_manager_state_reset');
   }
 
   //-------------------------------------------------------------------------

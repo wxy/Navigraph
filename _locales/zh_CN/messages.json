@@ -815,6 +815,14 @@
     "message": "会话管理器初始化失败: {0}",
     "description": "会话管理器初始化失败错误 @src/background/session/session-manager.ts"
   },
+  "background_session_manager_init_start": {
+    "message": "初始化会话管理器...",
+    "description": "会话管理器初始化开始日志 @src/background/background.ts"
+  },
+  "background_nav_manager_init_start": {
+    "message": "初始化导航管理器...",
+    "description": "导航管理器初始化开始日志 @src/background/background.ts"
+  },
   "background_db_open_failed": {
     "message": "打开数据库失败: {0}",
     "description": "打开数据库失败错误 @src/background/store/indexed-db.ts"
@@ -1346,6 +1354,82 @@
   "ui_manager_dispose_complete": {
     "message": "UI管理器资源已清理",
     "description": "UI管理器清理完成日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "background_register_base_handlers_start": {
+    "message": "注册基础消息处理程序...",
+    "description": "基础消息处理程序注册开始日志 @src/background/background.ts"
+  },
+  "background_settings_service_init_start": {
+    "message": "初始化设置服务...",
+    "description": "设置服务初始化开始日志 @src/background/background.ts"
+  },
+  "background_message_service_init_start": {
+    "message": "初始化消息服务...",
+    "description": "消息服务初始化开始日志 @src/background/background.ts"
+  },
+  "background_register_session_handlers_start": {
+    "message": "注册会话管理器消息处理程序...",
+    "description": "会话管理器消息处理程序注册开始日志 @src/background/background.ts"
+  },
+  "background_init_complete": {
+    "message": "导航图谱后台初始化成功",
+    "description": "后台初始化成功日志 @src/background/background.ts"
+  },
+  "navigation_manager_session_id_retrieved": {
+    "message": "已从会话管理器获取当前会话ID: {0}",
+    "description": "获取当前会话ID成功日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_create_session_start": {
+    "message": "未找到活跃会话，请求会话管理器创建新会话...",
+    "description": "请求创建新会话日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_session_name": {
+    "message": "浏览会话 {0}",
+    "description": "新建会话默认名称 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_register_message_handlers_start": {
+    "message": "注册导航相关消息处理程序...",
+    "description": "导航消息处理程序注册开始日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_setup_event_listeners_start": {
+    "message": "设置导航相关事件监听器...",
+    "description": "导航事件监听器设置开始日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_session_changed": {
+    "message": "已切换到会话: {0}",
+    "description": "会话变更日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_resources_cleaned": {
+    "message": "导航管理器资源已清理",
+    "description": "导航管理器清理资源日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_state_reset": {
+    "message": "已重置导航管理器内部状态",
+    "description": "导航管理器状态重置日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_init_start": {
+    "message": "初始化导航管理器...",
+    "description": "导航管理器初始化开始日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_init_complete": {
+    "message": "导航管理器初始化完成",
+    "description": "导航管理器初始化完成日志 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_init_failed": {
+    "message": "导航管理器初始化失败: {0}",
+    "description": "导航管理器初始化失败错误 @src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_init_error": {
+    "message": "导航管理器初始化失败",
+    "description": "导航管理器初始化失败错误消息 @src/background/navigation/navigation-manager.ts"
+  },
+  "background_startup_begin": {
+    "message": "Navigraph 后台脚本启动",
+    "description": "后台脚本启动消息 @src/background/background.ts"
+  },
+  "background_init_start": {
+    "message": "初始化后台服务...",
+    "description": "后台服务初始化开始 @src/background/background.ts"
   },
   "_": {
     "message": "_",
