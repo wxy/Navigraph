@@ -94,13 +94,7 @@ export class StatusBar {
         const durationMs = endTime - startTime;
 
         // 格式化时长
-        const minutes = Math.floor(durationMs / 60000);
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-
-        const durationText = hours > 0 ? 
-          `${hours}${i18n("content_unit_hour")}${mins}${i18n("content_unit_minute")}` : 
-          `${mins}${i18n("content_unit_minute")}`;
+        const durationText = this.formatDuration(durationMs);
         
         durationElement.textContent = i18n("content_session_duration_label", durationText);
       }
@@ -158,5 +152,21 @@ export class StatusBar {
 
     // 确保状态栏可见
     this.statusBarElement.style.display = "flex";
+  }
+
+  private formatDuration(ms: number): string {
+    if (!ms || ms <= 0) {
+      return i18n('content_duration_zero_minutes');
+    }
+    
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return i18n('content_duration_hours', String(hours));
+    } else {
+      return i18n('content_duration_minutes', String(minutes));
+    }
   }
 }

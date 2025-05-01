@@ -91,37 +91,38 @@ export class Logger {
    * 格式化日志消息
    */
   private format(args: any[]): any[] {
-    if (args.length === 0) return args;
-
-    // 检测日志中第一个参数是否为字符串类型
-    if (typeof args[0] === 'string') {
-      const rawMsg = args[0];
-      
-      // 将后续参数分为两组
-      const stringParams: string[] = []; // 用于占位符替换
-      const metaParams: any[] = [];      // 保留为日志元数据
-      
-      // 按类型分组所有后续参数
-      args.slice(1).forEach(param => {
-        if (typeof param === 'string') {
-          stringParams.push(param); // 字符串参数加入占位符组
-        } else {
-          metaParams.push(param);   // 非字符串参数保留为元数据
-        }
-      });
-
-      // 尝试本地化首个字符串参数，使用字符串参数进行占位符替换
-      let localized: string;
-      try {
-        localized = i18n(rawMsg, ...stringParams);
-      } catch {
-        localized = rawMsg;
-      }
-      
-      // 替换为本地化后的消息和非字符串元数据
-      // 重要：这里不再包含作为占位符的字符串参数
-      args = [localized, ...metaParams];
+    // 如果空数组或第一项不是字符串，无需处理
+    if (args.length === 0 || typeof args[0] !== 'string') {
+      return args;
     }
+
+    const rawMsg = args[0];
+    
+    // 按类型分组所有后续参数
+    const placeholderParams: any[] = []; // 用于替换的占位符参数
+    const metaParams: any[] = [];      // 其他元数据参数
+    
+    args.slice(1).forEach(param => {
+      // 字符串和数字类型都应该用于占位符替换
+      if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
+        placeholderParams.push(param); // 字符串和数字参数加入占位符组
+      } else {
+        metaParams.push(param);      // 非基本类型参数保留为元数据
+      }
+    });
+
+    // 尝试本地化首个字符串参数，使用收集的参数进行占位符替换
+    let localized: string;
+    try {
+      // 确保所有占位符参数都转换为字符串
+      const stringifiedParams = placeholderParams.map(p => String(p));
+      localized = i18n(rawMsg, ...stringifiedParams);
+    } catch {
+      localized = rawMsg;
+    }
+    
+    // 替换为本地化后的消息和元数据参数（不包含用于占位符的参数）
+    args = [localized, ...metaParams];
     
     const timestamp = getSimpleTimestamp();
     const fileInfo = getCallerInfo();

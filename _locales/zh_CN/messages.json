@@ -475,10 +475,6 @@
     "message": "UI初始化失败",
     "description": "UI初始化失败错误消息 @src/content/visualizer/ui/UIManager.ts"
   },
-  "content_session_list_load_failed": {
-    "message": "加载会话列表失败",
-    "description": "加载会话列表失败消息 @src/content/core/session-view-controller.ts"
-  },
   "content_session_load_failed": {
     "message": "会话数据加载失败",
     "description": "会话数据加载失败消息 @src/content/core/session-view-controller.ts"
@@ -1122,6 +1118,234 @@
   "content_listener_failed": {
     "message": "设置页面活动监听器失败: {0}",
     "description": "内容脚本页面活动监听器初始化失败日志 @src/content/index.ts"
+  },
+  "content_loading_indicator": {
+    "message": "加载中...",
+    "description": "加载指示器文本 @src/content/visualizer/ui/LoadingIndicator.ts"
+  },
+  "content_ui_init_failed": {
+    "message": "UI 初始化失败: {0}",
+    "description": "UI初始化失败错误日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "content_detailed_error_fallback": {
+    "message": "详细错误: {0} {1}",
+    "description": "详细错误回退消息 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "content_duration_zero_minutes": {
+    "message": "0 分钟",
+    "description": "零分钟时长显示 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_duration_hours": {
+    "message": "{0} 小时",
+    "description": "小时时长格式 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_duration_minutes": {
+    "message": "{0} 分钟",
+    "description": "分钟时长格式 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_session_list_load_error": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败错误 @src/content/visualizer/ui/SessionSelector.ts @src/content/core/session-view-controller.ts"
+  },
+  "content_session_list_load_failed": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败日志 @src/content/visualizer/ui/SessionSelector.ts"
+  },
+  "content_session_list_unavailable": {
+    "message": "无法加载会话列表",
+    "description": "会话列表不可用错误消息 @src/content/visualizer/ui/SessionSelector.ts"
+  },
+  "calendar_selector_container_not_found": {
+    "message": "日历选择器容器未找到",
+    "description": "日历选择器找不到容器元素错误 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_session_selector_initialized": {
+    "message": "日历会话选择器已初始化",
+    "description": "日历选择器初始化完成日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_prev_month": {
+    "message": "上个月",
+    "description": "日历上个月按钮提示文字 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_next_month": {
+    "message": "下个月",
+    "description": "日历下个月按钮提示文字 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_weekdays": {
+    "message": "日,一,二,三,四,五,六",
+    "description": "日历星期标题(逗号分隔) @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_loading_data": {
+    "message": "加载会话数据...",
+    "description": "日历加载指示器文本 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_select_session": {
+    "message": "选择会话",
+    "description": "会话选择标题 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_container_not_exists": {
+    "message": "日历容器不存在，无法更新",
+    "description": "日历容器不存在警告 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_skip_duplicate_update": {
+    "message": "跳过重复的日历选择器更新",
+    "description": "日历跳过重复更新调试日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_update": {
+    "message": "更新日历选择器，会话数量: {0}",
+    "description": "日历更新日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_grid_missing": {
+    "message": "日历网格不存在，重新创建结构",
+    "description": "日历网格缺失警告 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_update_complete": {
+    "message": "日历会话选择器更新完成",
+    "description": "日历更新完成日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_current_and_latest_session": {
+    "message": "当前查看会话 & 最新活跃会话",
+    "description": "当前和最新会话指示器提示 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_latest_session": {
+    "message": "最新活跃会话",
+    "description": "最新会话指示器提示 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_current_session": {
+    "message": "当前查看会话",
+    "description": "当前会话指示器提示 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_days_rendered": {
+    "message": "日历天数渲染完成，本月共{0}天",
+    "description": "日历渲染完成日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_parse_sessions_error": {
+    "message": "解析会话ID数组失败: {0}",
+    "description": "日历解析会话数据错误 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_session_list_container_missing": {
+    "message": "找不到会话列表容器元素",
+    "description": "会话列表容器丢失错误 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_sessions_for_date": {
+    "message": "{0}年{1}月{2}日的会话",
+    "description": "指定日期的会话列表标题 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_session_in_progress": {
+    "message": "进行中",
+    "description": "正在进行的会话状态 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_duration_less_than_minute": {
+    "message": "不足1分钟",
+    "description": "时长少于1分钟显示文本 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_duration_minutes": {
+    "message": "{0}分钟",
+    "description": "分钟时长格式 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_duration_hours": {
+    "message": "{0}小时",
+    "description": "小时时长格式(无分钟) @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_duration_hours_minutes": {
+    "message": "{0}小时 {1}分钟",
+    "description": "小时分钟时长格式 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_session_selected": {
+    "message": "会话已选择: {0}",
+    "description": "已选择会话日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_load_session_failed": {
+    "message": "加载会话失败: {0}",
+    "description": "加载会话失败错误 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_disposed": {
+    "message": "日历会话选择器资源已清理",
+    "description": "日历选择器资源清理日志 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_month_names": {
+    "message": "1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月",
+    "description": "月份名称列表(逗号分隔) @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "calendar_month_year": {
+    "message": "{0}年{1}",
+    "description": "年月格式 @src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+  },
+  "ui_manager_created": {
+    "message": "UI管理器已创建",
+    "description": "UI管理器创建完成日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_init": {
+    "message": "初始化UI管理器",
+    "description": "UI管理器初始化开始日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_init_complete": {
+    "message": "UI管理器初始化完成",
+    "description": "UI管理器初始化完成日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_create_container": {
+    "message": "创建/查找可视化容器",
+    "description": "创建容器日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_container_not_found": {
+    "message": "未找到可视化容器，创建新容器",
+    "description": "容器未找到警告 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_create_main_view": {
+    "message": "创建主视图容器",
+    "description": "创建主视图容器日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_svg_no_container": {
+    "message": "无法创建SVG：目标容器不存在",
+    "description": "SVG创建失败错误 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_create_svg": {
+    "message": "创建SVG元素",
+    "description": "SVG创建日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_init_components": {
+    "message": "初始化UI组件",
+    "description": "UI组件初始化日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_no_container_for_control_panel": {
+    "message": "容器元素不存在，控制面板无法初始化",
+    "description": "控制面板初始化失败警告 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_detailed_error_fallback": {
+    "message": "详细错误: {0} {1}",
+    "description": "详细错误回落显示 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_handle_resize": {
+    "message": "UI管理器处理大小变化: {0}x{1}",
+    "description": "UI调整大小日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_control_panel_hidden": {
+    "message": "已隐藏控制面板",
+    "description": "控制面板隐藏日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_cannot_hide_control_panel": {
+    "message": "无法隐藏控制面板：组件不可用或没有hide方法",
+    "description": "无法隐藏控制面板警告 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_control_panel_shown": {
+    "message": "已显示控制面板",
+    "description": "控制面板显示日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_cannot_show_control_panel": {
+    "message": "无法显示控制面板：组件不可用或没有show方法",
+    "description": "无法显示控制面板警告 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_svg_initialized": {
+    "message": "SVG初始化完成通知已接收",
+    "description": "SVG初始化完成日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_dispose_start": {
+    "message": "清理UI管理器资源",
+    "description": "UI管理器清理开始日志 @src/content/visualizer/ui/UIManager.ts"
+  },
+  "ui_manager_dispose_complete": {
+    "message": "UI管理器资源已清理",
+    "description": "UI管理器清理完成日志 @src/content/visualizer/ui/UIManager.ts"
   },
   "_": {
     "message": "_",
