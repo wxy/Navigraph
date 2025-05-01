@@ -5,7 +5,9 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { DatabaseSchema, StoreDefinition } from '../../types/storage-types.js';
 import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+
 const logger = new Logger('IndexedDBStorage');
+
 /**
  * IndexedDB存储类
  * 提供对IndexedDB的低级访问
@@ -30,7 +32,7 @@ export class IndexedDBStorage {
     
     if (!this.instances.has(key)) {
       this.instances.set(key, new IndexedDBStorage(schema));
-      logger.debug(`创建新的数据库实例: ${key}`);
+      logger.debug('indexed_db_instance_created', key);
     }
     
     return this.instances.get(key)!;
@@ -96,7 +98,7 @@ export class IndexedDBStorage {
         };
         
         request.onupgradeneeded = (event) => {
-          logger.log(`数据库升级: ${(event.oldVersion || 0)} -> ${this.schema.version}`);
+          logger.log('indexed_db_upgrade', (event.oldVersion || 0), this.schema.version);
           const db = (event.target as IDBOpenDBRequest).result;
           
           // 升级数据库结构
@@ -108,7 +110,7 @@ export class IndexedDBStorage {
           
           // 只在第一次打开时输出日志，避免重复
           if (!this.isInitialized) {
-            logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已打开`);
+            logger.log('indexed_db_opened', this.schema.name, this.schema.version);
           }
           
           resolve();
@@ -146,7 +148,7 @@ export class IndexedDBStorage {
       const key = `${this.schema.name}_v${this.schema.version}`;
       IndexedDBStorage.instances.delete(key);
       
-      logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已关闭`);
+      logger.log('indexed_db_closed', this.schema.name, this.schema.version);
     }
   }
   
@@ -161,7 +163,7 @@ export class IndexedDBStorage {
       this.createStore(db, store);
     }
     
-    logger.log('数据库结构升级完成');
+    logger.log('indexed_db_upgrade_complete');
   }
   
   /**
@@ -173,7 +175,7 @@ export class IndexedDBStorage {
     // 如果存储已存在，先删除
     if (db.objectStoreNames.contains(storeDefinition.name)) {
       db.deleteObjectStore(storeDefinition.name);
-      logger.log(`删除已存在的存储: ${storeDefinition.name}`);
+      logger.log('indexed_db_store_deleted', storeDefinition.name);
     }
     
     // 创建存储
@@ -182,7 +184,7 @@ export class IndexedDBStorage {
       autoIncrement: storeDefinition.autoIncrement
     });
     
-    logger.log(`创建存储: ${storeDefinition.name}`);
+    logger.log('indexed_db_store_created', storeDefinition.name);
     
     // 创建索引
     if (storeDefinition.indices) {
@@ -192,7 +194,7 @@ export class IndexedDBStorage {
           multiEntry: index.multiEntry || false
         });
         
-        logger.log(`  创建索引: ${index.name}`);
+        logger.log('indexed_db_index_created', index.name);
       }
     }
   }

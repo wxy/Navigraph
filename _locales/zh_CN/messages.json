@@ -1431,6 +1431,102 @@
     "message": "初始化后台服务...",
     "description": "后台服务初始化开始 @src/background/background.ts"
   },
+  "session_storage_init_complete": {
+    "message": "会话存储已初始化",
+    "description": "会话存储初始化完成日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_delete_nonexistent": {
+    "message": "尝试删除不存在的会话: {0}",
+    "description": "尝试删除不存在会话警告 @src/background/store/session-storage.ts"
+  },
+  "session_storage_deleted": {
+    "message": "会话已删除: {0}",
+    "description": "会话已删除日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_cleared_all": {
+    "message": "所有会话数据已清除",
+    "description": "所有会话数据清除日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_connection_closed": {
+    "message": "会话存储连接已关闭",
+    "description": "会话存储连接关闭日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_update_stats_nonexistent": {
+    "message": "更新统计信息失败: 会话 {0} 不存在",
+    "description": "更新不存在会话统计警告 @src/background/store/session-storage.ts"
+  },
+  "session_storage_stats_updated": {
+    "message": "会话 {0} 统计信息已更新",
+    "description": "会话统计信息更新日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_update_stats_failed": {
+    "message": "更新会话 {0} 统计信息失败: {1}",
+    "description": "更新会话统计失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_get_current_failed": {
+    "message": "获取当前会话失败: {0}",
+    "description": "获取当前会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_default_title": {
+    "message": "会话 {0}",
+    "description": "默认会话标题 @src/background/store/session-storage.ts"
+  },
+  "session_storage_created": {
+    "message": "已创建新会话: {0}",
+    "description": "创建新会话日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_create_failed": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_deactivated_all": {
+    "message": "已将 {0} 个活跃会话设为非活跃状态",
+    "description": "将所有活跃会话设置为非活跃日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_deactivate_all_failed": {
+    "message": "设置会话为非活跃状态失败: {0}",
+    "description": "设置会话为非活跃状态失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_end_nonexistent": {
+    "message": "结束会话失败: 会话 {0} 不存在",
+    "description": "结束不存在会话警告 @src/background/store/session-storage.ts"
+  },
+  "session_storage_ended": {
+    "message": "会话 {0} 已结束",
+    "description": "会话已结束日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_end_failed": {
+    "message": "结束会话 {0} 失败: {1}",
+    "description": "结束会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_activate_nonexistent": {
+    "message": "激活会话失败: 会话 {0} 不存在",
+    "description": "激活不存在会话警告 @src/background/store/session-storage.ts"
+  },
+  "session_storage_activated": {
+    "message": "会话 {0} 已激活",
+    "description": "会话已激活日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_activate_failed": {
+    "message": "激活会话 {0} 失败: {1}",
+    "description": "激活会话失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_data_cleared": {
+    "message": "已清除会话 {0} 的所有数据",
+    "description": "会话数据清除日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_data_failed": {
+    "message": "清除会话 {0} 的数据失败: {1}",
+    "description": "清除会话数据失败错误 @src/background/store/session-storage.ts"
+  },
+  "session_storage_updated": {
+    "message": "已更新会话 {0} 的属性",
+    "description": "会话属性更新日志 @src/background/store/session-storage.ts"
+  },
+  "session_storage_update_failed": {
+    "message": "更新会话 {0} 的属性失败: {1}",
+    "description": "更新会话属性失败错误 @src/background/store/session-storage.ts"
+  },
   "_": {
     "message": "_",
     "description": "空白消息"

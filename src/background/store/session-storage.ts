@@ -7,8 +7,10 @@ import { BrowsingSession, SessionQueryOptions, SessionCreationOptions } from '..
 import { IndexedDBStorage } from './indexed-db.js';
 import { NavigraphDBSchema } from './storage-schema.js';
 import { IdGenerator } from '../lib/id-generator.js';
-import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';  // 增加
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+
 const logger = new Logger('SessionStorage');
+
 /**
  * 会话存储类
  * 提供会话数据的持久化存储和检索功能
@@ -64,7 +66,7 @@ export class SessionStorage {
       await this.db.initialize();
       
       this.initialized = true;
-      logger.log('会话存储已初始化');
+      logger.log('session_storage_init_complete');
     } catch (error) {
       logger.error(i18n('session_storage_init_failed', error instanceof Error ? error.message : String(error)), error);
       throw new I18nError(
@@ -220,12 +222,12 @@ export class SessionStorage {
       // 检查会话是否存在
       const exists = await this.db.exists(this.STORE_NAME, sessionId);
       if (!exists) {
-        logger.warn(`尝试删除不存在的会话: ${sessionId}`);
+        logger.warn('session_storage_delete_nonexistent', sessionId);
         return false;
       }
       
       await this.db.delete(this.STORE_NAME, sessionId);
-      logger.log(`会话已删除: ${sessionId}`);
+      logger.log('session_storage_deleted', sessionId);
       return true;
     } catch (error) {
       logger.error(i18n('session_storage_delete_failed', error instanceof Error ? error.message : String(error)), error);
@@ -244,7 +246,7 @@ export class SessionStorage {
     
     try {
       await this.db.clear(this.STORE_NAME);
-      logger.log('所有会话数据已清除');
+      logger.log('session_storage_cleared_all');
     } catch (error) {
       logger.error(i18n('session_storage_clear_failed', error instanceof Error ? error.message : String(error)), error);
       throw new I18nError(
@@ -287,11 +289,10 @@ export class SessionStorage {
     if (this.initialized) {
       this.db.close();
       this.initialized = false;
-      logger.log('会话存储连接已关闭');
+      logger.log('session_storage_connection_closed');
     }
   }
 
-  // 添加新方法
   /**
    * 更新会话统计信息
    * @param sessionId 会话ID
@@ -306,7 +307,7 @@ export class SessionStorage {
     try {
       const session = await this.getSession(sessionId);
       if (!session) {
-        logger.warn(`更新统计信息失败: 会话 ${sessionId} 不存在`);
+        logger.warn('session_storage_update_stats_nonexistent', sessionId);
         return;
       }
       
@@ -321,9 +322,9 @@ export class SessionStorage {
       }
       
       await this.saveSession(session);
-      logger.log(`会话 ${sessionId} 统计信息已更新`);
+      logger.log('session_storage_stats_updated', sessionId);
     } catch (error) {
-      logger.error(`更新会话 ${sessionId} 统计信息失败:`, error);
+      logger.error('session_storage_update_stats_failed', sessionId, error);
       throw new Error(`更新会话统计信息失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -347,7 +348,7 @@ export class SessionStorage {
       
       return null;
     } catch (error) {
-      logger.error('获取当前会话失败:', error);
+      logger.error('session_storage_get_current_failed', error);
       throw new Error(`获取当前会话失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -382,7 +383,7 @@ export class SessionStorage {
       // 创建新会话
       const newSession: BrowsingSession = {
         id: sessionId,
-        title: options.title || `会话 ${new Date(now).toLocaleString()}`,
+        title: options.title || i18n('session_storage_default_title', new Date(now).toLocaleString()),
         description: options.description || "",
         startTime: now,
         endTime: undefined,
@@ -397,10 +398,10 @@ export class SessionStorage {
       // 保存会话
       await this.saveSession(newSession);
       
-      logger.log(`已创建新会话: ${sessionId}`);
+      logger.log('session_storage_created', sessionId);
       return newSession;
     } catch (error) {
-      logger.error('创建会话失败:', error);
+      logger.error('session_storage_create_failed', error);
       throw new Error(`创建会话失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -418,10 +419,10 @@ export class SessionStorage {
       }
       
       if (activeSessions.length > 0) {
-        logger.log(`已将 ${activeSessions.length} 个活跃会话设为非活跃状态`);
+        logger.log('session_storage_deactivated_all', activeSessions.length);
       }
     } catch (error) {
-      logger.error('设置会话为非活跃状态失败:', error);
+      logger.error('session_storage_deactivate_all_failed', error);
       throw new Error(`设置会话为非活跃状态失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -436,7 +437,7 @@ export class SessionStorage {
     try {
       const session = await this.getSession(sessionId);
       if (!session) {
-        logger.warn(`结束会话失败: 会话 ${sessionId} 不存在`);
+        logger.warn('session_storage_end_nonexistent', sessionId);
         return null;
       }
       
@@ -446,11 +447,11 @@ export class SessionStorage {
       
       // 保存更新后的会话
       await this.saveSession(session);
-      logger.log(`会话 ${sessionId} 已结束`);
+      logger.log('session_storage_ended', sessionId);
       
       return session;
     } catch (error) {
-      logger.error(`结束会话 ${sessionId} 失败:`, error);
+      logger.error('session_storage_end_failed', sessionId, error);
       throw new Error(`结束会话失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -469,7 +470,7 @@ export class SessionStorage {
       // 获取要激活的会话
       const session = await this.getSession(sessionId);
       if (!session) {
-        logger.warn(`激活会话失败: 会话 ${sessionId} 不存在`);
+        logger.warn('session_storage_activate_nonexistent', sessionId);
         return null;
       }
       
@@ -478,11 +479,11 @@ export class SessionStorage {
       
       // 保存更新后的会话
       await this.saveSession(session);
-      logger.log(`会话 ${sessionId} 已激活`);
+      logger.log('session_storage_activated', sessionId);
       
       return session;
     } catch (error) {
-      logger.error(`激活会话 ${sessionId} 失败:`, error);
+      logger.error('session_storage_activate_failed', sessionId, error);
       throw new Error(`激活会话失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -513,12 +514,13 @@ export class SessionStorage {
       // 调用导航存储清除相关数据
       // 注意：这里依赖于外部调用者同时清除导航存储中的数据
       
-      logger.log(`已清除会话 ${sessionId} 的所有数据`);
+      logger.log('session_storage_data_cleared', sessionId);
     } catch (error) {
-      logger.error(`清除会话 ${sessionId} 的数据失败:`, error);
+      logger.error('session_storage_clear_data_failed', sessionId, error);
       throw new Error(`清除会话数据失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+
   /**
    * 更新会话属性
    * @param sessionId 会话ID
@@ -535,7 +537,6 @@ export class SessionStorage {
       }
       
       // 应用更新
-
       const updateSession = {
         ...session,
         ...updates,
@@ -547,10 +548,10 @@ export class SessionStorage {
       // 保存会话
       await this.saveSession(updateSession);
       
-      logger.log(`已更新会话 ${sessionId} 的属性`);
+      logger.log('session_storage_updated', sessionId);
       return session;
     } catch (error) {
-      logger.error(`更新会话 ${sessionId} 的属性失败:`, error);
+      logger.error('session_storage_update_failed', sessionId, error);
       throw new Error(`更新会话属性失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
