@@ -1,5 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { BaseResponse } from '../../types/messages/common.js';
+import { i18n } from '../../lib/utils/i18n-utils.js';    // 新增
 
 const logger = new Logger('MessageHandlers');
 /**
@@ -36,7 +37,7 @@ export function createErrorResponse<T extends Omit<BaseResponse, 'success' | 're
   return {
     success: false,
     requestId,
-    error,
+    error: i18n(error), // 本地化错误消息
     ...data
   };
 }
@@ -60,12 +61,14 @@ export function createMessageContext<TRequest, TResponse extends BaseResponse>(
         ...data
       } as TResponse);
     },
-    error: (errorMessage: string, data: Partial<Omit<TResponse, 'success' | 'requestId' | 'error'>> = {}) => {
+    error: (msgOrId: string, ...params: any[]) => {
+      // 本地化错误消息
+      const localized = i18n(msgOrId, ...params);
+      logger.error('handler_response_error', localized);  // 日志也本地化
       sendResponse({
         success: false,
         requestId: message.requestId,
-        error: errorMessage,
-        ...data
+        error: localized
       } as TResponse);
     }
   };

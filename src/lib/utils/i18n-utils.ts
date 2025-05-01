@@ -5,8 +5,7 @@
  * 2. 动态获取本地化字符串 (i18n 函数)
  */
 
-import { Logger } from '../../lib/utils/logger.js';
-const logger = new Logger('i18n-utils');
+// 为避免与 logger 循环依赖，直接使用 console 打印
 
 export class I18nUtils {
   private static instance: I18nUtils;
@@ -32,7 +31,7 @@ export class I18nUtils {
   public async apply(): Promise<void> {
     // 如果已经初始化过，不再重复执行
     if (this.hasInitialized) {
-      logger.debug('本地化工具已初始化，跳过重复操作');
+      console.debug('[i18n-utils] I18nUtils already initialized, skipping');
       return;
     }
     
@@ -44,7 +43,7 @@ export class I18nUtils {
       this.forcedLocale = urlParams.get('locale')?.replace('-', '_') ?? null;
       
       if (this.forcedLocale) {
-        logger.log(`使用URL参数指定的本地化: ${this.forcedLocale}`);
+        console.log(`[i18n-utils] Using locale from URL: ${this.forcedLocale}`);
         const response = await fetch(`../_locales/${this.forcedLocale}/messages.json`);
         
         if (!response.ok) {
@@ -52,10 +51,10 @@ export class I18nUtils {
         }
         
         this.loadedMessages = await response.json();
-        logger.log(`已加载本地化消息: ${Object.keys(this.loadedMessages).length} 条`);
+        console.log(`[i18n-utils] Loaded ${Object.keys(this.loadedMessages).length} localization messages`);
       }
     } catch (error) {
-      logger.error(`加载本地化文件失败:`, error);
+      console.error('[i18n-utils] Failed to load localization file:', error);
       this.forcedLocale = null;
     }
     
@@ -119,7 +118,7 @@ export class I18nUtils {
       }
     });
     
-    logger.debug('页面本地化应用完成');
+    console.debug('[i18n-utils] Applied localization to page');
   }
 
   /** 

@@ -18,21 +18,22 @@
    * 初始化函数
    */
   async function initialize() {
-    logger.log('初始化 Navigraph 可视化...');
-    
+    // 开始初始化
+    logger.log('content_init_start');
+
     try {
       // 初始化配置管理器
-      logger.log('初始化配置管理...');
+      logger.log('content_config_init_start');
       try {
         const settingsModule = await import('../lib/settings/service.js');
         const settingsService = settingsModule.getSettingsService();
         await settingsService.initialize();
-        // 将设置保存为全局变量以便访问
         window.navigraphSettings = settingsService.getSettings();
-        logger.log('全局设置已加载:', window.navigraphSettings);
+        // 全局设置已加载
+        logger.log('content_settings_loaded', JSON.stringify(window.navigraphSettings));
       } catch (error) {
-        logger.error(i18n('content_config_init_failed'), error);
-        // 使用 I18nError 抛出本地化错误
+        // 配置管理器初始化失败
+        logger.error('content_config_init_failed', error);
         throw new I18nError(
           'content_config_load_failed',
           error instanceof Error ? error.message : String(error)
@@ -40,102 +41,67 @@
       }
 
       // 初始化消息服务
-      logger.log('初始化消息服务...');
+      logger.log('content_message_service_init_start');
       try {
         const messageServiceModule = await import('./messaging/content-message-service.js');
         messageServiceModule.setupMessageService();
         const handlerModule = await import('./messaging/index.js');
         handlerModule.registerContentMessageHandlers();
-        logger.log('消息服务初始化完成');
+        // 消息服务初始化完成
+        logger.log('content_message_service_initialized');
       } catch (error) {
-        logger.error(i18n('content_message_service_init_failed'), error);
-        // 使用 I18nError 抛出本地化错误
+        logger.error('content_message_service_init_failed', error);
         throw new I18nError(
           'content_message_service_init_failed',
           error instanceof Error ? error.message : String(error)
         );
       }
-    
+
       // 初始化主题管理器
-      logger.log('初始化主题管理器...');
+      logger.log('content_theme_init_start');
       let themeManager;
       try {
         const themeManagerModule = await import('./utils/theme-manager.js');
         themeManager = themeManagerModule.getThemeManager();
         themeManager.initialize();
       } catch (error) {
-        // 主题管理器失败不是关键错误，记录但继续
-        logger.error('主题管理器初始化失败:', error);
-        // 不抛出异常，继续执行
+        // 主题管理器初始化失败（警告）
+        logger.warn('content_theme_init_failed', error);
       }
-      
+
       // 导入并创建可视化器
-      let visualizerModule, NavigationVisualizer;
+      let NavigationVisualizer;
       try {
-        visualizerModule = await import('./core/navigation-visualizer.js');
+        const visualizerModule = await import('./core/navigation-visualizer.js');
         NavigationVisualizer = visualizerModule.NavigationVisualizer;
-        
-        // 创建可视化器实例
         window.visualizer = new NavigationVisualizer();
-        
-        // 为了兼容性考虑
         window.NavigationVisualizer = NavigationVisualizer;
-        
-        // 初始化视觉化器
         await window.visualizer.initialize();
-        
-        logger.log('Navigraph 可视化器初始化成功');
+        // 可视化器初始化成功
+        logger.log('content_visualizer_init_success');
       } catch (error) {
-        logger.error(i18n('content_visualizer_init_failed'), error);
+        logger.error('content_visualizer_init_failed', error);
         showDetailedErrorMessage('content_visualizer_init_failed', error);
-        // 使用 I18nError 抛出本地化错误
         throw new I18nError(
           'content_visualizer_init_failed',
           error instanceof Error ? error.message : String(error)
         );
       }
-      
+
       // 设置页面活动监听器
+      logger.log('content_setup_page_activity_listeners_start');
       setupPageActivityListeners();
 
-      logger.log('所有初始化逻辑完成');
+      // 所有初始化逻辑完成
+      logger.log('content_init_complete');
     } catch (error) {
-      logger.error('初始化过程中发生错误:', error);
-      showErrorMessage('content_init_failed', (error instanceof Error ? error.message : String(error)));
-      
-      // 记录更详细的错误信息用于调试
+      // 初始化过程中发生错误
+      logger.error('content_init_error', error);
+      showErrorMessage('content_init_failed',
+        error instanceof Error ? error.message : String(error)
+      );
       if (error instanceof Error && error.stack) {
-        logger.error('错误堆栈:', error.stack);
-      }
-    }
-  }
-      
-  /**
-   * 应用主题设置
-   * 直接使用已加载的全局设置
-   */
-  function applyThemeFromSettings(themeManager: any): void {
-    try {
-      logger.log('从全局设置应用主题...');
-      
-      // 从全局设置中获取主题设置
-      if (window.navigraphSettings && window.navigraphSettings.theme) {
-        const themeSetting = window.navigraphSettings.theme;
-        logger.log('应用主题设置:', themeSetting);
-        themeManager.applyTheme(themeSetting);
-      } else {
-        // 如果全局设置中没有主题设置，使用系统主题
-        logger.log('全局设置中没有主题设置，使用系统主题');
-        themeManager.applyTheme('system');
-      }
-    } catch (error) {
-      logger.error('应用主题设置失败:', error);
-      // 出错时尝试应用系统主题
-      try {
-        themeManager.applyTheme('system');
-      } catch (e) {
-        // 如果连这个也失败，只记录错误
-        logger.error('无法应用系统主题:', e);
+        logger.error('content_init_stack', error.stack);
       }
     }
   }
@@ -146,26 +112,20 @@
    */
   function setupPageActivityListeners() {
     try {
-      logger.log('设置页面活动监听器...');
-      
-      // 监听页面可见性变化
+      logger.log('content_listener_start');
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          logger.log('页面变为可见状态');
+          logger.log('content_page_visible');
           triggerPageActivity('visibility');
         }
       });
-      
-      // 监听页面获得焦点
       window.addEventListener('focus', () => {
-        logger.log('页面获得焦点');
+        logger.log('content_page_focus');
         triggerPageActivity('focus');
       });
-      
-      logger.log('页面活动监听器设置完成');
+      logger.log('content_listener_ready');
     } catch (error) {
-      // 监听器设置失败不是关键错误，只记录
-      logger.error('设置页面活动监听器失败:', error);
+      logger.error('content_listener_failed', error);
     }
   }
 
@@ -382,21 +342,21 @@
 
   // 启动初始化流程
   try {
-    // 检查 DOM 是否已经加载
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initialize);
     } else {
-      // 如果 DOM 已加载完成，直接初始化
       await I18nUtils.getInstance().apply();
       await initialize();
     }
   } catch (error) {
-    logger.error('启动初始化过程失败:', error);
-    // 尝试显示错误，即使在DOM加载前
-    setTimeout(() => showErrorMessage('content_startup_error', (error instanceof Error ? error.message : String(error))), 500);
+    logger.error('content_startup_error', error);
+    setTimeout(() => showErrorMessage(
+      'content_startup_error',
+      error instanceof Error ? error.message : String(error)
+    ), 500);
   }
 })().catch(error => {
-  // 捕获闭包函数本身可能抛出的任何错误
+  // 注意：此处故意保留英文，避免依赖本地化回退
   console.error('Critical error in content script:', error);
   // 尝试提供可见的错误反馈
   try {

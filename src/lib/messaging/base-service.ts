@@ -1,4 +1,5 @@
 import { Logger } from '../../lib/utils/logger.js';
+import { i18n } from '../../lib/utils/i18n-utils.js';
 import { BaseMessage, BaseResponse, MessageHandler, MessageTarget } from '../../types/messages/common.js';
 const logger = new Logger('BaseMessageService');
 
@@ -35,48 +36,57 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     sender: chrome.runtime.MessageSender, 
     sendResponse: (response?: any) => void
   ): boolean {
-    // 验证消息格式
+    // 1. 格式校验
     if (!message || !message.action) {
-      logger.error(`[${this.serviceTarget}] 收到无效消息，缺少action字段：`, message);
+      logger.error('message_missing_action_field'); // 日志使用消息ID
       sendResponse({ 
         success: false, 
-        error: '缺少action字段',
-        requestId: message?.requestId || 'unknown'
+        error: i18n('message_missing_action_field'),
+        requestId: message?.requestId || i18n('unknown')
       });
       return false;
     }
     
-    logger.log(`[${this.serviceTarget}] 收到消息: ${message.action} [ID:${message.requestId || 'unknown'}]`, 
-                'target:', message.target);
+    // 2. 接收日志
+    logger.log(
+      'message_received',
+      this.serviceTarget,
+      message.action,
+      message.requestId || i18n('unknown')
+    );
     
-    // 仅处理目标匹配的消息
+    // 3. 目标过滤
     if (message.target !== this.serviceTarget) {
-      logger.log(`[${this.serviceTarget}] 跳过非当前目标消息: ${message.action}, target: ${message.target || '未指定'}`);
+      logger.log(
+        'message_skip_wrong_target',
+        this.serviceTarget,
+        message.action,
+        message.target || i18n('unknown')
+      );
       return false;
     }
     
-    // 查找对应处理程序
+    // 4. 查找处理程序
     const handlers = this.handlers.get(message.action) || [];
-    
     if (handlers.length === 0) {
-      logger.warn(`[${this.serviceTarget}] 未找到处理程序: ${message.action}`);
+      logger.warn('handler_not_found', message.action);
       sendResponse({ 
         success: false, 
-        error: `未注册的消息类型: ${message.action}`,
-        requestId: message.requestId || 'unknown'
+        error: i18n('handler_not_found', message.action),
+        requestId: message.requestId || i18n('unknown')
       });
       return false;
     }
     
-    // 调用处理程序(仅使用第一个注册的处理程序)
+    // 5. 执行处理程序
     try {
       return handlers[0](message, sender, sendResponse);
     } catch (error) {
-      logger.error(`[${this.serviceTarget}] 处理消息 ${message.action} 时出错:`, error);
+      logger.error('message_handle_error', error instanceof Error ? error.message : String(error));
       sendResponse({ 
         success: false, 
-        error: `处理消息时出错: ${error instanceof Error ? error.message : String(error)}`,
-        requestId: message.requestId || 'unknown'
+        error: i18n('message_handle_error', error instanceof Error ? error.message : String(error)),
+        requestId: message.requestId || i18n('unknown')
       });
       return false;
     }
@@ -147,29 +157,33 @@ export abstract class BaseMessageService<T extends MessageTarget> {
    * 创建消息上下文对象
    * 简化处理程序中的响应创建
    */
-public createMessageContext(message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-  return {
-    message,
-    sender,
-    success: (data: any = {}) => {
-      sendResponse({
-        success: true,
-        requestId: message.requestId,
-        ...data
-      });
-      return false; // 表示同步响应已完成
-    },
-    error: (errorMsg: string, data: any = {}) => {
-      sendResponse({
-        success: false,
-        error: errorMsg,
-        requestId: message.requestId,
-        ...data
-      });
-      return false; // 表示同步响应已完成
-    }
-  };
-}
+  public createMessageContext(
+    message: any, 
+    sender: chrome.runtime.MessageSender, 
+    sendResponse: (response?: any) => void
+  ) {
+    return {
+      message,
+      sender,
+      success: (data: any = {}) => {
+        sendResponse({
+          success: true,
+          requestId: message.requestId,
+          ...data
+        });
+        return false; // 表示同步响应已完成
+      },
+      error: (msgOrId: string, ...params: any[]) => {
+        const localized = i18n(msgOrId, ...params);
+        sendResponse({
+          success: false,
+          error: localized,
+          requestId: message.requestId
+        });
+        return false; // 表示同步响应已完成
+      }
+    };
+  }
   
   /**
    * 生成唯一请求ID

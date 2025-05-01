@@ -4,6 +4,7 @@
  */
 
 import { isDev } from '../environment.js';
+import { i18n } from './i18n-utils.js';  // 添加本地化导入
 
 // 日志级别枚举
 export enum LogLevel {
@@ -92,58 +93,79 @@ export class Logger {
   private format(args: any[]): any[] {
     if (args.length === 0) return args;
 
+    // 检测日志中第一个参数是否为字符串类型
+    if (typeof args[0] === 'string') {
+      const rawMsg = args[0];
+      
+      // 将后续参数分为两组
+      const stringParams: string[] = []; // 用于占位符替换
+      const metaParams: any[] = [];      // 保留为日志元数据
+      
+      // 按类型分组所有后续参数
+      args.slice(1).forEach(param => {
+        if (typeof param === 'string') {
+          stringParams.push(param); // 字符串参数加入占位符组
+        } else {
+          metaParams.push(param);   // 非字符串参数保留为元数据
+        }
+      });
+
+      // 尝试本地化首个字符串参数，使用字符串参数进行占位符替换
+      let localized: string;
+      try {
+        localized = i18n(rawMsg, ...stringParams);
+      } catch {
+        localized = rawMsg;
+      }
+      
+      // 替换为本地化后的消息和非字符串元数据
+      // 重要：这里不再包含作为占位符的字符串参数
+      args = [localized, ...metaParams];
+    }
+    
     const timestamp = getSimpleTimestamp();
     const fileInfo = getCallerInfo();
-    
-    // 构建时间戳前缀
     const timePrefix = timestamp ? `[${timestamp}] ` : "";
-    const fileInfoFormatted = fileInfo !== "unknown" && fileInfo !== "error" ? 
-      ` [${fileInfo}]` : ""; // 注意这里在前面加了空格
+    const fileInfoFormatted = fileInfo && fileInfo !== "unknown" && fileInfo !== "error"
+      ? ` [${fileInfo}]` 
+      : "";
 
-    // 处理第一个参数，添加前缀和可能的完成emoji
+    // 处理第一个参数，添加emoji和颜色
     if (typeof args[0] === "string") {
       const enhancedMessage = addCompletionEmoji(args[0]);
 
       if (config.colorfulModules) {
-        // 根据配置决定文件信息位置
         if (config.fileInfoPosition === "end") {
-          // 文件信息放在消息后
           return [
             `%c${timePrefix}%c${enhancedMessage}%c ${fileInfoFormatted}`,
-            "color: #888", // 时间戳颜色
-            `color: ${this.moduleColor}; font-weight: 500`, // 消息颜色
-            "color: #888; font-size: 0.9em", // 文件信息颜色和大小
-            ...args.slice(1),
-          ];
-        } else {
-          // 文件信息放在消息前（原来的方式）
-          return [
-            `%c${timePrefix}${
-              fileInfo ? `[${fileInfo}] ` : ""
-            }%c${enhancedMessage}`,
             "color: #888",
             `color: ${this.moduleColor}; font-weight: 500`,
-            ...args.slice(1),
+            "color: #888; font-size: 0.9em",
+            ...args.slice(1)  // 现在只剩元数据
+          ];
+        } else {
+          return [
+            `%c${timePrefix}${fileInfo ? `[${fileInfo}] ` : ""}%c${enhancedMessage}`,
+            "color: #888",
+            `color: ${this.moduleColor}; font-weight: 500`,
+            ...args.slice(1)  // 现在只剩元数据
           ];
         }
       } else {
-        // 不使用颜色时
         if (config.fileInfoPosition === "end") {
           return [
             `${timePrefix}${enhancedMessage}${fileInfoFormatted}`,
-            ...args.slice(1),
+            ...args.slice(1)  // 现在只剩元数据
           ];
         } else {
           return [
-            `${timePrefix}${
-              fileInfo ? `[${fileInfo}] ` : ""
-            }${enhancedMessage}`,
-            ...args.slice(1),
+            `${timePrefix}${fileInfo ? `[${fileInfo}] ` : ""}${enhancedMessage}`,
+            ...args.slice(1)  // 现在只剩元数据
           ];
         }
       }
     } else {
-      // 非字符串参数处理
+      // 非字符串参数，保持原样
       if (config.colorfulModules) {
         return [`%c${timePrefix}${fileInfo}`, "color: #888", ...args];
       } else {
