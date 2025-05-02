@@ -863,10 +863,6 @@
     "message": "导航图谱后台初始化失败",
     "description": "后台初始化失败错误 @src/background/background.ts"
   },
-  "background_session_create_failed": {
-    "message": "创建会话失败: {0}",
-    "description": "创建会话失败错误 @src/background/session/session-manager.ts"
-  },
   "background_session_manager_init_failed": {
     "message": "会话管理器初始化失败: {0}",
     "description": "会话管理器初始化失败错误 @src/background/session/session-manager.ts"
@@ -1909,7 +1905,7 @@
   },
   "session_list_loading": {
     "message": "加载会话列表...",
-    "description": "加载会话列表开始日志 @src/content/visualizer/state/SessionViewController.ts"
+    "description": "加载会话列表开始日志 @src/content/core/session-service-client.ts @src/content/visualizer/state/SessionViewController.ts"
   },
   "session_list_load_complete": {
     "message": "会话列表加载完成，找到 {0} 个会话",
@@ -1918,10 +1914,6 @@
   "session_list_load_failed": {
     "message": "加载会话列表失败: {0}",
     "description": "加载会话列表失败错误 @src/content/visualizer/state/SessionViewController.ts"
-  },
-  "session_list_loaded": {
-    "message": "会话列表已加载，共{0}个会话",
-    "description": "会话列表已加载日志 @src/content/visualizer/state/SessionViewController.ts"
   },
   "session_list_process_failed": {
     "message": "处理会话列表失败: {0}",
@@ -2234,6 +2226,482 @@
   "content_no_navigation_data": {
     "message": "无导航数据可显示",
     "description": "无导航数据提示 @src/content/utils/visualization-utils.ts"
+  },
+  "nav_visualizer_init_start": {
+    "message": "初始化NavigationVisualizer...",
+    "description": "开始初始化导航可视化器日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "d3_lib_loaded": {
+    "message": "d3 库已加载: {0}",
+    "description": "d3库加载成功日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "nav_visualization_init_start": {
+    "message": "初始化导航可视化...",
+    "description": "导航可视化初始化开始日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "nav_visualizer_init_complete": {
+    "message": "NavigationVisualizer 初始化完成",
+    "description": "导航可视化器初始化完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "waiting_for_dom_complete": {
+    "message": "等待DOM加载完成...",
+    "description": "等待DOM完成加载日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "base_config_and_messaging_init_complete": {
+    "message": "基础配置与消息监听初始化完成",
+    "description": "基础配置初始化完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "global_config_unavailable_using_defaults": {
+    "message": "全局配置不可用，使用默认设置",
+    "description": "全局配置不可用日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "applying_default_view": {
+    "message": "应用默认视图: {0}",
+    "description": "应用默认视图日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "global_config_apply_failed": {
+    "message": "应用全局配置出错",
+    "description": "应用全局配置错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "debug_tools_init_start": {
+    "message": "初始化调试工具...",
+    "description": "调试工具初始化开始日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "debug_tools_init_failed": {
+    "message": "初始化调试工具失败",
+    "description": "调试工具初始化失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "visualizer_resources_cleanup_start": {
+    "message": "清理可视化器资源...",
+    "description": "可视化器资源清理开始日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "refresh_skipped_too_frequent": {
+    "message": "最近已经刷新过，跳过此次刷新",
+    "description": "刷新频率过高跳过日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "visualization_refresh_triggered": {
+    "message": "触发可视化刷新...",
+    "description": "可视化刷新触发日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "page_activity_refresh_complete": {
+    "message": "页面活动触发的刷新完成",
+    "description": "页面活动刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "refresh_trigger_failed": {
+    "message": "触发刷新失败",
+    "description": "触发刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "visualization_refresh_complete": {
+    "message": "可视化刷新完成",
+    "description": "可视化刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "visualization_refresh_failed": {
+    "message": "可视化刷新失败",
+    "description": "可视化刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "reinit_view_failed": {
+    "message": "重新初始化视图失败",
+    "description": "重新初始化视图失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "node_metadata_updating": {
+    "message": "更新节点元信息: {0}",
+    "description": "更新节点元信息日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "node_metadata_updated": {
+    "message": "节点{0}元信息已更新",
+    "description": "节点元信息更新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "node_update_failed": {
+    "message": "未能更新节点: {0}",
+    "description": "节点更新失败警告 @src/content/core/navigation-visualizer.ts"
+  },
+  "page_load_refresh_complete": {
+    "message": "页面加载后刷新可视化完成",
+    "description": "页面加载后刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "page_load_refresh_failed": {
+    "message": "页面加载后刷新可视化失败",
+    "description": "页面加载后刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "link_click_refresh_complete": {
+    "message": "基于链接点击刷新可视化完成",
+    "description": "链接点击刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "link_click_refresh_failed": {
+    "message": "链接点击后刷新可视化失败",
+    "description": "链接点击刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "form_submit_refresh_complete": {
+    "message": "基于表单提交刷新可视化完成",
+    "description": "表单提交刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "form_submit_refresh_failed": {
+    "message": "表单提交后刷新可视化失败",
+    "description": "表单提交刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "js_navigation_refresh_complete": {
+    "message": "基于JS导航刷新可视化完成",
+    "description": "JS导航刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "js_navigation_refresh_failed": {
+    "message": "JS导航后刷新可视化失败",
+    "description": "JS导航刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "data_refresh_complete": {
+    "message": "刷新数据完成",
+    "description": "数据刷新完成日志 @src/content/core/navigation-visualizer.ts"
+  },
+  "data_refresh_failed": {
+    "message": "刷新数据失败",
+    "description": "数据刷新失败错误 @src/content/core/navigation-visualizer.ts"
+  },
+  "session_list_loading_reuse_request": {
+    "message": "会话列表正在加载中，复用现有请求",
+    "description": "会话列表加载复用请求 @src/content/core/session-service-client.ts"
+  },
+  "session_list_response_received": {
+    "message": "收到会话列表响应: {0}",
+    "description": "收到会话列表响应 @src/content/core/session-service-client.ts"
+  },
+  "session_list_listener_error": {
+    "message": "会话列表加载监听器执行错误: {0}",
+    "description": "会话列表监听器错误 @src/content/core/session-service-client.ts"
+  },
+  "session_list_loaded": {
+    "message": "成功加载{0}个会话",
+    "description": "会话列表加载成功 @src/content/visualizer/state/SessionViewController.ts @src/content/core/session-service-client.ts"
+  },
+  "session_response_invalid_format": {
+    "message": "会话响应格式不正确: {0}",
+    "description": "会话响应格式错误 @src/content/core/session-service-client.ts"
+  },
+  "session_loading_reuse_request": {
+    "message": "会话 {0} 正在加载中，复用现有请求",
+    "description": "会话加载复用请求 @src/content/core/session-service-client.ts"
+  },
+  "session_loading_attempt": {
+    "message": "尝试加载会话: {0}",
+    "description": "尝试加载会话 @src/content/core/session-service-client.ts"
+  },
+  "session_details_response": {
+    "message": "getSessionDetails响应: {0}",
+    "description": "会话详情响应 @src/content/core/session-service-client.ts"
+  },
+  "session_data_fetch_success": {
+    "message": "会话数据获取成功, 节点数: {0}",
+    "description": "会话数据获取成功 @src/content/core/session-service-client.ts"
+  },
+  "session_data_process_error": {
+    "message": "处理会话数据时出错: {0}",
+    "description": "处理会话数据错误 @src/content/core/session-service-client.ts"
+  },
+  "session_load_listener_error": {
+    "message": "会话加载监听器执行错误: {0}",
+    "description": "会话监听器错误 @src/content/core/session-service-client.ts"
+  },
+  "session_details_fetch_failed": {
+    "message": "获取会话详情失败, 响应: {0}",
+    "description": "会话详情获取失败 @src/content/core/session-service-client.ts"
+  },
+  "session_details_load_failed": {
+    "message": "加载会话详情失败: {0}",
+    "description": "加载会话详情失败 @src/content/core/session-service-client.ts"
+  },
+  "latest_session_load_failed": {
+    "message": "加载最新会话失败: {0}",
+    "description": "加载最新会话失败 @src/background/session/session-manager.ts @src/content/core/session-service-client.ts"
+  },
+  "trying_to_load_latest_active_session": {
+    "message": "尝试加载最新活跃会话",
+    "description": "尝试加载最新会话 @src/content/core/session-service-client.ts"
+  },
+  "latest_active_session_found": {
+    "message": "找到最新活跃会话: {0}，使用该会话",
+    "description": "找到最新活跃会话 @src/content/core/session-service-client.ts"
+  },
+  "using_last_session_from_list": {
+    "message": "使用会话列表中最后一个会话: {0}",
+    "description": "使用最后一个会话 @src/content/core/session-service-client.ts"
+  },
+  "no_available_sessions_found": {
+    "message": "没有找到可用的会话",
+    "description": "无可用会话 @src/content/core/session-service-client.ts"
+  },
+  "save_session_id_local_storage_failed": {
+    "message": "保存会话ID到本地存储失败: {0}",
+    "description": "保存会话ID失败 @src/content/core/session-service-client.ts"
+  },
+  "latest_session_listener_call_failed": {
+    "message": "调用最新会话加载监听器失败: {0}",
+    "description": "最新会话监听器失败 @src/content/core/session-service-client.ts"
+  },
+  "session_no_data_skip_processing": {
+    "message": "会话不包含节点或边数据，跳过处理",
+    "description": "会话无数据跳过 @src/content/core/node-manager.ts"
+  },
+  "session_data_processing_start": {
+    "message": "开始处理会话数据...",
+    "description": "会话数据处理开始 @src/content/core/node-manager.ts"
+  },
+  "session_data_processing_complete": {
+    "message": "会话数据处理完成，节点: {0}, 边: {1}",
+    "description": "会话数据处理完成 @src/content/core/node-manager.ts"
+  },
+  "session_data_processing_failed": {
+    "message": "处理会话数据失败: {0}",
+    "description": "会话数据处理失败 @src/content/core/node-manager.ts"
+  },
+  "processing_records": {
+    "message": "处理{0}条记录",
+    "description": "处理记录数 @src/content/core/node-manager.ts"
+  },
+  "processing_edges": {
+    "message": "处理{0}条边",
+    "description": "处理边数 @src/content/core/node-manager.ts"
+  },
+  "rebuild_parent_child_relationships_start": {
+    "message": "开始重建父子关系...",
+    "description": "重建父子关系开始 @src/content/core/node-manager.ts"
+  },
+  "parent_child_relationships_rebuilt": {
+    "message": "父子关系重建完成: {0}/{1} 节点有父节点",
+    "description": "父子关系重建完成 @src/content/core/node-manager.ts"
+  },
+  "node_self_reference_fixed": {
+    "message": "节点 {0} 是自循环，修正为根节点",
+    "description": "修正节点自引用 @src/content/core/node-manager.ts"
+  },
+  "node_map_built": {
+    "message": "已建立{0}个节点的索引",
+    "description": "节点映射建立完成 @src/content/core/node-manager.ts"
+  },
+  "generated_edges_added": {
+    "message": "添加了{0}条生成的边",
+    "description": "添加生成的边 @src/content/core/node-manager.ts"
+  },
+  "session_manager_created": {
+    "message": "会话管理器已创建",
+    "description": "会话管理器创建日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_already_initialized": {
+    "message": "会话管理器已经初始化过",
+    "description": "会话管理器重复初始化警告 @src/background/session/session-manager.ts"
+  },
+  "session_manager_init_start": {
+    "message": "会话管理器开始初始化",
+    "description": "会话管理器初始化开始日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_init_complete": {
+    "message": "会话管理器初始化完成",
+    "description": "会话管理器初始化完成日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_register_handlers_start": {
+    "message": "开始注册会话管理器的消息处理程序",
+    "description": "注册会话处理程序开始日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_loaded_active": {
+    "message": "已加载活跃会话: {0} - {1}",
+    "description": "加载活跃会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_reuse_recent": {
+    "message": "重用最近会话: {0}，超过活跃时间 {1} 小时",
+    "description": "重用最近会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_create_new_session": {
+    "message": "创建新会话",
+    "description": "创建新会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_get_list_failed": {
+    "message": "获取会话列表失败: {0}",
+    "description": "获取会话列表失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_session_not_found": {
+    "message": "会话未找到: {0}",
+    "description": "会话未找到警告 @src/background/session/session-manager.ts"
+  },
+  "session_manager_get_session_failed": {
+    "message": "获取会话失败: {0}, 错误: {1}",
+    "description": "获取会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_get_navigation_failed": {
+    "message": "获取会话导航数据失败: {0}, 错误: {1}",
+    "description": "获取导航数据失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_default_session_name": {
+    "message": "会话 {0}",
+    "description": "默认会话名称 @src/background/session/session-manager.ts"
+  },
+  "session_manager_created_session": {
+    "message": "已创建会话: {0} - {1}",
+    "description": "已创建会话日志 @src/background/session/session-manager.ts"
+  },
+  "background_session_create_failed": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_create_activate_failed": {
+    "message": "创建并激活会话失败: {0}",
+    "description": "创建激活会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_does_not_exist": {
+    "message": "会话 {0} 不存在",
+    "description": "会话不存在错误 @src/background/session/session-manager.ts"
+  },
+  "session_not_found_after_update": {
+    "message": "更新会话后无法检索到会话",
+    "description": "更新后会话检索失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_updated": {
+    "message": "已更新会话: {0}",
+    "description": "已更新会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_update_failed": {
+    "message": "更新会话失败: {0}, 错误: {1}",
+    "description": "更新会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "update_node_count_failed_session_not_found": {
+    "message": "更新节点计数失败: 会话 {0} 不存在",
+    "description": "节点计数更新会话不存在警告 @src/background/session/session-manager.ts"
+  },
+  "update_node_count_session_failed": {
+    "message": "更新会话 {0} 节点计数失败: {1}",
+    "description": "更新节点计数失败错误 @src/background/session/session-manager.ts"
+  },
+  "update_tab_count_failed_session_not_found": {
+    "message": "更新标签页计数失败: 会话 {0} 不存在",
+    "description": "标签页计数更新会话不存在警告 @src/background/session/session-manager.ts"
+  },
+  "update_tab_count_session_failed": {
+    "message": "更新会话 {0} 标签页计数失败: {1}",
+    "description": "更新标签页计数失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_deactivate_not_found": {
+    "message": "无法停用不存在的会话: {0}",
+    "description": "停用不存在会话警告 @src/background/session/session-manager.ts"
+  },
+  "session_manager_already_inactive": {
+    "message": "会话已经处于非活跃状态: {0}",
+    "description": "会话已非活跃日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_deactivated": {
+    "message": "会话已停用: {0}",
+    "description": "会话已停用日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_deactivate_failed": {
+    "message": "停用会话失败: {0}, 错误: {1}",
+    "description": "停用会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_not_found_after_end": {
+    "message": "结束会话后无法检索到会话",
+    "description": "结束后会话检索失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_ended_session": {
+    "message": "会话已结束: {0}",
+    "description": "会话已结束日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_end_failed": {
+    "message": "结束会话失败: {0}, 错误: {1}",
+    "description": "结束会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_deleted": {
+    "message": "会话已删除: {0}",
+    "description": "会话已删除日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_delete_failed": {
+    "message": "删除会话失败: {0}, 错误: {1}",
+    "description": "删除会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_already_current": {
+    "message": "会话已是当前会话: {0}",
+    "description": "会话已是当前会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_set_current": {
+    "message": "已设置当前会话: {0}",
+    "description": "设置当前会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_set_current_failed": {
+    "message": "设置当前会话失败: {0}, 错误: {1}",
+    "description": "设置当前会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "latest_session_load_failed_message": {
+    "message": "获取最新会话失败: {0}",
+    "description": "获取最新会话失败错误消息 @src/background/session/session-manager.ts"
+  },
+  "session_manager_already_latest": {
+    "message": "会话已是最新会话: {0}",
+    "description": "会话已是最新会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_set_latest": {
+    "message": "已设置最新会话: {0}",
+    "description": "设置最新会话日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_set_latest_failed": {
+    "message": "设置最新会话失败: {0}, 错误: {1}",
+    "description": "设置最新会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_no_current_to_sync_latest": {
+    "message": "没有当前会话，无法同步到最新会话",
+    "description": "无当前会话同步警告 @src/background/session/session-manager.ts"
+  },
+  "sync_current_to_latest_failed": {
+    "message": "同步当前会话到最新会话失败: {0}",
+    "description": "同步当前会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "sync_current_to_latest_failed_message": {
+    "message": "同步当前会话到最新会话失败: {0}",
+    "description": "同步当前会话失败错误消息 @src/background/session/session-manager.ts"
+  },
+  "session_no_latest_to_sync_current": {
+    "message": "没有最新会话，无法同步到当前会话",
+    "description": "无最新会话同步警告 @src/background/session/session-manager.ts"
+  },
+  "sync_latest_to_current_failed": {
+    "message": "同步最新会话到当前会话失败: {0}",
+    "description": "同步最新会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "sync_latest_to_current_failed_message": {
+    "message": "同步最新会话到当前会话失败: {0}",
+    "description": "同步最新会话失败错误消息 @src/background/session/session-manager.ts"
+  },
+  "date_transition_check_failed": {
+    "message": "检查日期转换失败: {0}",
+    "description": "日期转换检查失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_activity_mark_failed": {
+    "message": "会话活动标记失败: {0}",
+    "description": "会话活动标记失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_idle_detected": {
+    "message": "检测到用户空闲",
+    "description": "用户空闲检测日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_auto_end_failed": {
+    "message": "自动结束会话失败: {0}",
+    "description": "自动结束会话失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_manager_tab_closed": {
+    "message": "标签页已关闭: {0}",
+    "description": "标签页关闭日志 @src/background/session/session-manager.ts"
+  },
+  "session_manager_close_nodes_failed": {
+    "message": "关闭节点失败: {0}",
+    "description": "关闭节点失败错误 @src/background/session/session-manager.ts"
+  },
+  "session_statistics_failed": {
+    "message": "获取会话 {0} 统计信息失败: {1}",
+    "description": "获取会话统计信息失败 @src/background/session/session-manager.ts"
+  },
+  "session_statistics_failed_message": {
+    "message": "获取会话统计信息失败: {0}",
+    "description": "获取会话统计信息失败消息 @src/background/session/session-manager.ts"
+  },
+  "session_navigation_data_failed": {
+    "message": "获取会话{0}的导航数据失败: {1}",
+    "description": "获取会话导航数据失败 @src/background/session/session-manager.ts"
+  },
+  "session_manager_not_initialized": {
+    "message": "SessionManager实例未初始化",
+    "description": "会话管理器未初始化错误 @src/background/session/session-manager.ts"
   },
   "_": {
     "message": "_",
