@@ -1,0 +1,106 @@
+{
+  "filter_panel_container_not_found": {
+    "message": "筛选器容器未找到",
+    "description": "筛选器容器未找到警告"
+  },
+  "filter_panel_initialized": {
+    "message": "筛选面板已初始化",
+    "description": "筛选面板初始化日志"
+  },
+  "filter_listener_added": {
+    "message": "为筛选器 {0} 添加了事件监听器，初始值: {1}",
+    "description": "筛选器事件监听器添加日志"
+  },
+  "filter_element_not_found": {
+    "message": "筛选器元素 {0} 未找到",
+    "description": "筛选器元素未找到警告"
+  },
+  "filter_change": {
+    "message": "筛选器变更: {0} = {1}",
+    "description": "筛选器变更日志"
+  },
+  "filter_using_visualizer_handler": {
+    "message": "使用可视化器的handleFilterChange方法处理筛选器变化",
+    "description": "使用可视化器筛选器处理器日志"
+  },
+  "filter_reset_element_not_found": {
+    "message": "重置筛选器时未找到元素: {0}",
+    "description": "重置筛选器元素未找到警告"
+  },
+  "filter_all_reset_to_default": {
+    "message": "所有筛选器已重置为默认值",
+    "description": "所有筛选器重置日志"
+  },
+  "filter_ui_updating": {
+    "message": "更新筛选器UI状态",
+    "description": "更新筛选器UI状态日志"
+  },
+  "filter_status_updated": {
+    "message": "筛选器 {0} 状态已更新为: {1}",
+    "description": "筛选器状态更新日志"
+  },
+  "filter_reload_label": {
+    "message": "显示刷新",
+    "description": "刷新筛选器标签"
+  },
+  "filter_reload_description": {
+    "message": "显示页面刷新操作",
+    "description": "刷新筛选器描述"
+  },
+  "filter_history_label": {
+    "message": "显示历史导航",
+    "description": "历史导航筛选器标签"
+  },
+  "filter_history_description": {
+    "message": "显示浏览器历史前进/后退操作",
+    "description": "历史导航筛选器描述"
+  },
+  "filter_closed_label": {
+    "message": "显示已关闭页面",
+    "description": "已关闭页面筛选器标签"
+  },
+  "filter_closed_description": {
+    "message": "显示已关闭的页面",
+    "description": "已关闭页面筛选器描述"
+  },
+  "filter_tracking_label": {
+    "message": "显示跟踪页面",
+    "description": "跟踪页面筛选器标签"
+  },
+  "filter_tracking_description": {
+    "message": "显示分析和跟踪相关的请求",
+    "description": "跟踪页面筛选器描述"
+  },
+  "filter_type_link_label": {
+    "message": "显示链接点击",
+    "description": "链接点击筛选器标签"
+  },
+  "filter_type_link_description": {
+    "message": "显示由链接点击导致的导航",
+    "description": "链接点击筛选器描述"
+  },
+  "filter_type_address_label": {
+    "message": "显示地址栏输入",
+    "description": "地址栏输入筛选器标签"
+  },
+  "filter_type_address_description": {
+    "message": "显示由地址栏输入导致的导航",
+    "description": "地址栏输入筛选器描述"
+  },
+  "filter_type_form_label": {
+    "message": "显示表单提交",
+    "description": "表单提交筛选器标签"
+  },
+  "filter_type_form_description": {
+    "message": "显示由表单提交导致的导航",
+    "description": "表单提交筛选器描述"
+  },
+  "filter_type_js_label": {
+    "message": "显示JS导航",
+    "description": "JS导航筛选器标签"
+  },
+  "filter_type_js_description": {
+    "message": "显示由JavaScript导致的导航",
+    "description": "JS导航筛选器描述"
+  }
+}

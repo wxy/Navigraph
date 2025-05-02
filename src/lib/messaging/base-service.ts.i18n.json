@@ -1,0 +1,26 @@
+{
+  "message_missing_action_field": {
+    "message": "缺少 action 字段",
+    "description": "收到无效消息时的错误"
+  },
+  "message_received": {
+    "message": "收到消息 [{0}] 操作: {1} 请求ID: {2}",
+    "description": "收到消息日志"
+  },
+  "message_skip_wrong_target": {
+    "message": "跳过非目标服务消息: 服务={0} 操作={1} 目标={2}",
+    "description": "跳过目标不匹配消息日志"
+  },
+  "handler_not_found": {
+    "message": "未注册的消息类型: {0}",
+    "description": "未找到消息处理程序警告"
+  },
+  "message_handle_error": {
+    "message": "处理消息时出错: {0}",
+    "description": "消息处理异常错误"
+  },
+  "unknown": {
+    "message": "未指定",
+    "description": "默认未知字符串"
+  }
+}

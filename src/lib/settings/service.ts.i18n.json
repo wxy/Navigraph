@@ -1,0 +1,54 @@
+{
+  "settings_service_init_failed": {
+    "message": "设置服务初始化失败",
+    "description": "设置服务初始化失败错误"
+  },
+  "settings_cache_load_failed": {
+    "message": "从缓存加载设置失败",
+    "description": "从缓存加载设置失败警告"
+  },
+  "settings_storage_load_failed": {
+    "message": "从存储加载设置失败",
+    "description": "从存储加载设置失败错误"
+  },
+  "settings_storage_save_failed": {
+    "message": "保存设置到存储失败",
+    "description": "保存设置到存储失败错误"
+  },
+  "settings_cache_update_failed": {
+    "message": "更新设置缓存失败",
+    "description": "更新设置缓存失败警告"
+  },
+  "settings_update_failed": {
+    "message": "更新设置失败",
+    "description": "更新设置失败错误"
+  },
+  "settings_reset_failed": {
+    "message": "重置设置失败",
+    "description": "重置设置失败错误"
+  },
+  "settings_refresh_failed": {
+    "message": "刷新设置失败",
+    "description": "刷新设置失败错误"
+  },
+  "settings_listener_call_failed": {
+    "message": "调用设置监听器失败",
+    "description": "调用设置监听器失败错误"
+  },
+  "settings_listener_notify_failed": {
+    "message": "通知设置监听器时出错",
+    "description": "通知设置监听器出错"
+  },
+  "settings_service_init_complete": {
+    "message": "设置服务初始化完成",
+    "description": "设置服务初始化完成日志"
+  },
+  "settings_loaded_from_storage": {
+    "message": "已从存储加载设置: {0}",
+    "description": "从存储加载设置日志"
+  },
+  "settings_not_found_using_defaults": {
+    "message": "存储中没有找到设置，使用默认值",
+    "description": "使用默认设置日志"
+  }
+}

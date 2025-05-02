@@ -1,0 +1,6 @@
+{
+  "handler_response_error": {
+    "message": "处理响应失败: {0}",
+    "description": "MessageHandlers 中创建响应时的本地化日志"
+  }
+}

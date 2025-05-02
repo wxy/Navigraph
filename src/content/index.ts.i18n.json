@@ -1,0 +1,86 @@
+{
+  "content_config_init_failed": {
+    "message": "配置管理初始化失败",
+    "description": "配置管理初始化失败日志"
+  },
+  "content_config_load_failed": {
+    "message": "配置加载失败: {0}",
+    "description": "配置加载失败错误"
+  },
+  "content_init_msg_service": {
+    "message": "初始化消息服务...",
+    "description": "初始化消息服务日志"
+  },
+  "content_message_service_init_failed": {
+    "message": "消息服务初始化失败: {0}",
+    "description": "消息服务初始化失败错误"
+  },
+  "content_message_system_failed": {
+    "message": "消息系统初始化失败:",
+    "description": "消息系统初始化失败错误消息"
+  },
+  "content_init_failed": {
+    "message": "初始化失败:",
+    "description": "一般初始化失败错误消息"
+  },
+  "content_extension_error": {
+    "message": "Navigraph 扩展错误:",
+    "description": "扩展错误通用前缀"
+  },
+  "content_startup_error": {
+    "message": "启动初始化过程失败: {0}",
+    "description": "内容脚本启动初始化失败错误日志"
+  },
+  "content_script_execution_failed": {
+    "message": "内容脚本执行失败:",
+    "description": "脚本执行失败错误消息"
+  },
+  "content_init_start": {
+    "message": "开始初始化 Navigraph 可视化…",
+    "description": "内容脚本初始化开始日志"
+  },
+  "content_config_init_start": {
+    "message": "初始化配置管理…",
+    "description": "内容脚本页面焦点事件日志"
+  },
+  "content_listener_ready": {
+    "message": "页面活动监听器设置完成",
+    "description": "内容脚本页面活动监听器就绪日志"
+  },
+  "content_listener_failed": {
+    "message": "设置页面活动监听器失败: {0}",
+    "description": "内容脚本页面活动监听器初始化失败日志"
+  },
+  "content_page_activity_detected": {
+    "message": "检测到页面活动({0})，触发刷新",
+    "description": "页面活动检测日志"
+  },
+  "content_visualizer_missing_or_invalid": {
+    "message": "可视化器实例不存在或没有刷新方法",
+    "description": "可视化器缺失警告"
+  },
+  "content_page_activity_too_frequent": {
+    "message": "页面活动({0})距离上次时间过短({1}ms)，忽略",
+    "description": "页面活动过于频繁调试日志"
+  },
+  "content_page_activity_process_failed": {
+    "message": "处理页面活动({0})失败: {1}",
+    "description": "页面活动处理失败错误"
+  },
+  "content_error_container_not_found": {
+    "message": "找不到错误UI容器，降级到alert",
+    "description": "错误容器未找到错误"
+  },
+  "content_error_ui_display_failed": {
+    "message": "显示错误UI失败: {0}",
+    "description": "显示错误UI失败错误"
+  },
+  "content_detailed_error_ui_failed": {
+    "message": "显示详细错误UI失败: {0}",
+    "description": "显示详细错误UI失败错误"
+  },
+  "content_toast_display_failed": {
+    "message": "显示通知消息失败: {0}",
+    "description": "显示通知消息失败错误"
+  }
+}

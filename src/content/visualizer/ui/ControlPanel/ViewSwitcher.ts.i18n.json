@@ -1,0 +1,30 @@
+{
+  "view_switcher_buttons_not_found": {
+    "message": "视图切换按钮未找到",
+    "description": "视图切换按钮未找到警告"
+  },
+  "view_switcher_initialized": {
+    "message": "视图切换器已初始化",
+    "description": "视图切换器初始化日志"
+  },
+  "view_already_tree": {
+    "message": "已经是树形图视图，无需切换",
+    "description": "已在树形图视图日志"
+  },
+  "view_already_timeline": {
+    "message": "已经是时间线视图，无需切换",
+    "description": "已在时间线视图日志"
+  },
+  "view_switching_to_tree": {
+    "message": "切换到树形图视图",
+    "description": "切换到树形图视图日志"
+  },
+  "view_switching_to_timeline": {
+    "message": "切换到时间线视图",
+    "description": "切换到时间线视图日志"
+  },
+  "view_buttons_state_updated": {
+    "message": "视图按钮状态已更新: {0}",
+    "description": "视图按钮状态更新日志"
+  }
+}

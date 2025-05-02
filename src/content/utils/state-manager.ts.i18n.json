@@ -1,0 +1,18 @@
+{
+  "content_tree_view": {
+    "message": "树形图",
+    "description": "树形图视图按钮文本"
+  },
+  "content_timeline_view": {
+    "message": "时间线",
+    "description": "时间线视图按钮文本"
+  },
+  "content_reset_view": {
+    "message": "重置视图",
+    "description": "重置视图按钮文本"
+  },
+  "content_show_all": {
+    "message": "显示全部",
+    "description": "显示全部按钮文本"
+  }
+}

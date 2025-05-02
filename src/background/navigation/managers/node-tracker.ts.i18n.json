@@ -1,0 +1,130 @@
+{
+  "background_tab_info_failed": {
+    "message": "获取标签页信息失败",
+    "description": "获取标签页信息失败警告"
+  },
+  "background_node_metadata_invalid_id": {
+    "message": "更新元数据失败: 无效的节点ID",
+    "description": "无效节点ID错误"
+  },
+  "background_node_not_found": {
+    "message": "未找到节点 {0}，无法更新元数据",
+    "description": "节点未找到错误"
+  },
+  "background_title_update": {
+    "message": "更新标题: {0} -> {1}",
+    "description": "标题更新日志"
+  },
+  "node_tracker_initialized": {
+    "message": "节点追踪器初始化完成",
+    "description": "节点追踪器初始化完成日志"
+  },
+  "node_tracker_create_failed": {
+    "message": "创建节点失败: {0}",
+    "description": "创建节点失败错误"
+  },
+  "node_tracker_node_not_found_for_metadata": {
+    "message": "未找到节点 {0}，无法更新元数据",
+    "description": "节点未找到警告"
+  },
+  "node_tracker_get_or_create_failed": {
+    "message": "获取或创建节点失败: {0}",
+    "description": "获取或创建节点失败错误"
+  },
+  "node_tracker_title_update": {
+    "message": "标题从 '{0}' 更新为 '{1}'",
+    "description": "节点标题更新日志"
+  },
+  "content_unnamed_page": {
+    "message": "无标题",
+    "description": "无标题页面默认名称"
+  },
+  "node_tracker_update_metadata_failed": {
+    "message": "更新节点元数据失败: {0}",
+    "description": "更新节点元数据失败错误"
+  },
+  "node_tracker_tab_node_not_found": {
+    "message": "未找到标签页{0}的节点ID: {1}，不更新元数据",
+    "description": "标签页节点未找到日志"
+  },
+  "node_tracker_check_url_match_failed": {
+    "message": "检查节点URL匹配失败: {0}",
+    "description": "检查URL匹配失败警告"
+  },
+  "node_tracker_find_by_url_failed": {
+    "message": "通过URL查找节点失败: {0}",
+    "description": "URL查找节点失败错误"
+  },
+  "node_tracker_get_active_nodes_failed": {
+    "message": "获取活跃节点失败: {0}",
+    "description": "获取活跃节点失败错误"
+  },
+  "node_tracker_cache_cleanup_complete": {
+    "message": "清理缓存：移除了 {0} 个无效待更新节点",
+    "description": "缓存清理完成日志"
+  },
+  "node_tracker_reset_complete": {
+    "message": "节点追踪器状态已重置",
+    "description": "节点追踪器重置完成日志"
+  },
+  "node_tracker_close_all_nodes_start": {
+    "message": "关闭会话 {0} 中的所有活跃节点",
+    "description": "开始关闭会话节点日志"
+  },
+  "node_tracker_no_active_nodes": {
+    "message": "会话 {0} 中没有活跃节点",
+    "description": "无活跃节点日志"
+  },
+  "node_tracker_found_active_nodes": {
+    "message": "找到 {0} 个活跃节点需要关闭",
+    "description": "发现活跃节点日志"
+  },
+  "node_tracker_nodes_marked_closed": {
+    "message": "已将会话 {0} 中的 {1} 个节点标记为关闭",
+    "description": "节点标记关闭日志"
+  },
+  "node_tracker_close_nodes_failed": {
+    "message": "关闭会话 {0} 中的活跃节点失败: {1}",
+    "description": "关闭节点失败错误"
+  },
+  "node_tracker_associate_tabs_start": {
+    "message": "将当前打开的标签页关联到会话 {0}",
+    "description": "开始关联标签页日志"
+  },
+  "node_tracker_no_tabs_to_associate": {
+    "message": "没有需要关联的相关标签页",
+    "description": "无标签页可关联日志"
+  },
+  "node_tracker_found_tabs_to_associate": {
+    "message": "找到 {0} 个标签页需要关联到会话",
+    "description": "发现标签页可关联日志"
+  },
+  "node_tracker_tab_associated": {
+    "message": "已将标签页 {0} ({1}) 关联到会话 {2}",
+    "description": "标签页已关联日志"
+  },
+  "node_tracker_association_complete": {
+    "message": "完成标签页关联到会话 {0}",
+    "description": "标签页关联完成日志"
+  },
+  "node_tracker_association_failed": {
+    "message": "关联标签页到会话 {0} 失败: {1}",
+    "description": "标签页关联失败错误"
+  },
+  "node_tracker_query_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败错误"
+  },
+  "node_tracker_update_failed": {
+    "message": "更新节点 {0} 失败: {1}",
+    "description": "更新节点失败错误"
+  },
+  "node_tracker_tab_nodes_closed": {
+    "message": "已关闭标签页 {0} 的 {1} 个节点",
+    "description": "标签页节点已关闭日志"
+  },
+  "node_tracker_close_tab_nodes_failed": {
+    "message": "关闭标签页 {0} 节点失败: {1}",
+    "description": "关闭标签页节点失败错误"
+  }
+}

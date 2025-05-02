@@ -1,0 +1,98 @@
+{
+  "content_current_session": {
+    "message": "当前会话",
+    "description": "当前会话标题"
+  },
+  "content_no_open_records": {
+    "message": "没有打开的浏览记录",
+    "description": "没有打开记录消息"
+  },
+  "content_no_open_records_with_closed": {
+    "message": "没有打开的浏览记录 ({0} 个已关闭节点)",
+    "description": "带有关闭节点计数的无打开记录消息"
+  },
+  "content_filter_show_closed_hint": {
+    "message": "提示：点击筛选器显示已关闭节点",
+    "description": "显示已关闭节点的提示"
+  },
+  "rendering_manager_init": {
+    "message": "渲染管理器已创建",
+    "description": "渲染管理器初始化日志"
+  },
+  "rendering_manager_init_start": {
+    "message": "开始初始化渲染管理器",
+    "description": "渲染管理器初始化开始日志"
+  },
+  "rendering_manager_init_complete": {
+    "message": "渲染管理器初始化完成",
+    "description": "渲染管理器初始化完成日志"
+  },
+  "visualization_refresh_start": {
+    "message": "开始刷新可视化 {0}",
+    "description": "可视化刷新开始日志"
+  },
+  "using_provided_data": {
+    "message": "使用提供的数据",
+    "description": "使用提供数据日志"
+  },
+  "using_existing_data": {
+    "message": "使用现有数据",
+    "description": "使用现有数据日志"
+  },
+  "refresh_failed": {
+    "message": "刷新可视化失败: {0}",
+    "description": "刷新可视化失败错误"
+  },
+  "url_updated_for_view_filters": {
+    "message": "已更新URL以反映当前视图和筛选器状态",
+    "description": "URL更新日志"
+  },
+  "url_update_failed": {
+    "message": "更新URL失败: {0}",
+    "description": "URL更新失败警告"
+  },
+  "render_failed_no_container_svg": {
+    "message": "渲染失败：容器或SVG不存在",
+    "description": "渲染失败错误"
+  },
+  "visualization_render_start": {
+    "message": "开始渲染可视化: 视图={0}，节点数={1}，边数={2}，大小={3}",
+    "description": "可视化渲染开始日志"
+  },
+  "visualization_render_complete": {
+    "message": "可视化渲染完成",
+    "description": "可视化渲染完成日志"
+  },
+  "render_failed": {
+    "message": "渲染失败: {0}",
+    "description": "渲染失败错误"
+  },
+  "svg_setup_start": {
+    "message": "开始设置SVG元素",
+    "description": "SVG设置开始日志"
+  },
+  "svg_element_empty": {
+    "message": "SVG元素为空",
+    "description": "SVG元素为空错误"
+  },
+  "svg_setup_complete": {
+    "message": "SVG设置完成",
+    "description": "SVG设置完成日志"
+  },
+  "svg_setup_failed": {
+    "message": "SVG设置失败: {0}",
+    "description": "SVG设置失败错误"
+  },
+  "container_size_updated": {
+    "message": "容器大小已更新: {0}",
+    "description": "容器大小更新日志"
+  },
+  "container_size_change_insignificant": {
+    "message": "容器大小变化不显著，跳过更新",
+    "description": "容器大小变化不显著日志"
+  },
+  "rendering_manager_cleanup": {
+    "message": "清理渲染管理器资源",
+    "description": "渲染管理器清理日志"
+  }
+}

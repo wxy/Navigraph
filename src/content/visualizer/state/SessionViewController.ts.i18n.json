@@ -1,0 +1,122 @@
+{
+  "content_session_selection_failed": {
+    "message": "选择会话失败",
+    "description": "会话选择失败错误消息"
+  },
+  "content_current_session_load_failed": {
+    "message": "加载当前会话失败",
+    "description": "当前会话加载失败错误消息"
+  },
+  "content_session_load_failed_or_unavailable": {
+    "message": "会话加载失败或无可用会话",
+    "description": "会话加载失败或无可用会话错误消息"
+  },
+  "content_session_data_processing_failed": {
+    "message": "处理会话数据失败",
+    "description": "会话数据处理失败错误消息"
+  },
+  "session_view_controller_init": {
+    "message": "会话视图控制器初始化",
+    "description": "会话视图控制器初始化日志"
+  },
+  "session_management_init_start": {
+    "message": "初始化会话管理...",
+    "description": "会话管理初始化开始日志"
+  },
+  "session_management_init_complete": {
+    "message": "会话管理初始化完成",
+    "description": "会话管理初始化完成日志"
+  },
+  "session_management_init_failed": {
+    "message": "会话管理初始化失败: {0}",
+    "description": "会话管理初始化失败错误"
+  },
+  "session_list_loading": {
+    "message": "加载会话列表...",
+    "description": "加载会话列表开始日志"
+  },
+  "session_list_load_complete": {
+    "message": "会话列表加载完成，找到 {0} 个会话",
+    "description": "会话列表加载完成日志"
+  },
+  "session_list_load_failed": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败错误"
+  },
+  "session_list_process_failed": {
+    "message": "处理会话列表失败: {0}",
+    "description": "处理会话列表失败错误"
+  },
+  "session_selector_updating": {
+    "message": "更新会话选择器...",
+    "description": "会话选择器更新日志"
+  },
+  "session_selector_update_failed": {
+    "message": "更新会话选择器失败: {0}",
+    "description": "更新会话选择器失败错误"
+  },
+  "session_selected": {
+    "message": "选择会话: {0}",
+    "description": "会话选择日志"
+  },
+  "session_switch_success": {
+    "message": "会话切换成功",
+    "description": "会话切换成功日志"
+  },
+  "session_selection_failed": {
+    "message": "选择会话失败: {0}",
+    "description": "选择会话失败错误"
+  },
+  "current_session_loading": {
+    "message": "加载当前会话...",
+    "description": "加载当前会话开始日志"
+  },
+  "current_session_load_complete": {
+    "message": "当前会话加载完成",
+    "description": "当前会话加载完成日志"
+  },
+  "current_session_load_failed": {
+    "message": "加载当前会话失败: {0}",
+    "description": "加载当前会话失败错误"
+  },
+  "session_load_handling_in_progress": {
+    "message": "会话加载处理已在进行中，跳过重复处理",
+    "description": "会话加载处理进行中提示"
+  },
+  "session_loaded_updating_ui": {
+    "message": "会话已加载，准备更新UI和数据",
+    "description": "会话加载后更新UI日志"
+  },
+  "session_loaded_details": {
+    "message": "会话已加载: {0}",
+    "description": "会话加载详情日志"
+  },
+  "session_load_processing_failed": {
+    "message": "处理会话加载失败: {0}",
+    "description": "处理会话加载失败错误"
+  },
+  "session_data_refresh_in_progress": {
+    "message": "会话数据刷新已在进行中，跳过重复刷新",
+    "description": "会话数据刷新进行中提示"
+  },
+  "session_data_refreshing": {
+    "message": "刷新会话数据...",
+    "description": "会话数据刷新开始日志"
+  },
+  "session_data_refresh_complete": {
+    "message": "会话数据刷新完成",
+    "description": "会话数据刷新完成日志"
+  },
+  "session_data_refresh_failed": {
+    "message": "刷新会话数据失败: {0}",
+    "description": "刷新会话数据失败错误"
+  },
+  "session_data_cleanup": {
+    "message": "清理会话数据...",
+    "description": "清理会话数据日志"
+  },
+  "session_list_loaded": {
+    "message": "成功加载{0}个会话",
+    "description": "会话列表加载成功"
+  }
+}

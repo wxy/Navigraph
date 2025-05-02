@@ -1,0 +1,6 @@
+{
+  "background_storage_init_failed": {
+    "message": "初始化导航存储失败: {0}",
+    "description": "导航存储初始化失败错误"
+  }
+}

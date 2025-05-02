@@ -1,1 +1,6635 @@
-{}
+{
+  "background_message_service_not_initialized": {
+    "message": "MessageService 尚未初始化",
+    "description": "消息服务未初始化错误",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_init_failed": {
+    "message": "导航图谱后台初始化失败",
+    "description": "后台初始化失败错误",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_session_manager_init_start": {
+    "message": "初始化会话管理器...",
+    "description": "会话管理器初始化开始日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_nav_manager_init_start": {
+    "message": "初始化导航管理器...",
+    "description": "导航管理器初始化开始日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_register_base_handlers_start": {
+    "message": "注册基础消息处理程序...",
+    "description": "基础消息处理程序注册开始日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_settings_service_init_start": {
+    "message": "初始化设置服务...",
+    "description": "设置服务初始化开始日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_message_service_init_start": {
+    "message": "初始化消息服务...",
+    "description": "消息服务初始化开始日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_register_session_handlers_start": {
+    "message": "注册会话管理器消息处理程序...",
+    "description": "会话管理器消息处理程序注册开始日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_init_complete": {
+    "message": "导航图谱后台初始化成功",
+    "description": "后台初始化成功日志",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_startup_begin": {
+    "message": "Navigraph 后台脚本启动",
+    "description": "后台脚本启动消息",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_init_start": {
+    "message": "初始化后台服务...",
+    "description": "后台服务初始化开始",
+    "_sourceFiles": [
+      "background/background.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_tab_info_failed": {
+    "message": "获取标签页信息失败",
+    "description": "获取标签页信息失败警告",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_node_metadata_invalid_id": {
+    "message": "更新元数据失败: 无效的节点ID",
+    "description": "无效节点ID错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_node_not_found": {
+    "message": "未找到节点 {0}，无法更新元数据",
+    "description": "节点未找到错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_title_update": {
+    "message": "更新标题: {0} -> {1}",
+    "description": "标题更新日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_initialized": {
+    "message": "节点追踪器初始化完成",
+    "description": "节点追踪器初始化完成日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_create_failed": {
+    "message": "创建节点失败: {0}",
+    "description": "创建节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_node_not_found_for_metadata": {
+    "message": "未找到节点 {0}，无法更新元数据",
+    "description": "节点未找到警告",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_get_or_create_failed": {
+    "message": "获取或创建节点失败: {0}",
+    "description": "获取或创建节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_title_update": {
+    "message": "标题从 '{0}' 更新为 '{1}'",
+    "description": "节点标题更新日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_unnamed_page": {
+    "message": "无标题",
+    "description": "无标题页面默认名称",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts",
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_update_metadata_failed": {
+    "message": "更新节点元数据失败: {0}",
+    "description": "更新节点元数据失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_tab_node_not_found": {
+    "message": "未找到标签页{0}的节点ID: {1}，不更新元数据",
+    "description": "标签页节点未找到日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_check_url_match_failed": {
+    "message": "检查节点URL匹配失败: {0}",
+    "description": "检查URL匹配失败警告",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_find_by_url_failed": {
+    "message": "通过URL查找节点失败: {0}",
+    "description": "URL查找节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_get_active_nodes_failed": {
+    "message": "获取活跃节点失败: {0}",
+    "description": "获取活跃节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_cache_cleanup_complete": {
+    "message": "清理缓存：移除了 {0} 个无效待更新节点",
+    "description": "缓存清理完成日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_reset_complete": {
+    "message": "节点追踪器状态已重置",
+    "description": "节点追踪器重置完成日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_close_all_nodes_start": {
+    "message": "关闭会话 {0} 中的所有活跃节点",
+    "description": "开始关闭会话节点日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_no_active_nodes": {
+    "message": "会话 {0} 中没有活跃节点",
+    "description": "无活跃节点日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_found_active_nodes": {
+    "message": "找到 {0} 个活跃节点需要关闭",
+    "description": "发现活跃节点日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_nodes_marked_closed": {
+    "message": "已将会话 {0} 中的 {1} 个节点标记为关闭",
+    "description": "节点标记关闭日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_close_nodes_failed": {
+    "message": "关闭会话 {0} 中的活跃节点失败: {1}",
+    "description": "关闭节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_associate_tabs_start": {
+    "message": "将当前打开的标签页关联到会话 {0}",
+    "description": "开始关联标签页日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_no_tabs_to_associate": {
+    "message": "没有需要关联的相关标签页",
+    "description": "无标签页可关联日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_found_tabs_to_associate": {
+    "message": "找到 {0} 个标签页需要关联到会话",
+    "description": "发现标签页可关联日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_tab_associated": {
+    "message": "已将标签页 {0} ({1}) 关联到会话 {2}",
+    "description": "标签页已关联日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_association_complete": {
+    "message": "完成标签页关联到会话 {0}",
+    "description": "标签页关联完成日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_association_failed": {
+    "message": "关联标签页到会话 {0} 失败: {1}",
+    "description": "标签页关联失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_query_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_update_failed": {
+    "message": "更新节点 {0} 失败: {1}",
+    "description": "更新节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_tab_nodes_closed": {
+    "message": "已关闭标签页 {0} 的 {1} 个节点",
+    "description": "标签页节点已关闭日志",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_tracker_close_tab_nodes_failed": {
+    "message": "关闭标签页 {0} 节点失败: {1}",
+    "description": "关闭标签页节点失败错误",
+    "_sourceFiles": [
+      "background/navigation/managers/node-tracker.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_navigation_manager_init_failed": {
+    "message": "导航管理器初始化失败: {0}",
+    "description": "导航管理器初始化失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_instance_not_initialized": {
+    "message": "NavigationManager实例未初始化",
+    "description": "NavigationManager实例未初始化错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_create_session_failed": {
+    "message": "无法创建新会话",
+    "description": "无法创建新会话错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_get_create_session_failed": {
+    "message": "获取或创建会话失败",
+    "description": "获取或创建会话失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_get_current_session_failed": {
+    "message": "从会话管理器获取当前会话失败",
+    "description": "获取当前会话失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_get_session_graph_failed": {
+    "message": "获取会话 {0} 图数据失败",
+    "description": "获取会话图数据失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_cleanup_pending_updates_failed": {
+    "message": "清理待更新列表失败",
+    "description": "清理待更新列表失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_get_node_count_failed": {
+    "message": "获取记录数量失败",
+    "description": "获取记录数量失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_get_tab_history_failed": {
+    "message": "获取标签页[{0}]历史失败",
+    "description": "获取标签页历史失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_session_id_retrieved": {
+    "message": "已从会话管理器获取当前会话ID: {0}",
+    "description": "获取当前会话ID成功日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_create_session_start": {
+    "message": "未找到活跃会话，请求会话管理器创建新会话...",
+    "description": "请求创建新会话日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_session_name": {
+    "message": "浏览会话 {0}",
+    "description": "新建会话默认名称",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_register_message_handlers_start": {
+    "message": "注册导航相关消息处理程序...",
+    "description": "导航消息处理程序注册开始日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_setup_event_listeners_start": {
+    "message": "设置导航相关事件监听器...",
+    "description": "导航事件监听器设置开始日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_session_changed": {
+    "message": "已切换到会话: {0}",
+    "description": "会话变更日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_resources_cleaned": {
+    "message": "导航管理器资源已清理",
+    "description": "导航管理器清理资源日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_state_reset": {
+    "message": "已重置导航管理器内部状态",
+    "description": "导航管理器状态重置日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_init_start": {
+    "message": "初始化导航管理器...",
+    "description": "导航管理器初始化开始日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_init_complete": {
+    "message": "导航管理器初始化完成",
+    "description": "导航管理器初始化完成日志",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_init_failed": {
+    "message": "导航管理器初始化失败: {0}",
+    "description": "导航管理器初始化失败错误",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "navigation_manager_init_error": {
+    "message": "导航管理器初始化失败",
+    "description": "导航管理器初始化失败错误消息",
+    "_sourceFiles": [
+      "background/navigation/navigation-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_context_failed": {
+    "message": "创建消息上下文失败",
+    "description": "SessionMessageHandler 创建消息上下文失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_id_empty": {
+    "message": "会话ID不能为空",
+    "description": "SessionMessageHandler 会话ID为空错误",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_sessions_failed": {
+    "message": "获取会话列表失败: {0}",
+    "description": "SessionMessageHandler 获取会话列表失败错误",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_registering": {
+    "message": "注册会话相关消息处理程序",
+    "description": "注册会话处理程序日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_latest_registered": {
+    "message": "已注册获取最新活跃会话处理程序",
+    "description": "最新会话处理程序注册日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_update_data_empty": {
+    "message": "更新数据不能为空",
+    "description": "更新数据为空错误",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_confirm_delete_required": {
+    "message": "需要确认删除操作",
+    "description": "需要确认删除错误",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_session_not_found": {
+    "message": "找不到会话: {0}",
+    "description": "会话未找到错误",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_current_failed": {
+    "message": "获取当前会话失败: {0}",
+    "description": "获取当前会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_current_failed_message": {
+    "message": "获取当前会话失败: {0}",
+    "description": "获取当前会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_latest_failed": {
+    "message": "获取最新会话失败: {0}",
+    "description": "获取最新会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_latest_failed_message": {
+    "message": "获取最新会话失败: {0}",
+    "description": "获取最新会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_create_failed": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_create_failed_message": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_update_failed": {
+    "message": "更新会话 {0} 失败: {1}",
+    "description": "更新会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_update_failed_message": {
+    "message": "更新会话失败: {0}",
+    "description": "更新会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_delete_failed": {
+    "message": "删除会话 {0} 失败: {1}",
+    "description": "删除会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_delete_failed_message": {
+    "message": "删除会话失败: {0}",
+    "description": "删除会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_end_failed": {
+    "message": "结束会话 {0} 失败: {1}",
+    "description": "结束会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_end_failed_message": {
+    "message": "结束会话失败: {0}",
+    "description": "结束会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_set_current_failed": {
+    "message": "设置当前会话失败: {0}",
+    "description": "设置当前会话失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_set_current_failed_message": {
+    "message": "设置当前会话失败: {0}",
+    "description": "设置当前会话失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_stats_failed": {
+    "message": "获取会话统计信息失败: {0}",
+    "description": "获取统计信息失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_stats_failed_message": {
+    "message": "获取会话统计信息失败: {0}",
+    "description": "获取统计信息失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_sessions_failed_message": {
+    "message": "获取会话列表失败: {0}",
+    "description": "获取会话列表失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_details_failed": {
+    "message": "获取会话 {0} 详情失败: {1}",
+    "description": "获取会话详情失败日志",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_handler_get_details_failed_message": {
+    "message": "获取会话详情失败: {0}",
+    "description": "获取会话详情失败消息",
+    "_sourceFiles": [
+      "background/session/handlers/session-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_session_manager_init_failed": {
+    "message": "会话管理器初始化失败: {0}",
+    "description": "会话管理器初始化失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_init_failed": {
+    "message": "会话管理器初始化失败: {0}",
+    "description": "SessionManager 初始化失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_load_active_failed": {
+    "message": "加载活跃会话失败: {0}",
+    "description": "SessionManager 加载活跃会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "latest_session_load_failed": {
+    "message": "加载最新会话失败: {0}",
+    "description": "加载最新会话失败",
+    "_sourceFiles": [
+      "background/session/session-manager.ts",
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_created": {
+    "message": "会话管理器已创建",
+    "description": "会话管理器创建日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_already_initialized": {
+    "message": "会话管理器已经初始化过",
+    "description": "会话管理器重复初始化警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_init_start": {
+    "message": "会话管理器开始初始化",
+    "description": "会话管理器初始化开始日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_init_complete": {
+    "message": "会话管理器初始化完成",
+    "description": "会话管理器初始化完成日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_register_handlers_start": {
+    "message": "开始注册会话管理器的消息处理程序",
+    "description": "注册会话处理程序开始日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_loaded_active": {
+    "message": "已加载活跃会话: {0} - {1}",
+    "description": "加载活跃会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_reuse_recent": {
+    "message": "重用最近会话: {0}，超过活跃时间 {1} 小时",
+    "description": "重用最近会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_create_new_session": {
+    "message": "创建新会话",
+    "description": "创建新会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_get_list_failed": {
+    "message": "获取会话列表失败: {0}",
+    "description": "获取会话列表失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_session_not_found": {
+    "message": "会话未找到: {0}",
+    "description": "会话未找到警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_get_session_failed": {
+    "message": "获取会话失败: {0}, 错误: {1}",
+    "description": "获取会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_get_navigation_failed": {
+    "message": "获取会话导航数据失败: {0}, 错误: {1}",
+    "description": "获取导航数据失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_default_session_name": {
+    "message": "会话 {0}",
+    "description": "默认会话名称",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_created_session": {
+    "message": "已创建会话: {0} - {1}",
+    "description": "已创建会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_session_create_failed": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_create_activate_failed": {
+    "message": "创建并激活会话失败: {0}",
+    "description": "创建激活会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_does_not_exist": {
+    "message": "会话 {0} 不存在",
+    "description": "会话不存在错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_not_found_after_update": {
+    "message": "更新会话后无法检索到会话",
+    "description": "更新后会话检索失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_updated": {
+    "message": "已更新会话: {0}",
+    "description": "已更新会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_update_failed": {
+    "message": "更新会话失败: {0}, 错误: {1}",
+    "description": "更新会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "update_node_count_failed_session_not_found": {
+    "message": "更新节点计数失败: 会话 {0} 不存在",
+    "description": "节点计数更新会话不存在警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "update_node_count_session_failed": {
+    "message": "更新会话 {0} 节点计数失败: {1}",
+    "description": "更新节点计数失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "update_tab_count_failed_session_not_found": {
+    "message": "更新标签页计数失败: 会话 {0} 不存在",
+    "description": "标签页计数更新会话不存在警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "update_tab_count_session_failed": {
+    "message": "更新会话 {0} 标签页计数失败: {1}",
+    "description": "更新标签页计数失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_deactivate_not_found": {
+    "message": "无法停用不存在的会话: {0}",
+    "description": "停用不存在会话警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_already_inactive": {
+    "message": "会话已经处于非活跃状态: {0}",
+    "description": "会话已非活跃日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_deactivated": {
+    "message": "会话已停用: {0}",
+    "description": "会话已停用日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_deactivate_failed": {
+    "message": "停用会话失败: {0}, 错误: {1}",
+    "description": "停用会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_not_found_after_end": {
+    "message": "结束会话后无法检索到会话",
+    "description": "结束后会话检索失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_ended_session": {
+    "message": "会话已结束: {0}",
+    "description": "会话已结束日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_end_failed": {
+    "message": "结束会话失败: {0}, 错误: {1}",
+    "description": "结束会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_deleted": {
+    "message": "会话已删除: {0}",
+    "description": "会话已删除日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_delete_failed": {
+    "message": "删除会话失败: {0}, 错误: {1}",
+    "description": "删除会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_already_current": {
+    "message": "会话已是当前会话: {0}",
+    "description": "会话已是当前会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_set_current": {
+    "message": "已设置当前会话: {0}",
+    "description": "设置当前会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_set_current_failed": {
+    "message": "设置当前会话失败: {0}, 错误: {1}",
+    "description": "设置当前会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "latest_session_load_failed_message": {
+    "message": "获取最新会话失败: {0}",
+    "description": "获取最新会话失败错误消息",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_already_latest": {
+    "message": "会话已是最新会话: {0}",
+    "description": "会话已是最新会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_set_latest": {
+    "message": "已设置最新会话: {0}",
+    "description": "设置最新会话日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_set_latest_failed": {
+    "message": "设置最新会话失败: {0}, 错误: {1}",
+    "description": "设置最新会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_no_current_to_sync_latest": {
+    "message": "没有当前会话，无法同步到最新会话",
+    "description": "无当前会话同步警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "sync_current_to_latest_failed": {
+    "message": "同步当前会话到最新会话失败: {0}",
+    "description": "同步当前会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "sync_current_to_latest_failed_message": {
+    "message": "同步当前会话到最新会话失败: {0}",
+    "description": "同步当前会话失败错误消息",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_no_latest_to_sync_current": {
+    "message": "没有最新会话，无法同步到当前会话",
+    "description": "无最新会话同步警告",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "sync_latest_to_current_failed": {
+    "message": "同步最新会话到当前会话失败: {0}",
+    "description": "同步最新会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "sync_latest_to_current_failed_message": {
+    "message": "同步最新会话到当前会话失败: {0}",
+    "description": "同步最新会话失败错误消息",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "date_transition_check_failed": {
+    "message": "检查日期转换失败: {0}",
+    "description": "日期转换检查失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_activity_mark_failed": {
+    "message": "会话活动标记失败: {0}",
+    "description": "会话活动标记失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_idle_detected": {
+    "message": "检测到用户空闲",
+    "description": "用户空闲检测日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_auto_end_failed": {
+    "message": "自动结束会话失败: {0}",
+    "description": "自动结束会话失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_tab_closed": {
+    "message": "标签页已关闭: {0}",
+    "description": "标签页关闭日志",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_close_nodes_failed": {
+    "message": "关闭节点失败: {0}",
+    "description": "关闭节点失败错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_statistics_failed": {
+    "message": "获取会话 {0} 统计信息失败: {1}",
+    "description": "获取会话统计信息失败",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_statistics_failed_message": {
+    "message": "获取会话统计信息失败: {0}",
+    "description": "获取会话统计信息失败消息",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_navigation_data_failed": {
+    "message": "获取会话{0}的导航数据失败: {1}",
+    "description": "获取会话导航数据失败",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_manager_not_initialized": {
+    "message": "SessionManager实例未初始化",
+    "description": "会话管理器未初始化错误",
+    "_sourceFiles": [
+      "background/session/session-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_open_failed": {
+    "message": "打开数据库失败: {0}",
+    "description": "打开数据库失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_init_failed": {
+    "message": "初始化数据库失败: {0}",
+    "description": "初始化数据库失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_open_success": {
+    "message": "成功打开数据库 {0} (版本 {1})",
+    "description": "数据库打开成功日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_upgrade_failed": {
+    "message": "数据库升级失败",
+    "description": "数据库升级失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_unknown_error": {
+    "message": "未知错误",
+    "description": "未知错误消息",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_new_instance": {
+    "message": "创建新的数据库实例: {0}",
+    "description": "创建新数据库实例日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_closed": {
+    "message": "数据库 {0} v{1} 已关闭",
+    "description": "数据库关闭日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_upgrade": {
+    "message": "数据库升级: {0} -> {1}",
+    "description": "数据库版本升级日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_upgrade_complete": {
+    "message": "数据库结构升级完成",
+    "description": "数据库结构升级完成日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_store_deleted": {
+    "message": "删除已存在的存储: {0}",
+    "description": "删除已存在存储日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_store_created": {
+    "message": "创建存储: {0}",
+    "description": "创建存储日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_index_created": {
+    "message": "创建索引: {0}",
+    "description": "创建索引日志",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_add_failed": {
+    "message": "添加数据到 {0} 失败",
+    "description": "添加数据失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_put_failed": {
+    "message": "更新数据到 {0} 失败",
+    "description": "更新数据失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_get_failed": {
+    "message": "获取 {0} 中的数据失败",
+    "description": "获取数据失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_get_all_failed": {
+    "message": "获取 {0} 中的所有数据失败",
+    "description": "获取所有数据失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_transaction_error": {
+    "message": "事务错误: {0}",
+    "description": "数据库事务错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_index_not_found": {
+    "message": "索引 {0} 不存在于 {1}",
+    "description": "索引不存在错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_get_by_index_failed": {
+    "message": "通过索引 {0} 获取数据失败",
+    "description": "通过索引获取数据失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_delete_failed": {
+    "message": "删除 {0} 中的数据失败",
+    "description": "删除数据失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_clear_failed": {
+    "message": "清空 {0} 失败",
+    "description": "清空存储失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_iterate_failed": {
+    "message": "遍历 {0} 失败",
+    "description": "遍历存储失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_count_failed": {
+    "message": "获取 {0} 记录数失败",
+    "description": "获取记录数失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_db_exists_failed": {
+    "message": "检查 {0} 中的数据是否存在失败",
+    "description": "检查数据存在失败错误",
+    "_sourceFiles": [
+      "background/store/indexed-db.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_init_failed": {
+    "message": "初始化导航存储失败: {0}",
+    "description": "导航存储初始化失败错误",
+    "_sourceFiles": [
+      "background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_init_failed": {
+    "message": "初始化会话存储失败: {0}",
+    "description": "SessionStorage 初始化失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_save_failed": {
+    "message": "保存会话失败: {0}",
+    "description": "SessionStorage 保存会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_get_failed": {
+    "message": "获取会话失败: {0}",
+    "description": "SessionStorage 获取单个会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_get_list_failed": {
+    "message": "获取会话列表失败: {0}",
+    "description": "SessionStorage 获取会话列表失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_delete_failed": {
+    "message": "删除会话失败: {0}",
+    "description": "SessionStorage 删除会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_clear_failed": {
+    "message": "清除会话数据失败: {0}",
+    "description": "SessionStorage 清除所有会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_count_failed": {
+    "message": "获取会话数量失败: {0}",
+    "description": "SessionStorage 获取会话计数失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_init_complete": {
+    "message": "会话存储已初始化",
+    "description": "会话存储初始化完成日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_delete_nonexistent": {
+    "message": "尝试删除不存在的会话: {0}",
+    "description": "尝试删除不存在会话警告",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_deleted": {
+    "message": "会话已删除: {0}",
+    "description": "会话已删除日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_cleared_all": {
+    "message": "所有会话数据已清除",
+    "description": "所有会话数据清除日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_connection_closed": {
+    "message": "会话存储连接已关闭",
+    "description": "会话存储连接关闭日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_update_stats_nonexistent": {
+    "message": "更新统计信息失败: 会话 {0} 不存在",
+    "description": "更新不存在会话统计警告",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_stats_updated": {
+    "message": "会话 {0} 统计信息已更新",
+    "description": "会话统计信息更新日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_update_stats_failed": {
+    "message": "更新会话 {0} 统计信息失败: {1}",
+    "description": "更新会话统计失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_get_current_failed": {
+    "message": "获取当前会话失败: {0}",
+    "description": "获取当前会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_default_title": {
+    "message": "会话 {0}",
+    "description": "默认会话标题",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_created": {
+    "message": "已创建新会话: {0}",
+    "description": "创建新会话日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_create_failed": {
+    "message": "创建会话失败: {0}",
+    "description": "创建会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_deactivated_all": {
+    "message": "已将 {0} 个活跃会话设为非活跃状态",
+    "description": "将所有活跃会话设置为非活跃日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_deactivate_all_failed": {
+    "message": "设置会话为非活跃状态失败: {0}",
+    "description": "设置会话为非活跃状态失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_end_nonexistent": {
+    "message": "结束会话失败: 会话 {0} 不存在",
+    "description": "结束不存在会话警告",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_ended": {
+    "message": "会话 {0} 已结束",
+    "description": "会话已结束日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_end_failed": {
+    "message": "结束会话 {0} 失败: {1}",
+    "description": "结束会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_activate_nonexistent": {
+    "message": "激活会话失败: 会话 {0} 不存在",
+    "description": "激活不存在会话警告",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_activated": {
+    "message": "会话 {0} 已激活",
+    "description": "会话已激活日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_activate_failed": {
+    "message": "激活会话 {0} 失败: {1}",
+    "description": "激活会话失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_data_cleared": {
+    "message": "已清除会话 {0} 的所有数据",
+    "description": "会话数据清除日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_clear_data_failed": {
+    "message": "清除会话 {0} 的数据失败: {1}",
+    "description": "清除会话数据失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_updated": {
+    "message": "已更新会话 {0} 的属性",
+    "description": "会话属性更新日志",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_update_failed": {
+    "message": "更新会话 {0} 的属性失败: {1}",
+    "description": "更新会话属性失败错误",
+    "_sourceFiles": [
+      "background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_visualizer_component_init_failed": {
+    "message": "可视化组件初始化失败",
+    "description": "可视化组件初始化失败错误消息",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_d3_lib_missing": {
+    "message": "d3 库未加载，可视化功能将不可用。请确保已包含d3.js库。",
+    "description": "D3库缺失错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_svg_create_failed": {
+    "message": "无法创建SVG元素",
+    "description": "SVG元素创建失败",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_svg_missing": {
+    "message": "SVG元素不存在",
+    "description": "SVG元素不存在",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_view_switch_failed": {
+    "message": "切换视图失败",
+    "description": "切换视图失败",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts",
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_no_data_available": {
+    "message": "没有可用数据",
+    "description": "没有数据提示",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_drag_handle": {
+    "message": "拖动",
+    "description": "拖动手柄文本",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_visualizer_init_start": {
+    "message": "初始化NavigationVisualizer...",
+    "description": "开始初始化导航可视化器日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "d3_lib_loaded": {
+    "message": "d3 库已加载: {0}",
+    "description": "d3库加载成功日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_visualization_init_start": {
+    "message": "初始化导航可视化...",
+    "description": "导航可视化初始化开始日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_visualizer_init_complete": {
+    "message": "NavigationVisualizer 初始化完成",
+    "description": "导航可视化器初始化完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "waiting_for_dom_complete": {
+    "message": "等待DOM加载完成...",
+    "description": "等待DOM完成加载日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "base_config_and_messaging_init_complete": {
+    "message": "基础配置与消息监听初始化完成",
+    "description": "基础配置初始化完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "global_config_unavailable_using_defaults": {
+    "message": "全局配置不可用，使用默认设置",
+    "description": "全局配置不可用日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "applying_default_view": {
+    "message": "应用默认视图: {0}",
+    "description": "应用默认视图日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "global_config_apply_failed": {
+    "message": "应用全局配置出错",
+    "description": "应用全局配置错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_tools_init_start": {
+    "message": "初始化调试工具...",
+    "description": "调试工具初始化开始日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_tools_init_failed": {
+    "message": "初始化调试工具失败",
+    "description": "调试工具初始化失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualizer_resources_cleanup_start": {
+    "message": "清理可视化器资源...",
+    "description": "可视化器资源清理开始日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "refresh_skipped_too_frequent": {
+    "message": "最近已经刷新过，跳过此次刷新",
+    "description": "刷新频率过高跳过日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_refresh_triggered": {
+    "message": "触发可视化刷新...",
+    "description": "可视化刷新触发日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "page_activity_refresh_complete": {
+    "message": "页面活动触发的刷新完成",
+    "description": "页面活动刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "refresh_trigger_failed": {
+    "message": "触发刷新失败",
+    "description": "触发刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_refresh_complete": {
+    "message": "可视化刷新完成",
+    "description": "可视化刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_refresh_failed": {
+    "message": "可视化刷新失败",
+    "description": "可视化刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "reinit_view_failed": {
+    "message": "重新初始化视图失败",
+    "description": "重新初始化视图失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_metadata_updating": {
+    "message": "更新节点元信息: {0}",
+    "description": "更新节点元信息日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_metadata_updated": {
+    "message": "节点{0}元信息已更新",
+    "description": "节点元信息更新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_update_failed": {
+    "message": "未能更新节点: {0}",
+    "description": "节点更新失败警告",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "page_load_refresh_complete": {
+    "message": "页面加载后刷新可视化完成",
+    "description": "页面加载后刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "page_load_refresh_failed": {
+    "message": "页面加载后刷新可视化失败",
+    "description": "页面加载后刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "link_click_refresh_complete": {
+    "message": "基于链接点击刷新可视化完成",
+    "description": "链接点击刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "link_click_refresh_failed": {
+    "message": "链接点击后刷新可视化失败",
+    "description": "链接点击刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "form_submit_refresh_complete": {
+    "message": "基于表单提交刷新可视化完成",
+    "description": "表单提交刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "form_submit_refresh_failed": {
+    "message": "表单提交后刷新可视化失败",
+    "description": "表单提交刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "js_navigation_refresh_complete": {
+    "message": "基于JS导航刷新可视化完成",
+    "description": "JS导航刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "js_navigation_refresh_failed": {
+    "message": "JS导航后刷新可视化失败",
+    "description": "JS导航刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "data_refresh_complete": {
+    "message": "刷新数据完成",
+    "description": "数据刷新完成日志",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "data_refresh_failed": {
+    "message": "刷新数据失败",
+    "description": "数据刷新失败错误",
+    "_sourceFiles": [
+      "content/core/navigation-visualizer.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_no_data_skip_processing": {
+    "message": "会话不包含节点或边数据，跳过处理",
+    "description": "会话无数据跳过",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_processing_start": {
+    "message": "开始处理会话数据...",
+    "description": "会话数据处理开始",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_processing_complete": {
+    "message": "会话数据处理完成，节点: {0}, 边: {1}",
+    "description": "会话数据处理完成",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_processing_failed": {
+    "message": "处理会话数据失败: {0}",
+    "description": "会话数据处理失败",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "processing_records": {
+    "message": "处理{0}条记录",
+    "description": "处理记录数",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "processing_edges": {
+    "message": "处理{0}条边",
+    "description": "处理边数",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "rebuild_parent_child_relationships_start": {
+    "message": "开始重建父子关系...",
+    "description": "重建父子关系开始",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "parent_child_relationships_rebuilt": {
+    "message": "父子关系重建完成: {0}/{1} 节点有父节点",
+    "description": "父子关系重建完成",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_self_reference_fixed": {
+    "message": "节点 {0} 是自循环，修正为根节点",
+    "description": "修正节点自引用",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_map_built": {
+    "message": "已建立{0}个节点的索引",
+    "description": "节点映射建立完成",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "generated_edges_added": {
+    "message": "添加了{0}条生成的边",
+    "description": "添加生成的边",
+    "_sourceFiles": [
+      "content/core/node-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_loading": {
+    "message": "加载会话列表...",
+    "description": "加载会话列表开始日志",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts",
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_loading_reuse_request": {
+    "message": "会话列表正在加载中，复用现有请求",
+    "description": "会话列表加载复用请求",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_response_received": {
+    "message": "收到会话列表响应: {0}",
+    "description": "收到会话列表响应",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_listener_error": {
+    "message": "会话列表加载监听器执行错误: {0}",
+    "description": "会话列表监听器错误",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_loaded": {
+    "message": "成功加载{0}个会话",
+    "description": "会话列表加载成功",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts",
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_response_invalid_format": {
+    "message": "会话响应格式不正确: {0}",
+    "description": "会话响应格式错误",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_loading_reuse_request": {
+    "message": "会话 {0} 正在加载中，复用现有请求",
+    "description": "会话加载复用请求",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_loading_attempt": {
+    "message": "尝试加载会话: {0}",
+    "description": "尝试加载会话",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_details_response": {
+    "message": "getSessionDetails响应: {0}",
+    "description": "会话详情响应",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_fetch_success": {
+    "message": "会话数据获取成功, 节点数: {0}",
+    "description": "会话数据获取成功",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_process_error": {
+    "message": "处理会话数据时出错: {0}",
+    "description": "处理会话数据错误",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_load_listener_error": {
+    "message": "会话加载监听器执行错误: {0}",
+    "description": "会话监听器错误",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_details_fetch_failed": {
+    "message": "获取会话详情失败, 响应: {0}",
+    "description": "会话详情获取失败",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_details_load_failed": {
+    "message": "加载会话详情失败: {0}",
+    "description": "加载会话详情失败",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "trying_to_load_latest_active_session": {
+    "message": "尝试加载最新活跃会话",
+    "description": "尝试加载最新会话",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "latest_active_session_found": {
+    "message": "找到最新活跃会话: {0}，使用该会话",
+    "description": "找到最新活跃会话",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "using_last_session_from_list": {
+    "message": "使用会话列表中最后一个会话: {0}",
+    "description": "使用最后一个会话",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "no_available_sessions_found": {
+    "message": "没有找到可用的会话",
+    "description": "无可用会话",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "save_session_id_local_storage_failed": {
+    "message": "保存会话ID到本地存储失败: {0}",
+    "description": "保存会话ID失败",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "latest_session_listener_call_failed": {
+    "message": "调用最新会话加载监听器失败: {0}",
+    "description": "最新会话监听器失败",
+    "_sourceFiles": [
+      "content/core/session-service-client.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_tools_disabled_in_production": {
+    "message": "生产环境，调试工具功能已禁用",
+    "description": "调试工具在生产环境禁用",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_tools_initialized": {
+    "message": "调试工具已初始化",
+    "description": "调试工具初始化完成",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_command_received_via_storage": {
+    "message": "通过存储API收到调试命令: {0}",
+    "description": "收到存储API调试命令",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_command_pending_detected": {
+    "message": "检测到未处理的调试命令: {0}",
+    "description": "检测到未处理的调试命令",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_command_received": {
+    "message": "收到调试命令: {0}",
+    "description": "收到调试命令",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_command_ignored_non_dev": {
+    "message": "非开发环境，忽略调试命令: {0}",
+    "description": "非开发环境忽略调试命令",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_command_unknown": {
+    "message": "未知的调试命令: {0}",
+    "description": "未知的调试命令",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_param_detected_in_url": {
+    "message": "检测到URL中的调试参数: {0}",
+    "description": "检测到URL中的调试参数",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_url_param_processing_failed": {
+    "message": "处理URL调试参数失败: {0}",
+    "description": "处理URL调试参数失败",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_data_status_check": {
+    "message": "📊 数据状态检查",
+    "description": "数据状态检查组标题",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_current_session": {
+    "message": "当前会话: {0}",
+    "description": "当前会话调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_session_id": {
+    "message": "会话ID: {0}",
+    "description": "会话ID调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_session_start_time": {
+    "message": "会话开始时间: {0}",
+    "description": "会话开始时间调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_session_end_time": {
+    "message": "会话结束时间: {0}",
+    "description": "会话结束时间调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_session_active": {
+    "message": "活跃中",
+    "description": "活跃会话状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_node_count": {
+    "message": "节点数量: {0}",
+    "description": "节点数量调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_edge_count": {
+    "message": "边数量: {0}",
+    "description": "边数量调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_node_samples": {
+    "message": "节点样本: {0}",
+    "description": "节点样本调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_edge_samples": {
+    "message": "边样本: {0}",
+    "description": "边样本调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_filter_status": {
+    "message": "过滤器状态: {0}",
+    "description": "过滤器状态调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_data_check_complete": {
+    "message": "数据检查完成！请查看控制台。\n\n▶ 当前会话: {0}\n▶ 总节点数: {1}\n▶ 总边数: {2}\n▶ 视图类型: {3}",
+    "description": "数据检查完成弹窗消息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_exists": {
+    "message": "存在",
+    "description": "元素存在状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_not_exists": {
+    "message": "不存在",
+    "description": "元素不存在状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_unknown": {
+    "message": "未知",
+    "description": "未知状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_dom_status_check": {
+    "message": "🔍 DOM状态检查",
+    "description": "DOM状态检查组标题",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_element_found": {
+    "message": "✅ 找到",
+    "description": "元素找到状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_element_not_found": {
+    "message": "❌ 未找到",
+    "description": "元素未找到状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_element_visibility": {
+    "message": "- 可见性: {0}",
+    "description": "元素可见性调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_element_size": {
+    "message": "- 尺寸: {0}x{1}",
+    "description": "元素尺寸调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_container_styles": {
+    "message": "可视化容器样式:",
+    "description": "容器样式调试标题",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_style_width": {
+    "message": "- width: {0}",
+    "description": "宽度样式调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_style_height": {
+    "message": "- height: {0}",
+    "description": "高度样式调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_style_position": {
+    "message": "- position: {0}",
+    "description": "位置样式调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_style_display": {
+    "message": "- display: {0}",
+    "description": "显示样式调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_svg_element": {
+    "message": "SVG元素: {0}",
+    "description": "SVG元素调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_svg_size": {
+    "message": "- SVG尺寸: {0} x {1}",
+    "description": "SVG尺寸调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_svg_child_count": {
+    "message": "- SVG子元素数: {0}",
+    "description": "SVG子元素数调试信息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_element_found_with_size": {
+    "message": "找到 ({0}x{1})",
+    "description": "带尺寸的元素找到状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_svg_found_with_children": {
+    "message": "找到 ({0} 个子元素)",
+    "description": "带子元素数量的SVG找到状态",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_dom_check_complete": {
+    "message": "DOM检查完成！请查看控制台。\n\n▶ 可视化容器: {0}\n▶ SVG元素: {1}\n▶ 当前视图: {2}",
+    "description": "DOM检查完成弹窗消息",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_clear_data_confirm": {
+    "message": "警告: 这将删除所有导航数据！确定要继续吗？",
+    "description": "清除数据确认提示",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_clear_data_unknown_error": {
+    "message": "清除数据时发生未知错误: {0}",
+    "description": "清除数据未知错误",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_clear_data_send_failed": {
+    "message": "发送清除数据消息失败: {0}",
+    "description": "发送清除数据消息失败",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_clear_data_success": {
+    "message": "已成功清除所有数据，页面将重新加载...",
+    "description": "清除数据成功提示",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_clear_data_failed": {
+    "message": "清除数据失败: {0}",
+    "description": "清除数据失败日志",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "debug_clear_data_failed_message": {
+    "message": "清除数据失败: {0}",
+    "description": "清除数据失败提示",
+    "_sourceFiles": [
+      "content/debug/debug-tools.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_title": {
+    "message": "导航图谱",
+    "description": "页面标题",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_logo_alt": {
+    "message": "导航图谱",
+    "description": "Logo图片替代文本",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_heading": {
+    "message": "导航图谱",
+    "description": "页面标题文本",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_prev_month_title": {
+    "message": "上一月",
+    "description": "上一月按钮提示文本",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_next_month_title": {
+    "message": "下一月",
+    "description": "下一月按钮提示文本",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_sunday": {
+    "message": "日",
+    "description": "星期日",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_monday": {
+    "message": "一",
+    "description": "星期一",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_tuesday": {
+    "message": "二",
+    "description": "星期二",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_wednesday": {
+    "message": "三",
+    "description": "星期三",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_thursday": {
+    "message": "四",
+    "description": "星期四",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_friday": {
+    "message": "五",
+    "description": "星期五",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_saturday": {
+    "message": "六",
+    "description": "星期六",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_select_session": {
+    "message": "选择会话",
+    "description": "选择会话标题",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_filters": {
+    "message": "筛选器",
+    "description": "筛选器标题",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_navigation_type": {
+    "message": "导航类型",
+    "description": "导航类型分类",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_link_click": {
+    "message": "链接点击",
+    "description": "链接点击类型",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_address_bar": {
+    "message": "地址栏",
+    "description": "地址栏类型",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交类型",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_js_redirect": {
+    "message": "JavaScript/重定向",
+    "description": "JavaScript重定向类型",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_navigation_behavior": {
+    "message": "导航行为",
+    "description": "导航行为分类",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_show_reload": {
+    "message": "显示页面重载",
+    "description": "页面重载选项",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_show_history": {
+    "message": "显示历史导航",
+    "description": "历史导航选项",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_page_status": {
+    "message": "页面状态",
+    "description": "页面状态分类",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_show_closed": {
+    "message": "显示已关闭页面",
+    "description": "显示已关闭页面选项",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_show_tracking": {
+    "message": "显示跟踪页面",
+    "description": "显示跟踪页面选项",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_loading": {
+    "message": "正在加载数据...",
+    "description": "加载提示",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_error": {
+    "message": "错误",
+    "description": "错误标题",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_refresh_page": {
+    "message": "刷新页面",
+    "description": "刷新页面按钮",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_close": {
+    "message": "关闭",
+    "description": "关闭按钮",
+    "_sourceFiles": [
+      "content/index.html",
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_tech_details": {
+    "message": "技术细节",
+    "description": "技术细节标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_session_date": {
+    "message": "会话日期",
+    "description": "底部状态栏会话日期标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_duration": {
+    "message": "时长",
+    "description": "底部状态栏时长标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_nodes": {
+    "message": "节点",
+    "description": "底部状态栏节点标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_hidden": {
+    "message": "已隐藏",
+    "description": "底部状态栏已隐藏标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_view": {
+    "message": "视图",
+    "description": "底部状态栏视图标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_tree_view_short": {
+    "message": "树形图",
+    "description": "底部状态栏树形视图简称",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_zoom": {
+    "message": "缩放",
+    "description": "底部状态栏缩放标签",
+    "_sourceFiles": [
+      "content/index.html"
+    ],
+    "_untranslated": true
+  },
+  "content_config_init_failed": {
+    "message": "配置管理初始化失败",
+    "description": "配置管理初始化失败日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_config_load_failed": {
+    "message": "配置加载失败: {0}",
+    "description": "配置加载失败错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_init_msg_service": {
+    "message": "初始化消息服务...",
+    "description": "初始化消息服务日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_message_service_init_failed": {
+    "message": "消息服务初始化失败: {0}",
+    "description": "消息服务初始化失败错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_message_system_failed": {
+    "message": "消息系统初始化失败:",
+    "description": "消息系统初始化失败错误消息",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_init_failed": {
+    "message": "初始化失败:",
+    "description": "一般初始化失败错误消息",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_extension_error": {
+    "message": "Navigraph 扩展错误:",
+    "description": "扩展错误通用前缀",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_startup_error": {
+    "message": "启动初始化过程失败: {0}",
+    "description": "内容脚本启动初始化失败错误日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_script_execution_failed": {
+    "message": "内容脚本执行失败:",
+    "description": "脚本执行失败错误消息",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_init_start": {
+    "message": "开始初始化 Navigraph 可视化…",
+    "description": "内容脚本初始化开始日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_config_init_start": {
+    "message": "初始化配置管理…",
+    "description": "内容脚本页面焦点事件日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_listener_ready": {
+    "message": "页面活动监听器设置完成",
+    "description": "内容脚本页面活动监听器就绪日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_listener_failed": {
+    "message": "设置页面活动监听器失败: {0}",
+    "description": "内容脚本页面活动监听器初始化失败日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_page_activity_detected": {
+    "message": "检测到页面活动({0})，触发刷新",
+    "description": "页面活动检测日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_visualizer_missing_or_invalid": {
+    "message": "可视化器实例不存在或没有刷新方法",
+    "description": "可视化器缺失警告",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_page_activity_too_frequent": {
+    "message": "页面活动({0})距离上次时间过短({1}ms)，忽略",
+    "description": "页面活动过于频繁调试日志",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_page_activity_process_failed": {
+    "message": "处理页面活动({0})失败: {1}",
+    "description": "页面活动处理失败错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_error_container_not_found": {
+    "message": "找不到错误UI容器，降级到alert",
+    "description": "错误容器未找到错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_error_ui_display_failed": {
+    "message": "显示错误UI失败: {0}",
+    "description": "显示错误UI失败错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_detailed_error_ui_failed": {
+    "message": "显示详细错误UI失败: {0}",
+    "description": "显示详细错误UI失败错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_toast_display_failed": {
+    "message": "显示通知消息失败: {0}",
+    "description": "显示通知消息失败错误",
+    "_sourceFiles": [
+      "content/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_tree_view": {
+    "message": "树形图",
+    "description": "树形图视图按钮文本",
+    "_sourceFiles": [
+      "content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_timeline_view": {
+    "message": "时间线",
+    "description": "时间线视图按钮文本",
+    "_sourceFiles": [
+      "content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_reset_view": {
+    "message": "重置视图",
+    "description": "重置视图按钮文本",
+    "_sourceFiles": [
+      "content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_show_all": {
+    "message": "显示全部",
+    "description": "显示全部按钮文本",
+    "_sourceFiles": [
+      "content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_no_navigation_data": {
+    "message": "无导航数据可显示",
+    "description": "无导航数据提示",
+    "_sourceFiles": [
+      "content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "data_processor_applying_filters": {
+    "message": "应用筛选器: {0}",
+    "description": "应用筛选器日志",
+    "_sourceFiles": [
+      "content/visualizer/DataProcessor.ts"
+    ],
+    "_untranslated": true
+  },
+  "data_processor_filter_result": {
+    "message": "过滤结果: 从{0}个节点中筛选出{1}个符合条件的节点",
+    "description": "过滤结果日志",
+    "_sourceFiles": [
+      "content/visualizer/DataProcessor.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_current_session": {
+    "message": "当前会话",
+    "description": "当前会话标题",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_no_open_records": {
+    "message": "没有打开的浏览记录",
+    "description": "没有打开记录消息",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_no_open_records_with_closed": {
+    "message": "没有打开的浏览记录 ({0} 个已关闭节点)",
+    "description": "带有关闭节点计数的无打开记录消息",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_filter_show_closed_hint": {
+    "message": "提示：点击筛选器显示已关闭节点",
+    "description": "显示已关闭节点的提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "rendering_manager_init": {
+    "message": "渲染管理器已创建",
+    "description": "渲染管理器初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "rendering_manager_init_start": {
+    "message": "开始初始化渲染管理器",
+    "description": "渲染管理器初始化开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "rendering_manager_init_complete": {
+    "message": "渲染管理器初始化完成",
+    "description": "渲染管理器初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_refresh_start": {
+    "message": "开始刷新可视化 {0}",
+    "description": "可视化刷新开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "using_provided_data": {
+    "message": "使用提供的数据",
+    "description": "使用提供数据日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "using_existing_data": {
+    "message": "使用现有数据",
+    "description": "使用现有数据日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "refresh_failed": {
+    "message": "刷新可视化失败: {0}",
+    "description": "刷新可视化失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "url_updated_for_view_filters": {
+    "message": "已更新URL以反映当前视图和筛选器状态",
+    "description": "URL更新日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "url_update_failed": {
+    "message": "更新URL失败: {0}",
+    "description": "URL更新失败警告",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "render_failed_no_container_svg": {
+    "message": "渲染失败：容器或SVG不存在",
+    "description": "渲染失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_render_start": {
+    "message": "开始渲染可视化: 视图={0}，节点数={1}，边数={2}，大小={3}",
+    "description": "可视化渲染开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_render_complete": {
+    "message": "可视化渲染完成",
+    "description": "可视化渲染完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "render_failed": {
+    "message": "渲染失败: {0}",
+    "description": "渲染失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "svg_setup_start": {
+    "message": "开始设置SVG元素",
+    "description": "SVG设置开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "svg_element_empty": {
+    "message": "SVG元素为空",
+    "description": "SVG元素为空错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "svg_setup_complete": {
+    "message": "SVG设置完成",
+    "description": "SVG设置完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "svg_setup_failed": {
+    "message": "SVG设置失败: {0}",
+    "description": "SVG设置失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "container_size_updated": {
+    "message": "容器大小已更新: {0}",
+    "description": "容器大小更新日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "container_size_change_insignificant": {
+    "message": "容器大小变化不显著，跳过更新",
+    "description": "容器大小变化不显著日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "rendering_manager_cleanup": {
+    "message": "清理渲染管理器资源",
+    "description": "渲染管理器清理日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_renderer_initialized": {
+    "message": "时间线渲染器已初始化",
+    "description": "时间线渲染器初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_renderer_no_container": {
+    "message": "无法渲染：SVG或容器未初始化",
+    "description": "时间线渲染器容器未初始化错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_renderer_cleaned_up": {
+    "message": "时间线渲染器已清理",
+    "description": "时间线渲染器资源清理日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "using_modular_timeline_renderer": {
+    "message": "使用模块化时间线渲染器",
+    "description": "模块化时间线渲染器使用日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_saved_state_detected": {
+    "message": "检测到保存的时间线状态: {0}",
+    "description": "检测到时间线保存状态日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_zoom_setup_start": {
+    "message": "为时间线视图设置缩放行为",
+    "description": "时间线缩放设置开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_invalid_transform_detected": {
+    "message": "检测到无效变换: {0}，恢复到安全状态",
+    "description": "检测到无效变换警告",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_zoom_setup_complete": {
+    "message": "已设置时间线缩放行为",
+    "description": "时间线缩放设置完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_zoom_setup_failed": {
+    "message": "设置时间线缩放失败: {0}",
+    "description": "时间线缩放设置失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_restore_transform": {
+    "message": "恢复时间线保存的变换状态: {0}",
+    "description": "恢复时间线变换状态日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_apply_transform_failed": {
+    "message": "应用变换失败: {0}",
+    "description": "应用变换失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_render_error": {
+    "message": "时间线渲染过程中出错: {0}",
+    "description": "时间线渲染错误日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_render_error_message": {
+    "message": "时间线渲染错误: {0}",
+    "description": "时间线渲染错误信息",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_no_data": {
+    "message": "无时间数据可显示",
+    "description": "时间线无数据提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_title": {
+    "message": "时间线",
+    "description": "时间线标题",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_date_range_same_day": {
+    "message": "时间线 - {0} {1} 至 {2}",
+    "description": "同一天时间线日期范围格式",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_date_range_different_days": {
+    "message": "时间线 - {0} {1} 至 {2} {3}",
+    "description": "不同天时间线日期范围格式",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "unknown_error": {
+    "message": "未知错误",
+    "description": "未知错误通用消息",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TimelineRenderer.ts",
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_renderer_initialized": {
+    "message": "树形图渲染器已初始化",
+    "description": "树形图渲染器初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "renderer_cannot_render_no_container": {
+    "message": "无法渲染：SVG或容器未初始化",
+    "description": "渲染器容器未初始化错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_renderer_cleaned_up": {
+    "message": "树形图渲染器已清理",
+    "description": "树形图渲染器资源清理日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "using_modular_tree_renderer": {
+    "message": "使用模块化树形图渲染器",
+    "description": "模块化树形图渲染器使用日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_state_detected": {
+    "message": "检测到保存的树形图状态: {0}",
+    "description": "检测到树形图保存状态日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "links_normalized_to_string_ids": {
+    "message": "链接已规范化为字符串ID",
+    "description": "链接规范化日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "creating_main_view_group": {
+    "message": "创建主视图组",
+    "description": "创建主视图组日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_view_zoom_setup_start": {
+    "message": "为树形图视图设置缩放行为",
+    "description": "树形图缩放设置开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_view_zoom_setup_complete": {
+    "message": "已设置树形图缩放行为",
+    "description": "树形图缩放设置完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_view_zoom_setup_failed": {
+    "message": "设置树形图缩放失败: {0}",
+    "description": "树形图缩放设置失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "found_root_and_self_loop_nodes": {
+    "message": "找到根节点和自循环节点: {0}, {1}",
+    "description": "找到根节点和自循环节点日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "no_root_nodes_found": {
+    "message": "未找到根节点",
+    "description": "未找到根节点警告",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "detected_redirect_nodes": {
+    "message": "检测到重定向节点: {0}",
+    "description": "检测到重定向节点日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "removed_cycle_links": {
+    "message": "移除了 {0} 个导致循环的链接",
+    "description": "移除循环链接日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "fixed_cycle_connections": {
+    "message": "已移除 {0} 个循环连接",
+    "description": "修复循环连接提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "balancing_root_nodes": {
+    "message": "平衡根节点: {0}",
+    "description": "平衡根节点日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "root_nodes_distribution": {
+    "message": "根节点分布: 左={0}，右={1}",
+    "description": "根节点分布日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_layout_calculation_failed": {
+    "message": "树形图布局计算失败: {0}",
+    "description": "树形图布局计算失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_layout_calculation_failed_msg": {
+    "message": "无法计算树形图布局",
+    "description": "树形图布局计算失败消息",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "unresolvable_cyclic_dependency": {
+    "message": "无法解决的循环依赖",
+    "description": "无法解决的循环依赖错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "cannot_render_tree_cyclic_dependency": {
+    "message": "由于存在循环依赖，无法渲染树形图",
+    "description": "循环依赖无法渲染提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "try_timeline_view_or_filter_nodes": {
+    "message": "尝试使用时间线视图或筛选节点",
+    "description": "建议使用时间线视图提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "click_to_switch_to_timeline": {
+    "message": "点击切换到时间线视图",
+    "description": "切换到时间线视图提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "left_tree_link_not_found": {
+    "message": "左侧树链接未找到: {0} -> {1}",
+    "description": "左侧树链接未找到日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "left_tree_missing_links": {
+    "message": "左侧树缺失 {0} 个链接",
+    "description": "左侧树缺失链接警告",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "right_tree_link_not_found": {
+    "message": "右侧树链接未找到: {0} -> {1}",
+    "description": "右侧树链接未找到日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "right_tree_missing_links": {
+    "message": "右侧树缺失 {0} 个链接",
+    "description": "右侧树缺失链接警告",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "unnamed_node": {
+    "message": "未命名节点",
+    "description": "未命名节点占位文本",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "contains_filtered_nodes": {
+    "message": "包含 {0} 个已过滤节点",
+    "description": "包含过滤节点提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "page_has_self_refresh": {
+    "message": "页面存在自我刷新",
+    "description": "自循环节点提示",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_date": {
+    "message": "会话日期: {0}",
+    "description": "会话日期格式",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "current_session": {
+    "message": "当前会话",
+    "description": "当前会话文本",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_transform_applying": {
+    "message": "应用树形图变换: {0}",
+    "description": "应用树形图变换日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_get_transform_failed": {
+    "message": "获取变换信息失败: {0}",
+    "description": "获取变换信息失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_rendering_failed": {
+    "message": "树形图渲染过程中出错: {0}",
+    "description": "树形图渲染失败错误",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_rendering_error": {
+    "message": "渲染错误: {0}",
+    "description": "渲染错误显示文本",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_detect_break_cycles": {
+    "message": "检测并打破循环...",
+    "description": "循环检测开始日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_cycle_detected": {
+    "message": "检测到循环: {0}",
+    "description": "检测到循环日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_back_edge_marked": {
+    "message": "标记回边: {0} -> {1}",
+    "description": "标记回边日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_skip_self_loop": {
+    "message": "跳过自循环连接: {0} -> {1} (将作为根节点处理)",
+    "description": "跳过自循环连接日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_remove_back_edge": {
+    "message": "移除回边: {0} -> {1}",
+    "description": "移除回边日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_restore_state": {
+    "message": "恢复树形图状态: {0}",
+    "description": "恢复树形图状态日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_rendering_complete": {
+    "message": "树形图渲染完成，节点数: {0}, 链接数: {1}",
+    "description": "树形图渲染完成日志",
+    "_sourceFiles": [
+      "content/visualizer/renderers/TreeRenderer.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_filter_url_load_failed": {
+    "message": "从URL加载筛选器配置失败",
+    "description": "筛选器URL加载失败",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_filter_unknown_id": {
+    "message": "未知筛选器ID: {0}",
+    "description": "未知筛选器ID警告",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_manager_init": {
+    "message": "筛选器管理器初始化",
+    "description": "筛选器管理器初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_init_start": {
+    "message": "初始化筛选器...",
+    "description": "筛选器初始化开始日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_init_complete": {
+    "message": "筛选器初始化完成",
+    "description": "筛选器初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_load_from_url": {
+    "message": "从URL加载筛选器配置: {0}",
+    "description": "从URL加载筛选器配置日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_applying": {
+    "message": "应用筛选器: {0}",
+    "description": "应用筛选器日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_result_stats": {
+    "message": "筛选后数据：节点 {0}/{1}，边 {2}/{3}",
+    "description": "筛选结果统计日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_update": {
+    "message": "更新筛选器: {0} = {1}",
+    "description": "更新筛选器日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_changed": {
+    "message": "筛选器 {0} ({1}) 已更改为 {2}",
+    "description": "筛选器变更日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_reset_start": {
+    "message": "重置所有筛选器...",
+    "description": "开始重置筛选器日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_reset_complete": {
+    "message": "所有筛选器已重置为默认值",
+    "description": "筛选器重置完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_cleanup": {
+    "message": "清理筛选器资源...",
+    "description": "清理筛选器资源日志",
+    "_sourceFiles": [
+      "content/visualizer/state/FilterManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_session_selection_failed": {
+    "message": "选择会话失败",
+    "description": "会话选择失败错误消息",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_current_session_load_failed": {
+    "message": "加载当前会话失败",
+    "description": "当前会话加载失败错误消息",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_session_load_failed_or_unavailable": {
+    "message": "会话加载失败或无可用会话",
+    "description": "会话加载失败或无可用会话错误消息",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_session_data_processing_failed": {
+    "message": "处理会话数据失败",
+    "description": "会话数据处理失败错误消息",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_view_controller_init": {
+    "message": "会话视图控制器初始化",
+    "description": "会话视图控制器初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_management_init_start": {
+    "message": "初始化会话管理...",
+    "description": "会话管理初始化开始日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_management_init_complete": {
+    "message": "会话管理初始化完成",
+    "description": "会话管理初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_management_init_failed": {
+    "message": "会话管理初始化失败: {0}",
+    "description": "会话管理初始化失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_load_complete": {
+    "message": "会话列表加载完成，找到 {0} 个会话",
+    "description": "会话列表加载完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_load_failed": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_list_process_failed": {
+    "message": "处理会话列表失败: {0}",
+    "description": "处理会话列表失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_selector_updating": {
+    "message": "更新会话选择器...",
+    "description": "会话选择器更新日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_selector_update_failed": {
+    "message": "更新会话选择器失败: {0}",
+    "description": "更新会话选择器失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_selected": {
+    "message": "选择会话: {0}",
+    "description": "会话选择日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_switch_success": {
+    "message": "会话切换成功",
+    "description": "会话切换成功日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_selection_failed": {
+    "message": "选择会话失败: {0}",
+    "description": "选择会话失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "current_session_loading": {
+    "message": "加载当前会话...",
+    "description": "加载当前会话开始日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "current_session_load_complete": {
+    "message": "当前会话加载完成",
+    "description": "当前会话加载完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "current_session_load_failed": {
+    "message": "加载当前会话失败: {0}",
+    "description": "加载当前会话失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_load_handling_in_progress": {
+    "message": "会话加载处理已在进行中，跳过重复处理",
+    "description": "会话加载处理进行中提示",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_loaded_updating_ui": {
+    "message": "会话已加载，准备更新UI和数据",
+    "description": "会话加载后更新UI日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_loaded_details": {
+    "message": "会话已加载: {0}",
+    "description": "会话加载详情日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_load_processing_failed": {
+    "message": "处理会话加载失败: {0}",
+    "description": "处理会话加载失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_refresh_in_progress": {
+    "message": "会话数据刷新已在进行中，跳过重复刷新",
+    "description": "会话数据刷新进行中提示",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_refreshing": {
+    "message": "刷新会话数据...",
+    "description": "会话数据刷新开始日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_refresh_complete": {
+    "message": "会话数据刷新完成",
+    "description": "会话数据刷新完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_refresh_failed": {
+    "message": "刷新会话数据失败: {0}",
+    "description": "刷新会话数据失败错误",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_data_cleanup": {
+    "message": "清理会话数据...",
+    "description": "清理会话数据日志",
+    "_sourceFiles": [
+      "content/visualizer/state/SessionViewController.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_zoom_setup_failed_no_svg": {
+    "message": "无法设置缩放：SVG不存在",
+    "description": "SVG不存在导致无法设置缩放",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_transform_apply_failed_missing_components": {
+    "message": "无法应用变换：缺少必要组件",
+    "description": "缺少必要组件导致无法应用变换",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_zoom_setup_failed": {
+    "message": "设置缩放功能失败",
+    "description": "设置缩放功能失败",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_transform_apply_failed": {
+    "message": "无法应用变换状态",
+    "description": "无法应用变换状态",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_state_manager_init": {
+    "message": "视图状态管理器初始化",
+    "description": "视图状态管理器初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switched": {
+    "message": "视图已切换为: {0}",
+    "description": "视图切换日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "basic_zoom_setup_complete": {
+    "message": "基本缩放功能已设置",
+    "description": "基本缩放功能设置完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switching": {
+    "message": "切换视图: {0} -> {1}",
+    "description": "视图切换过程日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switched_need_reinit": {
+    "message": "视图已切换，需要重新初始化和渲染",
+    "description": "视图切换后需要重新初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "tree_view_zoom_state_saved": {
+    "message": "已保存树形视图缩放状态: {0}",
+    "description": "树形视图缩放状态保存日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "timeline_view_zoom_state_saved": {
+    "message": "已保存时间线视图缩放状态: {0}",
+    "description": "时间线视图缩放状态保存日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_zoom_state_restoring": {
+    "message": "恢复{0}视图的缩放状态",
+    "description": "视图缩放状态恢复日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "transform_state_applied": {
+    "message": "已应用变换状态",
+    "description": "变换状态应用完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_state_initialized": {
+    "message": "视图状态已初始化",
+    "description": "视图状态初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/state/ViewStateManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "control_panel_created": {
+    "message": "控制面板已创建",
+    "description": "控制面板创建日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "control_panel_elements_not_found": {
+    "message": "控制面板元素未找到",
+    "description": "控制面板元素未找到错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "control_panel_components_initialized": {
+    "message": "控制面板及所有子组件已初始化",
+    "description": "控制面板初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "control_panel_interaction_initialized": {
+    "message": "控制面板交互初始化完成",
+    "description": "控制面板交互初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "control_panel_session_history": {
+    "message": "会话历史",
+    "description": "会话历史标题",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "control_panel_update_session_selector": {
+    "message": "控制面板更新会话选择器，共 {0} 个会话",
+    "description": "控制面板更新会话选择器日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_selector_container_not_found": {
+    "message": "日历选择器容器未找到",
+    "description": "日历选择器找不到容器元素错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_session_selector_initialized": {
+    "message": "日历会话选择器已初始化",
+    "description": "日历选择器初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_prev_month": {
+    "message": "上个月",
+    "description": "日历上个月按钮提示文字",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_next_month": {
+    "message": "下个月",
+    "description": "日历下个月按钮提示文字",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_weekdays": {
+    "message": "日,一,二,三,四,五,六",
+    "description": "日历星期标题(逗号分隔)",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_loading_data": {
+    "message": "加载会话数据...",
+    "description": "日历加载指示器文本",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_select_session": {
+    "message": "选择会话",
+    "description": "会话选择标题",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_container_not_exists": {
+    "message": "日历容器不存在，无法更新",
+    "description": "日历容器不存在警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_skip_duplicate_update": {
+    "message": "跳过重复的日历选择器更新",
+    "description": "日历跳过重复更新调试日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_update": {
+    "message": "更新日历选择器，会话数量: {0}",
+    "description": "日历更新日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_grid_missing": {
+    "message": "日历网格不存在，重新创建结构",
+    "description": "日历网格缺失警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_update_complete": {
+    "message": "日历会话选择器更新完成",
+    "description": "日历更新完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_current_and_latest_session": {
+    "message": "当前查看会话 & 最新活跃会话",
+    "description": "当前和最新会话指示器提示",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_latest_session": {
+    "message": "最新活跃会话",
+    "description": "最新会话指示器提示",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_current_session": {
+    "message": "当前查看会话",
+    "description": "当前会话指示器提示",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_days_rendered": {
+    "message": "日历天数渲染完成，本月共{0}天",
+    "description": "日历渲染完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_parse_sessions_error": {
+    "message": "解析会话ID数组失败: {0}",
+    "description": "日历解析会话数据错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_session_list_container_missing": {
+    "message": "找不到会话列表容器元素",
+    "description": "会话列表容器丢失错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_sessions_for_date": {
+    "message": "{0}年{1}月{2}日的会话",
+    "description": "指定日期的会话列表标题",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_session_in_progress": {
+    "message": "进行中",
+    "description": "正在进行的会话状态",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_duration_less_than_minute": {
+    "message": "不足1分钟",
+    "description": "时长少于1分钟显示文本",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_duration_minutes": {
+    "message": "{0}分钟",
+    "description": "分钟时长格式",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_duration_hours": {
+    "message": "{0}小时",
+    "description": "小时时长格式(无分钟)",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_duration_hours_minutes": {
+    "message": "{0}小时 {1}分钟",
+    "description": "小时分钟时长格式",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_session_selected": {
+    "message": "会话已选择: {0}",
+    "description": "已选择会话日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_load_session_failed": {
+    "message": "加载会话失败: {0}",
+    "description": "加载会话失败错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_disposed": {
+    "message": "日历会话选择器资源已清理",
+    "description": "日历选择器资源清理日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_month_names": {
+    "message": "1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月",
+    "description": "月份名称列表(逗号分隔)",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "calendar_month_year": {
+    "message": "{0}年{1}",
+    "description": "年月格式",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_panel_container_not_found": {
+    "message": "筛选器容器未找到",
+    "description": "筛选器容器未找到警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_panel_initialized": {
+    "message": "筛选面板已初始化",
+    "description": "筛选面板初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_listener_added": {
+    "message": "为筛选器 {0} 添加了事件监听器，初始值: {1}",
+    "description": "筛选器事件监听器添加日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_element_not_found": {
+    "message": "筛选器元素 {0} 未找到",
+    "description": "筛选器元素未找到警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_change": {
+    "message": "筛选器变更: {0} = {1}",
+    "description": "筛选器变更日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_using_visualizer_handler": {
+    "message": "使用可视化器的handleFilterChange方法处理筛选器变化",
+    "description": "使用可视化器筛选器处理器日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_reset_element_not_found": {
+    "message": "重置筛选器时未找到元素: {0}",
+    "description": "重置筛选器元素未找到警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_all_reset_to_default": {
+    "message": "所有筛选器已重置为默认值",
+    "description": "所有筛选器重置日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_ui_updating": {
+    "message": "更新筛选器UI状态",
+    "description": "更新筛选器UI状态日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_status_updated": {
+    "message": "筛选器 {0} 状态已更新为: {1}",
+    "description": "筛选器状态更新日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_reload_label": {
+    "message": "显示刷新",
+    "description": "刷新筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_reload_description": {
+    "message": "显示页面刷新操作",
+    "description": "刷新筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_history_label": {
+    "message": "显示历史导航",
+    "description": "历史导航筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_history_description": {
+    "message": "显示浏览器历史前进/后退操作",
+    "description": "历史导航筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_closed_label": {
+    "message": "显示已关闭页面",
+    "description": "已关闭页面筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_closed_description": {
+    "message": "显示已关闭的页面",
+    "description": "已关闭页面筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_tracking_label": {
+    "message": "显示跟踪页面",
+    "description": "跟踪页面筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_tracking_description": {
+    "message": "显示分析和跟踪相关的请求",
+    "description": "跟踪页面筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_link_label": {
+    "message": "显示链接点击",
+    "description": "链接点击筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_link_description": {
+    "message": "显示由链接点击导致的导航",
+    "description": "链接点击筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_address_label": {
+    "message": "显示地址栏输入",
+    "description": "地址栏输入筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_address_description": {
+    "message": "显示由地址栏输入导致的导航",
+    "description": "地址栏输入筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_form_label": {
+    "message": "显示表单提交",
+    "description": "表单提交筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_form_description": {
+    "message": "显示由表单提交导致的导航",
+    "description": "表单提交筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_js_label": {
+    "message": "显示JS导航",
+    "description": "JS导航筛选器标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_js_description": {
+    "message": "显示由JavaScript导致的导航",
+    "description": "JS导航筛选器描述",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/FilterPanel.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switcher_buttons_not_found": {
+    "message": "视图切换按钮未找到",
+    "description": "视图切换按钮未找到警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switcher_initialized": {
+    "message": "视图切换器已初始化",
+    "description": "视图切换器初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_already_tree": {
+    "message": "已经是树形图视图，无需切换",
+    "description": "已在树形图视图日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_already_timeline": {
+    "message": "已经是时间线视图，无需切换",
+    "description": "已在时间线视图日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switching_to_tree": {
+    "message": "切换到树形图视图",
+    "description": "切换到树形图视图日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_switching_to_timeline": {
+    "message": "切换到时间线视图",
+    "description": "切换到时间线视图日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "view_buttons_state_updated": {
+    "message": "视图按钮状态已更新: {0}",
+    "description": "视图按钮状态更新日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_error_occurred": {
+    "message": "发生错误: {0}",
+    "description": "错误日志消息前缀",
+    "_sourceFiles": [
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_error_ui_missing": {
+    "message": "找不到必要的错误UI元素",
+    "description": "错误UI元素缺失消息",
+    "_sourceFiles": [
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_error_default_title": {
+    "message": "错误",
+    "description": "默认错误标题",
+    "_sourceFiles": [
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_refresh": {
+    "message": "刷新",
+    "description": "刷新按钮文本",
+    "_sourceFiles": [
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "error_notification_initialized": {
+    "message": "错误通知组件已初始化",
+    "description": "错误通知组件初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "notification_message": {
+    "message": "通知: {0}",
+    "description": "通知消息日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_loading_indicator": {
+    "message": "加载中...",
+    "description": "加载指示器文本",
+    "_sourceFiles": [
+      "content/visualizer/ui/LoadingIndicator.ts"
+    ],
+    "_untranslated": true
+  },
+  "loading_indicator_initialized": {
+    "message": "加载指示器已初始化",
+    "description": "加载指示器初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/LoadingIndicator.ts"
+    ],
+    "_untranslated": true
+  },
+  "loading_indicator_shown": {
+    "message": "显示加载指示器{0}",
+    "description": "显示加载指示器日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/LoadingIndicator.ts"
+    ],
+    "_untranslated": true
+  },
+  "loading_indicator_timeout": {
+    "message": "加载超时，自动隐藏加载指示器",
+    "description": "加载指示器超时警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/LoadingIndicator.ts"
+    ],
+    "_untranslated": true
+  },
+  "loading_indicator_hidden": {
+    "message": "隐藏加载指示器",
+    "description": "隐藏加载指示器日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/LoadingIndicator.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_url_label": {
+    "message": "URL",
+    "description": "URL标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_type_label": {
+    "message": "类型",
+    "description": "类型标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_time_label": {
+    "message": "时间",
+    "description": "时间标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_status_label": {
+    "message": "状态",
+    "description": "状态标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_tracking_page_label": {
+    "message": "跟踪页面",
+    "description": "跟踪页面标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_yes": {
+    "message": "是",
+    "description": "是",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_duration_label": {
+    "message": "时长",
+    "description": "时长标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_count_label": {
+    "message": "次数",
+    "description": "次数标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_technical_details": {
+    "message": "技术详情",
+    "description": "技术详情标题",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_tab_id_label": {
+    "message": "标签ID",
+    "description": "标签ID标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_node_id_label": {
+    "message": "节点ID",
+    "description": "节点ID标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_parent_id_label": {
+    "message": "父节点ID",
+    "description": "父节点ID标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_referrer_label": {
+    "message": "引用来源",
+    "description": "引用来源标签",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_status_closed": {
+    "message": "已关闭",
+    "description": "已关闭状态",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_status_active": {
+    "message": "活跃",
+    "description": "活跃状态",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_initial": {
+    "message": "外部打开",
+    "description": "外部打开导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_link_click": {
+    "message": "链接点击",
+    "description": "链接点击导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_address_bar": {
+    "message": "地址栏输入",
+    "description": "地址栏输入导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_history_back": {
+    "message": "历史后退",
+    "description": "历史后退导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_history_forward": {
+    "message": "历史前进",
+    "description": "历史前进导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_reload": {
+    "message": "页面刷新",
+    "description": "页面刷新导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_javascript": {
+    "message": "JavaScript导航",
+    "description": "JavaScript导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nav_type_redirect": {
+    "message": "重定向",
+    "description": "重定向导航类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_unit_millisecond": {
+    "message": "毫秒",
+    "description": "毫秒时间单位",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_unit_second": {
+    "message": "秒",
+    "description": "秒时间单位",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_unit_minute": {
+    "message": "分钟",
+    "description": "分钟时间单位",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts",
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_unit_hour": {
+    "message": "小时",
+    "description": "小时时间单位",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts",
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_unit_day": {
+    "message": "天",
+    "description": "天时间单位",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_drag_handle_missing": {
+    "message": "找不到拖动把手，无法使元素可拖拽",
+    "description": "拖动把手缺失错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_drag_panel": {
+    "message": "拖动移动此面板",
+    "description": "拖动面板提示",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_details_initialized": {
+    "message": "节点详情面板已初始化",
+    "description": "节点详情面板初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_details_showing": {
+    "message": "显示节点详情: {0}",
+    "description": "显示节点详情日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_details_shown": {
+    "message": "显示节点详情: {0}",
+    "description": "节点详情已显示日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_details_hidden": {
+    "message": "隐藏节点详情面板",
+    "description": "隐藏节点详情面板日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "node_details_initial_position_set": {
+    "message": "设置节点详情面板初始位置",
+    "description": "设置节点详情面板初始位置日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/NodeDetails.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_nodes_count": {
+    "message": "节点: {0}",
+    "description": "节点数量状态项",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_hidden_count": {
+    "message": "已隐藏: {0}",
+    "description": "已隐藏节点数量状态项",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_session_date_label": {
+    "message": "日期: {0}",
+    "description": "会话日期状态项",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_session_duration_label": {
+    "message": "时长: {0}",
+    "description": "时长状态项",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_view_label": {
+    "message": "视图: {0}",
+    "description": "视图类型状态项",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_zoom_label": {
+    "message": "缩放: {0}%",
+    "description": "缩放状态项",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_view_tree": {
+    "message": "树形图",
+    "description": "树形图视图类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_view_timeline": {
+    "message": "时间线",
+    "description": "时间线视图类型",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_duration_zero_minutes": {
+    "message": "0 分钟",
+    "description": "零分钟时长显示",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_duration_hours": {
+    "message": "{0} 小时",
+    "description": "小时时长格式",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_duration_minutes": {
+    "message": "{0} 分钟",
+    "description": "分钟时长格式",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_element_not_found": {
+    "message": "状态栏元素未找到",
+    "description": "状态栏元素未找到警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_initialized": {
+    "message": "状态栏已初始化",
+    "description": "状态栏初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_update_start": {
+    "message": "开始更新状态栏",
+    "description": "状态栏更新开始日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_data_retrieved": {
+    "message": "状态栏数据获取: {0}",
+    "description": "状态栏数据获取日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_update_complete": {
+    "message": "状态栏更新完成",
+    "description": "状态栏更新完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_update_failed": {
+    "message": "状态栏更新过程中出错: {0}",
+    "description": "状态栏更新失败错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "status_bar_handle_resize": {
+    "message": "状态栏处理大小变化: {0}x{1}",
+    "description": "状态栏处理大小变化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/StatusBar.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_error_prefix": {
+    "message": "Navigraph错误",
+    "description": "错误消息前缀",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_timeline_view_short": {
+    "message": "时间线",
+    "description": "时间线视图短名称",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_ui_initialization_failed": {
+    "message": "UI初始化失败",
+    "description": "UI初始化失败错误消息",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_ui_init_failed": {
+    "message": "UI 初始化失败: {0}",
+    "description": "UI初始化失败错误日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_detailed_error_fallback": {
+    "message": "详细错误: {0} {1}",
+    "description": "详细错误回退消息",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_created": {
+    "message": "UI管理器已创建",
+    "description": "UI管理器创建完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_init": {
+    "message": "初始化UI管理器",
+    "description": "UI管理器初始化开始日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_init_complete": {
+    "message": "UI管理器初始化完成",
+    "description": "UI管理器初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_create_container": {
+    "message": "创建/查找可视化容器",
+    "description": "创建容器日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_container_not_found": {
+    "message": "未找到可视化容器，创建新容器",
+    "description": "容器未找到警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_create_main_view": {
+    "message": "创建主视图容器",
+    "description": "创建主视图容器日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_svg_no_container": {
+    "message": "无法创建SVG：目标容器不存在",
+    "description": "SVG创建失败错误",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_create_svg": {
+    "message": "创建SVG元素",
+    "description": "SVG创建日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_init_components": {
+    "message": "初始化UI组件",
+    "description": "UI组件初始化日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_no_container_for_control_panel": {
+    "message": "容器元素不存在，控制面板无法初始化",
+    "description": "控制面板初始化失败警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_detailed_error_fallback": {
+    "message": "详细错误: {0} {1}",
+    "description": "详细错误回落显示",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_handle_resize": {
+    "message": "UI管理器处理大小变化: {0}x{1}",
+    "description": "UI调整大小日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_control_panel_hidden": {
+    "message": "已隐藏控制面板",
+    "description": "控制面板隐藏日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_cannot_hide_control_panel": {
+    "message": "无法隐藏控制面板：组件不可用或没有hide方法",
+    "description": "无法隐藏控制面板警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_control_panel_shown": {
+    "message": "已显示控制面板",
+    "description": "控制面板显示日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_cannot_show_control_panel": {
+    "message": "无法显示控制面板：组件不可用或没有show方法",
+    "description": "无法显示控制面板警告",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_svg_initialized": {
+    "message": "SVG初始化完成通知已接收",
+    "description": "SVG初始化完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_dispose_start": {
+    "message": "清理UI管理器资源",
+    "description": "UI管理器清理开始日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_manager_dispose_complete": {
+    "message": "UI管理器资源已清理",
+    "description": "UI管理器清理完成日志",
+    "_sourceFiles": [
+      "content/visualizer/ui/UIManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_missing_action_field": {
+    "message": "缺少 action 字段",
+    "description": "收到无效消息时的错误",
+    "_sourceFiles": [
+      "lib/messaging/base-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_received": {
+    "message": "收到消息 [{0}] 操作: {1} 请求ID: {2}",
+    "description": "收到消息日志",
+    "_sourceFiles": [
+      "lib/messaging/base-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_skip_wrong_target": {
+    "message": "跳过非目标服务消息: 服务={0} 操作={1} 目标={2}",
+    "description": "跳过目标不匹配消息日志",
+    "_sourceFiles": [
+      "lib/messaging/base-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "handler_not_found": {
+    "message": "未注册的消息类型: {0}",
+    "description": "未找到消息处理程序警告",
+    "_sourceFiles": [
+      "lib/messaging/base-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_handle_error": {
+    "message": "处理消息时出错: {0}",
+    "description": "消息处理异常错误",
+    "_sourceFiles": [
+      "lib/messaging/base-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "unknown": {
+    "message": "未指定",
+    "description": "默认未知字符串",
+    "_sourceFiles": [
+      "lib/messaging/base-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "handler_response_error": {
+    "message": "处理响应失败: {0}",
+    "description": "MessageHandlers 中创建响应时的本地化日志",
+    "_sourceFiles": [
+      "lib/messaging/handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_send": {
+    "message": "发送消息: {0} [ID:{1}] 目标:{2}",
+    "description": "MessageSender 发送消息日志",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_missing_tab_id": {
+    "message": "发送到内容脚本时必须指定 tabId",
+    "description": "sendMessage 时缺少 tabId 错误",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_send_failed_default": {
+    "message": "发送消息 {0} 失败，已使用默认值",
+    "description": "sendMessageWithRetry 默认值回退警告",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_send_error": {
+    "message": "发送消息异常: {0}",
+    "description": "MessageSender 捕获发送异常日志",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_runtime_error": {
+    "message": "运行时错误: {0}",
+    "description": "MessageSender 捕获 runtime.lastError 日志",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_no_response": {
+    "message": "没有收到响应",
+    "description": "MessageSender 未收到响应错误消息",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_response_error": {
+    "message": "收到错误响应: {0}",
+    "description": "MessageSender 收到 success=false 响应时的错误消息",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_retry": {
+    "message": "重试发送消息 ({0}/{1}): {2}",
+    "description": "MessageSender 重试日志",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_extension_context_invalid": {
+    "message": "扩展上下文失效或端口已关闭: {0}",
+    "description": "MessageSender 检测到扩展上下文失效时日志",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "message_send_final_failed": {
+    "message": "在第 {1} 次尝试后发送消息失败: {0}",
+    "description": "MessageSender 所有重试完成后最终失败错误",
+    "_sourceFiles": [
+      "lib/messaging/sender.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_service_init_failed": {
+    "message": "设置服务初始化失败",
+    "description": "设置服务初始化失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_cache_load_failed": {
+    "message": "从缓存加载设置失败",
+    "description": "从缓存加载设置失败警告",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_storage_load_failed": {
+    "message": "从存储加载设置失败",
+    "description": "从存储加载设置失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_storage_save_failed": {
+    "message": "保存设置到存储失败",
+    "description": "保存设置到存储失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_cache_update_failed": {
+    "message": "更新设置缓存失败",
+    "description": "更新设置缓存失败警告",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_update_failed": {
+    "message": "更新设置失败",
+    "description": "更新设置失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_reset_failed": {
+    "message": "重置设置失败",
+    "description": "重置设置失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_refresh_failed": {
+    "message": "刷新设置失败",
+    "description": "刷新设置失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_listener_call_failed": {
+    "message": "调用设置监听器失败",
+    "description": "调用设置监听器失败错误",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_listener_notify_failed": {
+    "message": "通知设置监听器时出错",
+    "description": "通知设置监听器出错",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_service_init_complete": {
+    "message": "设置服务初始化完成",
+    "description": "设置服务初始化完成日志",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_loaded_from_storage": {
+    "message": "已从存储加载设置: {0}",
+    "description": "从存储加载设置日志",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "settings_not_found_using_defaults": {
+    "message": "存储中没有找到设置，使用默认值",
+    "description": "使用默认设置日志",
+    "_sourceFiles": [
+      "lib/settings/service.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_session_started": {
+    "message": "{0} - 开始",
+    "description": "调试会话开始",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_session_ended": {
+    "message": "{0} - 结束 (耗时: {1}ms)",
+    "description": "调试会话结束",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_total_duration": {
+    "message": "总耗时: {0}ms",
+    "description": "计时分组总耗时",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_full_stack": {
+    "message": "完整堆栈:",
+    "description": "调试堆栈完整信息",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_line_number": {
+    "message": "行 {0}:",
+    "description": "调试堆栈行号",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_chrome_standard_format": {
+    "message": " Chrome标准格式:",
+    "description": "Chrome标准堆栈格式",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_chrome_simple_format": {
+    "message": " Chrome简单格式:",
+    "description": "Chrome简单堆栈格式",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_firefox_format": {
+    "message": " Firefox格式:",
+    "description": "Firefox堆栈格式",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_fallback_format": {
+    "message": " 后备格式:",
+    "description": "后备堆栈格式",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_stack_first_five": {
+    "message": "堆栈前5行:",
+    "description": "堆栈前5行",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_stack_view_full": {
+    "message": "使用Logger.debugStack(\"full\")查看完整分析",
+    "description": "查看完整堆栈提示",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_debug_stack_error": {
+    "message": "无法获取堆栈",
+    "description": "堆栈获取错误",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_completed": {
+    "message": "完成",
+    "description": "关键词:完成",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_success": {
+    "message": "成功",
+    "description": "关键词:成功",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_ended": {
+    "message": "结束",
+    "description": "关键词:结束",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_failed": {
+    "message": "失败",
+    "description": "关键词:失败",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_error": {
+    "message": "错误",
+    "description": "关键词:错误",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_warning": {
+    "message": "警告",
+    "description": "关键词:警告",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_initialized": {
+    "message": "已初始化",
+    "description": "关键词:已初始化",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_init_complete": {
+    "message": "初始化完成",
+    "description": "关键词:初始化完成",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_init_success": {
+    "message": "初始化成功",
+    "description": "关键词:初始化成功",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_started": {
+    "message": "启动完成",
+    "description": "关键词:启动完成",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_loaded": {
+    "message": "已加载",
+    "description": "关键词:已加载",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_load_complete": {
+    "message": "加载完成",
+    "description": "关键词:加载完成",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_saved": {
+    "message": "已保存",
+    "description": "关键词:已保存",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_save_success": {
+    "message": "保存成功",
+    "description": "关键词:保存成功",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_downloaded": {
+    "message": "已下载",
+    "description": "关键词:已下载",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_uploaded": {
+    "message": "已上传",
+    "description": "关键词:已上传",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_created": {
+    "message": "已创建",
+    "description": "关键词:已创建",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_registered": {
+    "message": "已注册",
+    "description": "关键词:已注册",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_added": {
+    "message": "已添加",
+    "description": "关键词:已添加",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_deleted": {
+    "message": "已删除",
+    "description": "关键词:已删除",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_set": {
+    "message": "已设置",
+    "description": "关键词:已设置",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_configured": {
+    "message": "已配置",
+    "description": "关键词:已配置",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_settings_complete": {
+    "message": "设置完成",
+    "description": "关键词:设置完成",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_started_action": {
+    "message": "已启动",
+    "description": "关键词:已启动",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_stopped": {
+    "message": "已停止",
+    "description": "关键词:已停止",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_paused": {
+    "message": "已暂停",
+    "description": "关键词:已暂停",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_resumed": {
+    "message": "已恢复",
+    "description": "关键词:已恢复",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_ready": {
+    "message": "已就绪",
+    "description": "关键词:已就绪",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_prepared": {
+    "message": "已准备",
+    "description": "关键词:已准备",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_in_progress": {
+    "message": "...",
+    "description": "关键词:进行中",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "logger_keyword_processing": {
+    "message": "处理中",
+    "description": "关键词:处理中",
+    "_sourceFiles": [
+      "lib/utils/logger.ts"
+    ],
+    "_untranslated": true
+  },
+  "url_utils_unknown_page": {
+    "message": "未知页面",
+    "description": "URLUtils.extractTitle 中无法提取标题时的默认文本",
+    "_sourceFiles": [
+      "lib/utils/url-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_head_title": {
+    "message": "导航图谱(Navigraph) 设置",
+    "description": "页面 <title> 标签文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_header": {
+    "message": "导航图谱(Navigraph) 设置",
+    "description": "页面主标题 <h1> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_header_subtitle": {
+    "message": "自定义浏览历史可视化体验",
+    "description": "页面子标题 <p> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_tab_basic_settings": {
+    "message": "基本设置",
+    "description": "选项卡按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_tab_session_settings": {
+    "message": "会话管理",
+    "description": "选项卡按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_tab_data_settings": {
+    "message": "数据与隐私",
+    "description": "选项卡按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_tab_performance_settings": {
+    "message": "性能优化",
+    "description": "选项卡按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_basic_group_title": {
+    "message": "界面设置",
+    "description": "分组标题 <h2> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_label_theme_mode": {
+    "message": "主题模式：",
+    "description": "标签文本 <label> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_light": {
+    "message": "明亮模式",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_dark": {
+    "message": "暗黑模式",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_system": {
+    "message": "跟随系统",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_label_default_view": {
+    "message": "默认视图：",
+    "description": "标签文本 <label> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_tree": {
+    "message": "树形图",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_timeline": {
+    "message": "时间线",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_session_group_title": {
+    "message": "会话管理",
+    "description": "分组标题 <h2> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_label_session_mode": {
+    "message": "会话模式：",
+    "description": "标签文本 <label> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_daily": {
+    "message": "工作日模式 (推荐)",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_manual": {
+    "message": "手动模式",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_desc_daily": {
+    "message": "每天自动创建新会话，并在空闲一段时间后结束当前会话",
+    "description": "说明文本 <p> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_desc_manual": {
+    "message": "需要手动创建和结束会话",
+    "description": "说明文本 <p> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_label_idle_timeout": {
+    "message": "会话空闲超时时间（小时）",
+    "description": "标签文本 <label> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_idle_timeout_help": {
+    "message": "空闲多长时间后自动结束当前会话并在下次浏览时创建新会话",
+    "description": "帮助文本 <small> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_data_retention_group_title": {
+    "message": "数据保留",
+    "description": "分组标题 <h2> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_label_data_retention": {
+    "message": "保留浏览历史数据：",
+    "description": "标签文本 <label> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_7": {
+    "message": "7天",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_14": {
+    "message": "14天",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_30": {
+    "message": "30天",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_90": {
+    "message": "90天",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_180": {
+    "message": "180天",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_365": {
+    "message": "1年",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_option_forever": {
+    "message": "永久保留",
+    "description": "下拉选项文本 <option> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_btn_clear_data": {
+    "message": "清除所有导航数据",
+    "description": "按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_warn_clear_data": {
+    "message": "此操作将永久删除所有收集的浏览历史数据，无法恢复",
+    "description": "警告文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_data_retention_help": {
+    "message": "较旧的浏览历史数据将被自动删除",
+    "description": "数据保留说明文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_performance_group_title": {
+    "message": "性能设置",
+    "description": "分组标题 <h2> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_badge_coming_soon": {
+    "message": "即将推出",
+    "description": "徽章文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_placeholder_performance": {
+    "message": "性能优化选项将在后续更新中添加",
+    "description": "占位文本 <p> 文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_btn_save": {
+    "message": "保存设置",
+    "description": "底部按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_btn_reset": {
+    "message": "恢复默认值",
+    "description": "底部按钮文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_notify_saved": {
+    "message": "设置已保存",
+    "description": "通知文本",
+    "_sourceFiles": [
+      "options/index.html"
+    ],
+    "_untranslated": true
+  },
+  "options_tree_view_label": {
+    "message": "树形图视图",
+    "description": "树形图视图标签",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_timeline_view_label": {
+    "message": "时间线视图",
+    "description": "时间线视图标签",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_load_failed": {
+    "message": "加载设置失败，请重试",
+    "description": "加载设置失败通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_theme_updated": {
+    "message": "主题已更新",
+    "description": "主题更新通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_update_theme_failed": {
+    "message": "更新主题失败",
+    "description": "主题更新失败通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_save_failed": {
+    "message": "保存设置失败",
+    "description": "保存设置失败通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_no_changes": {
+    "message": "没有设置被更改",
+    "description": "无变更通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_saved": {
+    "message": "设置已保存",
+    "description": "设置保存成功通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_saved_reload": {
+    "message": "设置已保存 - 需要重新加载扩展才能完全生效",
+    "description": "需要重载扩展通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_saved_refresh": {
+    "message": "设置已保存 - 请刷新已打开的扩展页以应用新设置",
+    "description": "需要刷新页面通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_reload_now": {
+    "message": "立即重载",
+    "description": "重载扩展按钮",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_reload_failed": {
+    "message": "重载扩展失败，请手动刷新",
+    "description": "扩展重载失败通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_confirm_reset": {
+    "message": "确定要恢复所有默认设置吗？",
+    "description": "重置设置确认对话框",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_reset_failed": {
+    "message": "重置设置失败",
+    "description": "设置重置失败通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_confirm_clear_data": {
+    "message": "确定要清除所有导航数据吗？此操作无法撤销！",
+    "description": "清除数据确认对话框",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_data_cleared": {
+    "message": "所有数据已清除",
+    "description": "数据清除成功通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_clear_failed": {
+    "message": "清除数据失败",
+    "description": "数据清除失败通知",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_dom_loaded_init_start": {
+    "message": "DOM已加载，开始初始化选项页...",
+    "description": "选项页初始化开始日志",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_notification_element_not_found": {
+    "message": "未找到通知元素，可能会影响用户反馈",
+    "description": "通知元素未找到警告",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_loaded_success": {
+    "message": "配置加载成功: {0}",
+    "description": "配置加载成功日志",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_change_detected": {
+    "message": "检测到设置变更: {0}",
+    "description": "检测设置变更日志",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_page_init_failed": {
+    "message": "初始化选项页面失败: {0}",
+    "description": "选项页初始化失败错误",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_loaded": {
+    "message": "设置已加载 {0}",
+    "description": "设置加载完成日志",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_settings_load_error": {
+    "message": "加载设置时出错: {0}",
+    "description": "加载设置错误",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_extension_reload_failed": {
+    "message": "重载扩展失败: {0}",
+    "description": "重载扩展失败错误",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_complex_notification_failed": {
+    "message": "创建复杂通知失败，回退到标准通知: {0}",
+    "description": "创建复杂通知失败错误",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_notification_showing": {
+    "message": "显示通知: \"{0}\" ({1})",
+    "description": "显示通知日志",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  },
+  "options_notification_element_missing": {
+    "message": "找不到通知元素",
+    "description": "通知元素缺失错误",
+    "_sourceFiles": [
+      "options/options.ts"
+    ],
+    "_untranslated": true
+  }
+}
