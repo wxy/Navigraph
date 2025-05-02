@@ -3,6 +3,7 @@
  * 为渲染器提供共享功能
  */
 import { Logger } from '../../lib/utils/logger.js';
+import { i18n } from '../../lib/utils/i18n-utils.js'; // 添加i18n导入
 import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 
 const logger = new Logger('VisualizationUtils');
@@ -156,5 +157,5 @@ export function renderEmptyTreeMessage(svg: any, width: number, height: number):
     .attr('y', height / 2)
     .attr('text-anchor', 'middle')
     .attr('fill', '#999')
-    .text('无导航数据可显示');
+    .text(i18n('content_no_navigation_data'));
 }

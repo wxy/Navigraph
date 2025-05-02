@@ -23,13 +23,13 @@ export class StatusBar {
     this.statusBarElement = document.querySelector(".windows-status-bar");
 
     if (!this.statusBarElement) {
-      logger.warn("状态栏元素未找到");
+      logger.warn("status_bar_element_not_found");
       return;
     }
 
     // 不需要修改 HTML 结构，因为元素已经存在
     // 仅需记录初始化成功
-    logger.log("状态栏已初始化");
+    logger.log("status_bar_initialized");
   }
 
   /**
@@ -39,7 +39,7 @@ export class StatusBar {
     if (!this.statusBarElement) return;
 
     // 在处理前添加更详细的日志，帮助定位问题
-    logger.debug(i18n("content_status_bar_update_start"));
+    logger.debug("status_bar_update_start");
 
     try {
       // 获取当前状态数据 - 使用可视化器的属性
@@ -53,12 +53,12 @@ export class StatusBar {
       const allNodesCount = visualizer.allNodes?.length || 0;
 
       // 打印详细日志以帮助诊断问题
-      logger.debug("状态栏数据获取:", {
-        当前会话: currentSession ? "已获取" : "未获取",
-        节点数量: nodeCount,
-        边数量: edgeCount,
-        总节点数: allNodesCount,
-        视图类型: currentView,
+      logger.debug("status_bar_data_retrieved", {
+        session: currentSession ? "retrieved" : "not_retrieved",
+        nodeCount,
+        edgeCount,
+        allNodesCount,
+        viewType: currentView,
       });
 
       // 更新节点计数
@@ -116,9 +116,9 @@ export class StatusBar {
         const zoom = visualizer.currentTransform?.k || 1;
         zoomElement.textContent = i18n("content_zoom_label", (100 * zoom).toFixed(0));
       }
-            logger.debug("状态栏更新完成");
+      logger.debug("status_bar_update_complete");
     } catch (error) {
-      logger.error("状态栏更新过程中出错:", error);
+      logger.error("status_bar_update_failed", error);
     }
   }
 
@@ -128,7 +128,7 @@ export class StatusBar {
   public handleResize(width: number, height: number): void {
     if (!this.statusBarElement) return;
 
-    logger.log(`状态栏处理大小变化: ${width}x${height}`);
+    logger.log("status_bar_handle_resize", `${width}`, `${height}`);
 
     // 调整状态栏宽度与容器一致
     this.statusBarElement.style.width = `${width}px`;

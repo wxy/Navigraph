@@ -32,7 +32,7 @@ export class NodeDetails {
     this.detailsContainer = null;
     this.panelVisible = false;
 
-    logger.log("节点详情面板已初始化");
+    logger.log("node_details_initialized");
   }
 
   /**
@@ -40,7 +40,7 @@ export class NodeDetails {
    * @param node 要显示的节点
    */
   public show(node: NavNode): void {
-    logger.log("显示节点详情:", node);
+    logger.log("node_details_showing", node);
 
     // 隐藏之前的面板
     this.hide();
@@ -154,7 +154,7 @@ export class NodeDetails {
     // 更新状态
     this.panelVisible = true;
 
-    logger.log(`显示节点详情: ${node.id}`);
+    logger.log("node_details_shown", node.id);
   }
 
   /**
@@ -170,7 +170,7 @@ export class NodeDetails {
       this.panelVisible = false; // 使用正确的变量名
       this.currentNode = null;
 
-      logger.log("隐藏节点详情面板");
+      logger.log("node_details_hidden");
     }
   }
 
@@ -195,7 +195,7 @@ export class NodeDetails {
     valueCell.style.maxWidth = "70%"; // 限制宽度防止表格被撑开
   
     // 对于URL，创建可点击链接
-    if (label === "URL") {
+    if (label === i18n("content_url_label")) {
       const link = document.createElement("a");
       link.href = value;
       link.target = "_blank";
@@ -316,7 +316,7 @@ export class NodeDetails {
       (targetElement.querySelector(".node-details-titlebar") as HTMLElement);
     if (!handle) {
       // 如果没有找到拖动把手，退出函数
-      logger.warn("找不到拖动把手，无法使元素可拖拽");
+      logger.warn("content_drag_handle_missing");
       return;
     }
 
@@ -432,7 +432,7 @@ export class NodeDetails {
     this.detailsContainer.style.left = `${left}px`;
     this.detailsContainer.style.top = `${top}px`;
 
-    logger.log("设置节点详情面板初始位置");
+    logger.log("node_details_initial_position_set");
   }
 
   /**

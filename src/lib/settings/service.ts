@@ -46,7 +46,7 @@ export class SettingsService {
       // 设置初始化完成
       this.initialized = true;
       
-      logger.log('设置服务初始化完成');
+      logger.log('settings_service_init_complete');
     } catch (error) {
       logger.error(i18n('settings_service_init_failed'), error);
     }
@@ -81,9 +81,9 @@ export class SettingsService {
         this.updateSettingsInternal(settings);
         // 更新本地缓存
         this.updateCache(settings);
-        logger.log('已从存储加载设置:', settings);
+        logger.log('settings_loaded_from_storage', settings);
       } else {
-        logger.log('存储中没有找到设置，使用默认值');
+        logger.log('settings_not_found_using_defaults');
         // 如果存储中没有设置，保存默认设置
         if (this.initialized) {
           // 如果已经初始化，只更新内部状态，不保存到存储

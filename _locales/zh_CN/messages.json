@@ -239,6 +239,50 @@
     "message": "清除数据失败",
     "description": "数据清除失败通知 @src/options/options.ts"
   },
+  "options_dom_loaded_init_start": {
+    "message": "DOM已加载，开始初始化选项页...",
+    "description": "选项页初始化开始日志 @src/options/options.ts"
+  },
+  "options_notification_element_not_found": {
+    "message": "未找到通知元素，可能会影响用户反馈",
+    "description": "通知元素未找到警告 @src/options/options.ts"
+  },
+  "options_settings_loaded_success": {
+    "message": "配置加载成功: {0}",
+    "description": "配置加载成功日志 @src/options/options.ts"
+  },
+  "options_settings_change_detected": {
+    "message": "检测到设置变更: {0}",
+    "description": "检测设置变更日志 @src/options/options.ts"
+  },
+  "options_page_init_failed": {
+    "message": "初始化选项页面失败: {0}",
+    "description": "选项页初始化失败错误 @src/options/options.ts"
+  },
+  "options_settings_loaded": {
+    "message": "设置已加载 {0}",
+    "description": "设置加载完成日志 @src/options/options.ts"
+  },
+  "options_settings_load_error": {
+    "message": "加载设置时出错: {0}",
+    "description": "加载设置错误 @src/options/options.ts"
+  },
+  "options_extension_reload_failed": {
+    "message": "重载扩展失败: {0}",
+    "description": "重载扩展失败错误 @src/options/options.ts"
+  },
+  "options_complex_notification_failed": {
+    "message": "创建复杂通知失败，回退到标准通知: {0}",
+    "description": "创建复杂通知失败错误 @src/options/options.ts"
+  },
+  "options_notification_showing": {
+    "message": "显示通知: \"{0}\" ({1})",
+    "description": "显示通知日志 @src/options/options.ts"
+  },
+  "options_notification_element_missing": {
+    "message": "找不到通知元素",
+    "description": "通知元素缺失错误 @src/options/options.ts"
+  },
   "content_title": {
     "message": "导航图谱",
     "description": "页面标题 @src/content/index.html"
@@ -771,6 +815,18 @@
     "message": "通知设置监听器时出错",
     "description": "通知设置监听器出错 @src/lib/settings/service.ts"
   },
+  "settings_service_init_complete": {
+    "message": "设置服务初始化完成",
+    "description": "设置服务初始化完成日志 @src/lib/settings/service.ts"
+  },
+  "settings_loaded_from_storage": {
+    "message": "已从存储加载设置: {0}",
+    "description": "从存储加载设置日志 @src/lib/settings/service.ts"
+  },
+  "settings_not_found_using_defaults": {
+    "message": "存储中没有找到设置，使用默认值",
+    "description": "使用默认设置日志 @src/lib/settings/service.ts"
+  },
   "background_create_session_failed": {
     "message": "无法创建新会话",
     "description": "无法创建新会话错误 @src/background/navigation/navigation-manager.ts"
@@ -1061,62 +1117,6 @@
   },
   "content_config_init_start": {
     "message": "初始化配置管理…",
-    "description": "内容脚本配置管理初始化开始日志 @src/content/index.ts"
-  },
-  "content_settings_loaded": {
-    "message": "全局设置已加载: {0}",
-    "description": "内容脚本全局设置加载成功日志 @src/content/index.ts"
-  },
-  "content_message_service_init_start": {
-    "message": "初始化消息服务…",
-    "description": "内容脚本消息服务初始化开始日志 @src/content/index.ts"
-  },
-  "content_message_service_initialized": {
-    "message": "消息服务初始化完成",
-    "description": "内容脚本消息服务初始化完成日志 @src/content/index.ts"
-  },
-  "content_theme_init_start": {
-    "message": "初始化主题管理器…",
-    "description": "内容脚本主题管理器初始化开始日志 @src/content/index.ts"
-  },
-  "content_theme_init_failed": {
-    "message": "主题管理器初始化失败: {0}",
-    "description": "内容脚本主题管理器初始化失败警告 @src/content/index.ts"
-  },
-  "content_visualizer_init_success": {
-    "message": "Navigraph 可视化器初始化成功",
-    "description": "内容脚本可视化器初始化成功日志 @src/content/index.ts"
-  },
-  "content_visualizer_init_failed": {
-    "message": "可视化器初始化失败: {0}",
-    "description": "内容脚本可视化器初始化失败错误日志 @src/content/index.ts  "
-  },
-  "content_setup_page_activity_listeners_start": {
-    "message": "设置页面活动监听器…",
-    "description": "内容脚本页面活动监听器初始化日志 @src/content/index.ts"
-  },
-  "content_init_complete": {
-    "message": "所有初始化逻辑完成",
-    "description": "内容脚本初始化完成日志 @src/content/index.ts"
-  },
-  "content_init_error": {
-    "message": "初始化过程中发生错误: {0}",
-    "description": "内容脚本初始化捕获异常日志 @src/content/index.ts"
-  },
-  "content_init_stack": {
-    "message": "错误堆栈: {0}",
-    "description": "内容脚本初始化错误堆栈日志 @src/content/index.ts"
-  },
-  "content_listener_start": {
-    "message": "开始设置页面活动监听器",
-    "description": "内容脚本页面活动监听器开始日志 @src/content/index.ts"
-  },
-  "content_page_visible": {
-    "message": "页面变为可见状态",
-    "description": "内容脚本页面可见状态日志 @src/content/index.ts"
-  },
-  "content_page_focus": {
-    "message": "页面获得焦点",
     "description": "内容脚本页面焦点事件日志 @src/content/index.ts"
   },
   "content_listener_ready": {
@@ -1806,6 +1806,434 @@
   "current_session": {
     "message": "当前会话",
     "description": "当前会话文本 @src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "view_state_manager_init": {
+    "message": "视图状态管理器初始化",
+    "description": "视图状态管理器初始化日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "view_switched": {
+    "message": "视图已切换为: {0}",
+    "description": "视图切换日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "basic_zoom_setup_complete": {
+    "message": "基本缩放功能已设置",
+    "description": "基本缩放功能设置完成日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "view_switching": {
+    "message": "切换视图: {0} -> {1}",
+    "description": "视图切换过程日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "view_switched_need_reinit": {
+    "message": "视图已切换，需要重新初始化和渲染",
+    "description": "视图切换后需要重新初始化日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "tree_view_zoom_state_saved": {
+    "message": "已保存树形视图缩放状态: {0}",
+    "description": "树形视图缩放状态保存日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "timeline_view_zoom_state_saved": {
+    "message": "已保存时间线视图缩放状态: {0}",
+    "description": "时间线视图缩放状态保存日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "view_zoom_state_restoring": {
+    "message": "恢复{0}视图的缩放状态",
+    "description": "视图缩放状态恢复日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "transform_state_applied": {
+    "message": "已应用变换状态",
+    "description": "变换状态应用完成日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "view_state_initialized": {
+    "message": "视图状态已初始化",
+    "description": "视图状态初始化完成日志 @src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "filter_manager_init": {
+    "message": "筛选器管理器初始化",
+    "description": "筛选器管理器初始化日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_init_start": {
+    "message": "初始化筛选器...",
+    "description": "筛选器初始化开始日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_init_complete": {
+    "message": "筛选器初始化完成",
+    "description": "筛选器初始化完成日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_load_from_url": {
+    "message": "从URL加载筛选器配置: {0}",
+    "description": "从URL加载筛选器配置日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_applying": {
+    "message": "应用筛选器: {0}",
+    "description": "应用筛选器日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_result_stats": {
+    "message": "筛选后数据：节点 {0}/{1}，边 {2}/{3}",
+    "description": "筛选结果统计日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_update": {
+    "message": "更新筛选器: {0} = {1}",
+    "description": "更新筛选器日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_changed": {
+    "message": "筛选器 {0} ({1}) 已更改为 {2}",
+    "description": "筛选器变更日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_reset_start": {
+    "message": "重置所有筛选器...",
+    "description": "开始重置筛选器日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_reset_complete": {
+    "message": "所有筛选器已重置为默认值",
+    "description": "筛选器重置完成日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "filter_cleanup": {
+    "message": "清理筛选器资源...",
+    "description": "清理筛选器资源日志 @src/content/visualizer/state/FilterManager.ts"
+  },
+  "session_view_controller_init": {
+    "message": "会话视图控制器初始化",
+    "description": "会话视图控制器初始化日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_management_init_start": {
+    "message": "初始化会话管理...",
+    "description": "会话管理初始化开始日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_management_init_complete": {
+    "message": "会话管理初始化完成",
+    "description": "会话管理初始化完成日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_management_init_failed": {
+    "message": "会话管理初始化失败: {0}",
+    "description": "会话管理初始化失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_list_loading": {
+    "message": "加载会话列表...",
+    "description": "加载会话列表开始日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_list_load_complete": {
+    "message": "会话列表加载完成，找到 {0} 个会话",
+    "description": "会话列表加载完成日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_list_load_failed": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_list_loaded": {
+    "message": "会话列表已加载，共{0}个会话",
+    "description": "会话列表已加载日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_list_process_failed": {
+    "message": "处理会话列表失败: {0}",
+    "description": "处理会话列表失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_selector_updating": {
+    "message": "更新会话选择器...",
+    "description": "会话选择器更新日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_selector_update_failed": {
+    "message": "更新会话选择器失败: {0}",
+    "description": "更新会话选择器失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_selected": {
+    "message": "选择会话: {0}",
+    "description": "会话选择日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_switch_success": {
+    "message": "会话切换成功",
+    "description": "会话切换成功日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_selection_failed": {
+    "message": "选择会话失败: {0}",
+    "description": "选择会话失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "current_session_loading": {
+    "message": "加载当前会话...",
+    "description": "加载当前会话开始日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "current_session_load_complete": {
+    "message": "当前会话加载完成",
+    "description": "当前会话加载完成日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "current_session_load_failed": {
+    "message": "加载当前会话失败: {0}",
+    "description": "加载当前会话失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_load_handling_in_progress": {
+    "message": "会话加载处理已在进行中，跳过重复处理",
+    "description": "会话加载处理进行中提示 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_loaded_updating_ui": {
+    "message": "会话已加载，准备更新UI和数据",
+    "description": "会话加载后更新UI日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_loaded_details": {
+    "message": "会话已加载: {0}",
+    "description": "会话加载详情日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_load_processing_failed": {
+    "message": "处理会话加载失败: {0}",
+    "description": "处理会话加载失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_data_refresh_in_progress": {
+    "message": "会话数据刷新已在进行中，跳过重复刷新",
+    "description": "会话数据刷新进行中提示 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_data_refreshing": {
+    "message": "刷新会话数据...",
+    "description": "会话数据刷新开始日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_data_refresh_complete": {
+    "message": "会话数据刷新完成",
+    "description": "会话数据刷新完成日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_data_refresh_failed": {
+    "message": "刷新会话数据失败: {0}",
+    "description": "刷新会话数据失败错误 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "session_data_cleanup": {
+    "message": "清理会话数据...",
+    "description": "清理会话数据日志 @src/content/visualizer/state/SessionViewController.ts"
+  },
+  "node_details_initialized": {
+    "message": "节点详情面板已初始化",
+    "description": "节点详情面板初始化日志 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "node_details_showing": {
+    "message": "显示节点详情: {0}",
+    "description": "显示节点详情日志 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "node_details_shown": {
+    "message": "显示节点详情: {0}",
+    "description": "节点详情已显示日志 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "node_details_hidden": {
+    "message": "隐藏节点详情面板",
+    "description": "隐藏节点详情面板日志 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "node_details_initial_position_set": {
+    "message": "设置节点详情面板初始位置",
+    "description": "设置节点详情面板初始位置日志 @src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "status_bar_element_not_found": {
+    "message": "状态栏元素未找到",
+    "description": "状态栏元素未找到警告 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_bar_initialized": {
+    "message": "状态栏已初始化",
+    "description": "状态栏初始化日志 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_bar_update_start": {
+    "message": "开始更新状态栏",
+    "description": "状态栏更新开始日志 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_bar_data_retrieved": {
+    "message": "状态栏数据获取: {0}",
+    "description": "状态栏数据获取日志 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_bar_update_complete": {
+    "message": "状态栏更新完成",
+    "description": "状态栏更新完成日志 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_bar_update_failed": {
+    "message": "状态栏更新过程中出错: {0}",
+    "description": "状态栏更新失败错误 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_bar_handle_resize": {
+    "message": "状态栏处理大小变化: {0}x{1}",
+    "description": "状态栏处理大小变化日志 @src/content/visualizer/ui/StatusBar.ts"
+  },
+  "control_panel_created": {
+    "message": "控制面板已创建",
+    "description": "控制面板创建日志 @src/content/visualizer/ui/ControlPanel.ts"
+  },
+  "control_panel_elements_not_found": {
+    "message": "控制面板元素未找到",
+    "description": "控制面板元素未找到错误 @src/content/visualizer/ui/ControlPanel.ts"
+  },
+  "control_panel_components_initialized": {
+    "message": "控制面板及所有子组件已初始化",
+    "description": "控制面板初始化日志 @src/content/visualizer/ui/ControlPanel.ts"
+  },
+  "control_panel_interaction_initialized": {
+    "message": "控制面板交互初始化完成",
+    "description": "控制面板交互初始化日志 @src/content/visualizer/ui/ControlPanel.ts"
+  },
+  "control_panel_session_history": {
+    "message": "会话历史",
+    "description": "会话历史标题 @src/content/visualizer/ui/ControlPanel.ts"
+  },
+  "control_panel_update_session_selector": {
+    "message": "控制面板更新会话选择器，共 {0} 个会话",
+    "description": "控制面板更新会话选择器日志 @src/content/visualizer/ui/ControlPanel.ts"
+  },
+  "filter_panel_container_not_found": {
+    "message": "筛选器容器未找到",
+    "description": "筛选器容器未找到警告 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_panel_initialized": {
+    "message": "筛选面板已初始化",
+    "description": "筛选面板初始化日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_listener_added": {
+    "message": "为筛选器 {0} 添加了事件监听器，初始值: {1}",
+    "description": "筛选器事件监听器添加日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_element_not_found": {
+    "message": "筛选器元素 {0} 未找到",
+    "description": "筛选器元素未找到警告 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_change": {
+    "message": "筛选器变更: {0} = {1}",
+    "description": "筛选器变更日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_using_visualizer_handler": {
+    "message": "使用可视化器的handleFilterChange方法处理筛选器变化",
+    "description": "使用可视化器筛选器处理器日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_reset_element_not_found": {
+    "message": "重置筛选器时未找到元素: {0}",
+    "description": "重置筛选器元素未找到警告 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_all_reset_to_default": {
+    "message": "所有筛选器已重置为默认值",
+    "description": "所有筛选器重置日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_ui_updating": {
+    "message": "更新筛选器UI状态",
+    "description": "更新筛选器UI状态日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_status_updated": {
+    "message": "筛选器 {0} 状态已更新为: {1}",
+    "description": "筛选器状态更新日志 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_reload_label": {
+    "message": "显示刷新",
+    "description": "刷新筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_reload_description": {
+    "message": "显示页面刷新操作",
+    "description": "刷新筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_history_label": {
+    "message": "显示历史导航",
+    "description": "历史导航筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_history_description": {
+    "message": "显示浏览器历史前进/后退操作",
+    "description": "历史导航筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_closed_label": {
+    "message": "显示已关闭页面",
+    "description": "已关闭页面筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_closed_description": {
+    "message": "显示已关闭的页面",
+    "description": "已关闭页面筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_tracking_label": {
+    "message": "显示跟踪页面",
+    "description": "跟踪页面筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_tracking_description": {
+    "message": "显示分析和跟踪相关的请求",
+    "description": "跟踪页面筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_link_label": {
+    "message": "显示链接点击",
+    "description": "链接点击筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_link_description": {
+    "message": "显示由链接点击导致的导航",
+    "description": "链接点击筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_address_label": {
+    "message": "显示地址栏输入",
+    "description": "地址栏输入筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_address_description": {
+    "message": "显示由地址栏输入导致的导航",
+    "description": "地址栏输入筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_form_label": {
+    "message": "显示表单提交",
+    "description": "表单提交筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_form_description": {
+    "message": "显示由表单提交导致的导航",
+    "description": "表单提交筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_js_label": {
+    "message": "显示JS导航",
+    "description": "JS导航筛选器标签 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "filter_type_js_description": {
+    "message": "显示由JavaScript导致的导航",
+    "description": "JS导航筛选器描述 @src/content/visualizer/ui/ControlPanel/FilterPanel.ts"
+  },
+  "view_switcher_buttons_not_found": {
+    "message": "视图切换按钮未找到",
+    "description": "视图切换按钮未找到警告 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_switcher_initialized": {
+    "message": "视图切换器已初始化",
+    "description": "视图切换器初始化日志 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_already_tree": {
+    "message": "已经是树形图视图，无需切换",
+    "description": "已在树形图视图日志 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_already_timeline": {
+    "message": "已经是时间线视图，无需切换",
+    "description": "已在时间线视图日志 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_switching_to_tree": {
+    "message": "切换到树形图视图",
+    "description": "切换到树形图视图日志 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_switching_to_timeline": {
+    "message": "切换到时间线视图",
+    "description": "切换到时间线视图日志 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_buttons_state_updated": {
+    "message": "视图按钮状态已更新: {0}",
+    "description": "视图按钮状态更新日志 @src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "error_notification_initialized": {
+    "message": "错误通知组件已初始化",
+    "description": "错误通知组件初始化日志 @src/content/visualizer/ui/ErrorNotification.ts"
+  },
+  "notification_message": {
+    "message": "通知: {0}",
+    "description": "通知消息日志 @src/content/visualizer/ui/ErrorNotification.ts"
+  },
+  "loading_indicator_initialized": {
+    "message": "加载指示器已初始化",
+    "description": "加载指示器初始化日志 @src/content/visualizer/ui/LoadingIndicator.ts"
+  },
+  "loading_indicator_shown": {
+    "message": "显示加载指示器{0}",
+    "description": "显示加载指示器日志 @src/content/visualizer/ui/LoadingIndicator.ts"
+  },
+  "loading_indicator_timeout": {
+    "message": "加载超时，自动隐藏加载指示器",
+    "description": "加载指示器超时警告 @src/content/visualizer/ui/LoadingIndicator.ts"
+  },
+  "loading_indicator_hidden": {
+    "message": "隐藏加载指示器",
+    "description": "隐藏加载指示器日志 @src/content/visualizer/ui/LoadingIndicator.ts"
+  },
+  "data_processor_applying_filters": {
+    "message": "应用筛选器: {0}",
+    "description": "应用筛选器日志 @src/content/visualizer/DataProcessor.ts"
+  },
+  "data_processor_filter_result": {
+    "message": "过滤结果: 从{0}个节点中筛选出{1}个符合条件的节点",
+    "description": "过滤结果日志 @src/content/visualizer/DataProcessor.ts"
+  },
+  "content_no_navigation_data": {
+    "message": "无导航数据可显示",
+    "description": "无导航数据提示 @src/content/utils/visualization-utils.ts"
   },
   "_": {
     "message": "_",

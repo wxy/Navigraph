@@ -30,7 +30,7 @@ export class LoadingIndicator {
       this.createLoadingElements();
     }
 
-    logger.log('加载指示器已初始化');
+    logger.log('loading_indicator_initialized');
   }
 
   /**
@@ -103,12 +103,12 @@ export class LoadingIndicator {
 
     this.isVisible = true;
 
-    logger.log(`显示加载指示器${message ? `: ${message}` : ''}`);
+    logger.log('loading_indicator_shown', message || '');
 
     // 设置安全超时，防止加载状态卡住
     this.loadingTimeoutId = window.setTimeout(() => {
       this.hide();
-      logger.warn('加载超时，自动隐藏加载指示器');
+      logger.warn('loading_indicator_timeout');
     }, 30000); // 30秒超时
   }
 
@@ -134,7 +134,7 @@ export class LoadingIndicator {
 
     this.isVisible = false;
 
-    logger.log('隐藏加载指示器');
+    logger.log('loading_indicator_hidden');
   }
 
   /**

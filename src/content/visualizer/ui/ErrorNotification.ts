@@ -25,7 +25,7 @@ export class ErrorNotification {
       logger.error(i18n('content_error_ui_missing'));
     }
 
-    logger.log('错误通知组件已初始化');
+    logger.log('error_notification_initialized');
   }
 
   /**
@@ -159,7 +159,7 @@ export class ErrorNotification {
       this.initialize();
     }
 
-    logger.log(`通知: ${message}`);
+    logger.log('notification_message', message);
 
     if (this.toastElement) {
       // 清除之前的自动隐藏计时器

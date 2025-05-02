@@ -12,7 +12,7 @@ const settingsService = getSettingsService();
 let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
 
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
-  logger.log('DOM已加载，开始初始化选项页...');
+  logger.log('options_dom_loaded_init_start');
   
   // 初始化通知元素
   const notification = document.getElementById('notification');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     notification.className = 'notification hidden';
     notification.style.display = 'none';
   } else {
-    logger.warn('未找到通知元素，可能会影响用户反馈');
+    logger.warn('options_notification_element_not_found');
   }
   
   // 初始化UI
@@ -33,20 +33,20 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     
     // 加载设置
     await loadSettings();
-    logger.log('配置加载成功:', currentSettings);
+    logger.log('options_settings_loaded_success', currentSettings);
     
     // 应用主题到选项页面
     applyThemeToOptionsPage();
     
     // 添加设置变更监听器
     settingsService.addChangeListener(settings => {
-      logger.log('检测到设置变更:', settings);
+      logger.log('options_settings_change_detected', settings);
       currentSettings = { ...settings };
       applySettingsToUI();
       applyThemeToOptionsPage();
     });
   } catch (error) {
-    logger.error('初始化选项页面失败:', error);
+    logger.error('options_page_init_failed', error);
     showNotification('options_load_failed', 'error');
   }
 });
@@ -194,9 +194,9 @@ async function loadSettings(): Promise<void> {
     // 应用设置到UI
     applySettingsToUI();
     
-    logger.log('设置已加载', currentSettings);
+    logger.log('options_settings_loaded', currentSettings);
   } catch (error) {
-    logger.error('加载设置时出错:', error);
+    logger.error('options_settings_load_error', error);
     showNotification('options_load_failed', 'error');
   }
 }
@@ -364,7 +364,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
           try {
             chrome.runtime.reload();
           } catch (e) {
-            logger.error('重载扩展失败:', e);
+            logger.error('options_extension_reload_failed', e);
             showNotification('options_reload_failed', 'error');
           }
         };
@@ -384,7 +384,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
         return; // 提前返回
       }
     } catch (e) {
-      logger.error('创建复杂通知失败，回退到标准通知:', e);
+      logger.error('options_complex_notification_failed', e);
     }
   } else if (affectsFrontend) {
     // 使用完整的"需要刷新"消息
@@ -459,11 +459,11 @@ const notificationManager = {
    * 显示通知
    */
   show(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
-    logger.log(`显示通知: "${message}" (${type})`);
+    logger.log('options_notification_showing', message, type);
     
     const notification = document.getElementById('notification');
     if (!notification) {
-      logger.error('找不到通知元素');
+      logger.error('options_notification_element_missing');
       return;
     }
     

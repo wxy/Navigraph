@@ -1,4 +1,5 @@
 import { Logger } from '../../lib/utils/logger.js';
+import { i18n } from '../../lib/utils/i18n-utils.js'; // 添加i18n导入
 import { NavNode, NavLink } from '../types/navigation.js';
 import { FilterStates } from './ui/FilterConfig.js';
 
@@ -45,7 +46,7 @@ export class DataProcessor {
     edges: NavLink[], 
     filters: FilterStates
   ): { nodes: NavNode[]; edges: NavLink[] } {
-    logger.log('应用筛选器:', filters);
+    logger.log('data_processor_applying_filters', filters);
     
     // 筛选节点
     const filteredNodes = this.filterNodes(nodes, filters);
@@ -58,7 +59,7 @@ export class DataProcessor {
       return nodeIds.has(edge.source) && nodeIds.has(edge.target);
     });
     
-    logger.log(`过滤结果: 从${nodes.length}个节点中筛选出${filteredNodes.length}个符合条件的节点`);
+    logger.log('data_processor_filter_result', nodes.length, filteredNodes.length);
     
     return { nodes: filteredNodes, edges: filteredEdges };
   }
