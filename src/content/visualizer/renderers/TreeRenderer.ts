@@ -865,7 +865,7 @@ function renderTreeLayout(
       
       // 尝试应用保存的变换
       if (shouldRestoreTransform && transformToRestore) {
-        logger.log('恢复树形图状态:', transformToRestore);
+        logger.log('tree_restore_state', transformToRestore);
         
         const transform = d3.zoomIdentity
           .translate(transformToRestore.x, transformToRestore.y)
@@ -876,7 +876,7 @@ function renderTreeLayout(
       }
       
       // 否则应用默认初始变换
-      logger.log('应用树形图变换:', {
+      logger.log('tree_transform_applying', {
         translate: [centerX - treeWidth / 2, centerY - treeHeight / 2],
         scale: finalScaleFactor
       });
@@ -886,17 +886,17 @@ function renderTreeLayout(
     visualizer.updateStatusBar();
     
     // 7. 添加调试信息
-    logger.log('树形图渲染完成，节点数:', descendants.length, '链接数:', treeLinks.length);
+    logger.log('tree_rendering_complete', descendants.length.toString(), treeLinks.length.toString());
     // 验证变换是否被正确应用
     setTimeout(() => {
       try {
         const currentTransform = d3.zoomTransform(svg.node());
         } catch (e) {
-        logger.error('获取变换信息失败:', e);
+        logger.error('tree_get_transform_failed', e);
         }
     }, 10);
   } catch (err) {
-    logger.error('树形图渲染过程中出错:', err);
+    logger.error('tree_rendering_failed', err);
     
     // 添加错误信息显示
     svg.append('text')
@@ -904,7 +904,7 @@ function renderTreeLayout(
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
       .attr('fill', 'red')
-      .text(`渲染错误: ${err instanceof Error ? err.message : '未知错误'}`);
+      .text(i18n('tree_rendering_error', err instanceof Error ? err.message : i18n('unknown_error')));
   }
 }
 
@@ -929,7 +929,7 @@ function normalizeLinks(links: any[]): NavLink[] {
  * @returns 安全连接列表（仅移除回边）
  */
 function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLink[] {
-  logger.log('检测并打破循环...');
+  logger.log('tree_detect_break_cycles');
   
   // 创建节点ID映射表
   const nodeById: Record<string, ExtendedNavNode> = {};
@@ -943,7 +943,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     const isSelfLoop = link.source === link.target;
     
     if (isSelfLoop) {
-      logger.log(`跳过自循环连接: ${link.source} -> ${link.target} (将作为根节点处理)`);
+      logger.log('tree_skip_self_loop', link.source, link.target);
       return false;
     }
     return true;
@@ -969,7 +969,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
   function detectCycle(nodeId: string, visited: Set<string>, path: Set<string>, pathList: string[]): boolean {
     // 当前节点已在路径中 -> 发现循环!
     if (path.has(nodeId)) {
-      logger.log('检测到循环:', [...pathList, nodeId].join(' -> '));
+      logger.log('tree_cycle_detected', [...pathList, nodeId].join(' -> '));
       
       // 标记循环中的回边（最后一条边）
       const cycleStart = pathList.indexOf(nodeId);
@@ -981,7 +981,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
         const backEdgeId = `${lastNodeInCycle}->${nodeId}`;
         
         backEdges.add(backEdgeId);
-        logger.log(`标记回边: ${lastNodeInCycle} -> ${nodeId}`);
+        logger.log('tree_back_edge_marked', lastNodeInCycle, nodeId);
       }
       
       return true;
@@ -1024,7 +1024,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     const isSafe = !backEdges.has(linkId);
     
     if (!isSafe) {
-      logger.log(`移除回边: ${link.source} -> ${link.target}`);
+      logger.log('tree_remove_back_edge', link.source, link.target);
     }
     
     return isSafe;

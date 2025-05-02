@@ -138,7 +138,7 @@
       const now = Date.now();
       if (now - lastActivityTime > MIN_ACTIVITY_INTERVAL) {
         lastActivityTime = now;
-        logger.log(`检测到页面活动(${source})，触发刷新`);
+        logger.log('content_page_activity_detected', source);
         
         // 修改为只刷新视图，不重新加载会话数据
         if (window.visualizer && typeof window.visualizer.refreshVisualization === 'function') {
@@ -147,13 +147,13 @@
             source: 'pageActivity'
           });
         } else {
-          logger.warn('可视化器实例不存在或没有刷新方法');
+          logger.warn('content_visualizer_missing_or_invalid');
         }
       } else {
-        logger.debug(`页面活动(${source})距离上次时间过短(${now - lastActivityTime}ms)，忽略`);
+        logger.debug('content_page_activity_too_frequent', source, (now - lastActivityTime).toString());
       }
     } catch (error) {
-      logger.error(`处理页面活动(${source})失败:`, error);
+      logger.error('content_page_activity_process_failed', source, error);
     }
   }
     
@@ -175,7 +175,7 @@
         
         const errorContainer = document.getElementById('navigraph-error');
         if (!errorContainer) {
-          logger.error('找不到错误UI容器，降级到alert');
+          logger.error('content_error_container_not_found');
           this.showNativeAlert('content_extension_error', formattedMessage);
           return;
         }
@@ -187,7 +187,7 @@
         
         errorContainer.style.display = 'block';
       } catch (err) {
-        logger.error('显示错误UI失败:', err);
+        logger.error('content_error_ui_display_failed', err);
         alert(messageId); // 直接显示消息ID，以便快速发现问题
       }
     },
@@ -243,7 +243,7 @@
         // 显示容器
         errorContainer.style.display = 'block';
       } catch (err) {
-        logger.error('显示详细错误UI失败:', err);
+        logger.error('content_detailed_error_ui_failed', err);
         this.showErrorMessage(titleId, (error instanceof Error ? error.message : String(error)));
       }
     },
@@ -272,7 +272,7 @@
           }
         }, duration);
       } catch (err) {
-        logger.error('显示通知消息失败:', err);
+        logger.error('content_toast_display_failed', err);
       }
     },
 

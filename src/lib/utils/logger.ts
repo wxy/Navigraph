@@ -211,12 +211,12 @@ export class Logger {
     }
 
     const startTime = performance.now();
-    this.debug(`${sessionName} - 开始`);
+    this.debug('logger_session_started', sessionName);
 
     return {
       end: () => {
         const duration = performance.now() - startTime;
-        this.debug(`${sessionName} - 结束 (耗时: ${duration.toFixed(2)}ms)`);
+        this.debug('logger_session_ended', sessionName, duration.toFixed(2));
       },
     };
   }
@@ -269,7 +269,7 @@ export class Logger {
     return {
       end: () => {
         const duration = performance.now() - startTime;
-        this.log(`总耗时: ${duration.toFixed(2)}ms`);
+        this.log('logger_total_duration', duration.toFixed(2));
         this.groupEnd();
       }
     };
@@ -316,31 +316,31 @@ export class Logger {
       const lines = stack.split("\n");
 
       if (detailLevel === "full") {
-        console.log("完整堆栈:", lines);
+        console.log(i18n("logger_debug_full_stack"), lines);
 
         // 分析每一行
         lines.forEach((line, i) => {
-          console.log(`行 ${i}:`, line);
+          console.log(i18n("logger_debug_line_number", i.toString()), line);
 
           // 测试各种正则表达式
           console.log(
-            " Chrome标准格式:",
+            i18n("logger_debug_chrome_standard_format"),
             line.match(/at .+? \((.+?):(\d+):\d+\)/)
           );
-          console.log(" Chrome简单格式:", line.match(/at (.+?):(\d+):\d+/));
-          console.log(" Firefox格式:", line.match(/(.+?)@(.+?):(\d+):\d+/));
+          console.log(i18n("logger_debug_chrome_simple_format"), line.match(/at (.+?):(\d+):\d+/));
+          console.log(i18n("logger_debug_firefox_format"), line.match(/(.+?)@(.+?):(\d+):\d+/));
           console.log(
-            " 后备格式:",
+            i18n("logger_debug_fallback_format"),
             line.match(/([^\/\\]+\.(js|ts|jsx|tsx|vue|html))(?::(\d+))?/i)
           );
           console.log("---");
         });
       } else {
-        console.log("堆栈前5行:", lines.slice(0, 5));
-        console.log('使用Logger.debugStack("full")查看完整分析');
+        console.log(i18n("logger_debug_stack_first_five"), lines.slice(0, 5));
+        console.log(i18n("logger_debug_stack_view_full"));
       }
     } catch (e) {
-      console.error("无法获取堆栈", e);
+      console.error(i18n("logger_debug_stack_error"), e);
     }
   }
 }

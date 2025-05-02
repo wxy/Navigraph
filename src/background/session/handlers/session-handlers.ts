@@ -23,7 +23,7 @@ export class SessionMessageHandler {
    * 注册所有会话相关消息处理程序
    */
   public registerHandlers(messageService: BackgroundMessageService): void {
-    logger.groupCollapsed("注册会话相关消息处理程序");
+    logger.groupCollapsed(i18n("session_handler_registering"));
 
     // 只包含原始实现中存在的处理程序
     this.registerGetSessionsHandler(messageService);
@@ -61,7 +61,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
@@ -93,7 +93,7 @@ export class SessionMessageHandler {
             );
             ctx.error(
               i18n(
-                "session_handler_get_sessions_failed",
+                "session_handler_get_sessions_failed_message",
                 error instanceof Error ? error.message : String(error)
               )
             );
@@ -125,12 +125,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n("session_handler_id_empty"));
+          ctx.error("session_handler_id_empty");
           return false;
         }
 
@@ -138,18 +138,17 @@ export class SessionMessageHandler {
           .getSessionDetails(message.sessionId)
           .then((session) => {
             if (!session) {
-              ctx.error(`找不到会话: ${message.sessionId}`);
+              ctx.error("session_handler_session_not_found", message.sessionId);
               return;
             }
 
             ctx.success({ session });
           })
           .catch((error) => {
-            logger.error(`获取会话 ${message.sessionId} 详情失败:`, error);
+            logger.error("session_handler_get_details_failed", message.sessionId, error);
             ctx.error(
-              `获取会话详情失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_get_details_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -179,7 +178,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
@@ -194,11 +193,10 @@ export class SessionMessageHandler {
             ctx.success({ session, sessionId: session.id });
           })
           .catch((error) => {
-            logger.error("获取当前会话失败:", error);
+            logger.error("session_handler_get_current_failed", error);
             ctx.error(
-              `获取当前会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_get_current_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -228,7 +226,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
@@ -243,11 +241,10 @@ export class SessionMessageHandler {
             ctx.success({ session, sessionId: session.id });
           })
           .catch((error) => {
-            logger.error("获取最新会话失败:", error);
+            logger.error("session_handler_get_latest_failed", error);
             ctx.error(
-              `获取最新会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_get_latest_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -255,7 +252,7 @@ export class SessionMessageHandler {
       }
     );
 
-    logger.log("已注册获取最新活跃会话处理程序");
+    logger.log("session_handler_latest_registered");
   }
   /**
    * 注册创建会话处理程序
@@ -278,7 +275,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
@@ -289,11 +286,10 @@ export class SessionMessageHandler {
             ctx.success({ session });
           })
           .catch((error) => {
-            logger.error("创建会话失败:", error);
+            logger.error("session_handler_create_failed", error);
             ctx.error(
-              `创建会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_create_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -323,17 +319,17 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n("session_handler_id_empty"));
+          ctx.error("session_handler_id_empty");
           return false;
         }
 
         if (!message.updates) {
-          ctx.error("更新数据不能为空");
+          ctx.error("session_handler_update_data_empty");
           return false;
         }
 
@@ -343,11 +339,10 @@ export class SessionMessageHandler {
             ctx.success({ session });
           })
           .catch((error) => {
-            logger.error(`更新会话 ${message.sessionId} 失败:`, error);
+            logger.error("session_handler_update_failed", message.sessionId, error);
             ctx.error(
-              `更新会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_update_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -377,17 +372,17 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n("session_handler_id_empty"));
+          ctx.error("session_handler_id_empty");
           return false;
         }
 
         if (!message.confirm) {
-          ctx.error("需要确认删除操作");
+          ctx.error("session_handler_confirm_delete_required");
           return false;
         }
 
@@ -397,11 +392,10 @@ export class SessionMessageHandler {
             ctx.success({ sessionId: message.sessionId });
           })
           .catch((error) => {
-            logger.error(`删除会话 ${message.sessionId} 失败:`, error);
+            logger.error("session_handler_delete_failed", message.sessionId, error);
             ctx.error(
-              `删除会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_delete_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -429,12 +423,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n("session_handler_id_empty"));
+          ctx.error("session_handler_id_empty");
           return false;
         }
 
@@ -444,11 +438,10 @@ export class SessionMessageHandler {
             ctx.success({ sessionId: message.sessionId, session });
           })
           .catch((error) => {
-            logger.error(`结束会话 ${message.sessionId} 失败:`, error);
+            logger.error("session_handler_end_failed", message.sessionId, error);
             ctx.error(
-              `结束会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_end_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -478,7 +471,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
@@ -498,15 +491,14 @@ export class SessionMessageHandler {
             if (session) {
               ctx.success({ sessionId: message.sessionId, session });
             } else {
-              ctx.error(`找不到会话: ${message.sessionId}`);
+              ctx.error("session_handler_session_not_found", message.sessionId);
             }
           })
           .catch((error) => {
-            logger.error("设置当前会话失败:", error);
+            logger.error("session_handler_set_current_failed", error);
             ctx.error(
-              `设置当前会话失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_set_current_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
@@ -536,7 +528,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n("session_handler_context_failed"));
+          logger.error("session_handler_context_failed");
           return false;
         }
 
@@ -546,11 +538,10 @@ export class SessionMessageHandler {
             ctx.success({ statistics });
           })
           .catch((error) => {
-            logger.error("获取会话统计信息失败:", error);
+            logger.error("session_handler_get_stats_failed", error);
             ctx.error(
-              `获取会话统计信息失败: ${
-                error instanceof Error ? error.message : String(error)
-              }`
+              "session_handler_get_stats_failed_message",
+              error instanceof Error ? error.message : String(error)
             );
           });
 
