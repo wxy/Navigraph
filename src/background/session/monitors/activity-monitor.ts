@@ -2,6 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { SessionManager } from '../session-manager.js';
 import { NavigraphSettings } from '../../../lib/settings/types.js';
 import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 
 const logger = new Logger('ActivityMonitor');
 
@@ -88,19 +89,41 @@ export class ActivityMonitor {
     });
     
     // 标签页激活时
-    chrome.tabs.onActivated.addListener(() => {
-      this.markActivity();
+    chrome.tabs.onActivated.addListener(async (activeInfo) => {
+      try {
+        const tab = await chrome.tabs.get(activeInfo.tabId);
+        if (tab && tab.url && !UrlUtils.isSystemPage(tab.url)) {
+          logger.debug('activity_monitor_real_page_activated', tab.url);
+          this.markActivity();
+        } else if (tab && tab.url) {
+          logger.debug('activity_monitor_system_page_ignored', tab.url);
+        }
+      } catch (error) {
+        logger.debug('activity_monitor_tab_get_failed', 
+          error instanceof Error ? error.message : String(error));
+      }
     });
     
     // 导航完成时
-    chrome.webNavigation.onCompleted.addListener(() => {
-      this.markActivity();
+    chrome.webNavigation.onCompleted.addListener((details) => {
+      if (!UrlUtils.isSystemPage(details.url)) {
+        logger.debug('activity_monitor_navigation_completed', details.url);
+        this.markActivity();
+      } else {
+        logger.debug('activity_monitor_system_navigation_ignored', details.url);
+      }
     });
     
+    
     // 标签页更新时
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-      if (changeInfo.status === 'complete') {
-        this.markActivity();
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+      if (changeInfo.status === 'complete' && tab?.url) {
+        if (!UrlUtils.isSystemPage(tab.url)) {
+          logger.debug('activity_monitor_page_updated', tab.url);
+          this.markActivity();
+        } else {
+          logger.debug('activity_monitor_system_update_ignored', tab.url);
+        }
       }
     });
 
