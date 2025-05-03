@@ -2,6 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { SessionManager } from '../session-manager.js';
 import { SessionStrategy } from './session-strategy.js';
 import { DailySessionStrategy } from './daily-session.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 // 导入其他策略...
 
 const logger = new Logger('SessionStrategyFactory');
@@ -30,7 +31,7 @@ export class SessionStrategyFactory {
     
     // 添加其他策略...
     
-    logger.log(`已初始化${this.strategies.size}个会话策略`);
+    logger.log('strategy_factory_initialized', this.strategies.size.toString());
   }
   
   /**
@@ -42,9 +43,9 @@ export class SessionStrategyFactory {
     if (this.strategies.has(strategyType)) {
       const oldType = this.activeStrategyType;
       this.activeStrategyType = strategyType;
-      logger.log(`会话策略已从${oldType}切换为${strategyType}`);
+      logger.log('strategy_factory_strategy_changed', oldType, strategyType);
     } else {
-      logger.warn(`未找到策略类型: ${strategyType}，保持当前策略: ${this.activeStrategyType}`);
+      logger.warn('strategy_factory_strategy_not_found', strategyType, this.activeStrategyType);
     }
   }
   
@@ -55,6 +56,7 @@ export class SessionStrategyFactory {
     const strategy = this.strategies.get(this.activeStrategyType);
     if (!strategy) {
       // 回退到默认策略
+      logger.warn('strategy_factory_fallback_used', this.activeStrategyType);
       return this.strategies.get('daily')!;
     }
     return strategy;

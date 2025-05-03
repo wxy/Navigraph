@@ -1,0 +1,50 @@
+{
+  "tab_state_manager_initialized": {
+    "message": "标签页状态管理器初始化完成",
+    "description": "标签页状态管理器初始化完成时的日志消息"
+  },
+  "tab_state_manager_reset": {
+    "message": "标签页状态管理器已重置",
+    "description": "标签页状态管理器重置状态时的日志消息"
+  },
+  "tab_state_manager_event_listener_error": {
+    "message": "事件监听器错误: {0}",
+    "description": "事件监听器执行失败时的错误日志，{0}为错误详情"
+  },
+  "tab_state_manager_state_changed": {
+    "message": "标签页 {0} 状态已更新",
+    "description": "标签页状态更新时的日志消息，{0}为标签页ID"
+  },
+  "tab_state_manager_state_added": {
+    "message": "添加标签页 {0} 状态",
+    "description": "添加标签页状态时的日志消息，{0}为标签页ID"
+  },
+  "tab_state_manager_node_added": {
+    "message": "标签页 {0} 添加节点: {1}",
+    "description": "标签页添加导航节点时的日志消息，{0}为标签页ID，{1}为节点ID"
+  },
+  "tab_state_manager_tab_removed": {
+    "message": "标签页 {0} 已标记为移除",
+    "description": "标签页被标记为移除时的日志消息，{0}为标签页ID"
+  },
+  "tab_state_manager_tab_active_time_set": {
+    "message": "设置标签页 {0} 激活时间: {1}",
+    "description": "设置标签页激活时间时的日志消息，{0}为标签页ID，{1}为时间戳"
+  },
+  "tab_state_manager_no_history": {
+    "message": "标签页 {0} 没有导航历史",
+    "description": "标签页没有导航历史时的警告日志，{0}为标签页ID"
+  },
+  "tab_state_manager_tab_not_found": {
+    "message": "找不到标签页 {0} 的状态",
+    "description": "找不到标签页状态时的警告日志，{0}为标签页ID"
+  },
+  "tab_state_manager_event_listener_added": {
+    "message": "添加了标签页事件监听器",
+    "description": "添加事件监听器时的日志消息"
+  },
+  "tab_state_manager_event_listener_removed": {
+    "message": "移除了标签页事件监听器",
+    "description": "移除事件监听器时的日志消息"
+  }
+}

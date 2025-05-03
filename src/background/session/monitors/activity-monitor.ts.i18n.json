@@ -1,0 +1,46 @@
+{
+  "activity_monitor_initialized": {
+    "message": "活动监控器初始化完成",
+    "description": "活动监控器初始化完成时的日志消息"
+  },
+  "activity_monitor_restore_time_success": {
+    "message": "恢复会话活动时间: {0}",
+    "description": "成功恢复会话活动时间时的日志消息，{0}为格式化的日期时间"
+  },
+  "activity_monitor_restore_time_failed": {
+    "message": "恢复活动时间失败: {0}",
+    "description": "恢复活动时间失败时的错误日志，{0}为错误详情"
+  },
+  "activity_monitor_setup_listeners": {
+    "message": "设置会话活动监听器",
+    "description": "设置活动监听器时的日志消息"
+  },
+  "activity_monitor_browser_startup": {
+    "message": "浏览器启动",
+    "description": "浏览器启动事件的日志消息"
+  },
+  "activity_monitor_idle_detected": {
+    "message": "检测到用户空闲超过{0}小时",
+    "description": "检测到用户空闲时的日志消息，{0}为空闲小时数"
+  },
+  "activity_monitor_timeout_changed": {
+    "message": "活动超时设置已更改为{0}分钟",
+    "description": "活动超时设置更改时的日志消息，{0}为新设置的分钟数"
+  },
+  "activity_monitor_activity_marked": {
+    "message": "标记用户活动，上次活动时间: {0}",
+    "description": "标记用户活动时的日志消息，{0}为格式化的上次活动时间"
+  },
+  "activity_monitor_idle_timer_reset": {
+    "message": "重置空闲计时器，超时时间: {0}分钟",
+    "description": "重置空闲计时器时的日志消息，{0}为超时分钟数"
+  },
+  "activity_monitor_idle_timer_disabled": {
+    "message": "空闲计时器已禁用",
+    "description": "空闲计时器被禁用时的日志消息"
+  },
+  "activity_monitor_session_null": {
+    "message": "未找到当前会话，使用当前时间作为活动时间",
+    "description": "当找不到当前会话时的日志消息"
+  }
+}

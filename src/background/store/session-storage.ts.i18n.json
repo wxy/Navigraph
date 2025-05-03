@@ -1,126 +1,130 @@
 {
   "session_storage_init_failed": {
-    "message": "初始化会话存储失败: {0}",
-    "description": "SessionStorage 初始化失败错误"
+    "message": "会话存储初始化失败: {0}",
+    "description": "会话存储初始化失败时的错误日志，{0}为错误详情"
   },
   "session_storage_save_failed": {
     "message": "保存会话失败: {0}",
-    "description": "SessionStorage 保存会话失败错误"
+    "description": "保存会话失败时的错误日志，{0}为错误详情"
   },
   "session_storage_get_failed": {
     "message": "获取会话失败: {0}",
-    "description": "SessionStorage 获取单个会话失败错误"
+    "description": "获取会话失败时的错误日志，{0}为错误详情"
   },
   "session_storage_get_list_failed": {
     "message": "获取会话列表失败: {0}",
-    "description": "SessionStorage 获取会话列表失败错误"
+    "description": "获取会话列表失败时的错误日志，{0}为错误详情"
   },
   "session_storage_delete_failed": {
     "message": "删除会话失败: {0}",
-    "description": "SessionStorage 删除会话失败错误"
+    "description": "删除会话失败时的错误日志，{0}为错误详情"
   },
   "session_storage_clear_failed": {
     "message": "清除会话数据失败: {0}",
-    "description": "SessionStorage 清除所有会话失败错误"
+    "description": "清除会话数据失败时的错误日志，{0}为错误详情"
   },
   "session_storage_count_failed": {
     "message": "获取会话数量失败: {0}",
-    "description": "SessionStorage 获取会话计数失败错误"
+    "description": "获取会话数量失败时的错误日志，{0}为错误详情"
   },
   "session_storage_init_complete": {
-    "message": "会话存储已初始化",
-    "description": "会话存储初始化完成日志"
+    "message": "会话存储初始化完成",
+    "description": "会话存储初始化完成时的日志消息"
   },
   "session_storage_delete_nonexistent": {
     "message": "尝试删除不存在的会话: {0}",
-    "description": "尝试删除不存在会话警告"
+    "description": "尝试删除不存在的会话时的警告日志，{0}为会话ID"
   },
   "session_storage_deleted": {
-    "message": "会话已删除: {0}",
-    "description": "会话已删除日志"
+    "message": "已删除会话: {0}",
+    "description": "删除会话成功时的日志消息，{0}为会话ID"
   },
   "session_storage_cleared_all": {
-    "message": "所有会话数据已清除",
-    "description": "所有会话数据清除日志"
+    "message": "已清除所有会话数据",
+    "description": "清除所有会话数据时的日志消息"
   },
   "session_storage_connection_closed": {
     "message": "会话存储连接已关闭",
-    "description": "会话存储连接关闭日志"
+    "description": "会话存储连接关闭时的日志消息"
   },
   "session_storage_update_stats_nonexistent": {
-    "message": "更新统计信息失败: 会话 {0} 不存在",
-    "description": "更新不存在会话统计警告"
+    "message": "尝试更新不存在会话的统计信息: {0}",
+    "description": "尝试更新不存在会话的统计信息时的警告日志，{0}为会话ID"
   },
   "session_storage_stats_updated": {
-    "message": "会话 {0} 统计信息已更新",
-    "description": "会话统计信息更新日志"
+    "message": "已更新会话统计信息: {0}",
+    "description": "更新会话统计信息成功时的日志消息，{0}为会话ID"
   },
   "session_storage_update_stats_failed": {
-    "message": "更新会话 {0} 统计信息失败: {1}",
-    "description": "更新会话统计失败错误"
+    "message": "更新会话统计信息失败: {0}, {1}",
+    "description": "更新会话统计信息失败时的错误日志，{0}为会话ID，{1}为错误详情"
   },
   "session_storage_get_current_failed": {
     "message": "获取当前会话失败: {0}",
-    "description": "获取当前会话失败错误"
+    "description": "获取当前会话失败时的错误日志，{0}为错误详情"
   },
   "session_storage_default_title": {
-    "message": "会话 {0}",
-    "description": "默认会话标题"
+    "message": "{0} 的浏览会话",
+    "description": "默认会话标题，{0}为日期时间"
   },
   "session_storage_created": {
-    "message": "已创建新会话: {0}",
-    "description": "创建新会话日志"
+    "message": "已创建会话: {0}",
+    "description": "创建会话成功时的日志消息，{0}为会话ID"
   },
   "session_storage_create_failed": {
     "message": "创建会话失败: {0}",
-    "description": "创建会话失败错误"
+    "description": "创建会话失败时的错误日志，{0}为错误详情"
   },
   "session_storage_deactivated_all": {
-    "message": "已将 {0} 个活跃会话设为非活跃状态",
-    "description": "将所有活跃会话设置为非活跃日志"
+    "message": "已将 {0} 个会话设置为非活跃状态",
+    "description": "将所有会话设置为非活跃状态时的日志消息，{0}为会话数量"
   },
   "session_storage_deactivate_all_failed": {
-    "message": "设置会话为非活跃状态失败: {0}",
-    "description": "设置会话为非活跃状态失败错误"
+    "message": "将会话设置为非活跃状态失败: {0}",
+    "description": "将会话设置为非活跃状态失败时的错误日志，{0}为错误详情"
   },
   "session_storage_end_nonexistent": {
-    "message": "结束会话失败: 会话 {0} 不存在",
-    "description": "结束不存在会话警告"
+    "message": "尝试结束不存在的会话: {0}",
+    "description": "尝试结束不存在的会话时的警告日志，{0}为会话ID"
   },
   "session_storage_ended": {
-    "message": "会话 {0} 已结束",
-    "description": "会话已结束日志"
+    "message": "已结束会话: {0}",
+    "description": "结束会话成功时的日志消息，{0}为会话ID"
   },
   "session_storage_end_failed": {
-    "message": "结束会话 {0} 失败: {1}",
-    "description": "结束会话失败错误"
+    "message": "结束会话失败: {0}, {1}",
+    "description": "结束会话失败时的错误日志，{0}为会话ID，{1}为错误详情"
   },
   "session_storage_activate_nonexistent": {
-    "message": "激活会话失败: 会话 {0} 不存在",
-    "description": "激活不存在会话警告"
+    "message": "尝试激活不存在的会话: {0}",
+    "description": "尝试激活不存在的会话时的警告日志，{0}为会话ID"
   },
   "session_storage_activated": {
-    "message": "会话 {0} 已激活",
-    "description": "会话已激活日志"
+    "message": "已激活会话: {0}",
+    "description": "激活会话成功时的日志消息，{0}为会话ID"
   },
   "session_storage_activate_failed": {
-    "message": "激活会话 {0} 失败: {1}",
-    "description": "激活会话失败错误"
+    "message": "激活会话失败: {0}, {1}",
+    "description": "激活会话失败时的错误日志，{0}为会话ID，{1}为错误详情"
+  },
+  "session_storage_session_not_found": {
+    "message": "会话不存在: {0}",
+    "description": "找不到指定ID的会话时的错误信息，{0}为会话ID"
   },
   "session_storage_data_cleared": {
-    "message": "已清除会话 {0} 的所有数据",
-    "description": "会话数据清除日志"
+    "message": "已清除会话数据: {0}",
+    "description": "清除会话数据成功时的日志消息，{0}为会话ID"
   },
   "session_storage_clear_data_failed": {
-    "message": "清除会话 {0} 的数据失败: {1}",
-    "description": "清除会话数据失败错误"
+    "message": "清除会话数据失败: {0}, {1}",
+    "description": "清除会话数据失败时的错误日志，{0}为会话ID，{1}为错误详情"
   },
   "session_storage_updated": {
-    "message": "已更新会话 {0} 的属性",
-    "description": "会话属性更新日志"
+    "message": "已更新会话: {0}",
+    "description": "更新会话成功时的日志消息，{0}为会话ID"
   },
   "session_storage_update_failed": {
-    "message": "更新会话 {0} 的属性失败: {1}",
-    "description": "更新会话属性失败错误"
+    "message": "更新会话失败: {0}, {1}",
+    "description": "更新会话失败时的错误日志，{0}为会话ID，{1}为错误详情"
   }
 }

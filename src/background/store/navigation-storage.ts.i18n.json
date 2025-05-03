@@ -1,6 +1,130 @@
 {
-  "background_storage_init_failed": {
+  "nav_storage_initialized": {
+    "message": "导航存储已初始化",
+    "description": "导航存储初始化完成时的日志消息"
+  },
+  "nav_storage_init_failed": {
     "message": "初始化导航存储失败: {0}",
-    "description": "导航存储初始化失败错误"
+    "description": "导航存储初始化失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_node_saved": {
+    "message": "节点已保存: {0}",
+    "description": "节点保存成功时的日志消息，{0}为节点ID"
+  },
+  "nav_storage_save_node_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "保存节点失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_query_nodes_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_get_node_failed": {
+    "message": "获取节点失败: {0}, {1}",
+    "description": "获取节点失败时的错误日志，{0}为节点ID，{1}为错误详情"
+  },
+  "nav_storage_node_updated": {
+    "message": "节点已更新: {0}，会话 {1}",
+    "description": "节点更新成功时的日志消息，{0}为节点ID，{1}为会话ID"
+  },
+  "nav_storage_update_node_failed": {
+    "message": "更新节点失败: {0}, {1}",
+    "description": "更新节点失败时的错误日志，{0}为节点ID，{1}为错误详情"
+  },
+  "nav_storage_node_deleted": {
+    "message": "节点已删除: {0}",
+    "description": "节点删除成功时的日志消息，{0}为节点ID"
+  },
+  "nav_storage_delete_node_failed": {
+    "message": "删除节点失败: {0}, {1}",
+    "description": "删除节点失败时的错误日志，{0}为节点ID，{1}为错误详情"
+  },
+  "nav_storage_edge_saved": {
+    "message": "边已保存: {0} ({1} -> {2})",
+    "description": "边保存成功时的日志消息，{0}为边ID，{1}为源节点，{2}为目标节点"
+  },
+  "nav_storage_save_edge_failed": {
+    "message": "保存边失败: {0}",
+    "description": "保存边失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_query_edges_failed": {
+    "message": "查询边失败: {0}",
+    "description": "查询边失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_get_edge_failed": {
+    "message": "获取边失败: {0}, {1}",
+    "description": "获取边失败时的错误日志，{0}为边ID，{1}为错误详情"
+  },
+  "nav_storage_nodes_batch_saved": {
+    "message": "批量保存了 {0} 个节点",
+    "description": "批量保存节点成功时的日志消息，{0}为节点数量"
+  },
+  "nav_storage_save_nodes_batch_failed": {
+    "message": "批量保存节点失败: {0}",
+    "description": "批量保存节点失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_edges_batch_saved": {
+    "message": "批量保存了 {0} 条边",
+    "description": "批量保存边成功时的日志消息，{0}为边数量"
+  },
+  "nav_storage_save_edges_batch_failed": {
+    "message": "批量保存边失败: {0}",
+    "description": "批量保存边失败时的错误日志，{0}为错误详情"
+  },
+  "nav_storage_session_graph_fetched": {
+    "message": "已获取会话 {0} 的导航图谱: {1} 个节点, {2} 条边",
+    "description": "获取会话图谱成功时的日志消息，{0}为会话ID，{1}为节点数量，{2}为边数量"
+  },
+  "nav_storage_fetch_session_graph_failed": {
+    "message": "获取会话 {0} 的导航图谱失败: {1}",
+    "description": "获取会话图谱失败时的错误日志，{0}为会话ID，{1}为错误详情"
+  },
+  "background_storage_node_not_found": {
+    "message": "节点不存在: {0}",
+    "description": "找不到指定ID的节点时的错误消息，{0}为节点ID"
+  },
+  "background_storage_save_node_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "保存节点失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_query_nodes_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_get_node_failed": {
+    "message": "获取节点失败: {0}",
+    "description": "获取节点失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_update_node_failed": {
+    "message": "更新节点失败: {0}",
+    "description": "更新节点失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_save_edge_failed": {
+    "message": "保存边失败: {0}",
+    "description": "保存边失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_query_edges_failed": {
+    "message": "查询边失败: {0}",
+    "description": "查询边失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_get_edge_failed": {
+    "message": "获取边失败: {0}",
+    "description": "获取边失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_save_nodes_batch_failed": {
+    "message": "批量保存节点失败: {0}",
+    "description": "批量保存节点失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_save_edges_batch_failed": {
+    "message": "批量保存边失败: {0}",
+    "description": "批量保存边失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_fetch_session_graph_failed": {
+    "message": "获取会话图谱失败: {0}",
+    "description": "获取会话图谱失败时的错误消息，{0}为错误详情"
+  },
+  "background_storage_init_failed": {
+    "message": "初始化存储失败: {0}",
+    "description": "初始化存储失败时的错误消息，{0}为错误详情"
   }
 }
