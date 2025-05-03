@@ -28,7 +28,7 @@
     "description": "渲染管理器初始化完成日志"
   },
   "visualization_refresh_start": {
-    "message": "开始刷新可视化 {0}",
+    "message": "开始刷新可视化 {0} ",
     "description": "可视化刷新开始日志"
   },
   "using_provided_data": {

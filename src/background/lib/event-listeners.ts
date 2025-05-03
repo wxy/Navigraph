@@ -1,5 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { NavigationManager } from '../navigation/navigation-manager.js';
+import { i18n } from '../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('EventListeners');
 
@@ -23,7 +24,7 @@ export function setupEventListeners(): void {
  */
 function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): void {
   if (details.reason === 'install') {
-    logger.log('Navigraph 扩展首次安装');
+    logger.log('extension_installed');
     
     // 显示欢迎页面或教程
     chrome.tabs.create({
@@ -31,7 +32,7 @@ function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): voi
       active: true
     });
   } else if (details.reason === 'update') {
-    logger.log(`Navigraph 扩展已更新到版本 ${chrome.runtime.getManifest().version}`);
+    logger.log('extension_updated', chrome.runtime.getManifest().version);
   }
 }
 
@@ -39,7 +40,7 @@ function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): voi
  * 处理扩展图标点击事件
  */
 async function handleActionClicked(): Promise<void> {
-  logger.log('扩展图标被点击');
+  logger.log('icon_clicked');
   
   try {
     // 获取所有标签页
@@ -51,7 +52,7 @@ async function handleActionClicked(): Promise<void> {
     
     if (existingTab && existingTab.id) {
       // 如果已经打开，切换到该标签页
-      logger.log('导航树页面已打开，切换到该标签页');
+      logger.log('tab_exists');
       await chrome.tabs.update(existingTab.id, { active: true });
       
       // 如果标签页在其他窗口，则聚焦该窗口
@@ -60,10 +61,10 @@ async function handleActionClicked(): Promise<void> {
       }
     } else {
       // 如果没有打开，创建新标签页
-      logger.log('创建新导航树页面');
+      logger.log('create_new_tab');
       await chrome.tabs.create({ url: indexUrl });
     }
   } catch (error) {
-    logger.error('打开导航树页面失败:', error);
+    logger.error('open_tab_failed', error instanceof Error ? error.message : String(error));
   }
 }

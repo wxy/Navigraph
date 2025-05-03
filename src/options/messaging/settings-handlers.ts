@@ -9,7 +9,7 @@ const logger = new Logger('SettingsHandlers');
  * @returns 保存操作的Promise
  */
 export function saveSettings(settings: any): Promise<any> {
-  logger.log('保存设置:', settings);
+  logger.log('settings_handlers_save_settings', settings);
   return sendToBackground('saveSettings', { settings });
 }
 

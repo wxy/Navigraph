@@ -94,5 +94,9 @@
   "background_db_exists_failed": {
     "message": "检查 {0} 中的数据是否存在失败",
     "description": "检查数据存在失败错误"
+  },
+  "indexed_db_opened": {
+    "message": "数据库 {0} (版本 {1}) 已打开",
+    "description": "成功打开数据库时的日志消息，{0}为数据库名称，{1}为版本"
   }
 }

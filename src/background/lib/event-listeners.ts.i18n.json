@@ -1,0 +1,26 @@
+{
+  "extension_installed": {
+    "message": "导航图谱（Navigraph）扩展首次安装",
+    "description": "扩展首次安装时的日志消息"
+  },
+  "extension_updated": {
+    "message": "导航图谱（Navigraph）扩展已更新到版本 {0}",
+    "description": "扩展更新时的日志消息，{0}为版本号"
+  },
+  "icon_clicked": {
+    "message": "导航图谱（Navigraph）扩展图标被点击",
+    "description": "用户点击扩展图标时的日志消息"
+  },
+  "tab_exists": {
+    "message": "导航图谱页面已打开，切换到该标签页",
+    "description": "当导航图谱页面已打开并切换到该页面时的日志消息"
+  },
+  "create_new_tab": {
+    "message": "创建新导航图谱页面",
+    "description": "创建新导航图谱页面时的日志消息"
+  },
+  "open_tab_failed": {
+    "message": "打开导航图谱页面失败",
+    "description": "打开导航图谱页面失败时的错误日志"
+  }
+}

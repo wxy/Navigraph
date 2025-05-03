@@ -50,7 +50,7 @@ module.exports = {
       // 可选：指定默认语言
       // defaultLang: 'zh_CN',
       // 源代码目录
-      srcDir: 'src',
+      srcDir: './',
       // 输出目录
       tempOutputDir: '_locales',
     }),
