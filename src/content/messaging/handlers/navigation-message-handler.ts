@@ -14,6 +14,7 @@ import {
 } from '../content-message-service.js';
 import type { NavigationVisualizer } from '../../core/navigation-visualizer.js';
 import type { NavNode } from '../../types/navigation.js';
+import { i18n, I18nError } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('NavigationMessageHandler');
 
@@ -30,14 +31,14 @@ export class NavigationMessageHandler {
    */
   constructor(visualizer: NavigationVisualizer) {
     this.visualizer = visualizer;
-    logger.log('导航消息处理器初始化');
+    logger.log('nav_message_handler_initialized');
   }
   
   /**
    * 初始化所有消息监听器
    */
   initialize(): void {
-    logger.groupCollapsed("初始化导航消息监听...");
+    logger.groupCollapsed('nav_message_handler_init_listeners');
     
     // 注册各类消息处理函数
     this.registerRefreshHandler();
@@ -57,7 +58,7 @@ export class NavigationMessageHandler {
    * 清理所有消息监听器
    */
   cleanup(): void {
-    logger.log("清理消息处理器...");
+    logger.log('nav_message_handler_cleanup');
     
     // 取消注册所有处理器
     unregisterHandler("getNodeId");
@@ -70,7 +71,7 @@ export class NavigationMessageHandler {
     unregisterHandler("jsNavigation");
     unregisterHandler("refreshVisualization");
     
-    logger.log("所有消息处理器已清理");
+    logger.log('nav_message_handler_all_cleaned');
   }
   
   /**
@@ -80,7 +81,7 @@ export class NavigationMessageHandler {
     registerHandler<BaseMessage, BaseResponse>(
       "refreshVisualization",
       (message: any, sender, sendResponse) => {
-        logger.log("收到刷新请求");
+        logger.log('nav_message_handler_refresh_request');
         
         // 确认收到请求并发送响应
         if (message.requestId) {
@@ -93,11 +94,12 @@ export class NavigationMessageHandler {
         // 延迟执行刷新操作
         setTimeout(async () => {
           try {
-            logger.log("🔄 开始执行刷新操作...");
+            logger.log('nav_message_handler_refresh_start');
             await this.visualizer.refreshData();
-            logger.log("✅ 刷新操作完成");
+            logger.log('nav_message_handler_refresh_complete');
           } catch (error) {
-            logger.error("❌ 自动刷新可视化失败:", error);
+            logger.error('nav_message_handler_refresh_failed', 
+              error instanceof Error ? error.message : String(error));
           }
         }, 50);
         
@@ -115,10 +117,10 @@ export class NavigationMessageHandler {
       (message: any, sender, sendResponse) => {
         try {
           const pageUrl = message.url;
-          logger.debug("收到获取节点ID请求:", { url: pageUrl });
+          logger.debug('nav_message_handler_get_node_request', JSON.stringify({url: pageUrl}));
           
           if (!pageUrl) {
-            throw new Error("URL为空");
+            throw new I18nError('nav_message_handler_empty_url');
           }
           
           // 获取或创建节点ID
@@ -132,7 +134,8 @@ export class NavigationMessageHandler {
           } as BaseResponse);
           
         } catch (error) {
-          logger.error("获取节点ID失败:", error);
+          logger.error('nav_message_handler_get_node_failed', 
+            error instanceof Error ? error.message : String(error));
           sendResponse({ 
             success: false, 
             error: error instanceof Error ? error.message : String(error),
@@ -153,7 +156,7 @@ export class NavigationMessageHandler {
       "pageLoaded",
       (message: any, sender, sendResponse) => {
         try {
-          logger.debug("收到页面加载消息:", message.pageInfo?.url);
+          logger.debug('nav_message_handler_page_loaded', message.pageInfo?.url ?? '');
           
           // 确认收到消息并回复
           if (message.requestId) {
@@ -167,14 +170,16 @@ export class NavigationMessageHandler {
           setTimeout(async () => {
             try {
               await this.visualizer.handlePageLoaded(message);
-              logger.log("页面加载后刷新可视化完成");
+              logger.log('nav_message_handler_page_refresh_complete');
             } catch (error) {
-              logger.error("页面加载后刷新可视化失败:", error);
+              logger.error('nav_message_handler_page_refresh_failed', 
+                error instanceof Error ? error.message : String(error));
             }
           }, 200);
           
         } catch (error) {
-          logger.error("处理页面加载失败:", error);
+          logger.error('nav_message_handler_handle_page_failed', 
+            error instanceof Error ? error.message : String(error));
           if (message.requestId) {
             sendResponse({ 
               success: false, 
@@ -198,10 +203,10 @@ export class NavigationMessageHandler {
       (message: any, sender, sendResponse) => {
         try {
           const { nodeId, title } = message;
-          logger.debug("收到页面标题更新:", { nodeId, title });
+          logger.debug('nav_message_handler_title_updated', JSON.stringify({ nodeId, title }));
           
           if (!nodeId || !title) {
-            throw new Error("节点ID或标题为空");
+            throw new I18nError('nav_message_handler_empty_node_title');
           }
           
           // 委托给可视化器更新标题
@@ -215,7 +220,8 @@ export class NavigationMessageHandler {
             } as BaseResponse);
           }
         } catch (error) {
-          logger.error("更新页面标题失败:", error);
+          logger.error('nav_message_handler_update_title_failed', 
+            error instanceof Error ? error.message : String(error));
           if (message.requestId) {
             sendResponse({ 
               success: false, 
@@ -239,10 +245,11 @@ export class NavigationMessageHandler {
       (message: any, sender, sendResponse) => {
         try {
           const { nodeId, favicon } = message;
-          logger.debug("收到favicon更新:", { nodeId, faviconUrl: favicon });
+          logger.debug('nav_message_handler_favicon_updated', 
+            JSON.stringify({ nodeId, faviconUrl: favicon }));
           
           if (!nodeId || !favicon) {
-            throw new Error("节点ID或favicon为空");
+            throw new I18nError('nav_message_handler_empty_node_favicon');
           }
           
           // 委托给可视化器更新favicon
@@ -256,7 +263,8 @@ export class NavigationMessageHandler {
             } as BaseResponse);
           }
         } catch (error) {
-          logger.error("更新favicon失败:", error);
+          logger.error('nav_message_handler_update_favicon_failed', 
+            error instanceof Error ? error.message : String(error));
           if (message.requestId) {
             sendResponse({ 
               success: false, 
@@ -279,12 +287,13 @@ export class NavigationMessageHandler {
       "pageActivity",
       (message: any) => {
         try {
-          logger.log("收到页面活动事件，触发刷新", message.source);
+          logger.log('nav_message_handler_activity', message.source || '');
           
           // 触发刷新操作
           this.visualizer.triggerRefresh();
         } catch (error) {
-          logger.error("处理页面活动失败:", error);
+          logger.error('nav_message_handler_activity_failed', 
+            error instanceof Error ? error.message : String(error));
         }
         
         return false; // 无需回复
@@ -300,7 +309,7 @@ export class NavigationMessageHandler {
       "linkClicked",
       (message: any, sender, sendResponse) => {
         try {
-          logger.debug("收到链接点击:", message.linkInfo);
+          logger.debug('nav_message_handler_link_clicked', JSON.stringify(message.linkInfo));
           
           // 确认收到
           if (message.requestId) {
@@ -314,13 +323,15 @@ export class NavigationMessageHandler {
           setTimeout(async () => {
             try {
               await this.visualizer.handleLinkClicked(message);
-              logger.log("基于链接点击刷新可视化完成");
+              logger.log('nav_message_handler_link_refresh_complete');
             } catch (error) {
-              logger.error("链接点击后刷新可视化失败:", error);
+              logger.error('nav_message_handler_link_refresh_failed', 
+                error instanceof Error ? error.message : String(error));
             }
           }, 100);
         } catch (error) {
-          logger.error("处理链接点击失败:", error);
+          logger.error('nav_message_handler_link_handle_failed', 
+            error instanceof Error ? error.message : String(error));
           if (message.requestId) {
             sendResponse({ 
               success: false, 
@@ -343,7 +354,7 @@ export class NavigationMessageHandler {
       "formSubmitted",
       (message: any, sender, sendResponse) => {
         try {
-          logger.debug("收到表单提交:", message.formInfo);
+          logger.debug('nav_message_handler_form_submitted', JSON.stringify(message.formInfo));
           
           // 确认收到
           if (message.requestId) {
@@ -357,13 +368,15 @@ export class NavigationMessageHandler {
           setTimeout(async () => {
             try {
               await this.visualizer.handleFormSubmitted(message);
-              logger.log("基于表单提交刷新可视化完成");
+              logger.log('nav_message_handler_form_refresh_complete');
             } catch (error) {
-              logger.error("表单提交后刷新可视化失败:", error);
+              logger.error('nav_message_handler_form_refresh_failed', 
+                error instanceof Error ? error.message : String(error));
             }
           }, 150);
         } catch (error) {
-          logger.error("处理表单提交失败:", error);
+          logger.error('nav_message_handler_form_handle_failed', 
+            error instanceof Error ? error.message : String(error));
           if (message.requestId) {
             sendResponse({ 
               success: false, 
@@ -386,7 +399,7 @@ export class NavigationMessageHandler {
       "jsNavigation",
       (message: any, sender, sendResponse) => {
         try {
-          logger.debug("收到JS导航:", message);
+          logger.debug('nav_message_handler_js_navigation', JSON.stringify(message));
           
           // 确认收到
           if (message.requestId) {
@@ -400,13 +413,15 @@ export class NavigationMessageHandler {
           setTimeout(async () => {
             try {
               await this.visualizer.handleJsNavigation(message);
-              logger.log("处理JS导航完成");
+              logger.log('nav_message_handler_js_complete');
             } catch (error) {
-              logger.error("处理JS导航失败:", error);
+              logger.error('nav_message_handler_js_failed', 
+                error instanceof Error ? error.message : String(error));
             }
           }, 100);
         } catch (error) {
-          logger.error("处理JS导航失败:", error);
+          logger.error('nav_message_handler_js_failed', 
+            error instanceof Error ? error.message : String(error));
           if (message.requestId) {
             sendResponse({ 
               success: false, 

@@ -19,7 +19,7 @@ export class Environment {
         // 检查版本号是否以0开头(开发版本)
         this._isDevelopment = version.startsWith('0.');
       } catch (error) {
-        console.error('读取扩展版本信息失败:', error);
+        console.error('Reading extension version information failed:', error);
         this._isDevelopment = false; // 默认为生产环境
       }
     }

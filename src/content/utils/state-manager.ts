@@ -7,6 +7,7 @@ const d3 = window.d3;
 import { Logger } from '../../lib/utils/logger.js';
 // 扩展 Visualizer 类型，增加模块中使用的属性
 import { Visualizer } from '../types/navigation.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('StateManager');
 // 状态类型定义
@@ -42,9 +43,9 @@ export function saveViewState(tabId: string, state: ViewState): void {
     
     // 保存所有视图状态
     localStorage.setItem(key, JSON.stringify(allStates));
-    logger.log(`已保存${viewType}视图状态:`, state);
+    logger.log('state_manager_view_state_saved', viewType);
   } catch (err) {
-    logger.warn('保存视图状态失败:', err);
+    logger.warn('state_manager_save_state_failed', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -59,7 +60,7 @@ export function getViewState(tabId: string, viewType: string = 'tree'): ViewStat
     }
     return null;
   } catch (err) {
-    logger.warn(`获取${viewType}视图状态失败:`, err);
+    logger.warn('state_manager_get_state_failed', viewType, err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -77,7 +78,7 @@ export function getAllViewStates(tabId: string): Record<string, ViewState> | nul
     }
     return null;
   } catch (err) {
-    logger.warn('获取所有视图状态失败:', err);
+    logger.warn('state_manager_get_all_states_failed', err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -88,7 +89,7 @@ export function clearViewState(tabId: string): void {
     const key = `nav_view_state_${tabId}`;
     localStorage.removeItem(key);
   } catch (err) {
-    logger.warn('清除视图状态失败:', err);
+    logger.warn('state_manager_clear_state_failed', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -103,7 +104,7 @@ export function setupZoomHandling(
   height: number
 ): any {
   if (!visualizer || !svg || !container) {
-    logger.warn('设置缩放处理失败：缺少必要参数');
+    logger.warn('state_manager_zoom_setup_missing_params');
     return null;
   }
   
@@ -124,7 +125,7 @@ export function setupZoomHandling(
     const savedState = getViewState(tabId, visualizer.currentView || 'tree');
     
     if (savedState && savedState.transform) {
-      logger.log('检测到保存的变换状态:', savedState.transform);
+      logger.log('state_manager_saved_transform_detected');
       
       // 改为使用简单的本地标记，不依赖visualizer属性
       const isRestoringTransform = true;
@@ -159,7 +160,7 @@ export function setupZoomHandling(
               timeAxisGroup.attr('transform', `translate(${event.transform.x}, 0) scale(${event.transform.k}, 1)`);
             }
           } catch (timelineError) {
-            logger.warn('同步时间线视图出错:', timelineError);
+            logger.warn('state_manager_timeline_sync_error', timelineError instanceof Error ? timelineError.message : String(timelineError));
           }
         }
         
@@ -172,11 +173,11 @@ export function setupZoomHandling(
         // 更新当前变换信息
         visualizer.currentTransform = event.transform;
       } catch (zoomError) {
-        logger.error('处理缩放事件出错:', zoomError);
+        logger.error('state_manager_zoom_event_error', zoomError instanceof Error ? zoomError.message : String(zoomError));
       }
     }
   } catch (err) {
-    logger.error('设置缩放处理失败:', err);
+    logger.error('state_manager_zoom_setup_failed', err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -193,10 +194,6 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     
     logger.log('应用保存的变换状态:', transform);
     visualizer.svg.call(visualizer.zoom.transform, d3Transform);
-    
-    // 不再需要清除临时标记
-    // delete visualizer._isRestoringTransform;
-    // delete visualizer._savedTransform;
     
     // 更新状态栏
     updateStatusBar(visualizer);
@@ -346,25 +343,27 @@ function handleDOMFiltering(
  * @param visualizer 可视化器实例
  */
 export function initStatusBar(visualizer: Visualizer): void {
-  logger.log('初始化状态栏...');
+  logger.log('state_manager_statusbar_init');
   
   // 获取状态栏元素
   const statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
   
   if (!statusBar) {
-    logger.log('创建新的状态栏元素');
+    logger.log('state_manager_statusbar_create_new');
     const newStatusBar = document.createElement('div');
     newStatusBar.className = 'windows-status-bar';
     
     // 添加HTML结构
     newStatusBar.innerHTML = `
-      <div class="status-cell" id="status-date">会话日期: --</div>
-      <div class="status-cell" id="status-duration">时长: 0分钟</div>
-      <div class="status-cell" id="status-nodes">节点: 0</div>
-      <div class="status-cell" id="status-filtered">已隐藏: 0</div>
-      <div class="status-cell" id="status-view">视图: ${visualizer.currentView || '树形图'}</div>
-      <div class="status-cell" id="status-zoom">缩放: 100%</div>
-      <div class="status-cell status-cell-stretch" id="status-message">就绪</div>
+      <div class="status-cell" id="status-date">${i18n('state_manager_statusbar_no_date')}</div>
+      <div class="status-cell" id="status-duration">${i18n('state_manager_statusbar_duration', '0分钟')}</div>
+      <div class="status-cell" id="status-nodes">${i18n('state_manager_statusbar_nodes', '0')}</div>
+      <div class="status-cell" id="status-filtered">${i18n('state_manager_statusbar_filtered', '0')}</div>
+      <div class="status-cell" id="status-view">${i18n('state_manager_statusbar_view', visualizer.currentView ? 
+             i18n(visualizer.currentView === 'tree' ? 'state_manager_view_tree' : 'state_manager_view_timeline') : 
+             i18n('state_manager_view_tree'))}</div>
+      <div class="status-cell" id="status-zoom">${i18n('state_manager_statusbar_zoom', '100')}</div>
+      <div class="status-cell status-cell-stretch" id="status-message">${i18n('state_manager_statusbar_ready')}</div>
     `;
     
     // 添加基本样式
@@ -388,7 +387,7 @@ export function initStatusBar(visualizer: Visualizer): void {
   // 设置初始状态
   updateStatusBar(visualizer);
   
-  logger.log('状态栏初始化完成');
+  logger.log('state_manager_statusbar_init_complete');
 }
 
 /**
@@ -502,12 +501,12 @@ export function showFilteringIndicator(visualizer: Visualizer, hiddenCount: numb
     }
     
     // 更新提示文本
-    indicator.textContent = `${hiddenCount} 个节点已过滤（放大查看更多）`;
+    indicator.textContent = i18n('state_manager_filter_nodes_message', hiddenCount.toString());
     
     // 显示指示器
     indicator.style.display = 'block';
   } catch (err) {
-    logger.warn('显示过滤指示器失败:', err);
+    logger.warn('state_manager_show_indicator_failed', err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -602,9 +601,9 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       if (container) {
         // 更新visualizer的container引用
         visualizer.container = container;
-        logger.log('已找到并设置可视化容器:', container.id);
+        logger.log('state_manager_container_found', container.id);
       } else {
-        logger.error('找不到可视化容器元素');
+        logger.error('state_manager_container_not_found');
         return;
       }
     }
@@ -619,27 +618,27 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       
       // 添加视图切换按钮
       const treeBtn = document.createElement('button');
-      treeBtn.textContent = '树形图';
+      treeBtn.textContent = i18n('state_manager_button_tree');
       treeBtn.setAttribute('data-view', 'tree');
       treeBtn.onclick = () => switchViewType(visualizer, 'tree');
       toolbar.appendChild(treeBtn);
       
       const timelineBtn = document.createElement('button');
-      timelineBtn.textContent = '时间线';
+      timelineBtn.textContent = i18n('state_manager_button_timeline');
       timelineBtn.setAttribute('data-view', 'timeline');
       timelineBtn.onclick = () => switchViewType(visualizer, 'timeline');
       toolbar.appendChild(timelineBtn);
       
       // 添加其他工具按钮...
       const resetBtn = document.createElement('button');
-      resetBtn.textContent = '重置视图';
+      resetBtn.textContent = i18n('state_manager_button_reset');
       resetBtn.classList.add('reset-btn');
       resetBtn.onclick = () => resetView(visualizer);
       toolbar.appendChild(resetBtn);
       
       // 添加显示全部按钮
       const showAllBtn = document.createElement('button');
-      showAllBtn.textContent = '显示全部';
+      showAllBtn.textContent = i18n('state_manager_button_show_all');
       showAllBtn.classList.add('show-all-btn');
       showAllBtn.onclick = () => showAllNodes(visualizer);
       toolbar.appendChild(showAllBtn);
@@ -665,7 +664,7 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       }
     }
   } catch (err) {
-    logger.error('初始化视图工具栏失败:', err);
+    logger.error('state_manager_toolbar_init_failed', err instanceof Error ? err.message : String(err));
   }
 }
 

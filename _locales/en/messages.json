@@ -2628,9 +2628,257 @@
     ],
     "_untranslated": true
   },
+  "nav_storage_initialized": {
+    "message": "导航存储已初始化",
+    "description": "导航存储初始化完成时的日志消息",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_init_failed": {
+    "message": "初始化导航存储失败: {0}",
+    "description": "导航存储初始化失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_node_saved": {
+    "message": "节点已保存: {0}",
+    "description": "节点保存成功时的日志消息，{0}为节点ID",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_save_node_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "保存节点失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_query_nodes_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_get_node_failed": {
+    "message": "获取节点失败: {0}, {1}",
+    "description": "获取节点失败时的错误日志，{0}为节点ID，{1}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_node_updated": {
+    "message": "节点已更新: {0}，会话 {1}",
+    "description": "节点更新成功时的日志消息，{0}为节点ID，{1}为会话ID",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_update_node_failed": {
+    "message": "更新节点失败: {0}, {1}",
+    "description": "更新节点失败时的错误日志，{0}为节点ID，{1}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_node_deleted": {
+    "message": "节点已删除: {0}",
+    "description": "节点删除成功时的日志消息，{0}为节点ID",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_delete_node_failed": {
+    "message": "删除节点失败: {0}, {1}",
+    "description": "删除节点失败时的错误日志，{0}为节点ID，{1}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_edge_saved": {
+    "message": "边已保存: {0} ({1} -> {2})",
+    "description": "边保存成功时的日志消息，{0}为边ID，{1}为源节点，{2}为目标节点",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_save_edge_failed": {
+    "message": "保存边失败: {0}",
+    "description": "保存边失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_query_edges_failed": {
+    "message": "查询边失败: {0}",
+    "description": "查询边失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_get_edge_failed": {
+    "message": "获取边失败: {0}, {1}",
+    "description": "获取边失败时的错误日志，{0}为边ID，{1}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_nodes_batch_saved": {
+    "message": "批量保存了 {0} 个节点",
+    "description": "批量保存节点成功时的日志消息，{0}为节点数量",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_save_nodes_batch_failed": {
+    "message": "批量保存节点失败: {0}",
+    "description": "批量保存节点失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_edges_batch_saved": {
+    "message": "批量保存了 {0} 条边",
+    "description": "批量保存边成功时的日志消息，{0}为边数量",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_save_edges_batch_failed": {
+    "message": "批量保存边失败: {0}",
+    "description": "批量保存边失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_session_graph_fetched": {
+    "message": "已获取会话 {0} 的导航图谱: {1} 个节点, {2} 条边",
+    "description": "获取会话图谱成功时的日志消息，{0}为会话ID，{1}为节点数量，{2}为边数量",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_storage_fetch_session_graph_failed": {
+    "message": "获取会话 {0} 的导航图谱失败: {1}",
+    "description": "获取会话图谱失败时的错误日志，{0}为会话ID，{1}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_node_not_found": {
+    "message": "节点不存在: {0}",
+    "description": "找不到指定ID的节点时的错误消息，{0}为节点ID",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_save_node_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "保存节点失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_query_nodes_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_get_node_failed": {
+    "message": "获取节点失败: {0}",
+    "description": "获取节点失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_update_node_failed": {
+    "message": "更新节点失败: {0}",
+    "description": "更新节点失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_save_edge_failed": {
+    "message": "保存边失败: {0}",
+    "description": "保存边失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_query_edges_failed": {
+    "message": "查询边失败: {0}",
+    "description": "查询边失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_get_edge_failed": {
+    "message": "获取边失败: {0}",
+    "description": "获取边失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_save_nodes_batch_failed": {
+    "message": "批量保存节点失败: {0}",
+    "description": "批量保存节点失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_save_edges_batch_failed": {
+    "message": "批量保存边失败: {0}",
+    "description": "批量保存边失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "background_storage_fetch_session_graph_failed": {
+    "message": "获取会话图谱失败: {0}",
+    "description": "获取会话图谱失败时的错误消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/navigation-storage.ts"
+    ],
+    "_untranslated": true
+  },
   "background_storage_init_failed": {
     "message": "初始化导航存储失败: {0}",
-    "description": "导航存储初始化失败错误",
+    "description": "初始化存储失败时的错误消息，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/navigation-storage.ts"
     ],
@@ -2638,7 +2886,7 @@
   },
   "session_storage_init_failed": {
     "message": "初始化会话存储失败: {0}",
-    "description": "SessionStorage 初始化失败错误",
+    "description": "会话存储初始化失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2646,7 +2894,7 @@
   },
   "session_storage_save_failed": {
     "message": "保存会话失败: {0}",
-    "description": "SessionStorage 保存会话失败错误",
+    "description": "保存会话失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2654,7 +2902,7 @@
   },
   "session_storage_get_failed": {
     "message": "获取会话失败: {0}",
-    "description": "SessionStorage 获取单个会话失败错误",
+    "description": "获取会话失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2662,7 +2910,7 @@
   },
   "session_storage_get_list_failed": {
     "message": "获取会话列表失败: {0}",
-    "description": "SessionStorage 获取会话列表失败错误",
+    "description": "获取会话列表失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2670,7 +2918,7 @@
   },
   "session_storage_delete_failed": {
     "message": "删除会话失败: {0}",
-    "description": "SessionStorage 删除会话失败错误",
+    "description": "删除会话失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2678,7 +2926,7 @@
   },
   "session_storage_clear_failed": {
     "message": "清除会话数据失败: {0}",
-    "description": "SessionStorage 清除所有会话失败错误",
+    "description": "清除会话数据失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2686,7 +2934,7 @@
   },
   "session_storage_count_failed": {
     "message": "获取会话数量失败: {0}",
-    "description": "SessionStorage 获取会话计数失败错误",
+    "description": "获取会话数量失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2694,7 +2942,7 @@
   },
   "session_storage_init_complete": {
     "message": "会话存储已初始化",
-    "description": "会话存储初始化完成日志",
+    "description": "会话存储初始化完成时的日志消息",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2702,7 +2950,7 @@
   },
   "session_storage_delete_nonexistent": {
     "message": "尝试删除不存在的会话: {0}",
-    "description": "尝试删除不存在会话警告",
+    "description": "尝试删除不存在的会话时的警告日志，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2710,7 +2958,7 @@
   },
   "session_storage_deleted": {
     "message": "会话已删除: {0}",
-    "description": "会话已删除日志",
+    "description": "删除会话成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2718,7 +2966,7 @@
   },
   "session_storage_cleared_all": {
     "message": "所有会话数据已清除",
-    "description": "所有会话数据清除日志",
+    "description": "清除所有会话数据时的日志消息",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2726,7 +2974,7 @@
   },
   "session_storage_connection_closed": {
     "message": "会话存储连接已关闭",
-    "description": "会话存储连接关闭日志",
+    "description": "会话存储连接关闭时的日志消息",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2734,7 +2982,7 @@
   },
   "session_storage_update_stats_nonexistent": {
     "message": "更新统计信息失败: 会话 {0} 不存在",
-    "description": "更新不存在会话统计警告",
+    "description": "尝试更新不存在会话的统计信息时的警告日志，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2742,7 +2990,7 @@
   },
   "session_storage_stats_updated": {
     "message": "会话 {0} 统计信息已更新",
-    "description": "会话统计信息更新日志",
+    "description": "更新会话统计信息成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2750,7 +2998,7 @@
   },
   "session_storage_update_stats_failed": {
     "message": "更新会话 {0} 统计信息失败: {1}",
-    "description": "更新会话统计失败错误",
+    "description": "更新会话统计信息失败时的错误日志，{0}为会话ID，{1}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2758,7 +3006,7 @@
   },
   "session_storage_get_current_failed": {
     "message": "获取当前会话失败: {0}",
-    "description": "获取当前会话失败错误",
+    "description": "获取当前会话失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2766,7 +3014,7 @@
   },
   "session_storage_default_title": {
     "message": "会话 {0}",
-    "description": "默认会话标题",
+    "description": "默认会话标题，{0}为日期时间",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2774,7 +3022,7 @@
   },
   "session_storage_created": {
     "message": "已创建新会话: {0}",
-    "description": "创建新会话日志",
+    "description": "创建会话成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2782,7 +3030,7 @@
   },
   "session_storage_create_failed": {
     "message": "创建会话失败: {0}",
-    "description": "创建会话失败错误",
+    "description": "创建会话失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2790,7 +3038,7 @@
   },
   "session_storage_deactivated_all": {
     "message": "已将 {0} 个活跃会话设为非活跃状态",
-    "description": "将所有活跃会话设置为非活跃日志",
+    "description": "将所有会话设置为非活跃状态时的日志消息，{0}为会话数量",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2798,7 +3046,7 @@
   },
   "session_storage_deactivate_all_failed": {
     "message": "设置会话为非活跃状态失败: {0}",
-    "description": "设置会话为非活跃状态失败错误",
+    "description": "将会话设置为非活跃状态失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2806,7 +3054,7 @@
   },
   "session_storage_end_nonexistent": {
     "message": "结束会话失败: 会话 {0} 不存在",
-    "description": "结束不存在会话警告",
+    "description": "尝试结束不存在的会话时的警告日志，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2814,7 +3062,7 @@
   },
   "session_storage_ended": {
     "message": "会话 {0} 已结束",
-    "description": "会话已结束日志",
+    "description": "结束会话成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2822,7 +3070,7 @@
   },
   "session_storage_end_failed": {
     "message": "结束会话 {0} 失败: {1}",
-    "description": "结束会话失败错误",
+    "description": "结束会话失败时的错误日志，{0}为会话ID，{1}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2830,7 +3078,7 @@
   },
   "session_storage_activate_nonexistent": {
     "message": "激活会话失败: 会话 {0} 不存在",
-    "description": "激活不存在会话警告",
+    "description": "尝试激活不存在的会话时的警告日志，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2838,7 +3086,7 @@
   },
   "session_storage_activated": {
     "message": "会话 {0} 已激活",
-    "description": "会话已激活日志",
+    "description": "激活会话成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2846,7 +3094,15 @@
   },
   "session_storage_activate_failed": {
     "message": "激活会话 {0} 失败: {1}",
-    "description": "激活会话失败错误",
+    "description": "激活会话失败时的错误日志，{0}为会话ID，{1}为错误详情",
+    "_sourceFiles": [
+      "src/background/store/session-storage.ts"
+    ],
+    "_untranslated": true
+  },
+  "session_storage_session_not_found": {
+    "message": "会话不存在: {0}",
+    "description": "找不到指定ID的会话时的错误信息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2854,7 +3110,7 @@
   },
   "session_storage_data_cleared": {
     "message": "已清除会话 {0} 的所有数据",
-    "description": "会话数据清除日志",
+    "description": "清除会话数据成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2862,7 +3118,7 @@
   },
   "session_storage_clear_data_failed": {
     "message": "清除会话 {0} 的数据失败: {1}",
-    "description": "清除会话数据失败错误",
+    "description": "清除会话数据失败时的错误日志，{0}为会话ID，{1}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2870,7 +3126,7 @@
   },
   "session_storage_updated": {
     "message": "已更新会话 {0} 的属性",
-    "description": "会话属性更新日志",
+    "description": "更新会话成功时的日志消息，{0}为会话ID",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -2878,7 +3134,7 @@
   },
   "session_storage_update_failed": {
     "message": "更新会话 {0} 的属性失败: {1}",
-    "description": "更新会话属性失败错误",
+    "description": "更新会话失败时的错误日志，{0}为会话ID，{1}为错误详情",
     "_sourceFiles": [
       "src/background/store/session-storage.ts"
     ],
@@ -3073,7 +3329,8 @@
     "message": "可视化刷新完成",
     "description": "可视化刷新完成日志",
     "_sourceFiles": [
-      "src/content/core/navigation-visualizer.ts"
+      "src/content/core/navigation-visualizer.ts",
+      "src/content/visualizer/renderers/RenderingManager.ts"
     ],
     "_untranslated": true
   },
@@ -4269,7 +4526,8 @@
     "message": "消息服务初始化完成",
     "description": "消息服务初始化完成的日志消息",
     "_sourceFiles": [
-      "src/content/index.ts"
+      "src/content/index.ts",
+      "src/content/messaging/content-message-service.ts"
     ],
     "_untranslated": true
   },
@@ -4361,6 +4619,446 @@
     ],
     "_untranslated": true
   },
+  "content_message_service_setup": {
+    "message": "内容脚本消息服务已设置",
+    "description": "内容脚本消息服务设置完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/content-message-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_message_handler_registered": {
+    "message": "已注册消息处理程序: {0}",
+    "description": "消息处理程序注册成功时的日志消息，{0}为消息类型",
+    "_sourceFiles": [
+      "src/content/messaging/content-message-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_message_handler_unregistered": {
+    "message": "已注销消息处理程序: {0}",
+    "description": "消息处理程序注销成功时的日志消息，{0}为消息类型",
+    "_sourceFiles": [
+      "src/content/messaging/content-message-service.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_initialized": {
+    "message": "导航消息处理器初始化",
+    "description": "导航消息处理器初始化时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_init_listeners": {
+    "message": "初始化导航消息监听...",
+    "description": "开始初始化导航消息监听器时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_cleanup": {
+    "message": "清理消息处理器...",
+    "description": "开始清理消息处理器时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_all_cleaned": {
+    "message": "所有消息处理器已清理",
+    "description": "所有消息处理器清理完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_refresh_request": {
+    "message": "收到刷新请求",
+    "description": "收到刷新请求时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_refresh_start": {
+    "message": "🔄 开始执行刷新操作...",
+    "description": "开始执行刷新操作时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_refresh_complete": {
+    "message": "✅ 刷新操作完成",
+    "description": "刷新操作完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_refresh_failed": {
+    "message": "❌ 自动刷新可视化失败: {0}",
+    "description": "自动刷新可视化失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_get_node_request": {
+    "message": "收到获取节点ID请求: {0}",
+    "description": "收到获取节点ID请求时的日志消息，{0}表示URL",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_empty_url": {
+    "message": "URL为空",
+    "description": "URL为空时的错误消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_get_node_failed": {
+    "message": "获取节点ID失败: {0}",
+    "description": "获取节点ID失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_page_loaded": {
+    "message": "收到页面加载消息: {0}",
+    "description": "收到页面加载消息时的日志消息，{0}为页面URL",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_page_refresh_complete": {
+    "message": "页面加载后刷新可视化完成",
+    "description": "页面加载后刷新可视化完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_page_refresh_failed": {
+    "message": "页面加载后刷新可视化失败: {0}",
+    "description": "页面加载后刷新可视化失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_handle_page_failed": {
+    "message": "处理页面加载失败: {0}",
+    "description": "处理页面加载失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_title_updated": {
+    "message": "收到页面标题更新: {0}",
+    "description": "收到页面标题更新时的日志消息，{0}包含节点ID和标题信息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_empty_node_title": {
+    "message": "节点ID或标题为空",
+    "description": "节点ID或标题为空时的错误消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_update_title_failed": {
+    "message": "更新页面标题失败: {0}",
+    "description": "更新页面标题失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_favicon_updated": {
+    "message": "收到favicon更新: {0}",
+    "description": "收到favicon更新时的日志消息，{0}包含节点ID和favicon URL信息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_empty_node_favicon": {
+    "message": "节点ID或favicon为空",
+    "description": "节点ID或favicon为空时的错误消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_update_favicon_failed": {
+    "message": "更新favicon失败: {0}",
+    "description": "更新favicon失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_activity": {
+    "message": "收到页面活动事件，触发刷新: {0}",
+    "description": "收到页面活动事件时的日志消息，{0}为来源",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_activity_failed": {
+    "message": "处理页面活动失败: {0}",
+    "description": "处理页面活动失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_link_clicked": {
+    "message": "收到链接点击: {0}",
+    "description": "收到链接点击时的日志消息，{0}为链接信息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_link_refresh_complete": {
+    "message": "基于链接点击刷新可视化完成",
+    "description": "基于链接点击刷新可视化完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_link_refresh_failed": {
+    "message": "链接点击后刷新可视化失败: {0}",
+    "description": "链接点击后刷新可视化失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_link_handle_failed": {
+    "message": "处理链接点击失败: {0}",
+    "description": "处理链接点击失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_form_submitted": {
+    "message": "收到表单提交: {0}",
+    "description": "收到表单提交时的日志消息，{0}为表单信息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_form_refresh_complete": {
+    "message": "基于表单提交刷新可视化完成",
+    "description": "基于表单提交刷新可视化完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_form_refresh_failed": {
+    "message": "表单提交后刷新可视化失败: {0}",
+    "description": "表单提交后刷新可视化失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_form_handle_failed": {
+    "message": "处理表单提交失败: {0}",
+    "description": "处理表单提交失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_js_navigation": {
+    "message": "收到JS导航: {0}",
+    "description": "收到JS导航时的日志消息，{0}为导航信息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_js_complete": {
+    "message": "处理JS导航完成",
+    "description": "处理JS导航完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "nav_message_handler_js_failed": {
+    "message": "处理JS导航失败: {0}",
+    "description": "处理JS导航失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/navigation-message-handler.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_registered": {
+    "message": "跟踪相关消息处理程序已注册",
+    "description": "消息处理程序注册成功时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_init_node_id_failed": {
+    "message": "初始化节点ID失败: {0}",
+    "description": "初始化节点ID失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_request_node_id_failed": {
+    "message": "请求节点ID失败: {0}",
+    "description": "请求节点ID失败时的错误信息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_invalid_context": {
+    "message": "扩展上下文无效，无法请求节点ID",
+    "description": "扩展上下文无效时的警告日志",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_request_too_frequent": {
+    "message": "请求节点ID间隔过短，跳过",
+    "description": "请求节点ID过于频繁时的调试日志",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_request_tab_id": {
+    "message": "请求标签页ID...",
+    "description": "开始请求标签页ID时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_get_node_id_failed": {
+    "message": "获取节点ID失败: {0}",
+    "description": "获取节点ID失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_missing_link_info": {
+    "message": "缺少链接信息",
+    "description": "链接信息缺失时的错误消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_link_sent": {
+    "message": "链接点击已发送到后台: {0}",
+    "description": "链接点击事件成功发送到后台时的日志消息，{0}为目标URL",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_missing_form_info": {
+    "message": "缺少表单信息",
+    "description": "表单信息缺失时的错误消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "tracking_handlers_form_sent": {
+    "message": "表单提交已发送到后台: {0}",
+    "description": "表单提交事件成功发送到后台时的日志消息，{0}为表单动作URL",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/tracking-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_handlers_registered": {
+    "message": "UI相关消息处理程序已注册",
+    "description": "UI消息处理程序注册完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/ui-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_handlers_refresh_request": {
+    "message": "处理刷新可视化器请求",
+    "description": "处理刷新可视化器请求时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/ui-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_handlers_visualizer_unavailable": {
+    "message": "可视化器不可用，无法刷新",
+    "description": "可视化器不可用时的警告日志",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/ui-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_handlers_refresh_error": {
+    "message": "刷新可视化器失败: {0}",
+    "description": "刷新可视化器失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/ui-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "ui_handlers_visualizer_error": {
+    "message": "可视化器不可用",
+    "description": "可视化器不可用时的错误消息",
+    "_sourceFiles": [
+      "src/content/messaging/handlers/ui-handlers.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_message_registering_handlers": {
+    "message": "正在注册内容脚本消息处理程序...",
+    "description": "开始注册内容脚本消息处理程序时的日志消息",
+    "_sourceFiles": [
+      "src/content/messaging/index.ts"
+    ],
+    "_untranslated": true
+  },
+  "content_message_registration_failed": {
+    "message": "注册内容脚本消息处理程序失败: {0}",
+    "description": "注册内容脚本消息处理程序失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/messaging/index.ts"
+    ],
+    "_untranslated": true
+  },
   "content_error_container_not_found": {
     "message": "找不到错误UI容器，降级到alert",
     "description": "错误容器未找到错误",
@@ -4425,9 +5123,561 @@
     ],
     "_untranslated": true
   },
+  "state_manager_view_state_saved": {
+    "message": "已保存{0}视图状态",
+    "description": "保存视图状态时的日志消息，{0}为视图类型",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_save_state_failed": {
+    "message": "保存视图状态失败: {0}",
+    "description": "保存视图状态失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_get_state_failed": {
+    "message": "获取{0}视图状态失败: {1}",
+    "description": "获取视图状态失败时的警告日志，{0}为视图类型，{1}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_get_all_states_failed": {
+    "message": "获取所有视图状态失败: {0}",
+    "description": "获取所有视图状态失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_clear_state_failed": {
+    "message": "清除视图状态失败: {0}",
+    "description": "清除视图状态失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_zoom_setup_missing_params": {
+    "message": "设置缩放处理失败：缺少必要参数",
+    "description": "设置缩放处理缺少必要参数时的警告日志",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_saved_transform_detected": {
+    "message": "检测到保存的变换状态",
+    "description": "检测到保存的变换状态时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_timeline_sync_error": {
+    "message": "同步时间线视图出错: {0}",
+    "description": "同步时间线视图出错时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_zoom_event_error": {
+    "message": "处理缩放事件出错: {0}",
+    "description": "处理缩放事件出错时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_zoom_setup_failed": {
+    "message": "设置缩放处理失败: {0}",
+    "description": "设置缩放处理失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_transform_applied": {
+    "message": "应用保存的变换状态",
+    "description": "应用保存的变换状态时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_apply_transform_failed": {
+    "message": "应用变换状态失败: {0}",
+    "description": "应用变换状态失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_dynamic_filtering_error": {
+    "message": "处理动态过滤时出错: {0}",
+    "description": "处理动态过滤时出错时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_container_not_supported": {
+    "message": "容器类型不支持动态过滤",
+    "description": "容器类型不支持动态过滤时的警告日志",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_dom_filtering_failed": {
+    "message": "DOM过滤操作失败: {0}",
+    "description": "DOM过滤操作失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_init": {
+    "message": "初始化状态栏...",
+    "description": "初始化状态栏时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_create_new": {
+    "message": "创建新的状态栏元素",
+    "description": "创建新的状态栏元素时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_init_complete": {
+    "message": "状态栏初始化完成",
+    "description": "状态栏初始化完成时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_not_found": {
+    "message": "状态栏元素不存在",
+    "description": "状态栏元素不存在时的警告日志",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_transform_unavailable": {
+    "message": "无法获取当前变换状态",
+    "description": "无法获取当前变换状态时的警告日志",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_update_statusbar_failed": {
+    "message": "更新状态栏失败: {0}",
+    "description": "更新状态栏失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_show_indicator_failed": {
+    "message": "显示过滤指示器失败: {0}",
+    "description": "显示过滤指示器失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_hide_indicator_failed": {
+    "message": "隐藏过滤指示器失败: {0}",
+    "description": "隐藏过滤指示器失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_switch_view_failed": {
+    "message": "切换视图类型失败: {0}",
+    "description": "切换视图类型失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_container_not_found": {
+    "message": "找不到可视化容器元素",
+    "description": "找不到可视化容器元素时的错误日志",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_container_found": {
+    "message": "已找到并设置可视化容器: {0}",
+    "description": "找到并设置可视化容器时的日志消息，{0}为容器ID",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_toolbar_init_failed": {
+    "message": "初始化视图工具栏失败: {0}",
+    "description": "初始化视图工具栏失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_reset_view_failed": {
+    "message": "重置视图失败: {0}",
+    "description": "重置视图失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_show_all_nodes_failed": {
+    "message": "显示所有节点失败: {0}",
+    "description": "显示所有节点失败时的错误日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_calc_importance_failed": {
+    "message": "计算节点重要性时出错: {0}",
+    "description": "计算节点重要性时出错时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_get_connected_nodes_failed": {
+    "message": "获取连接节点时出错: {0}",
+    "description": "获取连接节点时出错时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_edge_data_extraction_failed": {
+    "message": "无法从边数据中提取源和目标ID",
+    "description": "无法从边数据中提取源和目标ID时的调试日志",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_filter_nodes_message": {
+    "message": "{0} 个节点已过滤（放大查看更多）",
+    "description": "过滤指示器消息，{0}为隐藏的节点数量",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_session_date": {
+    "message": "会话日期: {0}",
+    "description": "状态栏会话日期文本，{0}为日期",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_no_date": {
+    "message": "会话日期: --",
+    "description": "状态栏无会话日期时的文本",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_duration": {
+    "message": "时长: {0}",
+    "description": "状态栏会话时长文本，{0}为时长",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_nodes": {
+    "message": "节点: {0}",
+    "description": "状态栏节点数量文本，{0}为节点数量",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_filtered": {
+    "message": "已过滤: {0}",
+    "description": "状态栏已过滤节点数量文本，{0}为已过滤节点数量",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_view": {
+    "message": "视图: {0}",
+    "description": "状态栏视图类型文本，{0}为视图类型",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_zoom": {
+    "message": "缩放: {0}%",
+    "description": "状态栏缩放比例文本，{0}为缩放百分比",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_ready": {
+    "message": "就绪",
+    "description": "状态栏就绪状态文本",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_statusbar_message": {
+    "message": "{0}视图 | 缩放: {1}%",
+    "description": "状态栏消息文本，{0}为视图类型，{1}为缩放百分比",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_view_tree": {
+    "message": "树形图",
+    "description": "树形图视图类型名称",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_view_timeline": {
+    "message": "时间线",
+    "description": "时间线视图类型名称",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_button_tree": {
+    "message": "树形图",
+    "description": "树形图按钮文本",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_button_timeline": {
+    "message": "时间线",
+    "description": "时间线按钮文本",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_button_reset": {
+    "message": "重置视图",
+    "description": "重置视图按钮文本",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "state_manager_button_show_all": {
+    "message": "显示全部",
+    "description": "显示全部按钮文本",
+    "_sourceFiles": [
+      "src/content/utils/state-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_already_initialized": {
+    "message": "主题管理器已初始化，跳过",
+    "description": "主题管理器重复初始化时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_init_complete": {
+    "message": "主题管理器初始化完成，当前主题: {0}",
+    "description": "主题管理器初始化完成时的日志消息，{0}为当前主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_read_global_config": {
+    "message": "从全局配置读取主题设置: {0}",
+    "description": "从全局配置读取主题设置时的日志消息，{0}为主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_read_settings_service": {
+    "message": "从设置服务读取主题设置: {0}",
+    "description": "从设置服务读取主题设置时的日志消息，{0}为主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_settings_failed": {
+    "message": "获取主题设置失败，使用系统主题: {0}",
+    "description": "获取主题设置失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_applying_theme": {
+    "message": "应用主题设置: {0}",
+    "description": "应用主题设置时的日志消息，{0}为主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_no_change_needed": {
+    "message": "主题已经是 {0}，无需更改",
+    "description": "当前主题无需更改时的日志消息，{0}为当前主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_setting_theme": {
+    "message": "设置主题为: {0}",
+    "description": "设置主题时的日志消息，{0}为主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_theme_updated": {
+    "message": "已更新主题为: {0}",
+    "description": "主题更新完成时的日志消息，{0}为主题名称",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_localstorage_get_failed": {
+    "message": "从本地存储获取主题失败: {0}",
+    "description": "从本地存储获取主题失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_localstorage_save_failed": {
+    "message": "保存主题到本地存储失败: {0}",
+    "description": "保存主题到本地存储失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "theme_manager_stylesheet_added": {
+    "message": "已添加主题样式表",
+    "description": "添加主题样式表时的日志消息",
+    "_sourceFiles": [
+      "src/content/utils/theme-manager.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_link_type_error": {
+    "message": "获取链接类型时出错: {0}",
+    "description": "获取连接类型失败时的警告日志，{0}为错误详情",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
   "content_no_navigation_data": {
     "message": "无导航数据可显示",
-    "description": "无导航数据提示",
+    "description": "当没有导航数据可显示时的提示信息",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_default": {
+    "message": "默认",
+    "description": "默认节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_link_click": {
+    "message": "链接点击",
+    "description": "链接点击节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_address_bar": {
+    "message": "地址栏输入",
+    "description": "地址栏输入节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_reload": {
+    "message": "页面刷新",
+    "description": "页面刷新节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_history_navigation": {
+    "message": "历史导航",
+    "description": "历史导航(前进/后退)节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_redirect": {
+    "message": "页面重定向",
+    "description": "页面重定向节点类型名称",
+    "_sourceFiles": [
+      "src/content/utils/visualization-utils.ts"
+    ],
+    "_untranslated": true
+  },
+  "vis_utils_node_type_javascript": {
+    "message": "JavaScript导航",
+    "description": "JavaScript导航节点类型名称",
     "_sourceFiles": [
       "src/content/utils/visualization-utils.ts"
     ],
@@ -4467,7 +5717,7 @@
   },
   "content_current_session": {
     "message": "当前会话",
-    "description": "当前会话标题",
+    "description": "表示当前会话的默认标题",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4475,7 +5725,7 @@
   },
   "content_no_open_records": {
     "message": "没有打开的浏览记录",
-    "description": "没有打开记录消息",
+    "description": "没有打开的页面记录时的提示消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4483,7 +5733,7 @@
   },
   "content_no_open_records_with_closed": {
     "message": "没有打开的浏览记录 ({0} 个已关闭节点)",
-    "description": "带有关闭节点计数的无打开记录消息",
+    "description": "没有打开页面但有已关闭页面时的提示消息，{0}为已关闭页面数量",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4491,7 +5741,7 @@
   },
   "content_filter_show_closed_hint": {
     "message": "提示：点击筛选器显示已关闭节点",
-    "description": "显示已关闭节点的提示",
+    "description": "提示用户点击以显示已关闭页面的提示消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4499,7 +5749,7 @@
   },
   "rendering_manager_init": {
     "message": "渲染管理器已创建",
-    "description": "渲染管理器初始化日志",
+    "description": "渲染管理器初始化时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4507,7 +5757,7 @@
   },
   "rendering_manager_init_start": {
     "message": "开始初始化渲染管理器",
-    "description": "渲染管理器初始化开始日志",
+    "description": "开始初始化渲染管理器时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4515,7 +5765,7 @@
   },
   "rendering_manager_init_complete": {
     "message": "渲染管理器初始化完成",
-    "description": "渲染管理器初始化完成日志",
+    "description": "渲染管理器初始化完成时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4523,7 +5773,7 @@
   },
   "visualization_refresh_start": {
     "message": "开始刷新可视化 {0}",
-    "description": "可视化刷新开始日志",
+    "description": "开始刷新可视化时的日志消息，{0}表示是使用提供的数据还是现有数据",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4531,7 +5781,7 @@
   },
   "using_provided_data": {
     "message": "使用提供的数据",
-    "description": "使用提供数据日志",
+    "description": "表示正在使用提供的数据进行刷新",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4539,7 +5789,7 @@
   },
   "using_existing_data": {
     "message": "使用现有数据",
-    "description": "使用现有数据日志",
+    "description": "表示正在使用现有数据进行刷新",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4547,7 +5797,7 @@
   },
   "refresh_failed": {
     "message": "刷新可视化失败: {0}",
-    "description": "刷新可视化失败错误",
+    "description": "刷新失败时的错误消息，{0}为错误详情",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4555,7 +5805,7 @@
   },
   "url_updated_for_view_filters": {
     "message": "已更新URL以反映当前视图和筛选器状态",
-    "description": "URL更新日志",
+    "description": "更新URL以反映当前视图和筛选状态时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4563,7 +5813,7 @@
   },
   "url_update_failed": {
     "message": "更新URL失败: {0}",
-    "description": "URL更新失败警告",
+    "description": "更新URL失败时的警告日志，{0}为错误详情",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4571,7 +5821,7 @@
   },
   "render_failed_no_container_svg": {
     "message": "渲染失败：容器或SVG不存在",
-    "description": "渲染失败错误",
+    "description": "容器或SVG元素不存在导致渲染失败时的错误日志",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4579,15 +5829,23 @@
   },
   "visualization_render_start": {
     "message": "开始渲染可视化: 视图={0}，节点数={1}，边数={2}，大小={3}",
-    "description": "可视化渲染开始日志",
+    "description": "开始渲染可视化时的日志消息，{0}为视图类型，{1}为节点数，{2}为边数，{3}为尺寸",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
     "_untranslated": true
   },
-  "visualization_render_complete": {
-    "message": "可视化渲染完成",
-    "description": "可视化渲染完成日志",
+  "visualization_render_complete_with_zoom": {
+    "message": "可视化渲染完成：视图={0}，缩放已设置，有数据={1}",
+    "description": "可视化渲染完成且缩放已设置时的日志消息",
+    "_sourceFiles": [
+      "src/content/visualizer/renderers/RenderingManager.ts"
+    ],
+    "_untranslated": true
+  },
+  "visualization_render_complete_without_zoom": {
+    "message": "可视化渲染完成：视图={0}，缩放未设置，有数据={1}",
+    "description": "可视化渲染完成但缩放未设置时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4595,7 +5853,7 @@
   },
   "render_failed": {
     "message": "渲染失败: {0}",
-    "description": "渲染失败错误",
+    "description": "渲染失败时的错误消息，{0}为错误详情",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4603,7 +5861,7 @@
   },
   "svg_setup_start": {
     "message": "开始设置SVG元素",
-    "description": "SVG设置开始日志",
+    "description": "开始配置SVG元素时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4611,7 +5869,7 @@
   },
   "svg_element_empty": {
     "message": "SVG元素为空",
-    "description": "SVG元素为空错误",
+    "description": "SVG元素为空时的错误消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4619,7 +5877,7 @@
   },
   "svg_setup_complete": {
     "message": "SVG设置完成",
-    "description": "SVG设置完成日志",
+    "description": "SVG元素配置完成时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4627,7 +5885,7 @@
   },
   "svg_setup_failed": {
     "message": "SVG设置失败: {0}",
-    "description": "SVG设置失败错误",
+    "description": "SVG元素配置失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4635,7 +5893,7 @@
   },
   "container_size_updated": {
     "message": "容器大小已更新: {0}",
-    "description": "容器大小更新日志",
+    "description": "容器大小更新时的日志消息，{0}为新尺寸",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4643,7 +5901,7 @@
   },
   "container_size_change_insignificant": {
     "message": "容器大小变化不显著，跳过更新",
-    "description": "容器大小变化不显著日志",
+    "description": "容器大小变化不显著时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -4651,7 +5909,7 @@
   },
   "rendering_manager_cleanup": {
     "message": "清理渲染管理器资源",
-    "description": "渲染管理器清理日志",
+    "description": "清理渲染管理器资源时的日志消息",
     "_sourceFiles": [
       "src/content/visualizer/renderers/RenderingManager.ts"
     ],
@@ -6166,6 +7424,134 @@
     "description": "通知消息日志",
     "_sourceFiles": [
       "src/content/visualizer/ui/ErrorNotification.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_reload": {
+    "message": "显示刷新",
+    "description": "筛选器选项：显示页面刷新操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_reload_desc": {
+    "message": "显示页面刷新操作",
+    "description": "筛选器选项描述：显示页面刷新操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_history": {
+    "message": "显示历史导航",
+    "description": "筛选器选项：显示历史导航操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_history_desc": {
+    "message": "显示浏览器前进/后退操作",
+    "description": "筛选器选项描述：显示历史导航操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_closed": {
+    "message": "显示已关闭",
+    "description": "筛选器选项：显示已关闭页面",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_closed_desc": {
+    "message": "显示已关闭的页面",
+    "description": "筛选器选项描述：显示已关闭页面",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_tracking": {
+    "message": "显示跟踪页面",
+    "description": "筛选器选项：显示跟踪页面",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_show_tracking_desc": {
+    "message": "显示跟踪页面的操作",
+    "description": "筛选器选项描述：显示跟踪页面的操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_link": {
+    "message": "链接点击",
+    "description": "筛选器选项：链接点击类型",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_link_desc": {
+    "message": "显示链接点击操作",
+    "description": "筛选器选项描述：显示链接点击操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_address": {
+    "message": "地址栏输入",
+    "description": "筛选器选项：地址栏输入类型",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_address_desc": {
+    "message": "显示地址栏输入操作",
+    "description": "筛选器选项描述：显示地址栏输入操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_form": {
+    "message": "表单提交",
+    "description": "筛选器选项：表单提交类型",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_form_desc": {
+    "message": "显示表单提交操作",
+    "description": "筛选器选项描述：显示表单提交操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_js": {
+    "message": "JS导航",
+    "description": "筛选器选项：JavaScript导航类型",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
+    ],
+    "_untranslated": true
+  },
+  "filter_type_js_desc": {
+    "message": "显示JS导航操作",
+    "description": "筛选器选项描述：显示JS导航操作",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/FilterConfig.ts"
     ],
     "_untranslated": true
   },

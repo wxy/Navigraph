@@ -3,7 +3,7 @@
  * 负责协调和管理所有渲染相关操作
  */
 import { Logger } from '../../../lib/utils/logger.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { i18n, I18nError } from '../../../lib/utils/i18n-utils.js';
 import { RendererFactory } from './RendererFactory.js';
 import type { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
 import type { ViewStateManager } from '../state/ViewStateManager.js';
@@ -116,7 +116,8 @@ export class RenderingManager {
 
       logger.log("url_updated_for_view_filters");
     } catch (error) {
-      logger.warn("url_update_failed", error);
+      logger.warn("url_update_failed", 
+        error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -196,11 +197,16 @@ export class RenderingManager {
       // 更新状态栏
       this.uiManager.updateStatusBar();
 
-      logger.log("visualization_render_complete", {
-        view: this.viewStateManager.currentView,
-        zoom: this.viewStateManager.zoom ? "已设置" : "未设置",
-        hasData,
-      });
+      // 将一个日志消息拆分成两种情况的不同消息ID
+      if (this.viewStateManager.zoom) {
+        logger.log("visualization_render_complete_with_zoom", 
+          this.viewStateManager.currentView,
+          String(hasData));
+      } else {
+        logger.log("visualization_render_complete_without_zoom", 
+          this.viewStateManager.currentView,
+          String(hasData));
+      }
     } catch (error) {
       this.uiManager.showError(
         i18n("render_failed", error instanceof Error ? error.message : String(error))
@@ -361,7 +367,7 @@ export class RenderingManager {
     try {
       // 确保有效的SVG元素
       if (!svgElement) {
-        throw new Error(i18n("svg_element_empty"));
+        throw new I18nError("svg_element_empty");
       }
       
       // 将原生SVG元素转换为D3选择集
@@ -385,7 +391,8 @@ export class RenderingManager {
 
       logger.log("svg_setup_complete");
     } catch (error) {
-      logger.error("svg_setup_failed", error);
+      logger.error("svg_setup_failed", 
+        error instanceof Error ? error.message : String(error));
       throw error;
     }
   }

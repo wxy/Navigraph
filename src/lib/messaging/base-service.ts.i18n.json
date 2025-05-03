@@ -22,5 +22,17 @@
   "unknown": {
     "message": "未指定",
     "description": "默认未知字符串"
+  },
+  "messaging_handler_registered": {
+    "message": "[{0}] 已注册消息处理程序: {1}",
+    "description": "消息处理程序注册成功时的日志消息，{0}为服务目标，{1}为消息类型"
+  },
+  "messaging_handler_unregistered": {
+    "message": "[{0}] 已移除消息处理程序: {1}",
+    "description": "消息处理程序注销成功时的日志消息，{0}为服务目标，{1}为消息类型"
+  },
+  "messaging_all_handlers_unregistered": {
+    "message": "[{0}] 已移除所有 {1} 处理程序",
+    "description": "所有特定类型的消息处理程序注销时的日志消息，{0}为服务目标，{1}为消息类型"
   }
 }

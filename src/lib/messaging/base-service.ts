@@ -104,7 +104,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     }
     
     this.handlers.get(action)!.push(handler);
-    logger.log(`[${this.serviceTarget}] 已注册消息处理程序: ${action}`);
+    logger.log('messaging_handler_registered', this.serviceTarget, action);
   }
   
   /**
@@ -132,7 +132,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
       const index = handlers.indexOf(handler);
       if (index !== -1) {
         handlers.splice(index, 1);
-        logger.log(`[${this.serviceTarget}] 已移除消息处理程序: ${action}`);
+        logger.log('messaging_handler_unregistered', this.serviceTarget, action);
       }
       
       // 如果没有处理程序了，删除整个条目
@@ -142,7 +142,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     } else {
       // 移除所有该类型的处理程序
       this.handlers.delete(action);
-      logger.log(`[${this.serviceTarget}] 已移除所有 ${action} 处理程序`);
+      logger.log('messaging_all_handlers_unregistered', this.serviceTarget, action);
     }
   }
   
