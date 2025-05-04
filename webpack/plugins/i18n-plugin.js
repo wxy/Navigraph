@@ -283,20 +283,25 @@ class I18nPlugin {
             : "";
 
           if (existingMessages[key] && existingMessages[key].message) {
-            const isUntranslated =
-              existingMessages[key]._untranslated === true ||
-              (existingMessages[key]._untranslated === undefined &&
-                existingMessages[key].message === value.message);
+            // 简化的逻辑
+            const isTranslated = 
+              existingMessages[key]._untranslated === undefined ||
+              existingMessages[key]._untranslated === false ||
+              existingMessages[key].message !== value.message;
 
             // 保留现有翻译，更新干净的描述，源文件单独存储
             updatedMessages[key] = {
               message: existingMessages[key].message,
               description: cleanDesc,
               _sourceFiles: sourceFiles,
-              ...(isUntranslated ? { _untranslated: true } : {}),
             };
 
-            if (!isUntranslated) {
+            // 只有未翻译时才添加标记
+            if (!isTranslated) {
+              updatedMessages[key]._untranslated = true;
+            }
+
+            if (isTranslated) {
               translatedCount++;
             }
           } else {
