@@ -1,0 +1,142 @@
+{
+  "background_tab_info_failed": {
+    "message": "获取标签页信息失败",
+    "description": "获取标签页信息失败时的警告日志"
+  },
+  "background_node_metadata_invalid_id": {
+    "message": "更新元数据失败：无效的节点ID",
+    "description": "更新元数据时提供的节点ID无效"
+  },
+  "background_node_metadata_update_failed": {
+    "message": "更新节点元数据失败: {0}",
+    "description": "更新节点元数据时发生错误，{0}是错误详情"
+  },
+  "background_node_not_found": {
+    "message": "找不到节点: {0}",
+    "description": "查找节点失败时的错误消息，{0}为节点ID"
+  },
+  "content_unnamed_page": {
+    "message": "未命名页面",
+    "description": "页面没有标题时的默认名称"
+  },
+  "node_tracker_initialized": {
+    "message": "节点追踪器初始化完成",
+    "description": "节点追踪器初始化完成时的日志消息"
+  },
+  "node_tracker_create_failed": {
+    "message": "创建节点失败: {0}",
+    "description": "创建节点失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_node_not_found_for_metadata": {
+    "message": "找不到要更新元数据的节点: {0}",
+    "description": "无法找到指定ID的节点时的警告日志，{0}为节点ID"
+  },
+  "node_tracker_get_or_create_failed": {
+    "message": "获取或创建URL节点失败: {0}",
+    "description": "获取或创建URL节点失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_title_update": {
+    "message": "更新标题: {0} → {1}",
+    "description": "更新节点标题时的日志消息，{0}为旧标题，{1}为新标题"
+  },
+  "node_tracker_update_metadata_failed": {
+    "message": "更新节点元数据失败: {0}",
+    "description": "更新节点元数据失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_tab_node_not_found": {
+    "message": "标签页 {0} 找不到匹配URL的节点: {1}",
+    "description": "找不到标签页对应节点时的日志消息，{0}为标签页ID，{1}为URL"
+  },
+  "node_tracker_check_url_match_failed": {
+    "message": "检查节点 {0} URL匹配失败: {1}",
+    "description": "检查节点URL是否匹配时失败的警告日志，{0}为节点ID，{1}为错误详情"
+  },
+  "node_tracker_find_by_url_failed": {
+    "message": "根据URL查找节点失败: {0}",
+    "description": "根据URL查找节点失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_get_active_nodes_failed": {
+    "message": "获取活跃节点失败: {0}",
+    "description": "获取活跃节点失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_cache_cleanup_complete": {
+    "message": "清理了 {0} 个无效缓存项",
+    "description": "清理缓存完成时的日志消息，{0}为清理的项目数量"
+  },
+  "node_tracker_reset_complete": {
+    "message": "节点追踪器已重置",
+    "description": "节点追踪器重置完成时的日志消息"
+  },
+  "node_tracker_close_all_nodes_start": {
+    "message": "开始关闭会话 {0} 中的所有节点",
+    "description": "开始关闭会话节点时的日志消息，{0}为会话ID"
+  },
+  "node_tracker_no_active_nodes": {
+    "message": "会话 {0} 中没有活跃节点",
+    "description": "会话中没有活跃节点时的日志消息，{0}为会话ID"
+  },
+  "node_tracker_found_active_nodes": {
+    "message": "找到 {0} 个活跃节点",
+    "description": "找到活跃节点时的日志消息，{0}为节点数量"
+  },
+  "node_tracker_nodes_marked_closed": {
+    "message": "会话 {0} 中的 {1} 个节点已标记为关闭",
+    "description": "节点标记为关闭时的日志消息，{0}为会话ID，{1}为节点数量"
+  },
+  "node_tracker_close_nodes_failed": {
+    "message": "关闭会话 {0} 中的节点失败: {1}",
+    "description": "关闭会话节点失败时的错误日志，{0}为会话ID，{1}为错误详情"
+  },
+  "node_tracker_associate_tabs_start": {
+    "message": "开始将打开的标签页关联到会话 {0}",
+    "description": "开始关联标签页到会话时的日志消息，{0}为会话ID"
+  },
+  "node_tracker_no_tabs_to_associate": {
+    "message": "没有找到需要关联的标签页",
+    "description": "没有找到需要关联的标签页时的日志消息"
+  },
+  "node_tracker_found_tabs_to_associate": {
+    "message": "找到 {0} 个需要关联的标签页",
+    "description": "找到需要关联的标签页时的日志消息，{0}为标签页数量"
+  },
+  "node_tracker_tab_associated": {
+    "message": "标签页 {0}（{1}）已关联到会话 {2}",
+    "description": "标签页已关联到会话时的日志消息，{0}为标签页ID，{1}为URL，{2}为会话ID"
+  },
+  "node_tracker_association_complete": {
+    "message": "将标签页关联到会话 {0} 完成",
+    "description": "关联标签页到会话完成时的日志消息，{0}为会话ID"
+  },
+  "node_tracker_association_failed": {
+    "message": "关联标签页到会话 {0} 失败: {1}",
+    "description": "关联标签页到会话失败时的错误日志，{0}为会话ID，{1}为错误详情"
+  },
+  "node_tracker_query_failed": {
+    "message": "查询节点失败: {0}",
+    "description": "查询节点失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_update_failed": {
+    "message": "更新节点 {0} 失败: {1}",
+    "description": "更新节点失败时的错误日志，{0}为节点ID，{1}为错误详情"
+  },
+  "node_tracker_tab_nodes_closed": {
+    "message": "已关闭标签页 {0} 的 {1} 个节点",
+    "description": "关闭标签页节点时的日志消息，{0}为标签页ID，{1}为节点数量"
+  },
+  "node_tracker_close_tab_nodes_failed": {
+    "message": "关闭标签页 {0} 的节点失败: {1}",
+    "description": "关闭标签页节点失败时的错误日志，{0}为标签页ID，{1}为错误详情"
+  },
+  "node_tracker_handling_navigation_completed_failed": {
+    "message": "处理导航完成失败: {0}",
+    "description": "处理导航完成事件失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_cache_cleanup_failed": {
+    "message": "清理缓存失败: {0}",
+    "description": "清理缓存失败时的错误日志，{0}为错误详情"
+  },
+  "node_tracker_tab_association_failed": {
+    "message": "关联标签页 {0} 失败: {1}",
+    "description": "关联单个标签页失败时的错误日志，{0}为标签页ID，{1}为错误详情"
+  }
+}

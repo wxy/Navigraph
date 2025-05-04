@@ -3,6 +3,7 @@
  * 负责管理筛选器配置和状态，以及应用筛选器逻辑
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import { 
   FilterConfig, 
   FilterStates, 
@@ -40,14 +41,14 @@ export class FilterManager {
     this.visualizer = visualizer;
     this.dataProcessor = dataProcessor;
     this.uiManager = uiManager;
-    logger.log('筛选器管理器初始化');
+    logger.log('filter_manager_init');
   }
   
   /**
    * 初始化筛选器
    */
   initialize(): void {
-    logger.log("初始化筛选器...");
+    logger.log("filter_init_start");
     
     // 可以从URL参数或其他来源加载筛选器配置
     this.loadFilterConfigFromUrl();
@@ -55,7 +56,7 @@ export class FilterManager {
     // 更新UI
     this.updateFilterUI();
     
-    logger.log("筛选器初始化完成");
+    logger.log("filter_init_complete");
   }
   
   /**
@@ -69,7 +70,7 @@ export class FilterManager {
       if (filterParam) {
         const filterValues = JSON.parse(filterParam);
         
-        logger.log("从URL加载筛选器配置:", filterValues);
+        logger.log("filter_load_from_url", filterValues);
         
         // 更新筛选器配置
         for (const config of this.filterConfigs) {
@@ -84,7 +85,7 @@ export class FilterManager {
         }
       }
     } catch (error) {
-      logger.warn("从URL加载筛选器配置失败:", error);
+      logger.warn("content_filter_url_load_failed", error);
     }
   }
   
@@ -102,7 +103,7 @@ export class FilterManager {
    * @returns 筛选后的节点和边
    */
   applyFilters(allNodes: NavNode[], allEdges: NavLink[]): { nodes: NavNode[], edges: NavLink[] } {
-    logger.log("应用筛选器:", this.filters);
+    logger.log("filter_applying", this.filters);
     
     const result = this.dataProcessor.applyFilters(
       allNodes,
@@ -110,9 +111,7 @@ export class FilterManager {
       this.filters
     );
     
-    logger.log(
-      `筛选后数据：节点 ${result.nodes.length}/${allNodes.length}，边 ${result.edges.length}/${allEdges.length}`
-    );
+    logger.log("filter_result_stats", result.nodes.length, allNodes.length, result.edges.length, allEdges.length);
     
     return result;
   }
@@ -123,12 +122,12 @@ export class FilterManager {
    * @param value 新值
    */
   updateFilter(filterId: string, value: boolean): void {
-    logger.log(`更新筛选器: ${filterId} = ${value}`);
+    logger.log('filter_update', filterId, value);
     
     // 查找对应的筛选器配置
     const filter = this.filterConfigs.find(f => f.id === filterId);
     if (!filter) {
-      logger.warn(`未知筛选器ID: ${filterId}`);
+      logger.warn("content_filter_unknown_id", filterId);
       return;
     }
     
@@ -151,7 +150,7 @@ export class FilterManager {
     // 查找对应的筛选器配置用于日志记录
     const config = this.filterConfigs.find((f) => f.id === filterId);
     if (config) {
-      logger.log(`筛选器 ${filterId} (${config.property}) 已更改为 ${checked}`);
+      logger.log('filter_changed', filterId, config.property, checked);
     }
     
     // 触发可视化刷新
@@ -162,7 +161,7 @@ export class FilterManager {
    * 重置所有筛选器为默认值
    */
   resetFilters(): void {
-    logger.log("重置所有筛选器...");
+    logger.log("filter_reset_start");
     
     // 重置为初始配置
     this.filterConfigs = getInitialFilters();
@@ -173,7 +172,7 @@ export class FilterManager {
     // 触发可视化刷新
     this.visualizer.refreshVisualization(undefined, { restoreTransform: true });
     
-    logger.log("所有筛选器已重置为默认值");
+    logger.log("filter_reset_complete");
   }
   
   /**
@@ -198,7 +197,7 @@ export class FilterManager {
    * 清理筛选器资源
    */
   cleanup(): void {
-    logger.log("清理筛选器资源...");
+    logger.log("filter_cleanup");
     // 目前没有需要清理的资源
   }
 }

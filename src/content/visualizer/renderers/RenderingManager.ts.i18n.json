@@ -1,0 +1,106 @@
+{
+  "content_current_session": {
+    "message": "当前会话",
+    "description": "表示当前会话的默认标题"
+  },
+  "content_no_open_records": {
+    "message": "没有打开的页面记录",
+    "description": "没有打开的页面记录时的提示消息"
+  },
+  "content_no_open_records_with_closed": {
+    "message": "没有打开的页面（已关闭{0}个页面）",
+    "description": "没有打开页面但有已关闭页面时的提示消息，{0}为已关闭页面数量"
+  },
+  "content_filter_show_closed_hint": {
+    "message": "点击此处显示已关闭的页面",
+    "description": "提示用户点击以显示已关闭页面的提示消息"
+  },
+  "rendering_manager_init": {
+    "message": "渲染管理器初始化",
+    "description": "渲染管理器初始化时的日志消息"
+  },
+  "rendering_manager_init_start": {
+    "message": "开始初始化渲染管理器",
+    "description": "开始初始化渲染管理器时的日志消息"
+  },
+  "rendering_manager_init_complete": {
+    "message": "渲染管理器初始化完成",
+    "description": "渲染管理器初始化完成时的日志消息"
+  },
+  "visualization_refresh_start": {
+    "message": "开始刷新可视化：{0}",
+    "description": "开始刷新可视化时的日志消息，{0}表示是使用提供的数据还是现有数据"
+  },
+  "using_provided_data": {
+    "message": "使用提供的数据",
+    "description": "表示正在使用提供的数据进行刷新"
+  },
+  "using_existing_data": {
+    "message": "使用现有数据",
+    "description": "表示正在使用现有数据进行刷新"
+  },
+  "visualization_refresh_complete": {
+    "message": "可视化刷新完成",
+    "description": "可视化刷新完成时的日志消息"
+  },
+  "refresh_failed": {
+    "message": "刷新失败：{0}",
+    "description": "刷新失败时的错误消息，{0}为错误详情"
+  },
+  "url_updated_for_view_filters": {
+    "message": "已更新URL以反映当前视图和筛选状态",
+    "description": "更新URL以反映当前视图和筛选状态时的日志消息"
+  },
+  "url_update_failed": {
+    "message": "更新URL失败: {0}",
+    "description": "更新URL失败时的警告日志，{0}为错误详情"
+  },
+  "render_failed_no_container_svg": {
+    "message": "渲染失败：容器或SVG元素不存在",
+    "description": "容器或SVG元素不存在导致渲染失败时的错误日志"
+  },
+  "visualization_render_start": {
+    "message": "开始渲染可视化：视图={0}，节点数={1}，边数={2}，尺寸={3}",
+    "description": "开始渲染可视化时的日志消息，{0}为视图类型，{1}为节点数，{2}为边数，{3}为尺寸"
+  },
+  "visualization_render_complete_with_zoom": {
+    "message": "可视化渲染完成：视图={0}，缩放已设置，有数据={1}",
+    "description": "可视化渲染完成且缩放已设置时的日志消息"
+  },
+  "visualization_render_complete_without_zoom": {
+    "message": "可视化渲染完成：视图={0}，缩放未设置，有数据={1}",
+    "description": "可视化渲染完成但缩放未设置时的日志消息"
+  },
+  "render_failed": {
+    "message": "渲染失败：{0}",
+    "description": "渲染失败时的错误消息，{0}为错误详情"
+  },
+  "svg_setup_start": {
+    "message": "开始配置SVG元素",
+    "description": "开始配置SVG元素时的日志消息"
+  },
+  "svg_element_empty": {
+    "message": "SVG元素为空",
+    "description": "SVG元素为空时的错误消息"
+  },
+  "svg_setup_complete": {
+    "message": "SVG元素配置完成",
+    "description": "SVG元素配置完成时的日志消息"
+  },
+  "svg_setup_failed": {
+    "message": "SVG元素配置失败：{0}",
+    "description": "SVG元素配置失败时的错误日志，{0}为错误详情"
+  },
+  "container_size_updated": {
+    "message": "容器大小已更新：{0}",
+    "description": "容器大小更新时的日志消息，{0}为新尺寸"
+  },
+  "container_size_change_insignificant": {
+    "message": "容器大小变化不显著，跳过更新",
+    "description": "容器大小变化不显著时的日志消息"
+  },
+  "rendering_manager_cleanup": {
+    "message": "正在清理渲染管理器资源",
+    "description": "清理渲染管理器资源时的日志消息"
+  }
+}

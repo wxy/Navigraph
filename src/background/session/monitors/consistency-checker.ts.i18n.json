@@ -1,0 +1,50 @@
+{
+  "consistency_checker_check_failed": {
+    "message": "节点状态一致性检查失败: {0}",
+    "description": "一致性检查失败时的错误日志，{0}为错误详情"
+  },
+  "consistency_checker_started": {
+    "message": "启动节点状态一致性检查，间隔{0}分钟",
+    "description": "一致性检查启动时的日志消息，{0}为间隔分钟数"
+  },
+  "consistency_checker_stopped": {
+    "message": "停止节点状态一致性检查",
+    "description": "一致性检查停止时的日志消息"
+  },
+  "consistency_checker_executing": {
+    "message": "执行节点状态一致性检查...",
+    "description": "开始执行一致性检查时的日志消息"
+  },
+  "consistency_checker_active_tabs": {
+    "message": "当前有 {0} 个活跃标签页（不含系统页面）",
+    "description": "显示活跃标签页数量的日志消息，{0}为标签页数量"
+  },
+  "consistency_checker_active_nodes": {
+    "message": "当前会话有 {0} 个活跃节点",
+    "description": "显示活跃节点数量的日志消息，{0}为节点数量"
+  },
+  "consistency_checker_orphaned_found": {
+    "message": "发现 {0} 个孤立节点，标记为已关闭",
+    "description": "发现孤立节点时的日志消息，{0}为节点数量"
+  },
+  "consistency_checker_marking_node": {
+    "message": "标记节点 {0} (tabId={1}) 为已关闭",
+    "description": "标记节点为已关闭时的日志消息，{0}为节点ID，{1}为标签页ID"
+  },
+  "consistency_checker_no_orphaned": {
+    "message": "未发现需要更新状态的孤立节点",
+    "description": "没有发现孤立节点时的日志消息"
+  },
+  "consistency_checker_nav_manager_failed": {
+    "message": "获取导航管理器失败: {0}",
+    "description": "获取导航管理器失败时的错误日志，{0}为错误详情"
+  },
+  "consistency_checker_completed": {
+    "message": "节点状态一致性检查完成",
+    "description": "一致性检查完成时的日志消息"
+  },
+  "consistency_checker_error": {
+    "message": "节点状态一致性检查出错: {0}",
+    "description": "一致性检查出错时的错误日志，{0}为错误详情"
+  }
+}

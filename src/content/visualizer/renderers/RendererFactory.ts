@@ -18,7 +18,7 @@ export class RendererFactory {
    * @returns 相应类型的渲染器
    */
   static createRenderer(viewType: 'tree' | 'timeline', visualizer: Visualizer): BaseRenderer {
-    logger.log(`创建 ${viewType} 渲染器`);
+    logger.log('renderer_factory_create_renderer');
     
     switch (viewType) {
       case 'tree':
@@ -26,7 +26,7 @@ export class RendererFactory {
       case 'timeline':
         return new TimelineRenderer(visualizer);
       default:
-        logger.warn(`未知视图类型: ${viewType}，使用默认树形渲染器`);
+        logger.warn('renderer_factory_unknown_type');
         return new TreeRenderer(visualizer);
     }
   }

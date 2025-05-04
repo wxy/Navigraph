@@ -1,4 +1,5 @@
 import { Logger } from '../../../../lib/utils/logger.js';
+import { i18n } from '../../../../lib/utils/i18n-utils.js'; // 添加导入i18n
 import type { Visualizer } from '../../../types/navigation.js';
 
 const logger = new Logger('ViewSwitcher');
@@ -24,7 +25,7 @@ export class ViewSwitcher {
     this.timelineViewButton = document.getElementById('timeline-view');
     
     if (!this.treeViewButton || !this.timelineViewButton) {
-      logger.warn('视图切换按钮未找到');
+      logger.warn('view_switcher_buttons_not_found');
       return;
     }
     
@@ -40,7 +41,7 @@ export class ViewSwitcher {
     // 初始设置激活的视图
     this.updateButtonsState(this.visualizer.currentView);
     
-    logger.log('视图切换器已初始化');
+    logger.log('view_switcher_initialized');
   }
   
   /**
@@ -49,11 +50,11 @@ export class ViewSwitcher {
    */
   private switchView(view: 'tree' | 'timeline'): void {
     if (view === this.visualizer.currentView) {
-      logger.log(`已经是${view === 'tree' ? '树形图' : '时间线'}视图，无需切换`);
+      logger.log(view === 'tree' ? 'view_already_tree' : 'view_already_timeline');
       return;
     }
     
-    logger.log(`切换到${view === 'tree' ? '树形图' : '时间线'}视图`);
+    logger.log(view === 'tree' ? 'view_switching_to_tree' : 'view_switching_to_timeline');
     
     // 调用可视化器的切换视图方法
     this.visualizer.switchView(view);
@@ -82,6 +83,6 @@ export class ViewSwitcher {
       this.timelineViewButton.classList.add('active');
     }
     
-    logger.debug(`视图按钮状态已更新: ${currentView}`);
+    logger.debug('view_buttons_state_updated', currentView);
   }
 }

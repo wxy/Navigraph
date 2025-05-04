@@ -1,0 +1,102 @@
+{
+  "background_db_open_failed": {
+    "message": "打开数据库失败: {0}",
+    "description": "打开数据库失败错误"
+  },
+  "background_db_init_failed": {
+    "message": "初始化数据库失败: {0}",
+    "description": "初始化数据库失败错误"
+  },
+  "background_db_open_success": {
+    "message": "成功打开数据库 {0} (版本 {1})",
+    "description": "数据库打开成功日志"
+  },
+  "background_db_upgrade_failed": {
+    "message": "数据库升级失败",
+    "description": "数据库升级失败错误"
+  },
+  "background_unknown_error": {
+    "message": "未知错误",
+    "description": "未知错误消息"
+  },
+  "background_db_new_instance": {
+    "message": "创建新的数据库实例: {0}",
+    "description": "创建新数据库实例日志"
+  },
+  "background_db_closed": {
+    "message": "数据库 {0} v{1} 已关闭",
+    "description": "数据库关闭日志"
+  },
+  "background_db_upgrade": {
+    "message": "数据库升级: {0} -> {1}",
+    "description": "数据库版本升级日志"
+  },
+  "background_db_upgrade_complete": {
+    "message": "数据库结构升级完成",
+    "description": "数据库结构升级完成日志"
+  },
+  "background_db_store_deleted": {
+    "message": "删除已存在的存储: {0}",
+    "description": "删除已存在存储日志"
+  },
+  "background_db_store_created": {
+    "message": "创建存储: {0}",
+    "description": "创建存储日志"
+  },
+  "background_db_index_created": {
+    "message": "创建索引: {0}",
+    "description": "创建索引日志"
+  },
+  "background_db_add_failed": {
+    "message": "添加数据到 {0} 失败",
+    "description": "添加数据失败错误"
+  },
+  "background_db_put_failed": {
+    "message": "更新数据到 {0} 失败",
+    "description": "更新数据失败错误"
+  },
+  "background_db_get_failed": {
+    "message": "获取 {0} 中的数据失败",
+    "description": "获取数据失败错误"
+  },
+  "background_db_get_all_failed": {
+    "message": "获取 {0} 中的所有数据失败",
+    "description": "获取所有数据失败错误"
+  },
+  "background_db_transaction_error": {
+    "message": "事务错误: {0}",
+    "description": "数据库事务错误"
+  },
+  "background_db_index_not_found": {
+    "message": "索引 {0} 不存在于 {1}",
+    "description": "索引不存在错误"
+  },
+  "background_db_get_by_index_failed": {
+    "message": "通过索引 {0} 获取数据失败",
+    "description": "通过索引获取数据失败错误"
+  },
+  "background_db_delete_failed": {
+    "message": "删除 {0} 中的数据失败",
+    "description": "删除数据失败错误"
+  },
+  "background_db_clear_failed": {
+    "message": "清空 {0} 失败",
+    "description": "清空存储失败错误"
+  },
+  "background_db_iterate_failed": {
+    "message": "遍历 {0} 失败",
+    "description": "遍历存储失败错误"
+  },
+  "background_db_count_failed": {
+    "message": "获取 {0} 记录数失败",
+    "description": "获取记录数失败错误"
+  },
+  "background_db_exists_failed": {
+    "message": "检查 {0} 中的数据是否存在失败",
+    "description": "检查数据存在失败错误"
+  },
+  "indexed_db_opened": {
+    "message": "数据库 {0} (版本 {1}) 已打开",
+    "description": "成功打开数据库时的日志消息，{0}为数据库名称，{1}为版本"
+  }
+}

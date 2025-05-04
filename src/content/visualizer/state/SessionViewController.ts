@@ -3,6 +3,7 @@
  * 管理会话相关操作，如加载、保存、切换会话等
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import { sessionServiceClient } from '../../core/session-service-client.js';
 import type { UIManager } from '../ui/UIManager.js';
 import type { NavigationVisualizer } from '../../core/navigation-visualizer.js';
@@ -25,14 +26,14 @@ export class SessionViewController {
   constructor(visualizer: NavigationVisualizer, uiManager: UIManager) {
     this.visualizer = visualizer;
     this.uiManager = uiManager;
-    logger.log('会话视图控制器初始化');
+    logger.log('session_view_controller_init');
   }
   
   /**
    * 初始化会话管理
    */
   async initialize(): Promise<void> {
-    logger.log("初始化会话管理...");
+    logger.log("session_management_init_start");
     
     try {
       // 直接在会话选择器上注册事件监听
@@ -61,10 +62,10 @@ export class SessionViewController {
       // 获取最新会话ID (不需要单独加载，仅获取ID用于视觉区分)
       await sessionServiceClient.loadLatestSession();
       
-      logger.log("会话管理初始化完成");
+      logger.log("session_management_init_complete");
     } catch (error) {
-      logger.error("会话管理初始化失败:", error);
-      this.uiManager.showError("会话管理初始化失败");
+      logger.error("session_management_init_failed", error);
+      this.uiManager.showError("content_session_load_failed");
       throw error;
     }
   }
@@ -74,17 +75,17 @@ export class SessionViewController {
    */
   async loadSessionList(): Promise<any[]> {
     try {
-      logger.log("加载会话列表...");
+      logger.log("session_list_loading");
       
       const sessionList = await sessionServiceClient.loadSessionList();
       // handleSessionListLoaded 已通过事件触发，这里不需要显式调用
       
-      logger.log("会话列表加载完成，找到", sessionList.length, "个会话");
+      logger.log("session_list_load_complete", sessionList.length);
       
       return sessionList;
     } catch (error) {
-      logger.error("加载会话列表失败:", error);
-      this.uiManager.showError("加载会话列表失败");
+      logger.error("session_list_load_failed", error);
+      this.uiManager.showError("content_session_list_load_failed");
       throw error;
     }
   }
@@ -94,12 +95,12 @@ export class SessionViewController {
    */
   handleSessionListLoaded(sessionList: any[]): void {
     try {
-      logger.log(`会话列表已加载，共${sessionList.length}个会话`);
+      logger.log('session_list_loaded', sessionList.length);
       
       // 更新会话选择器
       this.updateSessionSelector(sessionList);
     } catch (error) {
-      logger.error("处理会话列表失败:", error);
+      logger.error("session_list_process_failed", error);
     }
   }
   
@@ -107,7 +108,7 @@ export class SessionViewController {
    * 更新会话选择器
    */
   updateSessionSelector(sessionList?: any[]): void {
-    logger.debug("更新会话选择器...");
+    logger.debug("session_selector_updating");
   
     try {
       // 获取当前会话ID
@@ -127,7 +128,7 @@ export class SessionViewController {
       const availableSessionList = sessionServiceClient.getSessionList();
       this.uiManager.updateSessionSelector(availableSessionList, currentSessionId, latestSessionId);
     } catch (error) {
-      logger.error("更新会话选择器失败", error);
+      logger.error("session_selector_update_failed", error);
     }
   }
   
@@ -136,17 +137,17 @@ export class SessionViewController {
    */
   async handleSessionSelected(sessionId: string): Promise<void> {
     try {
-      logger.log("选择会话:", sessionId);
+      logger.log("session_selected", sessionId);
 
       // 更新当前会话
       await sessionServiceClient.switchSession(sessionId);
       
       // 不需要再调用loadCurrentSession，switchSession内部已加载会话数据
       // 也不需要显式调用refreshVisualization，事件链会处理
-      logger.log("会话切换成功");
+      logger.log("session_switch_success");
     } catch (error) {
-      logger.error("选择会话失败:", error);
-      this.uiManager.showError("选择会话失败");
+      logger.error("session_selection_failed", error);
+      this.uiManager.showError("content_session_selection_failed");
     }
   }
   
@@ -155,17 +156,17 @@ export class SessionViewController {
    */
   async loadCurrentSession(): Promise<SessionDetails | null> {
     try {
-      logger.log("加载当前会话...");
+      logger.log("current_session_loading");
 
       const session = await sessionServiceClient.loadCurrentSession();
       // handleSessionLoaded 已通过事件触发，这里不需要显式调用
       
-      logger.log("当前会话加载完成");
+      logger.log("current_session_load_complete");
       
       return session;
     } catch (error) {
-      logger.error("加载当前会话失败:", error);
-      this.uiManager.showError("加载当前会话失败");
+      logger.error("current_session_load_failed", error);
+      this.uiManager.showError("content_current_session_load_failed");
       throw error;
     }
   }
@@ -176,19 +177,19 @@ export class SessionViewController {
   handleSessionLoaded(session: SessionDetails | null): void {
     // 防止递归调用
     if (this.isHandlingSessionLoaded) {
-      logger.debug("会话加载处理已在进行中，跳过重复处理");
+      logger.debug("session_load_handling_in_progress");
       return;
     }
     
     try {
       this.isHandlingSessionLoaded = true;
-      logger.log("会话已加载，准备更新UI和数据");
+      logger.log("session_loaded_updating_ui");
 
       // 移除加载状态
       document.body.classList.remove("loading-session");
 
       if (!session) {
-        this.uiManager.showError("会话加载失败或无可用会话");
+        this.uiManager.showError("content_session_load_failed_or_unavailable");
         return;
       }
 
@@ -212,15 +213,15 @@ export class SessionViewController {
         skipSessionEvents: true // 防止会话事件循环
       });
       
-      logger.log("会话已加载:", { 
+      logger.log("session_loaded_details", { 
         id: session.id, 
         title: session.title,
         nodes: nodes.length,
         edges: edges.length
       });
     } catch (error) {
-      logger.error("处理会话加载失败:", error);
-      this.uiManager.showError("处理会话数据失败");
+      logger.error("session_load_processing_failed", error);
+      this.uiManager.showError("content_session_data_processing_failed");
     } finally {
       // 确保标志被重置
       this.isHandlingSessionLoaded = false;
@@ -247,13 +248,13 @@ export class SessionViewController {
   async refreshSessionData(): Promise<void> {
     // 防止递归调用
     if (this.isRefreshingData) {
-      logger.debug("会话数据刷新已在进行中，跳过重复刷新");
+      logger.debug("session_data_refresh_in_progress");
       return;
     }
     
     try {
       this.isRefreshingData = true;
-      logger.log("刷新会话数据...");
+      logger.log("session_data_refreshing");
       
       await sessionServiceClient.loadSessionList();
       await sessionServiceClient.loadCurrentSession();
@@ -261,9 +262,9 @@ export class SessionViewController {
       // 同时更新最新会话ID
       await sessionServiceClient.loadLatestSession();
 
-      logger.log("会话数据刷新完成");
+      logger.log("session_data_refresh_complete");
     } catch (error) {
-      logger.error("刷新会话数据失败:", error);
+      logger.error("session_data_refresh_failed", error);
       throw error;
     } finally {
       // 确保标志被重置
@@ -297,7 +298,7 @@ export class SessionViewController {
    * 清理会话数据
    */
   cleanup(): void {
-    logger.log("清理会话数据...");
+    logger.log("session_data_cleanup");
     // 清理任何特定的会话相关资源
   }
 }

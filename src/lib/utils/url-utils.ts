@@ -1,3 +1,5 @@
+import { i18n } from './i18n-utils.js';  // 新增本地化导入
+
 /**
  * URL 处理工具类
  * 提供 URL 标准化和分类的工具函数
@@ -132,7 +134,7 @@ export class UrlUtils {
    */
   static extractTitle(url: string): string {
     try {
-      if (!url) return '未知页面';
+      if (!url) return i18n('url_utils_unknown_page');
       
       // 解析URL
       let parsedUrl;
@@ -140,7 +142,7 @@ export class UrlUtils {
         parsedUrl = new URL(url);
       } catch (e) {
         // 处理无效URL
-        return url.substring(0, 30);
+        return url.substring(0, 30) || i18n('url_utils_unknown_page');
       }
       
       // 获取不带www的主机名
@@ -184,7 +186,7 @@ export class UrlUtils {
         return hostname;
       }
     } catch (error) {
-      return url.substring(0, 30) || '未知页面';
+      return url.substring(0, 30) || i18n('url_utils_unknown_page');
     }
   }
 

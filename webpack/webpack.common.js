@@ -2,6 +2,7 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const I18nPlugin = require('./plugins/i18n-plugin');
 
 module.exports = {
   entry: {
@@ -43,6 +44,15 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin({
       cleanStaleWebpackAssets: false, // 防止删除复制的文件
+    }),
+    // 本地化处理插件
+    new I18nPlugin({
+      // 可选：指定默认语言
+      // defaultLang: 'zh_CN',
+      // 源代码目录
+      srcDir: './',
+      // 输出目录
+      tempOutputDir: '_locales',
     }),
     // 复制静态资源
     new CopyPlugin({

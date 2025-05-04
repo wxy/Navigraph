@@ -5,13 +5,13 @@
  * 2. 动态获取本地化字符串 (i18n 函数)
  */
 
-import { Logger } from '../../lib/utils/logger.js';
-const logger = new Logger('i18n-utils');
+// 为避免与 logger 循环依赖，直接使用 console 打印
 
 export class I18nUtils {
   private static instance: I18nUtils;
   private loadedMessages: Record<string, {message: string, description?: string}> = {};
   private forcedLocale: string | null = null;
+  private hasInitialized: boolean = false;
 
   /**
    * 获取单例实例
@@ -24,35 +24,54 @@ export class I18nUtils {
   }
 
   /**
-   * 初始化本地化工具
-   * 检查URL参数并可能加载特定的本地化文件
+   * 初始化本地化工具并应用到页面
+   * 集成了初始化和应用到页面两个步骤
+   * 该方法可以安全地多次调用，只会执行一次初始化和应用
    */
-  public async initialize(): Promise<void> {
+  public async apply(): Promise<void> {
+    // 如果已经初始化过，不再重复执行
+    if (this.hasInitialized) {
+      console.debug('[i18n-utils] I18nUtils already initialized, skipping');
+      return;
+    }
+    
+    this.hasInitialized = true;
+    
     // 获取 URL 查询参数中的本地化设置
     try {
       const urlParams = new URLSearchParams(window.location.search);
       this.forcedLocale = urlParams.get('locale')?.replace('-', '_') ?? null;
       
       if (this.forcedLocale) {
-        logger.log(`使用URL参数指定的本地化: ${this.forcedLocale}`);
+        console.log(`[i18n-utils] Using locale from URL: ${this.forcedLocale}`);
         const response = await fetch(`../_locales/${this.forcedLocale}/messages.json`);
         
         if (!response.ok) {
-          throw new Error(`无法加载指定语言文件: ${response.status}`);
+          throw new Error(`Unable to load specified language file: ${response.status}`);
         }
         
         this.loadedMessages = await response.json();
-        logger.log(`已加载本地化消息: ${Object.keys(this.loadedMessages).length} 条`);
+        console.log(`[i18n-utils] Loaded ${Object.keys(this.loadedMessages).length} localization messages`);
       }
     } catch (error) {
-      logger.error(`加载本地化文件失败:`, error);
+      console.error('[i18n-utils] Failed to load localization file:', error);
       this.forcedLocale = null;
+    }
+    
+    // 如果DOM已就绪，立即应用本地化
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        // DOM仍在加载，等待完成后应用
+        document.addEventListener('DOMContentLoaded', () => this.applyToPage());
+      } else {
+        // DOM已就绪，立即应用
+        this.applyToPage();
+      }
     }
   }
 
   /**
    * 获取本地化字符串
-   * 优先使用强制指定的本地化，如果未找到则使用Chrome本地化API
    */
   public getMessage(messageId: string, defaultValue?: string): string {
     // 强制本地化
@@ -72,11 +91,12 @@ export class I18nUtils {
 
   /**
    * 对DOM元素应用本地化
-   * 查找带有data-i18n属性的元素并替换内容
+   * 该方法安全地处理多次调用
    */
   public applyToPage(): void {
     if (typeof document === 'undefined') return;
-
+    
+    // 只要DOM就绪，就可以应用本地化
     // 处理页面标题
     const titleElement = document.querySelector('title[data-i18n]');
     if (titleElement) {
@@ -97,10 +117,12 @@ export class I18nUtils {
         }
       }
     });
+    
+    console.debug('[i18n-utils] Applied localization to page');
   }
 
-  /**
-   * 根据元素类型设置本地化内容
+  /** 
+   * 设置元素内容方法保持不变
    */
   private setElementContent(element: Element, message: string): void {
     switch (element.tagName) {
@@ -129,16 +151,86 @@ export class I18nUtils {
   }
 }
 
-// 创建简单的全局函数，用于快速访问
-export function i18n(messageId: string, defaultValue?: string): string {
-  return I18nUtils.getInstance().getMessage(messageId, defaultValue);
+/**
+ * 本地化错误类
+ */
+export class I18nError extends Error {
+  public readonly messageId: string;
+  public readonly technical?: string; // 更明确的名称
+  
+  /**
+   * 构造函数
+   * @param messageId 错误消息ID (必须以'content_'开头的本地化ID)
+   * @param technical 技术细节，不会被本地化 (可选)
+   * @param defaultMessage 当消息ID无法解析时的默认消息 (可选)
+   */
+  constructor(messageId: string, technical?: string, defaultMessage?: string) {
+    // 使用本地化的消息作为错误消息，如果解析失败则使用默认消息
+    super(I18nUtils.getInstance().getMessage(messageId, defaultMessage));
+    
+    this.messageId = messageId;
+    this.technical = technical;
+    
+    // 修复原型链
+    Object.setPrototypeOf(this, I18nError.prototype);
+    
+    // 保留原始堆栈
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, I18nError);
+    }
+  }
+  
+  /**
+   * 获取完整错误信息
+   */
+  getFullMessage(): string {
+    if (this.technical) {
+      return `${this.message} (${this.technical})`;
+    }
+    return this.message;
+  }
 }
 
-// 在DOM就绪后自动应用本地化
+/**
+ * 获取本地化字符串并支持参数替换
+ * @param messageId 消息ID
+ * @param args 用于替换消息中的{0}, {1}等占位符的参数
+ * @returns 本地化后的字符串
+ */
+export function i18n(messageId: string, ...args: string[]): string {
+  // 首先获取基本消息字符串
+  const message = I18nUtils.getInstance().getMessage(messageId);
+  
+  // 如果没有参数需要替换，直接返回
+  if (!args || args.length === 0) {
+    return message;
+  }
+  
+  // 替换所有 {0}, {1}, {2} 等占位符
+  let result = message;
+  for (let i = 0; i < args.length; i++) {
+    result = result.replace(new RegExp('\\{' + i + '\\}', 'g'), args[i]);
+  }
+  
+  return result;
+}
+
+/**
+ * 创建本地化错误
+ * @param messageId 错误消息ID
+ * @param technical 技术细节 (不会被本地化)
+ * @param defaultMessage 当消息ID无法解析时的默认消息
+ */
+export function i18nError(
+  messageId: string, 
+  technical?: string, 
+  defaultMessage?: string
+): I18nError {
+  return new I18nError(messageId, technical, defaultMessage);
+}
+
+// 自动初始化处理
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', async () => {
-    const i18nUtils = I18nUtils.getInstance();
-    await i18nUtils.initialize();
-    i18nUtils.applyToPage();
-  });
+  // 使用新的合并方法
+  I18nUtils.getInstance().apply();
 }

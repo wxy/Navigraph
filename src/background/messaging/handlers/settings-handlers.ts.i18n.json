@@ -1,0 +1,50 @@
+{
+  "settings_context_failed": {
+    "message": "创建消息上下文失败",
+    "description": "无法创建消息处理上下文时的错误日志"
+  },
+  "settings_get_error": {
+    "message": "获取设置时出错",
+    "description": "获取设置过程中发生错误时的日志消息"
+  },
+  "settings_get_failed": {
+    "message": "获取设置失败: {0}",
+    "description": "获取设置失败时返回给客户端的错误消息，{0}为具体错误"
+  },
+  "settings_handler_error": {
+    "message": "处理{0}请求时出错",
+    "description": "处理消息请求过程中出错的日志消息，{0}为请求类型"
+  },
+  "settings_request_failed": {
+    "message": "处理请求失败: {0}",
+    "description": "请求处理失败时返回给客户端的错误消息，{0}为具体错误"
+  },
+  "settings_missing_data": {
+    "message": "缺少设置数据",
+    "description": "保存设置时缺少必要数据的错误消息"
+  },
+  "settings_save_error": {
+    "message": "保存设置时出错",
+    "description": "保存设置过程中发生错误时的日志消息"
+  },
+  "settings_save_failed": {
+    "message": "保存设置失败: {0}",
+    "description": "保存设置失败时返回给客户端的错误消息，{0}为具体错误"
+  },
+  "settings_reset_error": {
+    "message": "重置设置时出错",
+    "description": "重置设置过程中发生错误时的日志消息"
+  },
+  "settings_reset_failed": {
+    "message": "重置设置失败: {0}",
+    "description": "重置设置失败时返回给客户端的错误消息，{0}为具体错误"
+  },
+  "settings_invalid_request": {
+    "message": "无效的请求",
+    "description": "收到无效请求时的错误消息"
+  },
+  "settings_handlers_registered": {
+    "message": "设置相关消息处理程序已注册",
+    "description": "设置相关消息处理程序注册完成时的日志消息"
+  }
+}

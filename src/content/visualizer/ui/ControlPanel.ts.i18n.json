@@ -1,0 +1,26 @@
+{
+  "control_panel_created": {
+    "message": "控制面板已创建",
+    "description": "控制面板创建日志"
+  },
+  "control_panel_elements_not_found": {
+    "message": "控制面板元素未找到",
+    "description": "控制面板元素未找到错误"
+  },
+  "control_panel_components_initialized": {
+    "message": "控制面板及所有子组件已初始化",
+    "description": "控制面板初始化日志"
+  },
+  "control_panel_interaction_initialized": {
+    "message": "控制面板交互初始化完成",
+    "description": "控制面板交互初始化日志"
+  },
+  "control_panel_session_history": {
+    "message": "会话历史",
+    "description": "会话历史标题"
+  },
+  "control_panel_update_session_selector": {
+    "message": "控制面板更新会话选择器，共 {0} 个会话",
+    "description": "控制面板更新会话选择器日志"
+  }
+}

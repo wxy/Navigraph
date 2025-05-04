@@ -1,14 +1,14 @@
 (async function() {
-  const DEBUG = false; // 是否启用调试模式
+  const DEBUG = false; // Debug mode flag
   try {
-    // 内联实现sendToBackground函数
+    // Inline implementation of sendToBackground function
     async function sendToBackground(action: string, data?: any): Promise<any> {
       return new Promise((resolve, reject) => {
         try {
           chrome.runtime.sendMessage({
             action,
             ...data,
-            target: 'background' // 明确指定目标
+            target: 'background' // Explicitly specify target
           }, (response) => {
             if (chrome.runtime.lastError) {
               reject(chrome.runtime.lastError);
@@ -22,11 +22,11 @@
       });
     }
     
-    // 内联实现isExtensionContextValid函数
+    // Inline implementation of isExtensionContextValid function
     function isExtensionContextValid(): boolean {
       try {
-        // 检查chrome.runtime是否可访问
-        // 这是检测扩展上下文是否有效的一种方法
+        // Check if chrome.runtime is accessible
+        // This is one way to detect if extension context is valid
         return typeof chrome !== 'undefined' && 
                typeof chrome.runtime !== 'undefined' && 
                typeof chrome.runtime.sendMessage === 'function';
@@ -35,16 +35,16 @@
       }
     }
     
-    // 存储从后台获取的标准节点ID
+    // Store standard node ID from background
     let standardNodeId: string | null = null;
     let isExtensionActive: boolean = true;
     let lastRequestTime: number = 0;
     
     /**
-     * 检查是否是系统页面
+     * Check if it's a system page
      */
     function isSystemPage(url: string): boolean {
-      // 检查是否是扩展页面、浏览器内置页面等
+      // Check if it's an extension page, browser built-in page, etc.
       return url.startsWith('chrome://') || 
              url.startsWith('chrome-extension://') || 
              url.startsWith('about:') ||
@@ -54,22 +54,22 @@
     }
     
     /**
-     * 请求当前页面的节点ID
+     * Request node ID for current page
      */
     async function requestNodeId(): Promise<void> {
       if (!isExtensionContextValid() || !isExtensionActive) {
         if (DEBUG) {
-          console.warn('扩展上下文无效或扩展不活跃，无法请求节点ID');
+          console.warn('Extension context invalid or extension inactive, unable to request node ID');
         }
         return;
       }
       
       const now = Date.now();
       
-      // 限制频率
+      // Rate limiting
       if (now - lastRequestTime < 5000) {
         if (DEBUG) {
-          console.debug('请求节点ID间隔过短，跳过');
+          console.debug('Request node ID interval too short, skipped');
         }
         return;
       }
@@ -77,21 +77,21 @@
       lastRequestTime = now;
       const url = window.location.href;
       
-      // 系统页面不请求
+      // Don't request for system pages
       if (isSystemPage(url)) {
         return;
       }
       
       try {        
-        // 获取标签页ID
+        // Get tab ID
         const tabIdResponse = await sendToBackground('getTabId', {});
         
         if (DEBUG) {
-          console.log('收到标签页ID响应:', tabIdResponse);
+          console.log('Received tab ID response:', tabIdResponse);
         }
         
         if (tabIdResponse.tabId !== undefined) {
-          // 请求节点ID
+          // Request node ID
           const nodeIdResponse = await sendToBackground('getNodeId', {
             tabId: tabIdResponse.tabId,
             url: url,
@@ -100,74 +100,74 @@
           });
           
           if (DEBUG) {
-            console.log('收到节点ID响应:', nodeIdResponse);
+            console.log('Received node ID response:', nodeIdResponse);
           }
           
           if (nodeIdResponse.nodeId) {
             if (standardNodeId !== nodeIdResponse.nodeId) {
               if (DEBUG) {
-                console.log(`更新节点ID: ${standardNodeId || 'null'} -> ${nodeIdResponse.nodeId}`);
+                console.log(`Updated node ID: ${standardNodeId || 'null'} -> ${nodeIdResponse.nodeId}`);
               }
               standardNodeId = nodeIdResponse.nodeId;
             }
           } else {
             if (DEBUG) {
-              console.warn('无法获取节点ID');
+              console.warn('Unable to get node ID');
             }
           }
         } else {
           if (DEBUG) {
-            console.warn('无法获取标签页ID');
+            console.warn('Unable to get tab ID');
           }
         }
       } catch (error) {
         if (DEBUG) {
-          console.error('请求节点ID失败:', error);
+          console.error('Failed to request node ID:', error);
         }
       }
     }
     
     /**
-     * 初始化函数
+     * Initialization function
      */
     async function init(): Promise<void> {
       if (DEBUG) {
-        console.log('Navigraph: 导航图谱初始化开始');
+        console.log('Navigraph: Navigation graph initialization started');
       }
       
       try {
         if (DEBUG) {
-          console.log('等待后台脚本初始化...');
+          console.log('Waiting for background script initialization...');
         }
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // 请求当前页面的节点ID
+        // Request node ID for current page
         await requestNodeId();
         
-        // 注册历史记录状态变化监听
+        // Register history state change listener
         window.addEventListener('popstate', () => {
           
           if (DEBUG) {
-            console.log('检测到历史记录状态变化');
+            console.log('History state change detected');
           }
           requestNodeId();
         });
         if (DEBUG) {
-          console.log('导航图谱初始化完成');
+          console.log('Navigation graph initialization completed');
         }
       } catch (error) {
         if (DEBUG) {
-          console.error('导航图谱初始化失败:', error);
+          console.error('Navigation graph initialization failed:', error);
         }
       }
     }
     
-    // 立即执行初始化函数
+    // Execute initialization function immediately
     await init();
-    console.log('Navigraph: 导航图谱已加载');
+    console.log('Navigraph: Navigation graph loaded');
   } catch (error) {
     if (DEBUG) {
-      console.error('导航图谱加载失败:', error);
+      console.error('Navigation graph loading failed:', error);
     }
   }
 })();

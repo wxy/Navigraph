@@ -1,0 +1,74 @@
+{
+  "activity_monitor_initialized": {
+    "message": "活动监控器初始化完成",
+    "description": "活动监控器初始化完成时的日志消息"
+  },
+  "activity_monitor_restore_time_success": {
+    "message": "活动监控器：成功恢复上次活动时间：{0}",
+    "description": "成功恢复上次活动时间的日志消息，{0}为恢复的时间"
+  },
+  "activity_monitor_restore_time_failed": {
+    "message": "恢复活动时间失败: {0}",
+    "description": "恢复活动时间失败时的错误日志，{0}为错误详情"
+  },
+  "activity_monitor_setup_listeners": {
+    "message": "活动监控器：设置活动监听器",
+    "description": "活动监控器设置事件监听器时的日志消息"
+  },
+  "activity_monitor_browser_startup": {
+    "message": "活动监控器：检测到浏览器启动",
+    "description": "浏览器启动事件被检测到时的日志消息"
+  },
+  "activity_monitor_idle_detected": {
+    "message": "检测到用户空闲超过{0}小时",
+    "description": "检测到用户空闲时的日志消息，{0}为空闲小时数"
+  },
+  "activity_monitor_timeout_changed": {
+    "message": "活动超时设置已更改为{0}分钟",
+    "description": "活动超时设置更改时的日志消息，{0}为新设置的分钟数"
+  },
+  "activity_monitor_activity_marked": {
+    "message": "活动监控器：标记活动，上次活动时间：{0}",
+    "description": "活动被标记时的日志消息，{0}为上次活动时间"
+  },
+  "activity_monitor_idle_timer_reset": {
+    "message": "重置空闲计时器，超时时间: {0}分钟",
+    "description": "重置空闲计时器时的日志消息，{0}为超时分钟数"
+  },
+  "activity_monitor_idle_timer_disabled": {
+    "message": "空闲计时器已禁用",
+    "description": "空闲计时器被禁用时的日志消息"
+  },
+  "activity_monitor_session_null": {
+    "message": "活动监控器：未找到当前会话，使用当前时间",
+    "description": "未找到当前会话时的日志消息"
+  },
+  "activity_monitor_real_page_activated": {
+    "message": "活动监控器：实际页面被激活：{0}",
+    "description": "用户激活实际页面（非系统/扩展页面）时的日志消息，{0}为页面URL"
+  },
+  "activity_monitor_system_page_ignored": {
+    "message": "活动监控器：忽略系统页面激活：{0}",
+    "description": "系统或扩展页面被激活但被忽略时的日志消息，{0}为页面URL"
+  },
+  "activity_monitor_tab_get_failed": {
+    "message": "活动监控器：无法获取标签页信息：{0}",
+    "description": "尝试获取标签页信息失败时的日志消息，{0}为错误详情"
+  },
+  "activity_monitor_navigation_completed": {
+    "message": "活动监控器：实际页面导航完成：{0}",
+    "description": "实际页面完成导航时的日志消息，{0}为页面URL"
+  },
+  "activity_monitor_system_navigation_ignored": {
+    "message": "活动监控器：忽略系统页面导航：{0}",
+    "description": "系统或扩展页面完成导航但被忽略时的日志消息，{0}为页面URL"
+  },
+  "activity_monitor_page_updated": {
+    "message": "活动监控器：实际页面更新完成：{0}",
+    "description": "实际页面更新完成时的日志消息，{0}为页面URL"
+  },
+  "activity_monitor_system_update_ignored": {
+    "message": "活动监控器：忽略系统页面更新：{0}",
+    "description": "系统或扩展页面更新完成但被忽略时的日志消息，{0}为页面URL"
+  }
+}

@@ -4,6 +4,7 @@
  */
 import { Logger } from '../../lib/utils/logger.js';
 import { SessionEvent, SessionEventType } from '../../types/session-types.js';
+import { i18n } from '../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('SessionEventEmitter');
 /**
@@ -31,7 +32,7 @@ export class SessionEventEmitter {
     
     this.listeners.get(eventType)!.add(listener);
     
-    logger.log(`添加了 ${eventType} 事件的监听器，当前共 ${this.listeners.get(eventType)!.size} 个`);
+    logger.log('session_event_listener_added', eventType, this.listeners.get(eventType)!.size.toString());
   }
   
   /**
@@ -47,7 +48,7 @@ export class SessionEventEmitter {
     const listeners = this.listeners.get(eventType)!;
     listeners.delete(listener);
     
-    logger.log(`移除了 ${eventType} 事件的监听器，剩余 ${listeners.size} 个`);
+    logger.log('session_event_listener_removed', eventType, listeners.size.toString());
     
     // 如果没有监听器了，删除这个事件类型的集合
     if (listeners.size === 0) {
@@ -75,13 +76,14 @@ export class SessionEventEmitter {
     
     // 同步调用所有监听器
     const listeners = this.listeners.get(eventType)!;
-    logger.log(`触发 ${eventType} 事件，通知 ${listeners.size} 个监听器`);
+    logger.log('session_event_emitted', eventType, listeners.size.toString());
     
     listeners.forEach(listener => {
       try {
         listener(event);
       } catch (error) {
-        logger.error(`会话事件监听器执行出错:`, error);
+        logger.error('session_event_listener_error', 
+          error instanceof Error ? error.message : String(error));
       }
     });
   }
@@ -91,7 +93,7 @@ export class SessionEventEmitter {
    */
   public clearAllListeners(): void {
     this.listeners.clear();
-    logger.log('已清除所有会话事件监听器');
+    logger.log('session_event_all_listeners_cleared');
   }
   
   /**
@@ -158,6 +160,7 @@ export class SessionEventEmitter {
   public emitSessionDeleted(sessionId: string, data?: any): void {
     this.emit(SessionEventType.Deleted, sessionId, data);
   }
+  
   /**
    * 发出会话查看事件
    * 当用户在UI中查看某个会话时触发

@@ -1,3 +1,5 @@
+import { i18n } from '../../../lib/utils/i18n-utils.js';
+
 /**
  * 筛选器配置项定义
  */
@@ -32,66 +34,66 @@ export function getInitialFilters(): FilterConfig[] {
   return [
     {
       id: "filter-reload",
-      text: "显示刷新",
+      text: i18n("filter_show_reload"),
       property: "reload",
       defaultValue: true,
-      description: "显示页面刷新操作",
+      description: i18n("filter_show_reload_desc"),
       enabled: true
     },
     {
       id: "filter-history",
-      text: "显示历史导航",
+      text: i18n("filter_show_history"),
       property: "history",
       defaultValue: true,
-      description: "显示浏览器前进/后退操作",
+      description: i18n("filter_show_history_desc"),
       enabled: true
     },
     {
       id: "filter-closed",
-      text: "显示已关闭",
+      text: i18n("filter_show_closed"),
       property: "closed",
       defaultValue: false,
-      description: "显示已关闭的页面",
+      description: i18n("filter_show_closed_desc"),
       enabled: false
     },
     {
       id: "filter-tracking",
-      text: "显示跟踪页面",
+      text: i18n("filter_show_tracking"),
       property: "showTracking",
       defaultValue: false,
-      description: "显示跟踪页面的操作",
+      description: i18n("filter_show_tracking_desc"),
       enabled: false
     },
     {
       id: "type-link",
-      text: "链接点击",
+      text: i18n("filter_type_link"),
       property: "typeLink",
       defaultValue: true,
-      description: "显示链接点击操作",
+      description: i18n("filter_type_link_desc"),
       enabled: true
     },
     {
       id: "type-address",
-      text: "地址栏输入",
+      text: i18n("filter_type_address"),
       property: "typeAddress",
       defaultValue: true,
-      description: "显示地址栏输入操作",
+      description: i18n("filter_type_address_desc"),
       enabled: true
     },
     {
       id: "type-form",
-      text: "表单提交",
+      text: i18n("filter_type_form"),
       property: "typeForm",
       defaultValue: true,
-      description: "显示表单提交操作",
+      description: i18n("filter_type_form_desc"),
       enabled: true
     },
     { 
       id: "type-js", 
-      text: "JS导航", 
+      text: i18n("filter_type_js"), 
       property: "typeJs", 
       defaultValue: true, 
-      description: "显示JS导航操作", 
+      description: i18n("filter_type_js_desc"), 
       enabled: true 
     },
   ];

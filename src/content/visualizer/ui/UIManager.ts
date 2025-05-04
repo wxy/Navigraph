@@ -1,4 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n, I18nError } from '../../../lib/utils/i18n-utils.js'; // 新增 I18nError
 import type { Visualizer, NavNode, NavLink } from '../../types/navigation.js';
 import { StatusBar } from './StatusBar.js';
 import { NodeDetails } from './NodeDetails.js';
@@ -48,7 +49,7 @@ export class UIManager {
     // 只创建控制面板，不再传入子组件
     this.controlPanel = new ControlPanel(visualizer);
 
-    logger.log("UI管理器已创建");
+    logger.log('ui_manager_created');
   }
 
   /**
@@ -60,7 +61,7 @@ export class UIManager {
     container: HTMLElement;
     svg: SVGElement | null;
   } {
-    logger.log("初始化UI管理器");
+    logger.log('ui_manager_init');
 
     // 如果没有提供容器，创建一个
     if (!container) {
@@ -78,7 +79,7 @@ export class UIManager {
     // 初始化各个UI组件
     this.initializeComponents();
 
-    logger.log("UI管理器初始化完成");
+    logger.log('ui_manager_init_complete');
 
     // 返回容器和SVG元素
     return { container, svg };
@@ -89,14 +90,14 @@ export class UIManager {
    * @returns 可视化容器元素
    */
   private createVisualizationContainer(): HTMLElement {
-    logger.log("创建/查找可视化容器");
+    logger.log('ui_manager_create_container');
 
     // 首先尝试查找现有容器
     let container = document.getElementById("visualization-container");
 
     // 如果找不到，创建新容器
     if (!container) {
-      logger.warn("未找到可视化容器，创建新容器");
+      logger.warn('ui_manager_container_not_found');
       container = document.createElement("div");
       container.id = "visualization-container";
       container.className = "visualization-container";
@@ -124,7 +125,7 @@ export class UIManager {
    * @returns 主视图容器元素
    */
   private createMainViewContainer(parentContainer: HTMLElement): HTMLElement {
-    logger.log("创建主视图容器");
+    logger.log('ui_manager_create_main_view');
 
     // 创建主视图容器
     const mainViewContainer = document.createElement("div");
@@ -147,11 +148,11 @@ export class UIManager {
     const targetContainer = container || this.mainViewContainer;
 
     if (!targetContainer) {
-      logger.error("无法创建SVG：目标容器不存在");
+      logger.error('ui_manager_svg_no_container');
       return null;
     }
 
-    logger.log("创建SVG元素");
+    logger.log('ui_manager_create_svg');
 
     // 如果容器中已经存在SVG元素，先移除它
     const existingSvg = targetContainer.querySelector("svg");
@@ -181,7 +182,7 @@ export class UIManager {
    * 初始化所有UI组件
    */
   private initializeComponents(): void {
-    logger.groupCollapsed("初始化UI组件");
+    logger.groupCollapsed('ui_manager_init_components');
     
     // 初始化顶层组件
     this.statusBar.initialize();
@@ -194,7 +195,7 @@ export class UIManager {
       this.controlPanel.initialize(this.containerElement);
       // 不再直接初始化子组件
     } else {
-      logger.warn("容器元素不存在，控制面板无法初始化");
+      logger.warn('ui_manager_no_container_for_control_panel');
     }
 
     logger.groupEnd();
@@ -225,41 +226,41 @@ export class UIManager {
 
   /**
    * 显示错误通知
-   * @param message 错误消息
+   * @param messageId 通知消息ID
    * @param duration 显示时间(毫秒)，默认5秒，0表示不自动关闭
    */
-  public showError(message: string, duration: number = 5000): void {
-    this.errorNotification.show(message, duration);
+  public showError(messageId: string, duration: number = 5000): void {
+    this.errorNotification.show(messageId, duration);
   }
 
   /**
    * 显示详细错误通知
-   * @param title 错误标题
-   * @param message 错误消息
+   * @param titleId 错误标题ID
+   * @param messageId 通知消息ID
    * @param stack 错误堆栈
    */
   public showDetailedError(
-    title: string,
-    message: string,
+    titleId: string,
+    messageId: string,
     stack?: string
   ): void {
     // 确保 ErrorNotification 类中有此方法
     if (typeof this.errorNotification.showDetailed === "function") {
-      this.errorNotification.showDetailed(title, message, stack);
+      this.errorNotification.showDetailed(titleId, messageId, stack);
     } else {
       // 降级处理，如果没有详细错误方法
-      this.errorNotification.show(`${title}: ${message}`, 0);
-      logger.error(`${title}: ${message}`, stack);
+      this.errorNotification.show(`${titleId}: ${messageId}`, 0);
+      logger.error('ui_manager_detailed_error_fallback', `${titleId}: ${messageId}`, stack);
     }
   }
 
   /**
    * 显示简短通知
-   * @param message 通知消息
+   * @param messageId 通知消息ID
    * @param duration 显示时间(毫秒)，默认3秒
    */
-  public showToast(message: string, duration: number = 3000): void {
-    this.errorNotification.showToast(message, duration);
+  public showToast(messageId: string, duration: number = 3000): void {
+    this.errorNotification.showToast(messageId, duration);
   }
 
   /**
@@ -303,7 +304,7 @@ export class UIManager {
       height = rect.height;
     }
 
-    logger.log(`UI管理器处理大小变化: ${width}x${height}`);
+    logger.log('ui_manager_handle_resize', `${width}`, `${height}`);
 
     // 通知各个需要响应大小变化的组件
     if (typeof this.controlPanel.handleResize === "function") {
@@ -330,9 +331,9 @@ export class UIManager {
     // 委托给控制面板组件处理
     if (this.controlPanel && typeof this.controlPanel.hide === "function") {
       this.controlPanel.hide();
-      logger.log("已隐藏控制面板");
+      logger.log('ui_manager_control_panel_hidden');
     } else {
-      logger.warn("无法隐藏控制面板：组件不可用或没有hide方法");
+      logger.warn('ui_manager_cannot_hide_control_panel');
     }
   }
 
@@ -342,9 +343,9 @@ export class UIManager {
   public showControlPanel(): void {
     if (this.controlPanel && typeof this.controlPanel.show === "function") {
       this.controlPanel.show();
-      logger.log("已显示控制面板");
+      logger.log('ui_manager_control_panel_shown');
     } else {
-      logger.warn("无法显示控制面板：组件不可用或没有show方法");
+      logger.warn('ui_manager_cannot_show_control_panel');
     }
   }
 
@@ -361,7 +362,7 @@ export class UIManager {
    * @param svg SVG元素
    */
   public onSvgInitialized(svg: any): void {
-    logger.log("SVG初始化完成通知已接收");
+    logger.log('ui_manager_svg_initialized');
     // 可以在这里执行任何需要在SVG初始化后进行的UI操作
   }
 
@@ -413,9 +414,9 @@ export class UIManager {
    * 清理UI资源
    */
   public dispose(): void {
-    logger.log('清理UI管理器资源');
+    logger.log('ui_manager_dispose_start');
     
     // 清理各组件资源
-    logger.log('UI管理器资源已清理');
+    logger.log('ui_manager_dispose_complete');
   }
 }

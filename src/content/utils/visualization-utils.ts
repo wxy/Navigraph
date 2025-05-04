@@ -3,6 +3,7 @@
  * 为渲染器提供共享功能
  */
 import { Logger } from '../../lib/utils/logger.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
 import { NavNode, NavLink, Visualizer } from '../types/navigation.js';
 
 const logger = new Logger('VisualizationUtils');
@@ -141,7 +142,7 @@ export function getLinkType(d3Link: any, links: NavLink[]): string {
     
     return originalLink ? originalLink.type : 'default';
   } catch (err) {
-    logger.warn('获取链接类型时出错:', err);
+    logger.warn('vis_utils_link_type_error', err instanceof Error ? err.message : String(err));
     return 'default';
   }
 }
@@ -156,5 +157,31 @@ export function renderEmptyTreeMessage(svg: any, width: number, height: number):
     .attr('y', height / 2)
     .attr('text-anchor', 'middle')
     .attr('fill', '#999')
-    .text('无导航数据可显示');
+    .text(i18n('content_no_navigation_data'));
+}
+
+/**
+ * 获取节点类型的本地化名称
+ * 新增工具函数
+ */
+export function getNodeTypeName(type: string): string {
+  switch (type) {
+    case 'link_click':
+      return i18n('vis_utils_node_type_link_click');
+    case 'address_bar':
+      return i18n('vis_utils_node_type_address_bar');
+    case 'form_submit':
+      return i18n('vis_utils_node_type_form_submit');
+    case 'reload':
+      return i18n('vis_utils_node_type_reload');
+    case 'history_back':
+    case 'history_forward':
+      return i18n('vis_utils_node_type_history_navigation');
+    case 'redirect':
+      return i18n('vis_utils_node_type_redirect');
+    case 'javascript':
+      return i18n('vis_utils_node_type_javascript');
+    default:
+      return i18n('vis_utils_node_type_default');
+  }
 }

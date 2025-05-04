@@ -1,0 +1,30 @@
+{
+  "content_close": {
+    "message": "关闭",
+    "description": "关闭按钮"
+  },
+  "content_error_occurred": {
+    "message": "发生错误: {0}",
+    "description": "错误日志消息前缀"
+  },
+  "content_error_ui_missing": {
+    "message": "找不到必要的错误UI元素",
+    "description": "错误UI元素缺失消息"
+  },
+  "content_error_default_title": {
+    "message": "错误",
+    "description": "默认错误标题"
+  },
+  "content_refresh": {
+    "message": "刷新",
+    "description": "刷新按钮文本"
+  },
+  "error_notification_initialized": {
+    "message": "错误通知组件已初始化",
+    "description": "错误通知组件初始化日志"
+  },
+  "notification_message": {
+    "message": "通知: {0}",
+    "description": "通知消息日志"
+  }
+}

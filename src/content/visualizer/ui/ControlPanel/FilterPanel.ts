@@ -1,4 +1,5 @@
 import { Logger } from '../../../../lib/utils/logger.js';
+import { i18n } from '../../../../lib/utils/i18n-utils.js'; // 添加导入i18n
 import type { Visualizer } from '../../../types/navigation.js';
 
 const logger = new Logger('FilterPanel');
@@ -8,9 +9,9 @@ const logger = new Logger('FilterPanel');
  */
 export interface FilterDefinition {
   id: string;           // 过滤器ID
-  label: string;        // 显示标签
+  labelId: string;      // 显示标签对应的i18n键
   defaultValue: boolean; // 默认值
-  description?: string; // 说明文本
+  descriptionId?: string; // 说明文本对应的i18n键
 }
 
 /**
@@ -21,55 +22,55 @@ export class FilterPanel {
   private visualizer: Visualizer;
   private filterContainer: HTMLElement | null = null;
   
-  // 默认过滤器定义 - 这些ID必须与HTML中的ID匹配
+  // 默认过滤器定义 - 这些ID必须与HTML中的ID匹配，使用i18n键
   private filterDefinitions: FilterDefinition[] = [
     {
       id: 'filter-reload',
-      label: '显示刷新',
+      labelId: 'filter_reload_label',
       defaultValue: true,
-      description: '显示页面刷新操作'
+      descriptionId: 'filter_reload_description'
     },
     {
       id: 'filter-history',
-      label: '显示历史导航',
+      labelId: 'filter_history_label',
       defaultValue: true,
-      description: '显示浏览器历史前进/后退操作'
+      descriptionId: 'filter_history_description'
     },
     {
       id: 'filter-closed',
-      label: '显示已关闭页面',
+      labelId: 'filter_closed_label',
       defaultValue: false,
-      description: '显示已关闭的页面'
+      descriptionId: 'filter_closed_description'
     },
     {
       id: 'filter-tracking',
-      label: '显示跟踪页面',
+      labelId: 'filter_tracking_label',
       defaultValue: false,
-      description: '显示分析和跟踪相关的请求'
+      descriptionId: 'filter_tracking_description'
     },
     {
       id: 'type-link',
-      label: '显示链接点击',
+      labelId: 'filter_type_link_label',
       defaultValue: true,
-      description: '显示由链接点击导致的导航'
+      descriptionId: 'filter_type_link_description'
     },
     {
       id: 'type-address',
-      label: '显示地址栏输入',
+      labelId: 'filter_type_address_label',
       defaultValue: true,
-      description: '显示由地址栏输入导致的导航'
+      descriptionId: 'filter_type_address_description'
     },
     {
       id: 'type-form',
-      label: '显示表单提交',
+      labelId: 'filter_type_form_label',
       defaultValue: true,
-      description: '显示由表单提交导致的导航'
+      descriptionId: 'filter_type_form_description'
     },
     {
       id: 'type-js',
-      label: '显示JS导航',
+      labelId: 'filter_type_js_label',
       defaultValue: true,
-      description: '显示由JavaScript导致的导航'
+      descriptionId: 'filter_type_js_description'
     }
   ];
   
@@ -84,14 +85,14 @@ export class FilterPanel {
     this.filterContainer = document.getElementById('filter-panel-container');
     
     if (!this.filterContainer) {
-      logger.warn('筛选器容器未找到');
+      logger.warn('filter_panel_container_not_found');
       return;
     }
     
     // 添加事件监听器到现有筛选器
     this.attachEventListenersToExistingFilters();
     
-    logger.log('筛选面板已初始化');
+    logger.log('filter_panel_initialized');
   }
   
   /**
@@ -116,9 +117,9 @@ export class FilterPanel {
           this.handleFilterChange(filter.id, checkbox.checked);
         });
         
-        logger.debug(`为筛选器 ${filter.id} 添加了事件监听器，初始值: ${initialValue}`);
+        logger.debug('filter_listener_added', filter.id, initialValue);
       } else {
-        logger.warn(`筛选器元素 ${filter.id} 未找到`);
+        logger.warn('filter_element_not_found', filter.id);
       }
     });
   }
@@ -135,13 +136,13 @@ export class FilterPanel {
    * 处理筛选器变更
    */
   private handleFilterChange(filterId: string, value: boolean): void {
-    logger.log(`筛选器变更: ${filterId} = ${value}`);
+    logger.log('filter_change', filterId, value);
     
     // 检查可视化器是否有handleFilterChange方法
     if (typeof (this.visualizer as any).handleFilterChange === 'function') {
       // 直接调用NavigationVisualizer的handleFilterChange方法
       (this.visualizer as any).handleFilterChange(filterId, value);
-      logger.debug(`使用可视化器的handleFilterChange方法处理筛选器变化`);
+      logger.debug('filter_using_visualizer_handler');
     } else {
       // 否则使用默认实现
       // 更新可视化器的筛选器配置
@@ -174,19 +175,19 @@ export class FilterPanel {
       const checkbox = document.getElementById(filter.id) as HTMLInputElement;
       if (checkbox) {
         // 使用默认值设置复选框状态
-        checkbox.checked = filter.defaultValue; // 直接使用 filter.defaultValue
+        checkbox.checked = filter.defaultValue;
         
         // 向可视化器通知筛选器变化
         this.handleFilterChange(filter.id, filter.defaultValue);
       } else {
-        logger.warn(`重置筛选器时未找到元素: ${filter.id}`);
+        logger.warn('filter_reset_element_not_found', filter.id);
       }
     });
     
     // 更新UI状态
     this.updateUI(this.visualizer.filters);
     
-    logger.log('所有筛选器已重置为默认值');
+    logger.log('filter_all_reset_to_default');
   }
   
   /**
@@ -196,7 +197,7 @@ export class FilterPanel {
   public updateUI(filters: any): void {
     if (!filters) return;
 
-    logger.log('更新筛选器UI状态');
+    logger.log('filter_ui_updating');
     
     // 映射筛选器ID
     const idMappings: Record<string, string> = {
@@ -222,7 +223,7 @@ export class FilterPanel {
         const checkbox = document.getElementById(htmlId) as HTMLInputElement;
         if (checkbox) {
           checkbox.checked = !!value;
-          logger.debug(`筛选器 ${htmlId} 状态已更新为: ${checkbox.checked}`);
+          logger.debug('filter_status_updated', htmlId, checkbox.checked);
         }
       }
     });

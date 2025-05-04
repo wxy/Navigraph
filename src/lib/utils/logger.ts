@@ -4,6 +4,7 @@
  */
 
 import { isDev } from '../environment.js';
+import { i18n } from './i18n-utils.js';  // 添加本地化导入
 
 // 日志级别枚举
 export enum LogLevel {
@@ -90,60 +91,82 @@ export class Logger {
    * 格式化日志消息
    */
   private format(args: any[]): any[] {
-    if (args.length === 0) return args;
+    // 如果空数组或第一项不是字符串，无需处理
+    if (args.length === 0 || typeof args[0] !== 'string') {
+      return args;
+    }
 
+    const rawMsg = args[0];
+    
+    // 按类型分组所有后续参数
+    const placeholderParams: any[] = []; // 用于替换的占位符参数
+    const metaParams: any[] = [];      // 其他元数据参数
+    
+    args.slice(1).forEach(param => {
+      // 字符串和数字类型都应该用于占位符替换
+      if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
+        placeholderParams.push(param); // 字符串和数字参数加入占位符组
+      } else {
+        metaParams.push(param);      // 非基本类型参数保留为元数据
+      }
+    });
+
+    // 尝试本地化首个字符串参数，使用收集的参数进行占位符替换
+    let localized: string;
+    try {
+      // 确保所有占位符参数都转换为字符串
+      const stringifiedParams = placeholderParams.map(p => String(p));
+      localized = i18n(rawMsg, ...stringifiedParams);
+    } catch {
+      localized = rawMsg;
+    }
+    
+    // 替换为本地化后的消息和元数据参数（不包含用于占位符的参数）
+    args = [localized, ...metaParams];
+    
     const timestamp = getSimpleTimestamp();
     const fileInfo = getCallerInfo();
-    
-    // 构建时间戳前缀
     const timePrefix = timestamp ? `[${timestamp}] ` : "";
-    const fileInfoFormatted = fileInfo !== "unknown" && fileInfo !== "error" ? 
-      ` [${fileInfo}]` : ""; // 注意这里在前面加了空格
+    const fileInfoFormatted = fileInfo && fileInfo !== "unknown" && fileInfo !== "error"
+      ? ` [${fileInfo}]` 
+      : "";
 
-    // 处理第一个参数，添加前缀和可能的完成emoji
+    // 处理第一个参数，添加emoji和颜色
     if (typeof args[0] === "string") {
       const enhancedMessage = addCompletionEmoji(args[0]);
 
       if (config.colorfulModules) {
-        // 根据配置决定文件信息位置
         if (config.fileInfoPosition === "end") {
-          // 文件信息放在消息后
           return [
             `%c${timePrefix}%c${enhancedMessage}%c ${fileInfoFormatted}`,
-            "color: #888", // 时间戳颜色
-            `color: ${this.moduleColor}; font-weight: 500`, // 消息颜色
-            "color: #888; font-size: 0.9em", // 文件信息颜色和大小
-            ...args.slice(1),
-          ];
-        } else {
-          // 文件信息放在消息前（原来的方式）
-          return [
-            `%c${timePrefix}${
-              fileInfo ? `[${fileInfo}] ` : ""
-            }%c${enhancedMessage}`,
             "color: #888",
             `color: ${this.moduleColor}; font-weight: 500`,
-            ...args.slice(1),
+            "color: #888; font-size: 0.9em",
+            ...args.slice(1)  // 现在只剩元数据
+          ];
+        } else {
+          return [
+            `%c${timePrefix}${fileInfo ? `[${fileInfo}] ` : ""}%c${enhancedMessage}`,
+            "color: #888",
+            `color: ${this.moduleColor}; font-weight: 500`,
+            ...args.slice(1)  // 现在只剩元数据
           ];
         }
       } else {
-        // 不使用颜色时
         if (config.fileInfoPosition === "end") {
           return [
             `${timePrefix}${enhancedMessage}${fileInfoFormatted}`,
-            ...args.slice(1),
+            ...args.slice(1)  // 现在只剩元数据
           ];
         } else {
           return [
-            `${timePrefix}${
-              fileInfo ? `[${fileInfo}] ` : ""
-            }${enhancedMessage}`,
-            ...args.slice(1),
+            `${timePrefix}${fileInfo ? `[${fileInfo}] ` : ""}${enhancedMessage}`,
+            ...args.slice(1)  // 现在只剩元数据
           ];
         }
       }
     } else {
-      // 非字符串参数处理
+      // 非字符串参数，保持原样
       if (config.colorfulModules) {
         return [`%c${timePrefix}${fileInfo}`, "color: #888", ...args];
       } else {
@@ -188,12 +211,12 @@ export class Logger {
     }
 
     const startTime = performance.now();
-    this.debug(`${sessionName} - 开始`);
+    this.debug('logger_session_started', sessionName);
 
     return {
       end: () => {
         const duration = performance.now() - startTime;
-        this.debug(`${sessionName} - 结束 (耗时: ${duration.toFixed(2)}ms)`);
+        this.debug('logger_session_ended', sessionName, duration.toFixed(2));
       },
     };
   }
@@ -246,7 +269,7 @@ export class Logger {
     return {
       end: () => {
         const duration = performance.now() - startTime;
-        this.log(`总耗时: ${duration.toFixed(2)}ms`);
+        this.log('logger_total_duration', duration.toFixed(2));
         this.groupEnd();
       }
     };
@@ -293,31 +316,31 @@ export class Logger {
       const lines = stack.split("\n");
 
       if (detailLevel === "full") {
-        console.log("完整堆栈:", lines);
+        console.log(i18n("logger_debug_full_stack"), lines);
 
         // 分析每一行
         lines.forEach((line, i) => {
-          console.log(`行 ${i}:`, line);
+          console.log(i18n("logger_debug_line_number", i.toString()), line);
 
           // 测试各种正则表达式
           console.log(
-            " Chrome标准格式:",
+            i18n("logger_debug_chrome_standard_format"),
             line.match(/at .+? \((.+?):(\d+):\d+\)/)
           );
-          console.log(" Chrome简单格式:", line.match(/at (.+?):(\d+):\d+/));
-          console.log(" Firefox格式:", line.match(/(.+?)@(.+?):(\d+):\d+/));
+          console.log(i18n("logger_debug_chrome_simple_format"), line.match(/at (.+?):(\d+):\d+/));
+          console.log(i18n("logger_debug_firefox_format"), line.match(/(.+?)@(.+?):(\d+):\d+/));
           console.log(
-            " 后备格式:",
+            i18n("logger_debug_fallback_format"),
             line.match(/([^\/\\]+\.(js|ts|jsx|tsx|vue|html))(?::(\d+))?/i)
           );
           console.log("---");
         });
       } else {
-        console.log("堆栈前5行:", lines.slice(0, 5));
-        console.log('使用Logger.debugStack("full")查看完整分析');
+        console.log(i18n("logger_debug_stack_first_five"), lines.slice(0, 5));
+        console.log(i18n("logger_debug_stack_view_full"));
       }
     } catch (e) {
-      console.error("无法获取堆栈", e);
+      console.error(i18n("logger_debug_stack_error"), e);
     }
   }
 }

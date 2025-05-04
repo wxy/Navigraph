@@ -1,11 +1,12 @@
 import { Logger } from '../../lib/utils/logger.js';
-import { 
-  MessageTarget, 
-  BaseMessage, 
+import { I18nError, i18n } from '../../lib/utils/i18n-utils.js';  // 引入 I18nError
+import {
+  MessageTarget,
+  BaseMessage,
   BaseResponse,
-  RetryInfo 
+  RetryInfo
 } from '../../types/messages/common.js';
-import { 
+import {
   RequestResponseMap,
   PrefixedAction,
   FindActionWithTarget
@@ -17,7 +18,7 @@ const logger = new Logger('MessageSender');
  * 发送消息到指定目标
  */
 export function sendMessage<T extends MessageTarget, A extends string>(
-  action: A, 
+  action: A,
   target: T,
   data: any = {},
   retryInfo?: RetryInfo
@@ -26,34 +27,39 @@ export function sendMessage<T extends MessageTarget, A extends string>(
     try {
       // 构造带前缀的完整action键名
       const prefixedAction = `${target}.${action}` as keyof RequestResponseMap;
-      const requestId = Date.now().toString() + Math.random().toString(36).substring(2, 9);
-      
+      const requestId = Date.now().toString() + Math.random().toString(36).slice(2, 9);
+
+      // 本地化发送日志
+      if (!retryInfo || retryInfo.isLastAttempt || retryInfo.attempt === 0) {
+        logger.log(
+          'message_send',
+          action,
+          requestId,
+          target
+        );
+      }
+
       const message = {
         action: action,
         requestId,
         target,
         ...data
       };
-      
-      // 修改日志记录逻辑
-      // 只在不是中间重试尝试时记录日志
-      if (!retryInfo || retryInfo.isLastAttempt || retryInfo.attempt === 0) {
-        logger.log(`发送消息: ${action} [ID:${requestId}] 至 ${target}${
-          retryInfo && retryInfo.attempt > 0 ? ` (尝试 ${retryInfo.attempt}/${retryInfo.maxRetries})` : ''
-        }`);
-      }
-      
+
       if (target === 'content') {
         // 发送到特定标签页内容脚本
         if ('tabId' in data && typeof data.tabId === 'number') {
           const tabId = data.tabId;
           delete (data as any).tabId; // 从数据中移除tabId，避免重复
-          
+
           chrome.tabs.sendMessage(tabId, message, (response) => {
             handleResponse(response, resolve, reject, retryInfo);
           });
         } else {
-          reject(new Error('发送到内容脚本时必须指定tabId'));
+          // 使用 I18nError 并本地化日志
+          const err = new I18nError('message_missing_tab_id');
+          logger.error('message_missing_tab_id');
+          reject(err);
         }
       } else {
         // 发送到后台脚本或其他目标
@@ -62,12 +68,14 @@ export function sendMessage<T extends MessageTarget, A extends string>(
         });
       }
     } catch (error) {
-      // 修改错误日志记录
       // 只有在最后一次尝试时才记录错误
       if (!retryInfo || retryInfo.isLastAttempt) {
-        logger.error('发送消息异常:', error);
-      }
-      reject(error);
+        logger.error('message_send_error', error instanceof Error ? error.message : String(error));
+      } 
+      const msg = error instanceof I18nError
+        ? error
+        : new I18nError('message_send_error', error instanceof Error ? error.message : String(error));
+      reject(msg);
     }
   });
 }
@@ -76,41 +84,39 @@ export function sendMessage<T extends MessageTarget, A extends string>(
  * 处理消息响应
  */
 function handleResponse<T extends BaseResponse>(
-  response: any, 
-  resolve: (value: T) => void, 
+  response: any,
+  resolve: (value: T) => void,
   reject: (reason: any) => void,
   retryInfo?: RetryInfo
 ): void {
-  // 修改抑制错误的条件逻辑
-  // 只有在这是最后一次尝试时才记录错误
   const suppressErrors = retryInfo?.isLastAttempt === false;
-  
+
   if (chrome.runtime.lastError) {
     if (!suppressErrors) {
-      logger.error('发送消息时出错:', chrome.runtime.lastError);
+      logger.error('message_runtime_error', chrome.runtime.lastError.message);
     }
-    reject(chrome.runtime.lastError);
+    reject(new I18nError('message_runtime_error', chrome.runtime.lastError.message));
     return;
   }
-  
+
   if (!response) {
-    const error = new Error('没有收到响应');
+    const err = new I18nError('message_no_response');
     if (!suppressErrors) {
-      logger.error(error);
+      logger.error('message_no_response');
     }
-    reject(error);
+    reject(err);
     return;
   }
-  
+
   if (!response.success) {
-    const error = new Error(response.error || '未知错误');
+    const err = new I18nError('message_response_error', response.error);
     if (!suppressErrors) {
-      logger.error('收到错误响应:', response.error);
+      logger.error('message_response_error', response.error);
     }
-    reject(error);
+    reject(err);
     return;
   }
-  
+
   resolve(response as T);
 }
 
@@ -134,12 +140,12 @@ export function sendToBackground<A extends string>(
   if (!options?.retry) {
     return sendMessage(action, 'background', data);
   }
-  
+
   // 启用重试
   return sendMessageWithRetry(
-    action, 
-    'background', 
-    data, 
+    action,
+    'background',
+    data,
     {
       maxRetries: options.maxRetries || 3,
       retryDelay: options.initialDelay || 500,
@@ -192,8 +198,8 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
   action: A,
   target: T,
   data: any = {},
-  options: { 
-    maxRetries?: number; 
+  options: {
+    maxRetries?: number;
     retryDelay?: number;
     exponentialBackoff?: boolean;
     factor?: number;
@@ -201,32 +207,32 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
     defaultValue?: any;
   } = {}
 ): Promise<any> {
-  const { 
-    maxRetries = 3, 
+  const {
+    maxRetries = 3,
     retryDelay = 500,
     exponentialBackoff = true,
     factor = 2,
     maxDelay = 5000,
     defaultValue = undefined
   } = options;
-  
+
   return new Promise(async (resolve, reject) => {
     let lastError: any;
     let currentDelay = retryDelay;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
-          logger.log(`重试发送消息 (${attempt}/${maxRetries}): ${action}`);
+          logger.log('message_retry', attempt, maxRetries, action);
           await new Promise(r => setTimeout(r, currentDelay));
-          
+
           // 计算下一次延迟（如果启用指数退避）
           if (exponentialBackoff) {
             const jitter = Math.random() * 0.3 + 0.85;
             currentDelay = Math.min(currentDelay * factor * jitter, maxDelay);
           }
         }
-        
+
         // 创建更详细的重试信息对象
         const retryInfo = {
           isRetrying: attempt > 0,
@@ -234,31 +240,34 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
           attempt: attempt,
           maxRetries: maxRetries
         };
-        
+
         const response = await sendMessage(action, target, data, retryInfo);
         resolve(response);
         return;
       } catch (error) {
         lastError = error;
-        
+
         // 如果是扩展上下文失效错误，不再重试
-        if (error instanceof Error && 
-            (error.message.includes('Extension context invalidated') ||
-             error.message.includes('The message port closed'))) {
-          logger.error('扩展上下文已失效或消息端口已关闭，不再重试');
+        if (error instanceof Error &&
+          (error.message.includes('invalid') || error.message.includes('closed'))) {
+          logger.error('message_extension_context_invalid', error.message);
           break;
         }
       }
     }
-    
+
     // 所有重试都失败了
     if (defaultValue !== undefined) {
-      logger.warn(`发送消息 ${action} 失败，使用默认值`);
+      logger.warn('message_send_failed_default', action);
       resolve(defaultValue);
     } else {
       // 最终失败时记录一条整体错误
-      logger.error(`在 ${maxRetries + 1} 次尝试后发送消息失败: ${action}`);
-      reject(lastError || new Error(`在 ${maxRetries} 次尝试后发送消息失败`));
+      logger.error('message_send_final_failed', action, maxRetries + 1);
+      reject(
+        lastError instanceof I18nError
+          ? lastError
+          : new I18nError('message_send_final_failed', action, `${maxRetries + 1}`)
+      );
     }
   });
 }
@@ -273,7 +282,7 @@ export function isExtensionContextValid(): boolean {
     const id = chrome.runtime.id;
     return !!id;
   } catch (e) {
-    logger.warn('扩展上下文已失效:', e);
+    logger.warn('message_extension_context_invalid', e instanceof Error ? e.message : String(e));
     return false;
   }
 }

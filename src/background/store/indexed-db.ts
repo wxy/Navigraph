@@ -4,7 +4,10 @@
  */
 import { Logger } from '../../lib/utils/logger.js';
 import { DatabaseSchema, StoreDefinition } from '../../types/storage-types.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+
 const logger = new Logger('IndexedDBStorage');
+
 /**
  * IndexedDB存储类
  * 提供对IndexedDB的低级访问
@@ -29,7 +32,7 @@ export class IndexedDBStorage {
     
     if (!this.instances.has(key)) {
       this.instances.set(key, new IndexedDBStorage(schema));
-      logger.debug(`创建新的数据库实例: ${key}`);
+      logger.debug('indexed_db_instance_created', key);
     }
     
     return this.instances.get(key)!;
@@ -86,12 +89,16 @@ export class IndexedDBStorage {
         const request = indexedDB.open(this.schema.name, this.schema.version);
         
         request.onerror = (event) => {
-          logger.error('打开数据库失败:', event);
-          reject(new Error('打开数据库失败'));
+          const error = (event.target as IDBRequest).error;
+          logger.error("background_db_open_failed", error);
+          reject(new I18nError(
+            "background_db_open_failed", 
+            error?.message || i18n("background_unknown_error")
+          ));
         };
         
         request.onupgradeneeded = (event) => {
-          logger.log(`数据库升级: ${(event.oldVersion || 0)} -> ${this.schema.version}`);
+          logger.log('indexed_db_upgrade', (event.oldVersion || 0), this.schema.version);
           const db = (event.target as IDBOpenDBRequest).result;
           
           // 升级数据库结构
@@ -103,7 +110,7 @@ export class IndexedDBStorage {
           
           // 只在第一次打开时输出日志，避免重复
           if (!this.isInitialized) {
-            logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已打开`);
+            logger.log('indexed_db_opened', this.schema.name, this.schema.version);
           }
           
           resolve();
@@ -111,12 +118,18 @@ export class IndexedDBStorage {
         
         request.onerror = (event) => {
           const error = request.error;
-          logger.error('打开数据库失败:', error);
-          reject(new Error(`打开数据库失败: ${error?.message || '未知错误'}`));
+          logger.error("background_db_open_failed", error);
+          reject(new I18nError(
+            "background_db_open_failed", 
+            error?.message || i18n("background_unknown_error")
+          ));
         };
       } catch (error) {
-        logger.error('初始化数据库失败:', error);
-        reject(error);
+        logger.error("background_db_init_failed", error);
+        reject(new I18nError(
+          "background_db_init_failed", 
+          error instanceof Error ? error.message : i18n("background_unknown_error")
+        ));
       }
     });
   }
@@ -135,7 +148,7 @@ export class IndexedDBStorage {
       const key = `${this.schema.name}_v${this.schema.version}`;
       IndexedDBStorage.instances.delete(key);
       
-      logger.log(`数据库 ${this.schema.name} v${this.schema.version} 已关闭`);
+      logger.log('indexed_db_closed', this.schema.name, this.schema.version);
     }
   }
   
@@ -150,7 +163,7 @@ export class IndexedDBStorage {
       this.createStore(db, store);
     }
     
-    logger.log('数据库结构升级完成');
+    logger.log('indexed_db_upgrade_complete');
   }
   
   /**
@@ -162,7 +175,7 @@ export class IndexedDBStorage {
     // 如果存储已存在，先删除
     if (db.objectStoreNames.contains(storeDefinition.name)) {
       db.deleteObjectStore(storeDefinition.name);
-      logger.log(`删除已存在的存储: ${storeDefinition.name}`);
+      logger.log('indexed_db_store_deleted', storeDefinition.name);
     }
     
     // 创建存储
@@ -171,7 +184,7 @@ export class IndexedDBStorage {
       autoIncrement: storeDefinition.autoIncrement
     });
     
-    logger.log(`创建存储: ${storeDefinition.name}`);
+    logger.log('indexed_db_store_created', storeDefinition.name);
     
     // 创建索引
     if (storeDefinition.indices) {
@@ -181,7 +194,7 @@ export class IndexedDBStorage {
           multiEntry: index.multiEntry || false
         });
         
-        logger.log(`  创建索引: ${index.name}`);
+        logger.log('indexed_db_index_created', index.name);
       }
     }
   }
@@ -232,11 +245,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`添加数据到 ${storeName} 失败`));
+          reject(new I18nError("background_db_add_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -262,11 +275,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`更新数据到 ${storeName} 失败`));
+          reject(new I18nError("background_db_put_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -292,11 +305,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`获取 ${storeName} 中的数据失败`));
+          reject(new I18nError("background_db_get_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -321,11 +334,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`获取 ${storeName} 中的所有数据失败`));
+          reject(new I18nError("background_db_get_all_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -350,7 +363,7 @@ export class IndexedDBStorage {
         const { transaction, store } = await this.startTransaction(storeName);
         
         if (!store.indexNames.contains(indexName)) {
-          reject(new Error(`索引 ${indexName} 不存在于 ${storeName}`));
+          reject(new I18nError("background_db_index_not_found", storeName));
           return;
         }
         
@@ -362,11 +375,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`通过索引 ${indexName} 获取数据失败`));
+          reject(new I18nError("background_db_get_by_index_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -391,11 +404,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`删除 ${storeName} 中的数据失败`));
+          reject(new I18nError("background_db_delete_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -419,11 +432,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`清空 ${storeName} 失败`));
+          reject(new I18nError("background_db_clear_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -457,11 +470,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`遍历 ${storeName} 失败`));
+          reject(new I18nError("background_db_for_each_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -513,11 +526,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`获取 ${storeName} 记录数失败`));
+          reject(new I18nError("background_db_count_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);
@@ -543,11 +556,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(`检查 ${storeName} 中的数据是否存在失败`));
+          reject(new I18nError("background_db_exists_failed", storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(`事务错误: ${event}`));
+          reject(new I18nError("background_db_transaction_error", String(event)));
         };
       } catch (error) {
         reject(error);

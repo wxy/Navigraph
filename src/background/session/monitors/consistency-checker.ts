@@ -2,6 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { SessionManager } from '../session-manager.js';
 import { getNavigationManager } from '../../navigation/navigation-manager.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('ConsistencyChecker');
 
@@ -26,10 +27,12 @@ export class ConsistencyChecker {
     
     this.checkIntervalId = setInterval(() => {
       this.checkNodeStateConsistency()
-        .catch(err => logger.error('节点状态一致性检查失败:', err));
+        .catch(err => logger.error('consistency_checker_check_failed', 
+          err instanceof Error ? err.message : String(err)));
     }, this.checkIntervalMs) as unknown as number;
     
-    logger.log(`启动节点状态一致性检查，间隔${this.checkIntervalMs / (60 * 1000)}分钟`);
+    const intervalMinutes = (this.checkIntervalMs / (60 * 1000)).toString();
+    logger.log('consistency_checker_started', intervalMinutes);
   }
   
   /**
@@ -39,7 +42,7 @@ export class ConsistencyChecker {
     if (this.checkIntervalId) {
       clearInterval(this.checkIntervalId);
       this.checkIntervalId = null;
-      logger.log('停止节点状态一致性检查');
+      logger.log('consistency_checker_stopped');
     }
   }
   
@@ -51,7 +54,7 @@ export class ConsistencyChecker {
     if (!latestSessionId) return;
     
     try {
-      logger.groupCollapsed('执行节点状态一致性检查...');
+      logger.groupCollapsed('consistency_checker_executing');
       
       // 获取所有活跃标签页
       const tabs = await this.getAllActiveTabs();
@@ -60,7 +63,7 @@ export class ConsistencyChecker {
           .filter(tab => tab.id !== undefined && tab.url && !UrlUtils.isSystemPage(tab.url))
           .map(tab => tab.id)
       );
-      logger.log(`当前有 ${activeTabIds.size} 个活跃标签页（不含系统页面）`);
+      logger.log('consistency_checker_active_tabs', activeTabIds.size.toString());
       
       try {
         // 获取导航管理器实例
@@ -73,7 +76,7 @@ export class ConsistencyChecker {
         
         // 过滤出活跃(未关闭)节点
         const activeNodes = sessionNodes.filter(node => node.isClosed !== true);
-        logger.log(`当前会话有 ${activeNodes.length} 个活跃节点`);
+        logger.log('consistency_checker_active_nodes', activeNodes.length.toString());
 
         // 找出标签页已关闭但节点未标记为关闭的节点
         const orphanedNodes = activeNodes.filter(node => 
@@ -81,29 +84,33 @@ export class ConsistencyChecker {
         );
         
         if (orphanedNodes.length > 0) {
-          logger.log(`发现 ${orphanedNodes.length} 个孤立节点，标记为已关闭`);
+          logger.log('consistency_checker_orphaned_found', orphanedNodes.length.toString());
           
           const now = Date.now();
           
           // 更新这些节点状态
           for (const node of orphanedNodes) {
-            logger.log(`标记节点 ${node.id} (tabId=${node.tabId}) 为已关闭`);
+            logger.log('consistency_checker_marking_node', 
+              node.id, node.tabId ? node.tabId.toString() : 'undefined');
+            
             await navManager.updateNode(node.id, {
               isClosed: true,
               closeTime: now
             });
           }
         } else {
-          logger.log('未发现需要更新状态的孤立节点');
+          logger.log('consistency_checker_no_orphaned');
         }
       } catch (navError) {
-        logger.error('获取导航管理器失败:', navError);
+        logger.error('consistency_checker_nav_manager_failed', 
+          navError instanceof Error ? navError.message : String(navError));
       }
       
-      logger.log('节点状态一致性检查完成');
+      logger.log('consistency_checker_completed');
       logger.groupEnd();
     } catch (error) {
-      logger.error('节点状态一致性检查出错:', error);
+      logger.error('consistency_checker_error', 
+        error instanceof Error ? error.message : String(error));
     }
   }
   

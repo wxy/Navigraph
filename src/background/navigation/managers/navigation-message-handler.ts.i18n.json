@@ -1,0 +1,90 @@
+{
+  "nav_msg_handler_registering": {
+    "message": "注册导航相关消息处理程序",
+    "description": "开始注册导航相关消息处理程序时的分组日志标题"
+  },
+  "nav_msg_handler_node_assigned": {
+    "message": "为URL分配节点ID: {0} -> {1}",
+    "description": "为URL分配节点ID时的日志消息，{0}为URL，{1}为节点ID"
+  },
+  "nav_msg_handler_get_node_id_failed": {
+    "message": "处理getNodeId失败: {0}",
+    "description": "处理getNodeId请求失败时的错误日志，{0}为错误详情"
+  },
+  "nav_msg_handler_link_click_failed": {
+    "message": "处理链接点击失败: {0}",
+    "description": "处理链接点击失败时的错误日志，{0}为错误详情"
+  },
+  "nav_msg_handler_form_submit_failed": {
+    "message": "处理表单提交失败: {0}",
+    "description": "处理表单提交失败时的错误日志，{0}为错误详情"
+  },
+  "nav_msg_handler_js_nav_failed": {
+    "message": "处理JS导航失败: {0}",
+    "description": "处理JS导航失败时的错误日志，{0}为错误详情"
+  },
+  "nav_msg_handler_handlers_cleared": {
+    "message": "已清理所有导航消息处理程序",
+    "description": "清理所有导航消息处理程序时的日志消息"
+  },
+  "nav_msg_error_create_node": {
+    "message": "无法创建节点",
+    "description": "无法创建节点时返回给客户端的错误消息"
+  },
+  "nav_msg_error_get_node": {
+    "message": "获取节点ID失败: {0}",
+    "description": "获取节点ID失败时返回给客户端的错误消息，{0}为错误详情"
+  },
+  "nav_msg_error_missing_page_info": {
+    "message": "缺少必要的页面信息",
+    "description": "请求缺少必要页面信息时返回给客户端的错误消息"
+  },
+  "nav_msg_error_node_not_found": {
+    "message": "未找到此页面的节点ID",
+    "description": "未找到页面节点ID时返回给客户端的错误消息"
+  },
+  "nav_msg_error_page_load": {
+    "message": "处理页面加载失败: {0}",
+    "description": "处理页面加载失败时返回给客户端的错误消息，{0}为错误详情"
+  },
+  "nav_msg_error_tab_info": {
+    "message": "无法确定标签页信息",
+    "description": "无法确定标签页信息时返回给客户端的错误消息"
+  },
+  "nav_msg_error_node_id_not_found": {
+    "message": "未找到节点ID",
+    "description": "未找到节点ID时返回给客户端的错误消息"
+  },
+  "nav_msg_error_update_title": {
+    "message": "更新页面标题失败: {0}",
+    "description": "更新页面标题失败时返回给客户端的错误消息，{0}为错误详情"
+  },
+  "nav_msg_error_update_favicon": {
+    "message": "更新页面图标失败: {0}",
+    "description": "更新页面图标失败时返回给客户端的错误消息，{0}为错误详情"
+  },
+  "nav_msg_error_link_click": {
+    "message": "处理链接点击失败: {0}",
+    "description": "处理链接点击失败时返回给客户端的错误消息，{0}为错误详情"
+  },
+  "nav_msg_error_missing_link_info": {
+    "message": "缺少链接信息",
+    "description": "请求缺少链接信息时返回给客户端的错误消息"
+  },
+  "nav_msg_error_tab_id": {
+    "message": "无法确定标签页ID",
+    "description": "无法确定标签页ID时返回给客户端的错误消息"
+  },
+  "nav_msg_error_missing_form_info": {
+    "message": "缺少表单信息",
+    "description": "请求缺少表单信息时返回给客户端的错误消息"
+  },
+  "nav_msg_error_form_submit": {
+    "message": "处理表单提交失败: {0}",
+    "description": "处理表单提交失败时返回给客户端的错误消息，{0}为错误详情"
+  },
+  "nav_msg_error_js_navigation": {
+    "message": "处理JS导航失败: {0}",
+    "description": "处理JS导航失败时返回给客户端的错误消息，{0}为错误详情"
+  }
+}

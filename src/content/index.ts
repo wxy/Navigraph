@@ -9,151 +9,121 @@
   let lastActivityTime = 0;
   const MIN_ACTIVITY_INTERVAL = 5000; // 最少5秒触发一次
 
-  const loggerModule = await import('../lib/utils/logger.js');
-  const logger = new loggerModule.Logger('ContentScript');
+  // 集中导入所有需要的模块
+  const { Logger } = await import('../lib/utils/logger.js');
+  const { I18nUtils, i18n, I18nError } = await import('../lib/utils/i18n-utils.js');
+  const { showErrorMessage, showDetailedErrorMessage } = await import('./utils/error-ui-manager.js');
+  const { getSettingsService } = await import('../lib/settings/service.js');
+  const { setupMessageService } = await import('./messaging/content-message-service.js');
+  const { registerContentMessageHandlers } = await import('./messaging/index.js');
+  const { getThemeManager } = await import('./utils/theme-manager.js');
+  const { NavigationVisualizer } = await import('./core/navigation-visualizer.js');
+  
+  const logger = new Logger('ContentScript');
+
   /**
    * 初始化函数
    */
   async function initialize() {
-    logger.log('初始化 Navigraph 可视化...');
-    
+    // 开始初始化
+    logger.log('content_init_start');
+
     try {
       // 初始化配置管理器
-      logger.log('初始化配置管理...');
+      logger.log('content_config_init_start');
       try {
-        const settingsModule = await import('../lib/settings/service.js');
-        const settingsService = settingsModule.getSettingsService();
+        const settingsService = getSettingsService();
         await settingsService.initialize();
-        // 将设置保存为全局变量以便访问
         window.navigraphSettings = settingsService.getSettings();
-        logger.log('全局设置已加载:', window.navigraphSettings);
+        // 全局设置已加载
+        logger.log('content_settings_loaded', JSON.stringify(window.navigraphSettings));
       } catch (error) {
-        // 配置加载失败是关键错误，需要显示给用户
-        logger.error('配置管理初始化失败:', error);
-        throw new Error('配置加载失败: ' + (error instanceof Error ? error.message : String(error)));
+        // 配置管理器初始化失败
+        logger.error('content_config_init_failed', error);
+        throw new I18nError(
+          'content_config_load_failed',
+          error instanceof Error ? error.message : String(error)
+        );
       }
 
       // 初始化消息服务
-      logger.log('初始化消息服务...');
+      logger.log('content_message_service_init_start');
       try {
-        const messageServiceModule = await import('./messaging/content-message-service.js');
-        messageServiceModule.setupMessageService();
-        const handlerModule = await import('./messaging/index.js');
-        handlerModule.registerContentMessageHandlers();
-        logger.log('消息服务初始化完成');
+        setupMessageService();
+        registerContentMessageHandlers();
+        // 消息服务初始化完成
+        logger.log('content_message_service_initialized');
       } catch (error) {
-        // 消息服务初始化失败是关键错误，需要显示给用户
-        logger.error('消息服务初始化失败:', error);
-        throw new Error('消息系统初始化失败: ' + (error instanceof Error ? error.message : String(error)));
+        logger.error('content_message_service_init_failed', error);
+        throw new I18nError(
+          'content_message_service_init_failed',
+          error instanceof Error ? error.message : String(error)
+        );
       }
-    
+
       // 初始化主题管理器
-      logger.log('初始化主题管理器...');
-      let themeManager;
+      logger.log('content_theme_init_start');
       try {
-        const themeManagerModule = await import('./utils/theme-manager.js');
-        themeManager = themeManagerModule.getThemeManager();
-        themeManager.initialize();
+        getThemeManager().initialize();
       } catch (error) {
-        // 主题管理器失败不是关键错误，记录但继续
-        logger.error('主题管理器初始化失败:', error);
-        // 不抛出异常，继续执行
+        // 主题管理器初始化失败（警告）
+        logger.warn('content_theme_init_failed', error);
       }
-      
-      // 导入并创建可视化器
-      let visualizerModule, NavigationVisualizer;
+
+      // 创建并初始化可视化器
       try {
-        visualizerModule = await import('./core/navigation-visualizer.js');
-        NavigationVisualizer = visualizerModule.NavigationVisualizer;
-        
-        // 创建可视化器实例
         window.visualizer = new NavigationVisualizer();
-        
-        // 为了兼容性考虑
         window.NavigationVisualizer = NavigationVisualizer;
-        
-        // 初始化视觉化器
         await window.visualizer.initialize();
-        
-        logger.log('Navigraph 可视化器初始化成功');
+        // 可视化器初始化成功
+        logger.log('content_visualizer_init_success');
       } catch (error) {
-        // 可视化器初始化失败是关键错误，需要显示给用户
-        logger.error('可视化器初始化失败:', error);
-        showDetailedErrorMessage('可视化器初始化失败', error);
-        throw error; // 重新抛出以确保后续代码不执行
+        logger.error('content_visualizer_init_failed', error);
+        showDetailedErrorMessage('content_visualizer_init_failed', error);
+        throw new I18nError(
+          'content_visualizer_init_failed',
+          error instanceof Error ? error.message : String(error)
+        );
       }
-      
+
       // 设置页面活动监听器
+      logger.log('content_setup_page_activity_listeners_start');
       setupPageActivityListeners();
 
-      logger.log('所有初始化逻辑完成');
+      // 所有初始化逻辑完成
+      logger.log('content_init_complete');
     } catch (error) {
-      logger.error('初始化过程中发生错误:', error);
-      showErrorMessage('初始化失败: ' + (error instanceof Error ? error.message : String(error)));
-      
-      // 记录更详细的错误信息用于调试
+      // 处理错误逻辑保持不变
+      logger.error('content_init_error', error);
+      showErrorMessage('content_init_failed',
+        error instanceof Error ? error.message : String(error)
+      );
       if (error instanceof Error && error.stack) {
-        logger.error('错误堆栈:', error.stack);
+        logger.error('content_init_stack', error.stack);
       }
     }
   }
-      
-  /**
-   * 应用主题设置
-   * 直接使用已加载的全局设置
-   */
-  function applyThemeFromSettings(themeManager: any): void {
-    try {
-      logger.log('从全局设置应用主题...');
-      
-      // 从全局设置中获取主题设置
-      if (window.navigraphSettings && window.navigraphSettings.theme) {
-        const themeSetting = window.navigraphSettings.theme;
-        logger.log('应用主题设置:', themeSetting);
-        themeManager.applyTheme(themeSetting);
-      } else {
-        // 如果全局设置中没有主题设置，使用系统主题
-        logger.log('全局设置中没有主题设置，使用系统主题');
-        themeManager.applyTheme('system');
-      }
-    } catch (error) {
-      logger.error('应用主题设置失败:', error);
-      // 出错时尝试应用系统主题
-      try {
-        themeManager.applyTheme('system');
-      } catch (e) {
-        // 如果连这个也失败，只记录错误
-        logger.error('无法应用系统主题:', e);
-      }
-    }
-  }
-
+  
   /**
    * 设置页面活动监听器
    * 监听页面可见性变化和焦点获取事件
    */
   function setupPageActivityListeners() {
     try {
-      logger.log('设置页面活动监听器...');
-      
-      // 监听页面可见性变化
+      logger.log('content_listener_start');
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          logger.log('页面变为可见状态');
+          logger.log('content_page_visible');
           triggerPageActivity('visibility');
         }
       });
-      
-      // 监听页面获得焦点
       window.addEventListener('focus', () => {
-        logger.log('页面获得焦点');
+        logger.log('content_page_focus');
         triggerPageActivity('focus');
       });
-      
-      logger.log('页面活动监听器设置完成');
+      logger.log('content_listener_ready');
     } catch (error) {
-      // 监听器设置失败不是关键错误，只记录
-      logger.error('设置页面活动监听器失败:', error);
+      logger.error('content_listener_failed', error);
     }
   }
 
@@ -166,7 +136,7 @@
       const now = Date.now();
       if (now - lastActivityTime > MIN_ACTIVITY_INTERVAL) {
         lastActivityTime = now;
-        logger.log(`检测到页面活动(${source})，触发刷新`);
+        logger.log('content_page_activity_detected', source);
         
         // 修改为只刷新视图，不重新加载会话数据
         if (window.visualizer && typeof window.visualizer.refreshVisualization === 'function') {
@@ -175,166 +145,37 @@
             source: 'pageActivity'
           });
         } else {
-          logger.warn('可视化器实例不存在或没有刷新方法');
+          logger.warn('content_visualizer_missing_or_invalid');
         }
       } else {
-        logger.debug(`页面活动(${source})距离上次时间过短(${now - lastActivityTime}ms)，忽略`);
+        logger.debug('content_page_activity_too_frequent', source, (now - lastActivityTime).toString());
       }
     } catch (error) {
-      logger.error(`处理页面活动(${source})失败:`, error);
+      logger.error('content_page_activity_process_failed', source, error);
     }
   }
     
-  /**
-   * 错误UI管理器
-   * 管理预定义的错误UI组件
-   */
-  const ErrorUIManager = {
-    /**
-     * 显示标准错误消息
-     * @param message 错误消息文本
-     */
-    showErrorMessage(message: string): void {
-      try {
-        const errorContainer = document.getElementById('navigraph-error');
-        if (!errorContainer) {
-          logger.error('找不到错误UI容器，降级到alert');
-          alert('Navigraph 扩展错误: ' + message);
-          return;
-        }
-        
-        const messageEl = errorContainer.querySelector('.error-message');
-        if (messageEl) {
-          messageEl.textContent = message;
-        }
-        
-        errorContainer.style.display = 'block';
-      } catch (err) {
-        logger.error('显示错误UI失败:', err);
-        alert('Navigraph 扩展错误: ' + message);
-      }
-    },
-    
-    /**
-     * 显示详细的错误消息
-     * @param title 错误标题
-     * @param error 错误对象
-     */
-    showDetailedErrorMessage(title: string, error: any): void {
-      try {
-        const errorContainer = document.getElementById('navigraph-error-detailed');
-        if (!errorContainer) {
-          this.showErrorMessage(title + ': ' + (error instanceof Error ? error.message : String(error)));
-          return;
-        }
-        
-        // 设置标题
-        const titleEl = errorContainer.querySelector('.error-title');
-        if (titleEl) {
-          titleEl.textContent = title;
-        }
-        
-        // 设置错误消息
-        const messageEl = errorContainer.querySelector('.error-message');
-        if (messageEl) {
-          messageEl.textContent = error instanceof Error ? error.message : String(error);
-        }
-        
-        // 检查是否有堆栈信息
-        const hasStack = error instanceof Error && error.stack;
-        
-        // 设置错误堆栈
-        const stackEl = errorContainer.querySelector('.error-stack');
-        if (stackEl) {
-          stackEl.textContent = hasStack ? (error.stack ?? '') : '';
-        }
-        
-        // 控制详情元素
-        const detailsEl = errorContainer.querySelector('details');
-        if (detailsEl) {
-          // 如果有堆栈信息，则设置open属性
-          if (hasStack) {
-            detailsEl.setAttribute('open', '');  // 打开详情
-          } else {
-            detailsEl.removeAttribute('open');   // 关闭详情
-            detailsEl.style.display = 'none';    // 完全隐藏详情部分
-          }
-        }
-        
-        // 显示容器
-        errorContainer.style.display = 'block';
-      } catch (err) {
-        logger.error('显示详细错误UI失败:', err);
-        this.showErrorMessage(title + ': ' + (error instanceof Error ? error.message : String(error)));
-      }
-    },
-    
-    /**
-     * 显示通知消息
-     * @param message 通知消息
-     * @param duration 显示时长（毫秒）
-     */
-    showToast(message: string, duration: number = 5000): void {
-      try {
-        const toastEl = document.getElementById('navigraph-toast');
-        if (!toastEl) return;
-        
-        toastEl.textContent = message;
-        toastEl.style.display = 'block';
-        
-        // 设置自动隐藏
-        setTimeout(() => {
-          if (toastEl) {
-            toastEl.style.display = 'none';
-          }
-        }, duration);
-      } catch (err) {
-        logger.error('显示通知消息失败:', err);
-      }
-    }
-  };
-
-  /**
-   * 显示标准错误消息（便捷方法）
-   */
-  function showErrorMessage(message: string): void {
-    ErrorUIManager.showErrorMessage(message);
-  }
-
-  /**
-   * 显示详细的错误消息（便捷方法）
-   */
-  function showDetailedErrorMessage(title: string, error: any): void {
-    ErrorUIManager.showDetailedErrorMessage(title, error);
-  }
-
-  /**
-   * 显示通知消息（便捷方法）
-   */
-  function showToast(message: string, duration?: number): void {
-    ErrorUIManager.showToast(message, duration);
-  }
-
   // 启动初始化流程
   try {
-    // 检查 DOM 是否已经加载
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initialize);
     } else {
-      // 如果 DOM 已加载完成，直接初始化
+      await I18nUtils.getInstance().apply();
       await initialize();
     }
   } catch (error) {
-    logger.error('启动初始化过程失败:', error);
-    // 尝试显示错误，即使在DOM加载前
-    setTimeout(() => showErrorMessage('启动失败: ' + (error instanceof Error ? error.message : String(error))), 500);
+    logger.error('content_startup_error', error);
+    setTimeout(() => showErrorMessage(
+      'content_startup_error',
+      error instanceof Error ? error.message : String(error)
+    ), 500);
   }
 })().catch(error => {
-  // 捕获闭包函数本身可能抛出的任何错误
-  console.error('Navigraph 内容脚本执行失败:', error);
+  // 注意：此处故意保留英文，避免依赖本地化回退
+  console.error('Critical error in content script:', error);
   // 尝试提供可见的错误反馈
   try {
-    const msg = '内容脚本执行失败: ' + (error instanceof Error ? error.message : String(error));
+    const msg = 'Navigraph extension error: ' + (error instanceof Error ? error.message : String(error));
     if (document.body) {
       const container = document.createElement('div');
       container.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:10px;border-radius:5px;z-index:100000;';
@@ -351,6 +192,6 @@
     }
   } catch (e) {
     // 最后的后备方案 - 至少显示一个警告
-    setTimeout(() => alert('Navigraph 扩展错误: ' + (error instanceof Error ? error.message : String(error))), 1000);
+    setTimeout(() => alert('Navigraph extension error: ' + (error instanceof Error ? error.message : String(error))), 1000);
   }
 });

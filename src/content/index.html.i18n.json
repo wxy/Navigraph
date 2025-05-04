@@ -1,0 +1,150 @@
+{
+  "content_title": {
+    "message": "导航图谱",
+    "description": "页面标题"
+  },
+  "content_logo_alt": {
+    "message": "导航图谱",
+    "description": "Logo图片替代文本"
+  },
+  "content_heading": {
+    "message": "导航图谱",
+    "description": "页面标题文本"
+  },
+  "content_prev_month_title": {
+    "message": "上一月",
+    "description": "上一月按钮提示文本"
+  },
+  "content_next_month_title": {
+    "message": "下一月",
+    "description": "下一月按钮提示文本"
+  },
+  "content_sunday": {
+    "message": "日",
+    "description": "星期日"
+  },
+  "content_monday": {
+    "message": "一",
+    "description": "星期一"
+  },
+  "content_tuesday": {
+    "message": "二",
+    "description": "星期二"
+  },
+  "content_wednesday": {
+    "message": "三",
+    "description": "星期三"
+  },
+  "content_thursday": {
+    "message": "四",
+    "description": "星期四"
+  },
+  "content_friday": {
+    "message": "五",
+    "description": "星期五"
+  },
+  "content_saturday": {
+    "message": "六",
+    "description": "星期六"
+  },
+  "content_select_session": {
+    "message": "选择会话",
+    "description": "选择会话标题"
+  },
+  "content_filters": {
+    "message": "筛选器",
+    "description": "筛选器标题"
+  },
+  "content_navigation_type": {
+    "message": "导航类型",
+    "description": "导航类型分类"
+  },
+  "content_link_click": {
+    "message": "链接点击",
+    "description": "链接点击类型"
+  },
+  "content_address_bar": {
+    "message": "地址栏",
+    "description": "地址栏类型"
+  },
+  "content_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交类型"
+  },
+  "content_js_redirect": {
+    "message": "JavaScript/重定向",
+    "description": "JavaScript重定向类型"
+  },
+  "content_navigation_behavior": {
+    "message": "导航行为",
+    "description": "导航行为分类"
+  },
+  "content_show_reload": {
+    "message": "显示页面重载",
+    "description": "页面重载选项"
+  },
+  "content_show_history": {
+    "message": "显示历史导航",
+    "description": "历史导航选项"
+  },
+  "content_page_status": {
+    "message": "页面状态",
+    "description": "页面状态分类"
+  },
+  "content_show_closed": {
+    "message": "显示已关闭页面",
+    "description": "显示已关闭页面选项"
+  },
+  "content_show_tracking": {
+    "message": "显示跟踪页面",
+    "description": "显示跟踪页面选项"
+  },
+  "content_loading": {
+    "message": "正在加载数据...",
+    "description": "加载提示"
+  },
+  "content_error": {
+    "message": "错误",
+    "description": "错误标题"
+  },
+  "content_refresh_page": {
+    "message": "刷新页面",
+    "description": "刷新页面按钮"
+  },
+  "content_close": {
+    "message": "关闭",
+    "description": "关闭按钮"
+  },
+  "content_tech_details": {
+    "message": "技术细节",
+    "description": "技术细节标签"
+  },
+  "content_session_date": {
+    "message": "会话日期",
+    "description": "底部状态栏会话日期标签"
+  },
+  "content_duration": {
+    "message": "时长",
+    "description": "底部状态栏时长标签"
+  },
+  "content_nodes": {
+    "message": "节点",
+    "description": "底部状态栏节点标签"
+  },
+  "content_hidden": {
+    "message": "已隐藏",
+    "description": "底部状态栏已隐藏标签"
+  },
+  "content_view": {
+    "message": "视图",
+    "description": "底部状态栏视图标签"
+  },
+  "content_tree_view_short": {
+    "message": "树形图",
+    "description": "底部状态栏树形视图简称"
+  },
+  "content_zoom": {
+    "message": "缩放",
+    "description": "底部状态栏缩放标签"
+  }
+}

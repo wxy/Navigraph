@@ -2,6 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { BrowsingSession, SessionCreationOptions } from '../../../types/session-types.js';
 import { SessionManager } from '../session-manager.js';
 import { SessionStrategy } from './session-strategy.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('DailySessionStrategy');
 
@@ -32,7 +33,7 @@ export class DailySessionStrategy implements SessionStrategy {
     currentSession: BrowsingSession | null
   ): Promise<boolean> {
     if (!currentSession) {
-      logger.log("没有活跃会话，应创建新会话");
+      logger.log('daily_session_no_active');
       return true;
     }
     
@@ -52,12 +53,14 @@ export class DailySessionStrategy implements SessionStrategy {
     
     // 如果工作日不同且空闲时间足够，创建新会话
     if (sessionWorkDay !== currentWorkDay && idleTime > idleThreshold) {
-      logger.log(`检测到新工作日且空闲时间足够(${Math.round(idleTime / (60 * 60 * 1000))}小时)，应创建新会话`);
+      const idleHours = Math.round(idleTime / (60 * 60 * 1000)).toString();
+      logger.log('daily_session_new_day_idle_enough', idleHours);
       return true;
     } 
     
     if (sessionWorkDay !== currentWorkDay) {
-      logger.log(`检测到新工作日，但空闲时间不足(${Math.round(idleTime / (60 * 1000))}分钟)，不创建新会话`);
+      const idleMinutes = Math.round(idleTime / (60 * 1000)).toString();
+      logger.log('daily_session_new_day_idle_not_enough', idleMinutes);
     }
     
     return false;
@@ -71,11 +74,11 @@ export class DailySessionStrategy implements SessionStrategy {
     const dateStr = now.toLocaleDateString();
     const timeStr = now.toLocaleTimeString();
     
-    logger.log(`创建新的每日会话: ${dateStr}`);
+    logger.log('daily_session_creating', dateStr);
     
     const options: SessionCreationOptions = {
-      title: `${dateStr} 浏览会话`,
-      description: `自动创建的 ${dateStr} ${timeStr} 会话`,
+      title: i18n('daily_session_title', dateStr),
+      description: i18n('daily_session_description', dateStr, timeStr),
       metadata: {
         type: "daily",
         date: now.getTime()

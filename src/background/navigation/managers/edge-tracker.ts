@@ -3,6 +3,7 @@ import { IdGenerator } from '../../lib/id-generator.js';
 import { NavigationStorage } from '../../store/navigation-storage.js';
 import { NavLink } from '../../../types/session-types.js';
 import { EdgeCreationOptions, EdgeQueryOptions, EdgeStats } from '../types/edge.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('EdgeTracker');
 
@@ -32,7 +33,7 @@ export class EdgeTracker {
     this.navigationStorage = navigationStorage;
     this.sessionId = sessionId;
     
-    logger.log('边追踪器初始化完成');
+    logger.log('edge_tracker_initialized');
   }
   
   /**
@@ -148,7 +149,7 @@ export class EdgeTracker {
       
       return edges;
     } catch (error) {
-      logger.error("查询边失败:", error);
+      logger.error('edge_tracker_query_failed', error instanceof Error ? error.message : String(error));
       return [];
     }
   }
@@ -163,7 +164,7 @@ export class EdgeTracker {
       const edges = await this.navigationStorage.queryEdges({ sessionId });
       return edges.length;
     } catch (error) {
-      logger.error("获取边数量失败:", error);
+      logger.error('edge_tracker_count_failed', error instanceof Error ? error.message : String(error));
       return 0;
     }
   }
@@ -180,7 +181,7 @@ export class EdgeTracker {
         source: sourceId
       });
     } catch (error) {
-      logger.error(`获取节点[${sourceId}]出边失败:`, error);
+      logger.error('edge_tracker_outgoing_failed', sourceId, error instanceof Error ? error.message : String(error));
       return [];
     }
   }
@@ -197,7 +198,7 @@ export class EdgeTracker {
         target: targetId
       });
     } catch (error) {
-      logger.error(`获取节点[${targetId}]入边失败:`, error);
+      logger.error('edge_tracker_incoming_failed', targetId, error instanceof Error ? error.message : String(error));
       return [];
     }
   }
@@ -269,7 +270,7 @@ export class EdgeTracker {
       
       return stats;
     } catch (error) {
-      logger.error("计算边统计信息失败:", error);
+      logger.error('edge_tracker_stats_failed', error instanceof Error ? error.message : String(error));
       return {
         total: 0,
         byType: {} as Record<string, number>,
@@ -290,7 +291,7 @@ export class EdgeTracker {
     try {
       return await this.navigationStorage.queryEdges({ sessionId });
     } catch (error) {
-      logger.error(`获取会话 ${sessionId} 的边失败:`, error);
+      logger.error('edge_tracker_session_failed', sessionId, error instanceof Error ? error.message : String(error));
       return [];
     }
   }
@@ -301,6 +302,6 @@ export class EdgeTracker {
     // 重置序列号
     this.navigationSequence = 0;
     
-    logger.log('边追踪器状态已重置');
+    logger.log('edge_tracker_reset');
   }
 }

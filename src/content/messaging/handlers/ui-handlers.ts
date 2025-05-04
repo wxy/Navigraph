@@ -1,6 +1,7 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import { ContentMessageService } from '../content-message-service.js';
 import { ContentMessages, ContentResponses } from '../../../types/messages/content.js';
+import { i18n, I18nError } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('UIHandlers');
 /**
@@ -16,7 +17,7 @@ export function registerUIHandlers(messageService: ContentMessageService): void 
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     
     try {
-      logger.log('处理刷新可视化器请求');
+      logger.log('ui_handlers_refresh_request');
       
       // 获取可视化器实例并刷新
       const visualizer = window.visualizer;
@@ -30,16 +31,18 @@ export function registerUIHandlers(messageService: ContentMessageService): void 
         
         ctx.success();
       } else {
-        logger.warn('可视化器不可用，无法刷新');
-        ctx.error('可视化器不可用');
+        logger.warn('ui_handlers_visualizer_unavailable');
+        ctx.error('ui_handlers_visualizer_error');
       }
       return false; // 同步响应
     } catch (error) {
-      logger.error('刷新可视化器失败:', error);
-      ctx.error(`刷新可视化器失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error('ui_handlers_refresh_error', 
+        error instanceof Error ? error.message : String(error));
+      ctx.error('ui_handlers_refresh_error', 
+        error instanceof Error ? error.message : String(error));
       return false; // 同步响应
     }
   });
   
-  logger.log('UI相关消息处理程序已注册');
+  logger.log('ui_handlers_registered');
 }

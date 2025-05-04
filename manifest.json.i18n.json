@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "导航图谱(Navigraph)：可视化浏览历史",
+    "description": "扩展名称"
+  },
+  "appDescription": {
+    "message": "以交互式图形展示浏览历史节点和链接，帮助用户直观分析访问模式和行为。",
+    "description": "扩展描述"
+  }
+}

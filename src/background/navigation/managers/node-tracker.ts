@@ -5,6 +5,7 @@ import { TabStateManager } from './tab-state-manager.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { NavNode, ExtendedCompletedDetails } from '../../../types/session-types.js';
 import { NodeCreationOptions, NodeMetadataOptions, MetadataSource, UpdateNodeResult } from '../types/node.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('NodeTracker');
 
@@ -43,7 +44,7 @@ export class NodeTracker {
     this.tabStateManager = tabStateManager;
     this.sessionId = sessionId;
 
-    logger.log("节点追踪器初始化完成");
+    logger.log('node_tracker_initialized');
   }
 
   /**
@@ -105,7 +106,7 @@ export class NodeTracker {
           favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
         }
       } catch (e) {
-        logger.warn("获取标签页信息失败:", e);
+        logger.warn('background_tab_info_failed', e);
       }
 
       // 创建导航记录
@@ -134,7 +135,7 @@ export class NodeTracker {
 
       return nodeId;
     } catch (error) {
-      logger.error("创建节点失败:", error);
+      logger.error('node_tracker_create_failed', error);
       return null;
     }
   }
@@ -246,7 +247,7 @@ export class NodeTracker {
 
       return { id: nodeId, isNew: true };
     } catch (error) {
-      logger.error("获取或创建节点失败:", error);
+      logger.error('node_tracker_get_or_create_failed', error);
       return null;
     }
   }
@@ -264,16 +265,16 @@ export class NodeTracker {
     source: MetadataSource = "chrome_api"
   ): Promise<UpdateNodeResult> {
     if (!nodeId) {
-      logger.warn("更新元数据失败: 无效的节点ID");
-      return { success: false, error: "无效的节点ID" };
+      logger.warn('background_node_metadata_invalid_id');
+      return { success: false, error: i18n('background_node_metadata_invalid_id') };
     }
 
     try {
       // 获取现有记录
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) {
-        logger.warn(`未找到节点 ${nodeId}，无法更新元数据`);
-        return { success: false, error: `未找到节点 ${nodeId}` };
+        logger.warn('node_tracker_node_not_found_for_metadata', nodeId);
+        return { success: false, error: i18n('background_node_not_found', nodeId) };
       }
 
       // 准备更新对象
@@ -305,7 +306,10 @@ export class NodeTracker {
         }
 
         if (updates.title) {
-          logger.log(`更新标题: ${record.title || "无"} -> ${updates.title}`);
+          logger.log('node_tracker_title_update', 
+            record.title || i18n('content_unnamed_page'), 
+            updates.title
+          );
         }
       }
 
@@ -366,12 +370,11 @@ export class NodeTracker {
 
       return { success: true, updatedFields: [] };
     } catch (error) {
-      logger.error("更新节点元数据失败:", error);
+      logger.error('node_tracker_update_metadata_failed', error);
       return {
         success: false,
-        error: `更新失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        error: i18n('background_node_metadata_update_failed', 
+          error instanceof Error ? error.message : String(error))
       };
     }
   }
@@ -399,7 +402,7 @@ export class NodeTracker {
     const nodeId = await this.getNodeIdForTab(tabId, url);
 
     if (!nodeId) {
-      logger.log(`未找到标签页${tabId}的节点ID: ${url}，不更新元数据`);
+      logger.log('node_tracker_tab_node_not_found', tabId, url);
       return null;
     }
 
@@ -418,45 +421,6 @@ export class NodeTracker {
     );
 
     return nodeId;
-  }
-
-  /**
-   * 获取标签页的节点ID
-   * @param tabId 标签页ID
-   * @param url 页面URL
-   * @returns 节点ID或null
-   */
-  async getNodeIdForTab(tabId: number, url: string): Promise<string | null> {
-    // 1. 首先尝试从缓存获取
-    const cacheKey = `${tabId}-${url}`;
-    const cachedId = this.tabNodeIdCache.get(cacheKey);
-    if (cachedId) {
-      return cachedId;
-    }
-
-    // 2. 再尝试从导航历史中找到最匹配的节点
-    const history = this.tabStateManager.getTabHistory(tabId);
-
-    // 倒序查找，优先使用最近的节点
-    for (let i = history.length - 1; i >= 0; i--) {
-      const nodeId = history[i];
-      if (await this.isSameNodeUrl(nodeId, url)) {
-        return nodeId;
-      }
-    }
-
-    // 3. 最后尝试找标签页状态的最后节点
-    const tabState = this.tabStateManager.getTabState(tabId);
-    if (
-      tabState &&
-      tabState.lastNodeId &&
-      tabState.url &&
-      UrlUtils.isSameUrl(tabState.url, url)
-    ) {
-      return tabState.lastNodeId;
-    }
-
-    return null;
   }
 
   /**
@@ -504,9 +468,48 @@ export class NodeTracker {
 
       return matchingRecord?.id || null;
     } catch (error) {
-      logger.error("通过URL查找节点失败:", error);
+      logger.error('node_tracker_find_by_url_failed', error);
       return null;
     }
+  }
+
+  /**
+   * 获取标签页的节点ID
+   * @param tabId 标签页ID
+   * @param url 页面URL
+   * @returns 节点ID或null
+   */
+  async getNodeIdForTab(tabId: number, url: string): Promise<string | null> {
+    // 1. 首先尝试从缓存获取
+    const cacheKey = `${tabId}-${url}`;
+    const cachedId = this.tabNodeIdCache.get(cacheKey);
+    if (cachedId) {
+      return cachedId;
+    }
+
+    // 2. 再尝试从导航历史中找到最匹配的节点
+    const history = this.tabStateManager.getTabHistory(tabId);
+
+    // 倒序查找，优先使用最近的节点
+    for (let i = history.length - 1; i >= 0; i--) {
+      const nodeId = history[i];
+      if (await this.isSameNodeUrl(nodeId, url)) {
+        return nodeId;
+      }
+    }
+
+    // 3. 最后尝试找标签页状态的最后节点
+    const tabState = this.tabStateManager.getTabState(tabId);
+    if (
+      tabState &&
+      tabState.lastNodeId &&
+      tabState.url &&
+      UrlUtils.isSameUrl(tabState.url, url)
+    ) {
+      return tabState.lastNodeId;
+    }
+
+    return null;
   }
 
   /**
@@ -522,8 +525,53 @@ export class NodeTracker {
 
       return UrlUtils.isSameUrl(record.url, url);
     } catch (e) {
-      logger.warn(`检查节点URL匹配失败: ${nodeId}`, e);
+      logger.warn('node_tracker_check_url_match_failed', nodeId, e);
       return false;
+    }
+  }
+
+  /**
+   * 处理导航完成事件
+   * @param details 导航完成详情
+   */
+  public async handleNavigationCompleted(
+    details: ExtendedCompletedDetails
+  ): Promise<void> {
+    try {
+      const tabId = details.tabId;
+      const url = details.url;
+      
+      // 获取节点ID
+      const nodeId = await this.getNodeIdForTab(tabId, url);
+      if (!nodeId) {
+        return;
+      }
+
+      // 获取增强版favicon
+      const tab = await chrome.tabs.get(tabId);
+      const favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
+
+      // 获取记录
+      const record = await this.navigationStorage.getNode(nodeId);
+
+      // 计算加载时间
+      let loadTime: number | undefined = undefined;
+      if (record && record.timestamp) {
+        loadTime = Date.now() - record.timestamp;
+      }
+
+      // 更新元数据
+      await this.updateNodeMetadata(
+        nodeId,
+        {
+          title: tab.title,
+          favicon: favicon,
+          loadTime: loadTime,
+        },
+        "navigation_event"
+      );
+    } catch (error) {
+      logger.error('node_tracker_handling_navigation_completed_failed', error);
     }
   }
 
@@ -574,51 +622,6 @@ export class NodeTracker {
   }
 
   /**
-   * 处理导航完成事件
-   * @param details 导航完成详情
-   */
-  public async handleNavigationCompleted(
-    details: ExtendedCompletedDetails
-  ): Promise<void> {
-    try {
-      const tabId = details.tabId;
-      const url = details.url;
-      
-      // 获取节点ID
-      const nodeId = await this.getNodeIdForTab(tabId, url);
-      if (!nodeId) {
-        return;
-      }
-
-      // 获取增强版favicon
-      const tab = await chrome.tabs.get(tabId);
-      const favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
-
-      // 获取记录
-      const record = await this.navigationStorage.getNode(nodeId);
-
-      // 计算加载时间
-      let loadTime: number | undefined = undefined;
-      if (record && record.timestamp) {
-        loadTime = Date.now() - record.timestamp;
-      }
-
-      // 更新元数据
-      await this.updateNodeMetadata(
-        nodeId,
-        {
-          title: tab.title,
-          favicon: favicon,
-          loadTime: loadTime,
-        },
-        "navigation_event"
-      );
-    } catch (error) {
-      logger.error("处理导航完成失败:", error);
-    }
-  }
-
-  /**
    * 获取当前活跃的节点
    * @returns 节点数组
    */
@@ -654,7 +657,7 @@ export class NodeTracker {
 
       return activeNodes;
     } catch (error) {
-      logger.error("获取活跃节点失败:", error);
+      logger.error('node_tracker_get_active_nodes_failed', error);
       return [];
     }
   }
@@ -695,10 +698,10 @@ export class NodeTracker {
       }
 
       if (totalRemoved > 0) {
-        logger.log(`清理缓存：移除了 ${totalRemoved} 个无效待更新节点`);
+        logger.log('node_tracker_cache_cleanup_complete', totalRemoved.toString());
       }
     } catch (error) {
-      logger.error("清理缓存失败:", error);
+      logger.error('node_tracker_cache_cleanup_failed', error);
     }
   }
 
@@ -711,7 +714,7 @@ export class NodeTracker {
     this.urlToNodeCache.clear();
     this.pendingUpdates.clear();
 
-    logger.log("节点追踪器状态已重置");
+    logger.log('node_tracker_reset_complete');
   }
 
   /**
@@ -720,7 +723,7 @@ export class NodeTracker {
    */
   public async closeAllNodesInSession(sessionId: string): Promise<void> {
     try {
-      logger.log(`关闭会话 ${sessionId} 中的所有活跃节点`);
+      logger.log('node_tracker_close_all_nodes_start', sessionId);
       
       // 查询此会话的所有活跃节点
       const activeNodes = await this.navigationStorage.queryNodes({
@@ -729,11 +732,11 @@ export class NodeTracker {
       });
       
       if (activeNodes.length === 0) {
-        logger.log(`会话 ${sessionId} 中没有活跃节点`);
+        logger.log('node_tracker_no_active_nodes', sessionId);
         return;
       }
       
-      logger.log(`找到 ${activeNodes.length} 个活跃节点需要关闭`);
+      logger.log('node_tracker_found_active_nodes', activeNodes.length.toString());
       const now = Date.now();
       
       // 批量更新这些节点为已关闭状态
@@ -744,9 +747,9 @@ export class NodeTracker {
         });
       }
       
-      logger.log(`已将会话 ${sessionId} 中的 ${activeNodes.length} 个节点标记为关闭`);
+      logger.log('node_tracker_nodes_marked_closed', sessionId, activeNodes.length.toString());
     } catch (error) {
-      logger.error(`关闭会话 ${sessionId} 中的活跃节点失败:`, error);
+      logger.error('node_tracker_close_nodes_failed', sessionId, error);
     }
   }
 
@@ -756,7 +759,7 @@ export class NodeTracker {
    */
   public async associateOpenTabsWithSession(sessionId: string): Promise<void> {
     try {
-      logger.log(`将当前打开的标签页关联到会话 ${sessionId}`);
+      logger.log('node_tracker_associate_tabs_start', sessionId);
       
       // 获取所有活跃标签页
       const tabs = await chrome.tabs.query({});
@@ -765,11 +768,11 @@ export class NodeTracker {
       );
       
       if (relevantTabs.length === 0) {
-        logger.log('没有需要关联的相关标签页');
+        logger.log('node_tracker_no_tabs_to_associate');
         return;
       }
       
-      logger.log(`找到 ${relevantTabs.length} 个标签页需要关联到会话`);
+      logger.log('node_tracker_found_tabs_to_associate', relevantTabs.length.toString());
       
       // 为每个标签页创建节点
       for (const tab of relevantTabs) {
@@ -798,17 +801,17 @@ export class NodeTracker {
                 });
               }
               
-              logger.log(`已将标签页 ${tab.id} (${tab.url}) 关联到会话 ${sessionId}`);
+              logger.log('node_tracker_tab_associated', tab.id.toString(), tab.url, sessionId);
             }
           } catch (tabError) {
-            logger.error(`关联标签页 ${tab.id} 失败:`, tabError);
+            logger.error('node_tracker_tab_association_failed', tab.id?.toString() || '0', tabError);
           }
         }
       }
       
-      logger.log(`完成标签页关联到会话 ${sessionId}`);
+      logger.log('node_tracker_association_complete', sessionId);
     } catch (error) {
-      logger.error(`关联标签页到会话 ${sessionId} 失败:`, error);
+      logger.error('node_tracker_association_failed', sessionId, error);
     }
   }
 
@@ -820,7 +823,7 @@ export class NodeTracker {
     try {
       return await this.navigationStorage.queryNodes(queryParams);
     } catch (error) {
-      logger.error('查询节点失败:', error);
+      logger.error('node_tracker_query_failed', error);
       return [];
     }
   }
@@ -835,7 +838,7 @@ export class NodeTracker {
       await this.navigationStorage.updateNode(nodeId, updates);
       return true; // 成功则返回true
     } catch (error) {
-      logger.error(`更新节点 ${nodeId} 失败:`, error);
+      logger.error('node_tracker_update_failed', nodeId, error);
       return false; // 失败返回false
     }
   }
@@ -868,9 +871,9 @@ export class NodeTracker {
         });
       }
       
-      logger.log(`已关闭标签页 ${tabId} 的 ${activeNodes.length} 个节点`);
+      logger.log('node_tracker_tab_nodes_closed', tabId.toString(), activeNodes.length.toString());
     } catch (error) {
-      logger.error(`关闭标签页 ${tabId} 节点失败:`, error);
+      logger.error('node_tracker_close_tab_nodes_failed', tabId.toString(), error);
     }
   }
 }

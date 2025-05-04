@@ -2,6 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { BackgroundMessageService } from '../bg-message-service.js';
 import { BackgroundMessages, BackgroundResponses } from '../../../types/messages/background.js';
 import { getSettingsService } from '../../../lib/settings/service.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 
 const logger = new Logger('SettingsHandlers');
 /**
@@ -16,7 +17,7 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     if (!ctx) {
-      logger.error('创建消息上下文失败');
+      logger.error('settings_context_failed');
       return false;
     }
     const settingsService = getSettingsService();
@@ -28,12 +29,12 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success({ settings: settings || {} });
         })
         .catch((error: Error) => {
-          logger.error('获取设置时出错:', error);
-          ctx.error(`获取设置失败: ${error.message}`);
+          logger.error('settings_get_error', error);
+          ctx.error('settings_get_failed', error.message);
         });
     } catch (error) {
-      logger.error('处理getSettings请求时出错:', error);
-      ctx.error(`处理请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error('settings_handler_error', 'getSettings');
+      ctx.error('settings_request_failed', error instanceof Error ? error.message : String(error));
     }
     
     return true; // 需要异步响应
@@ -47,14 +48,14 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     if (!ctx) {
-      logger.error('创建消息上下文失败');
+      logger.error('settings_context_failed');
       return false;
     }
     const settingsService = getSettingsService();
     const { settings } = message;
     
     if (!settings) {
-      ctx.error('缺少设置数据');
+      ctx.error('settings_missing_data');
       return false;
     }
     
@@ -65,12 +66,12 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success();
         })
         .catch((error: Error) => {
-          logger.error('保存设置时出错:', error);
-          ctx.error(`保存设置失败: ${error.message}`);
+          logger.error('settings_save_error', error);
+          ctx.error('settings_save_failed', error.message);
         });
     } catch (error) {
-      logger.error('处理saveSettings请求时出错:', error);
-      ctx.error(`处理请求失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error('settings_handler_error', 'saveSettings');
+      ctx.error('settings_request_failed', error instanceof Error ? error.message : String(error));
     }
     
     return true; // 需要异步响应
@@ -84,13 +85,13 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     if (!ctx) {
-      logger.error('创建消息上下文失败');
+      logger.error('settings_context_failed');
       return false;
     }
     const settingsService = getSettingsService();
     
     if (!message) {
-      ctx.error('无效的请求');
+      ctx.error('settings_invalid_request');
       return false;
     }
 
@@ -98,12 +99,12 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     settingsService.resetSettings()
       .then(() => ctx.success())
       .catch(error => {
-        logger.error('重置设置时出错:', error);
-        ctx.error(`重置设置失败: ${error instanceof Error ? error.message : String(error)}`);
+        logger.error('settings_reset_error', error);
+        ctx.error('settings_reset_failed', error instanceof Error ? error.message : String(error));
       });
     
     return true; // 需要异步响应
   });
   
-  logger.log('设置相关消息处理程序已注册');
+  logger.log('settings_handlers_registered');
 }

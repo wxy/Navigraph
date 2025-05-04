@@ -1,0 +1,22 @@
+{
+  "ui_handlers_registered": {
+    "message": "UI相关消息处理程序已注册",
+    "description": "UI消息处理程序注册完成时的日志消息"
+  },
+  "ui_handlers_refresh_request": {
+    "message": "处理刷新可视化器请求",
+    "description": "处理刷新可视化器请求时的日志消息"
+  },
+  "ui_handlers_visualizer_unavailable": {
+    "message": "可视化器不可用，无法刷新",
+    "description": "可视化器不可用时的警告日志"
+  },
+  "ui_handlers_refresh_error": {
+    "message": "刷新可视化器失败: {0}",
+    "description": "刷新可视化器失败时的错误日志，{0}为错误详情"
+  },
+  "ui_handlers_visualizer_error": {
+    "message": "可视化器不可用",
+    "description": "可视化器不可用时的错误消息"
+  }
+}

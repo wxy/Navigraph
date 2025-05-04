@@ -3,6 +3,7 @@
  * 负责加载和处理会话数据
  */
 import { Logger } from '../../lib/utils/logger.js';
+import { i18n, I18nError } from '../../lib/utils/i18n-utils.js'; // 保留i18n导入用于UI文本
 import type { Session, SessionDetails } from '../types/session.js';
 import { nodeManager } from './node-manager.js';
 import { sendMessage } from '../messaging/content-message-service.js';
@@ -67,7 +68,7 @@ export class SessionServiceClient {
   async loadSessionList(): Promise<any[]> {
     // 如果已有请求进行中，直接返回该请求
     if (this.pendingListRequest) {
-      logger.debug('会话列表正在加载中，复用现有请求');
+      logger.debug('session_list_loading_reuse_request');
       return this.pendingListRequest;
     }
 
@@ -90,7 +91,7 @@ export class SessionServiceClient {
    */
   private async executeLoadSessionList(): Promise<any[]> {
     try {
-      logger.log('加载会话列表...');
+      logger.log('session_list_loading');
 
       const response = await sendMessage('getSessions', {}, {
         retry: true,             // 启用重试
@@ -99,7 +100,7 @@ export class SessionServiceClient {
         factor: 1.5,             // 较小的退避因子
         defaultValue: { sessions: [] }  // 重试失败后默认返回空数组        
       });
-      logger.log('收到会话列表响应:', response);
+      logger.log('session_list_response_received', response);
 
       if (response && response.success === true && Array.isArray(response.sessions)) {
         const sessions = response.sessions;
@@ -110,18 +111,18 @@ export class SessionServiceClient {
           try {
             callback(sessions);
           } catch (err) {
-            logger.error('会话列表加载监听器执行错误:', err);
+            logger.error('session_list_listener_error', err);
           }
         });
 
-        logger.log(`成功加载${sessions.length}个会话`);
+        logger.log('session_list_loaded', sessions.length);
         return sessions;
       } else {
-        logger.warn('会话响应格式不正确:', response);
-        throw new Error(response?.error || '获取会话列表失败');
+        logger.warn('session_response_invalid_format', response);
+        throw new I18nError(response?.error || 'session_list_load_failed');
       }
     } catch (error) {
-      logger.error('加载会话列表失败:', error);
+      logger.error('session_list_load_failed', error);
       throw error;
     }
   }
@@ -133,7 +134,7 @@ export class SessionServiceClient {
   async loadSession(sessionId: string): Promise<any | null> {
     // 如果已有同ID请求进行中，直接返回该请求
     if (this.pendingSessionRequests.has(sessionId)) {
-      logger.debug(`会话 ${sessionId} 正在加载中，复用现有请求`);
+      logger.debug('session_loading_reuse_request', sessionId);
       return this.pendingSessionRequests.get(sessionId);
     }
 
@@ -157,7 +158,7 @@ export class SessionServiceClient {
    */
   private async executeLoadSession(sessionId: string): Promise<any | null> {
     try {
-      logger.log(`尝试加载会话: ${sessionId}`);
+      logger.log('session_loading_attempt', sessionId);
 
       const response = await sendMessage('getSessionDetails', { sessionId }, {
         retry: true,             // 启用重试
@@ -167,10 +168,10 @@ export class SessionServiceClient {
         defaultValue: { SessionDetails: null }  // 重试失败后默认返回空对象        
       });
 
-      logger.log('getSessionDetails响应:', response);
+      logger.log('session_details_response', response);
 
       if (response && response.success && response.session) {
-        logger.log('会话数据获取成功, 节点数:', 
+        logger.log('session_data_fetch_success', 
                   response.session.records ? Object.keys(response.session.records).length : 0);
 
         const session = response.session;
@@ -181,7 +182,7 @@ export class SessionServiceClient {
           try {
             nodeManager.processSessionData(session);
           } catch (processError) {
-            logger.error('处理会话数据时出错:', processError);
+            logger.error('session_data_process_error', processError);
           }
         }
 
@@ -190,17 +191,17 @@ export class SessionServiceClient {
           try {
             callback(session);
           } catch (err) {
-            logger.error('会话加载监听器执行错误:', err);
+            logger.error('session_load_listener_error', err);
           }
         });
 
         return session;
       } else {
-        logger.error('获取会话详情失败, 响应:', response);
-        throw new Error(response && response.error ? response.error : '获取会话详情失败');
+        logger.error('session_details_fetch_failed', response);
+        throw new I18nError(response && response.error ? response.error : 'session_details_fetch_failed');
       }
     } catch (error) {
-      logger.error('加载会话详情失败:', error);
+      logger.error('session_details_load_failed', error);
       throw error;
     }
   }
@@ -224,7 +225,7 @@ export class SessionServiceClient {
       
       return this.latestSession;
     } catch (error) {
-      logger.error("加载最新会话失败:", error);
+      logger.error("latest_session_load_failed", error);
       return null;
     }
   }
@@ -256,10 +257,10 @@ export class SessionServiceClient {
     
     try {
       // 2. 尝试加载最新活跃会话
-      logger.log('尝试加载最新活跃会话');
+      logger.log('trying_to_load_latest_active_session');
       const latestSession = await this.loadLatestSession();
       if (latestSession) {
-        logger.log(`找到最新活跃会话: ${latestSession.id}，使用该会话`);
+        logger.log('latest_active_session_found', latestSession.id);
         this.setCurrentSessionId(latestSession.id);
         return this.loadSession(latestSession.id);
       }
@@ -273,15 +274,15 @@ export class SessionServiceClient {
       if (this.sessionList.length > 0) {
         // 选择最后一个会话（通常是最新的）
         const lastSession = this.sessionList[this.sessionList.length - 1];
-        logger.log(`使用会话列表中最后一个会话: ${lastSession.id}`);
+        logger.log('using_last_session_from_list', lastSession.id);
         return this.loadSession(lastSession.id);
       }
       
       // 5. 如果以上都失败，返回null
-      logger.log('没有找到可用的会话');
+      logger.log('no_available_sessions_found');
       return null;
     } catch (error) {
-      logger.error('加载当前会话失败:', error);
+      logger.error('current_session_load_failed', error);
       throw error;
     }
   }
@@ -303,7 +304,7 @@ export class SessionServiceClient {
     try {
       localStorage.setItem('navigraph_current_session', sessionId);
     } catch (e) {
-      logger.warn('保存会话ID到本地存储失败:', e);
+      logger.warn('save_session_id_local_storage_failed', e);
     }
   }
 
@@ -334,7 +335,7 @@ export class SessionServiceClient {
       try {
         listener(session);
       } catch (error) {
-        logger.error("调用最新会话加载监听器失败:", error);
+        logger.error("latest_session_listener_call_failed", error);
       }
     }
   }

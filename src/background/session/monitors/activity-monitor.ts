@@ -1,6 +1,8 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import { SessionManager } from '../session-manager.js';
 import { NavigraphSettings } from '../../../lib/settings/types.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 
 const logger = new Logger('ActivityMonitor');
 
@@ -28,6 +30,8 @@ export class ActivityMonitor {
    * 初始化活动监控器
    */
   public async initialize(): Promise<void> {
+    logger.log('activity_monitor_initialized');
+    
     // 恢复最后活动时间
     await this.restoreActivityTime();
     
@@ -46,6 +50,7 @@ export class ActivityMonitor {
     
     // 如果超时值改变，重置计时器
     if (oldTimeout !== this.idleTimeoutMinutes) {
+      logger.log('activity_monitor_timeout_changed', this.idleTimeoutMinutes.toString());
       this.resetIdleTimer();
     }
   }
@@ -58,12 +63,15 @@ export class ActivityMonitor {
       const currentSession = await this.manager.getCurrentSession();
       if (currentSession) {
         this.lastActivityTime = currentSession.lastActivity || currentSession.startTime;
-        logger.log(`恢复会话活动时间: ${new Date(this.lastActivityTime).toLocaleString()}`);
+        logger.log('activity_monitor_restore_time_success', 
+          new Date(this.lastActivityTime).toLocaleString());
       } else {
+        logger.log('activity_monitor_session_null');
         this.lastActivityTime = Date.now();
       }
     } catch (error) {
-      logger.error("恢复活动时间失败:", error);
+      logger.error('activity_monitor_restore_time_failed', 
+        error instanceof Error ? error.message : String(error));
       this.lastActivityTime = Date.now();
     }
   }
@@ -72,28 +80,50 @@ export class ActivityMonitor {
    * 设置活动监听器
    */
   private setupActivityListeners(): void {
-    logger.log('设置会话活动监听器');
+    logger.log('activity_monitor_setup_listeners');
     
     // 浏览器启动时
     chrome.runtime.onStartup.addListener(() => {
-      logger.log('浏览器启动');
+      logger.log('activity_monitor_browser_startup');
       this.manager.checkDayTransition();
     });
     
     // 标签页激活时
-    chrome.tabs.onActivated.addListener(() => {
-      this.markActivity();
+    chrome.tabs.onActivated.addListener(async (activeInfo) => {
+      try {
+        const tab = await chrome.tabs.get(activeInfo.tabId);
+        if (tab && tab.url && !UrlUtils.isSystemPage(tab.url)) {
+          logger.debug('activity_monitor_real_page_activated', tab.url);
+          this.markActivity();
+        } else if (tab && tab.url) {
+          logger.debug('activity_monitor_system_page_ignored', tab.url);
+        }
+      } catch (error) {
+        logger.debug('activity_monitor_tab_get_failed', 
+          error instanceof Error ? error.message : String(error));
+      }
     });
     
     // 导航完成时
-    chrome.webNavigation.onCompleted.addListener(() => {
-      this.markActivity();
+    chrome.webNavigation.onCompleted.addListener((details) => {
+      if (!UrlUtils.isSystemPage(details.url)) {
+        logger.debug('activity_monitor_navigation_completed', details.url);
+        this.markActivity();
+      } else {
+        logger.debug('activity_monitor_system_navigation_ignored', details.url);
+      }
     });
     
+    
     // 标签页更新时
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-      if (changeInfo.status === 'complete') {
-        this.markActivity();
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+      if (changeInfo.status === 'complete' && tab?.url) {
+        if (!UrlUtils.isSystemPage(tab.url)) {
+          logger.debug('activity_monitor_page_updated', tab.url);
+          this.markActivity();
+        } else {
+          logger.debug('activity_monitor_system_update_ignored', tab.url);
+        }
       }
     });
 
@@ -112,6 +142,10 @@ export class ActivityMonitor {
     
     // 更新最后活动时间
     this.lastActivityTime = now;
+    
+    // 记录活动日志
+    logger.debug('activity_monitor_activity_marked', 
+      new Date(previousActivityTime).toLocaleString());
     
     // 重置空闲计时器
     this.resetIdleTimer();
@@ -132,11 +166,14 @@ export class ActivityMonitor {
     
     // 如果空闲超时为0，不设置计时器
     if (this.idleTimeoutMinutes <= 0) {
+      logger.debug('activity_monitor_idle_timer_disabled');
       return;
     }
     
     // 设置新的计时器
     const timeoutMs = this.idleTimeoutMinutes * 60 * 1000;
+    logger.debug('activity_monitor_idle_timer_reset', this.idleTimeoutMinutes.toString());
+    
     this.idleTimerId = setTimeout(() => {
       this.handleUserIdle();
     }, timeoutMs) as unknown as number;
@@ -146,7 +183,8 @@ export class ActivityMonitor {
    * 处理用户空闲
    */
   private async handleUserIdle(): Promise<void> {
-    logger.log(`检测到用户空闲超过${this.idleTimeoutMinutes / 60}小时`);
+    const idleHours = this.idleTimeoutMinutes / 60;
+    logger.log('activity_monitor_idle_detected', idleHours.toString());
     await this.manager.handleUserIdle();
   }
   

@@ -2,6 +2,7 @@
  * 视图状态管理器 - 处理视图类型和缩放状态
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import type { Visualizer } from '../../types/navigation.js';
 
 const d3 = window.d3;
@@ -31,7 +32,7 @@ export class ViewStateManager {
    */
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
-    logger.log('视图状态管理器初始化');
+    logger.log('view_state_manager_init');
   }
   
   /**
@@ -43,7 +44,7 @@ export class ViewStateManager {
   
   set currentView(view: string) {
     this._currentView = view;
-    logger.log(`视图已切换为: ${view}`);
+    logger.log('view_switched', view);
   }
   
   /**
@@ -84,7 +85,7 @@ export class ViewStateManager {
    */
   setupBasicZoom(): void {
     if (!this._svg) {
-      logger.warn('无法设置缩放：SVG不存在');
+      logger.warn('content_zoom_setup_failed_no_svg');
       return;
     }
 
@@ -107,9 +108,9 @@ export class ViewStateManager {
       this._svg.call(zoom);
       this._zoom = zoom;
       
-      logger.debug('基本缩放功能已设置');
+      logger.debug('basic_zoom_setup_complete');
     } catch (error) {
-      logger.error('设置缩放功能失败:', error);
+      logger.error('content_zoom_setup_failed', error);
     }
   }
   /**
@@ -126,7 +127,7 @@ export class ViewStateManager {
     if (this._currentView === view) return;
 
     const previousView = this._currentView;
-    logger.log(`切换视图: ${previousView} -> ${view}`);
+    logger.log('view_switching', previousView, view);
 
     try {
       // 保存当前视图的缩放状态
@@ -143,11 +144,11 @@ export class ViewStateManager {
         this._svg.selectAll("*").remove();
       }
       
-      logger.log('视图已切换，需要重新初始化和渲染');
+      logger.log('view_switched_need_reinit');
       
       // 返回视图已切换，但不做实际渲染（由调用者处理）
     } catch (error) {
-      logger.error("切换视图失败:", error);
+      logger.error("content_view_switch_failed", error);
 
       // 恢复到先前的视图
       this._currentView = previousView;
@@ -161,10 +162,10 @@ export class ViewStateManager {
     if (this._currentTransform) {
       if (this._currentView === 'tree') {
         this._treeZoom = this._currentTransform;
-        logger.debug('已保存树形视图缩放状态:', this._treeZoom);
+        logger.debug('tree_view_zoom_state_saved', this._treeZoom);
       } else if (this._currentView === 'timeline') {
         this._timelineZoom = this._currentTransform;
-        logger.debug('已保存时间线视图缩放状态:', this._timelineZoom);
+        logger.debug('timeline_view_zoom_state_saved', this._timelineZoom);
       }
     }
   }
@@ -177,7 +178,7 @@ export class ViewStateManager {
     const savedTransform = this._currentView === 'tree' ? this._treeZoom : this._timelineZoom;
     
     if (savedTransform && this._zoom) {
-      logger.log(`恢复${this._currentView}视图的缩放状态`);
+      logger.log('view_zoom_state_restoring', this._currentView);
       this.applyTransform(savedTransform);
       return true;
     }
@@ -190,7 +191,7 @@ export class ViewStateManager {
    */
   applyTransform(transform: any): void {
     if (!transform || !this._svg || !this._zoom) {
-      logger.warn('无法应用变换：缺少必要组件');
+      logger.warn('content_transform_apply_failed_missing_components');
       return;
     }
 
@@ -201,9 +202,9 @@ export class ViewStateManager {
       setTimeout(() => {
         this._isRestoringTransform = false;
       }, 100);
-      logger.debug('已应用变换状态');
+      logger.debug('transform_state_applied');
     } catch (e) {
-      logger.warn("无法应用变换状态", e);
+      logger.warn("content_transform_apply_failed", e);
       this._isRestoringTransform = false;
     }
   }
@@ -214,6 +215,6 @@ export class ViewStateManager {
   initialize(svg: any): void {
     this._svg = svg;
     this.setupBasicZoom();
-    logger.log('视图状态已初始化');
+    logger.log('view_state_initialized');
   }
 }

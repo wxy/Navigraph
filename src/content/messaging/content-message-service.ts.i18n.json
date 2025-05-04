@@ -1,0 +1,18 @@
+{
+  "content_message_service_initialized": {
+    "message": "内容脚本消息服务已初始化",
+    "description": "内容脚本消息服务初始化完成时的日志消息"
+  },
+  "content_message_service_setup": {
+    "message": "内容脚本消息服务已设置",
+    "description": "内容脚本消息服务设置完成时的日志消息"
+  },
+  "content_message_handler_registered": {
+    "message": "已注册消息处理程序: {0}",
+    "description": "消息处理程序注册成功时的日志消息，{0}为消息类型"
+  },
+  "content_message_handler_unregistered": {
+    "message": "已注销消息处理程序: {0}",
+    "description": "消息处理程序注销成功时的日志消息，{0}为消息类型"
+  }
+}

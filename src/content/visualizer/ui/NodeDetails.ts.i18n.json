@@ -1,0 +1,150 @@
+{
+  "content_url_label": {
+    "message": "URL",
+    "description": "URL标签"
+  },
+  "content_type_label": {
+    "message": "类型",
+    "description": "类型标签"
+  },
+  "content_time_label": {
+    "message": "时间",
+    "description": "时间标签"
+  },
+  "content_status_label": {
+    "message": "状态",
+    "description": "状态标签"
+  },
+  "content_tracking_page_label": {
+    "message": "跟踪页面",
+    "description": "跟踪页面标签"
+  },
+  "content_yes": {
+    "message": "是",
+    "description": "是"
+  },
+  "content_duration_label": {
+    "message": "时长",
+    "description": "时长标签"
+  },
+  "content_count_label": {
+    "message": "次数",
+    "description": "次数标签"
+  },
+  "content_technical_details": {
+    "message": "技术详情",
+    "description": "技术详情标题"
+  },
+  "content_tab_id_label": {
+    "message": "标签ID",
+    "description": "标签ID标签"
+  },
+  "content_node_id_label": {
+    "message": "节点ID",
+    "description": "节点ID标签"
+  },
+  "content_parent_id_label": {
+    "message": "父节点ID",
+    "description": "父节点ID标签"
+  },
+  "content_referrer_label": {
+    "message": "引用来源",
+    "description": "引用来源标签"
+  },
+  "content_status_closed": {
+    "message": "已关闭",
+    "description": "已关闭状态"
+  },
+  "content_status_active": {
+    "message": "活跃",
+    "description": "活跃状态"
+  },
+  "content_nav_type_initial": {
+    "message": "外部打开",
+    "description": "外部打开导航类型"
+  },
+  "content_nav_type_link_click": {
+    "message": "链接点击",
+    "description": "链接点击导航类型"
+  },
+  "content_nav_type_address_bar": {
+    "message": "地址栏输入",
+    "description": "地址栏输入导航类型"
+  },
+  "content_nav_type_form_submit": {
+    "message": "表单提交",
+    "description": "表单提交导航类型"
+  },
+  "content_nav_type_history_back": {
+    "message": "历史后退",
+    "description": "历史后退导航类型"
+  },
+  "content_nav_type_history_forward": {
+    "message": "历史前进",
+    "description": "历史前进导航类型"
+  },
+  "content_nav_type_reload": {
+    "message": "页面刷新",
+    "description": "页面刷新导航类型"
+  },
+  "content_nav_type_javascript": {
+    "message": "JavaScript导航",
+    "description": "JavaScript导航类型"
+  },
+  "content_nav_type_redirect": {
+    "message": "重定向",
+    "description": "重定向导航类型"
+  },
+  "content_unit_millisecond": {
+    "message": "毫秒",
+    "description": "毫秒时间单位"
+  },
+  "content_unit_second": {
+    "message": "秒",
+    "description": "秒时间单位"
+  },
+  "content_unit_minute": {
+    "message": "分钟",
+    "description": "分钟时间单位"
+  },
+  "content_unit_hour": {
+    "message": "小时",
+    "description": "小时时间单位"
+  },
+  "content_unit_day": {
+    "message": "天",
+    "description": "天时间单位"
+  },
+  "content_drag_handle_missing": {
+    "message": "找不到拖动把手，无法使元素可拖拽",
+    "description": "拖动把手缺失错误"
+  },
+  "content_drag_panel": {
+    "message": "拖动移动此面板",
+    "description": "拖动面板提示"
+  },
+  "node_details_initialized": {
+    "message": "节点详情面板已初始化",
+    "description": "节点详情面板初始化日志"
+  },
+  "node_details_showing": {
+    "message": "显示节点详情: {0}",
+    "description": "显示节点详情日志"
+  },
+  "node_details_shown": {
+    "message": "显示节点详情: {0}",
+    "description": "节点详情已显示日志"
+  },
+  "node_details_hidden": {
+    "message": "隐藏节点详情面板",
+    "description": "隐藏节点详情面板日志"
+  },
+  "node_details_initial_position_set": {
+    "message": "设置节点详情面板初始位置",
+    "description": "设置节点详情面板初始位置日志"
+  },
+  "content_unnamed_page": {
+    "message": "无标题",
+    "description": "无标题页面默认名称"
+  }
+}

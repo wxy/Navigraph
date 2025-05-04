@@ -1,0 +1,22 @@
+{
+  "content_error_container_not_found": {
+    "message": "找不到错误UI容器，降级到alert",
+    "description": "错误容器未找到错误"
+  },
+  "content_extension_error": {
+    "message": "Navigraph 扩展错误:",
+    "description": "扩展错误通用前缀"
+  },
+  "content_error_ui_display_failed": {
+    "message": "显示错误UI失败: {0}",
+    "description": "显示错误UI失败错误"
+  },
+  "content_detailed_error_ui_failed": {
+    "message": "显示详细错误UI失败: {0}",
+    "description": "显示详细错误UI失败错误"
+  },
+  "content_toast_display_failed": {
+    "message": "显示通知消息失败: {0}",
+    "description": "显示通知消息失败错误"
+  }
+}

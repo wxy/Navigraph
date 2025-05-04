@@ -1,0 +1,50 @@
+{
+  "theme_manager_already_initialized": {
+    "message": "主题管理器已初始化，跳过",
+    "description": "主题管理器重复初始化时的日志消息"
+  },
+  "theme_manager_init_complete": {
+    "message": "主题管理器初始化完成，当前主题: {0}",
+    "description": "主题管理器初始化完成时的日志消息，{0}为当前主题名称"
+  },
+  "theme_manager_read_global_config": {
+    "message": "从全局配置读取主题设置: {0}",
+    "description": "从全局配置读取主题设置时的日志消息，{0}为主题名称"
+  },
+  "theme_manager_read_settings_service": {
+    "message": "从设置服务读取主题设置: {0}",
+    "description": "从设置服务读取主题设置时的日志消息，{0}为主题名称"
+  },
+  "theme_manager_settings_failed": {
+    "message": "获取主题设置失败，使用系统主题: {0}",
+    "description": "获取主题设置失败时的警告日志，{0}为错误详情"
+  },
+  "theme_manager_applying_theme": {
+    "message": "应用主题设置: {0}",
+    "description": "应用主题设置时的日志消息，{0}为主题名称"
+  },
+  "theme_manager_no_change_needed": {
+    "message": "主题已经是 {0}，无需更改",
+    "description": "当前主题无需更改时的日志消息，{0}为当前主题名称"
+  },
+  "theme_manager_setting_theme": {
+    "message": "设置主题为: {0}",
+    "description": "设置主题时的日志消息，{0}为主题名称"
+  },
+  "theme_manager_theme_updated": {
+    "message": "已更新主题为: {0}",
+    "description": "主题更新完成时的日志消息，{0}为主题名称"
+  },
+  "theme_manager_localstorage_get_failed": {
+    "message": "从本地存储获取主题失败: {0}",
+    "description": "从本地存储获取主题失败时的警告日志，{0}为错误详情"
+  },
+  "theme_manager_localstorage_save_failed": {
+    "message": "保存主题到本地存储失败: {0}",
+    "description": "保存主题到本地存储失败时的警告日志，{0}为错误详情"
+  },
+  "theme_manager_stylesheet_added": {
+    "message": "已添加主题样式表",
+    "description": "添加主题样式表时的日志消息"
+  }
+}

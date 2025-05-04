@@ -1,0 +1,138 @@
+{
+  "nav_message_handler_initialized": {
+    "message": "导航消息处理器初始化",
+    "description": "导航消息处理器初始化时的日志消息"
+  },
+  "nav_message_handler_init_listeners": {
+    "message": "初始化导航消息监听...",
+    "description": "开始初始化导航消息监听器时的日志消息"
+  },
+  "nav_message_handler_cleanup": {
+    "message": "清理消息处理器...",
+    "description": "开始清理消息处理器时的日志消息"
+  },
+  "nav_message_handler_all_cleaned": {
+    "message": "所有消息处理器已清理",
+    "description": "所有消息处理器清理完成时的日志消息"
+  },
+  "nav_message_handler_refresh_request": {
+    "message": "收到刷新请求",
+    "description": "收到刷新请求时的日志消息"
+  },
+  "nav_message_handler_refresh_start": {
+    "message": "🔄 开始执行刷新操作...",
+    "description": "开始执行刷新操作时的日志消息"
+  },
+  "nav_message_handler_refresh_complete": {
+    "message": "✅ 刷新操作完成",
+    "description": "刷新操作完成时的日志消息"
+  },
+  "nav_message_handler_refresh_failed": {
+    "message": "❌ 自动刷新可视化失败: {0}",
+    "description": "自动刷新可视化失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_get_node_request": {
+    "message": "收到获取节点ID请求: {0}",
+    "description": "收到获取节点ID请求时的日志消息，{0}表示URL"
+  },
+  "nav_message_handler_empty_url": {
+    "message": "URL为空",
+    "description": "URL为空时的错误消息"
+  },
+  "nav_message_handler_get_node_failed": {
+    "message": "获取节点ID失败: {0}",
+    "description": "获取节点ID失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_page_loaded": {
+    "message": "收到页面加载消息: {0}",
+    "description": "收到页面加载消息时的日志消息，{0}为页面URL"
+  },
+  "nav_message_handler_page_refresh_complete": {
+    "message": "页面加载后刷新可视化完成",
+    "description": "页面加载后刷新可视化完成时的日志消息"
+  },
+  "nav_message_handler_page_refresh_failed": {
+    "message": "页面加载后刷新可视化失败: {0}",
+    "description": "页面加载后刷新可视化失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_handle_page_failed": {
+    "message": "处理页面加载失败: {0}",
+    "description": "处理页面加载失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_title_updated": {
+    "message": "收到页面标题更新: {0}",
+    "description": "收到页面标题更新时的日志消息，{0}包含节点ID和标题信息"
+  },
+  "nav_message_handler_empty_node_title": {
+    "message": "节点ID或标题为空",
+    "description": "节点ID或标题为空时的错误消息"
+  },
+  "nav_message_handler_update_title_failed": {
+    "message": "更新页面标题失败: {0}",
+    "description": "更新页面标题失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_favicon_updated": {
+    "message": "收到favicon更新: {0}",
+    "description": "收到favicon更新时的日志消息，{0}包含节点ID和favicon URL信息"
+  },
+  "nav_message_handler_empty_node_favicon": {
+    "message": "节点ID或favicon为空",
+    "description": "节点ID或favicon为空时的错误消息"
+  },
+  "nav_message_handler_update_favicon_failed": {
+    "message": "更新favicon失败: {0}",
+    "description": "更新favicon失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_activity": {
+    "message": "收到页面活动事件，触发刷新: {0}",
+    "description": "收到页面活动事件时的日志消息，{0}为来源"
+  },
+  "nav_message_handler_activity_failed": {
+    "message": "处理页面活动失败: {0}",
+    "description": "处理页面活动失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_link_clicked": {
+    "message": "收到链接点击: {0}",
+    "description": "收到链接点击时的日志消息，{0}为链接信息"
+  },
+  "nav_message_handler_link_refresh_complete": {
+    "message": "基于链接点击刷新可视化完成",
+    "description": "基于链接点击刷新可视化完成时的日志消息"
+  },
+  "nav_message_handler_link_refresh_failed": {
+    "message": "链接点击后刷新可视化失败: {0}",
+    "description": "链接点击后刷新可视化失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_link_handle_failed": {
+    "message": "处理链接点击失败: {0}",
+    "description": "处理链接点击失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_form_submitted": {
+    "message": "收到表单提交: {0}",
+    "description": "收到表单提交时的日志消息，{0}为表单信息"
+  },
+  "nav_message_handler_form_refresh_complete": {
+    "message": "基于表单提交刷新可视化完成",
+    "description": "基于表单提交刷新可视化完成时的日志消息"
+  },
+  "nav_message_handler_form_refresh_failed": {
+    "message": "表单提交后刷新可视化失败: {0}",
+    "description": "表单提交后刷新可视化失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_form_handle_failed": {
+    "message": "处理表单提交失败: {0}",
+    "description": "处理表单提交失败时的错误日志，{0}为错误详情"
+  },
+  "nav_message_handler_js_navigation": {
+    "message": "收到JS导航: {0}",
+    "description": "收到JS导航时的日志消息，{0}为导航信息"
+  },
+  "nav_message_handler_js_complete": {
+    "message": "处理JS导航完成",
+    "description": "处理JS导航完成时的日志消息"
+  },
+  "nav_message_handler_js_failed": {
+    "message": "处理JS导航失败: {0}",
+    "description": "处理JS导航失败时的错误日志，{0}为错误详情"
+  }
+}
