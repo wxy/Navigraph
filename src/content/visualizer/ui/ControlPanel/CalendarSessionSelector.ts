@@ -40,7 +40,20 @@ export class CalendarSessionSelector {
    * 获取本地化的月份名称列表
    */
   private getMonthNames(): string[] {
-    return i18n('calendar_month_names').split(',');
+    return [
+      i18n("calendar_month_jan"),
+      i18n("calendar_month_feb"),
+      i18n("calendar_month_mar"),
+      i18n("calendar_month_apr"),
+      i18n("calendar_month_may"),
+      i18n("calendar_month_jun"),
+      i18n("calendar_month_jul"),
+      i18n("calendar_month_aug"),
+      i18n("calendar_month_sep"),
+      i18n("calendar_month_oct"),
+      i18n("calendar_month_nov"),
+      i18n("calendar_month_dec")
+    ];
   }
   
   /**
@@ -110,7 +123,15 @@ export class CalendarSessionSelector {
     calendarGrid.className = 'calendar-grid';
     
     // 添加星期标题
-    const weekdays = i18n('calendar_weekdays').split(',');
+    const weekdays = [
+      i18n("content_sunday"),
+      i18n("content_monday"), 
+      i18n("content_tuesday"),
+      i18n("content_wednesday"),
+      i18n("content_thursday"),
+      i18n("content_friday"),
+      i18n("content_saturday")
+    ];
     weekdays.forEach(day => {
       const weekday = document.createElement('div');
       weekday.className = 'weekday';

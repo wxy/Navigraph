@@ -219,7 +219,7 @@ body.loading-session #visualization-container::before {
   font-size: 12px;
   font-weight: 600;
   color: var(--label-color, #666);
-  padding: 6px;
+  padding: 6px 1px;
   border-bottom: 1px solid var(--border-color, #eaeaea);
 }
 

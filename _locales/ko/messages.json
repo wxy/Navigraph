@@ -3614,21 +3614,21 @@
     ]
   },
   "content_title": {
-    "message": "내비게이션 지도",
+    "message": "Navigraph",
     "description": "页面标题",
     "_sourceFiles": [
       "src/content/index.html"
     ]
   },
   "content_logo_alt": {
-    "message": "내비게이션 지도",
+    "message": "Navigraph",
     "description": "Logo图片替代文本",
     "_sourceFiles": [
       "src/content/index.html"
     ]
   },
   "content_heading": {
-    "message": "내비게이션 지도",
+    "message": "Navigraph",
     "description": "页面标题文本",
     "_sourceFiles": [
       "src/content/index.html"
@@ -6101,13 +6101,6 @@
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
   },
-  "calendar_weekdays": {
-    "message": "일, 월, 화, 수, 목, 금, 토",
-    "description": "日历星期标题(逗号分隔)",
-    "_sourceFiles": [
-      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
-    ]
-  },
   "calendar_loading_data": {
     "message": "세션 데이터를 로딩 중입니다...",
     "description": "日历加载指示器文本",
@@ -6262,16 +6255,93 @@
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
   },
-  "calendar_month_names": {
-    "message": "1월, 2월, 3월, 4월, 5월, 6월, 7월, 8월, 9월, 10월, 11월, 12월",
-    "description": "月份名称列表(逗号分隔)",
+  "calendar_month_year": {
+    "message": "{0}년{1}",
+    "description": "年月格式",
     "_sourceFiles": [
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
   },
-  "calendar_month_year": {
-    "message": "{0}년{1}",
-    "description": "年月格式",
+  "calendar_month_jan": {
+    "message": "1월",
+    "description": "一月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_feb": {
+    "message": "2월",
+    "description": "二月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_mar": {
+    "message": "3월",
+    "description": "三月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_apr": {
+    "message": "4월",
+    "description": "四月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_may": {
+    "message": "5월",
+    "description": "五月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_jun": {
+    "message": "6월",
+    "description": "六月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_jul": {
+    "message": "7월",
+    "description": "七月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_aug": {
+    "message": "8월",
+    "description": "八月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_sep": {
+    "message": "9월",
+    "description": "九月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_oct": {
+    "message": "10월",
+    "description": "十月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_nov": {
+    "message": "11월",
+    "description": "十一月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_dec": {
+    "message": "12월",
+    "description": "十二月名称",
     "_sourceFiles": [
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]

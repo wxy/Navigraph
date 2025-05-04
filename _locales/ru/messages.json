@@ -6101,13 +6101,6 @@
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
   },
-  "calendar_weekdays": {
-    "message": "Вс,Пн,Вт,Ср,Чт,Пт,Сб",
-    "description": "日历星期标题(逗号分隔)",
-    "_sourceFiles": [
-      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
-    ]
-  },
   "calendar_loading_data": {
     "message": "Загрузка данных сеанса...",
     "description": "日历加载指示器文本",
@@ -6262,16 +6255,93 @@
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
   },
-  "calendar_month_names": {
-    "message": "Январь, Февраль, Март, Апрель, Май, Июнь, Июль, Август, Сентябрь, Октябрь, Ноябрь, Декабрь",
-    "description": "月份名称列表(逗号分隔)",
+  "calendar_month_year": {
+    "message": "{1} {0} г.",
+    "description": "年月格式",
     "_sourceFiles": [
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
   },
-  "calendar_month_year": {
-    "message": "{0}год{1}",
-    "description": "年月格式",
+  "calendar_month_jan": {
+    "message": "январь",
+    "description": "一月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_feb": {
+    "message": "февраль",
+    "description": "二月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_mar": {
+    "message": "март",
+    "description": "三月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_apr": {
+    "message": "апрель",
+    "description": "四月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_may": {
+    "message": "май",
+    "description": "五月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_jun": {
+    "message": "июнь",
+    "description": "六月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_jul": {
+    "message": "июль",
+    "description": "七月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_aug": {
+    "message": "август",
+    "description": "八月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_sep": {
+    "message": "сентябрь",
+    "description": "九月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_oct": {
+    "message": "октябрь",
+    "description": "十月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_nov": {
+    "message": "ноябрь",
+    "description": "十一月名称",
+    "_sourceFiles": [
+      "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
+    ]
+  },
+  "calendar_month_dec": {
+    "message": "декабрь",
+    "description": "十二月名称",
     "_sourceFiles": [
       "src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
     ]
