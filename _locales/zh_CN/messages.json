@@ -1446,8 +1446,8 @@
     ]
   },
   "activity_monitor_restore_time_success": {
-    "message": "恢复会话活动时间: {0}",
-    "description": "成功恢复会话活动时间时的日志消息，{0}为格式化的日期时间",
+    "message": "活动监控器：成功恢复上次活动时间：{0}",
+    "description": "成功恢复上次活动时间的日志消息，{0}为恢复的时间",
     "_sourceFiles": [
       "src/background/session/monitors/activity-monitor.ts"
     ]
@@ -1460,15 +1460,15 @@
     ]
   },
   "activity_monitor_setup_listeners": {
-    "message": "设置会话活动监听器",
-    "description": "设置活动监听器时的日志消息",
+    "message": "活动监控器：设置活动监听器",
+    "description": "活动监控器设置事件监听器时的日志消息",
     "_sourceFiles": [
       "src/background/session/monitors/activity-monitor.ts"
     ]
   },
   "activity_monitor_browser_startup": {
-    "message": "浏览器启动",
-    "description": "浏览器启动事件的日志消息",
+    "message": "活动监控器：检测到浏览器启动",
+    "description": "浏览器启动事件被检测到时的日志消息",
     "_sourceFiles": [
       "src/background/session/monitors/activity-monitor.ts"
     ]
@@ -1488,8 +1488,8 @@
     ]
   },
   "activity_monitor_activity_marked": {
-    "message": "标记用户活动，上次活动时间: {0}",
-    "description": "标记用户活动时的日志消息，{0}为格式化的上次活动时间",
+    "message": "活动监控器：标记活动，上次活动时间：{0}",
+    "description": "活动被标记时的日志消息，{0}为上次活动时间",
     "_sourceFiles": [
       "src/background/session/monitors/activity-monitor.ts"
     ]
@@ -1509,8 +1509,57 @@
     ]
   },
   "activity_monitor_session_null": {
-    "message": "未找到当前会话，使用当前时间作为活动时间",
-    "description": "当找不到当前会话时的日志消息",
+    "message": "活动监控器：未找到当前会话，使用当前时间",
+    "description": "未找到当前会话时的日志消息",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_real_page_activated": {
+    "message": "活动监控器：实际页面被激活：{0}",
+    "description": "用户激活实际页面（非系统/扩展页面）时的日志消息，{0}为页面URL",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_system_page_ignored": {
+    "message": "活动监控器：忽略系统页面激活：{0}",
+    "description": "系统或扩展页面被激活但被忽略时的日志消息，{0}为页面URL",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_tab_get_failed": {
+    "message": "活动监控器：无法获取标签页信息：{0}",
+    "description": "尝试获取标签页信息失败时的日志消息，{0}为错误详情",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_navigation_completed": {
+    "message": "活动监控器：实际页面导航完成：{0}",
+    "description": "实际页面完成导航时的日志消息，{0}为页面URL",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_system_navigation_ignored": {
+    "message": "活动监控器：忽略系统页面导航：{0}",
+    "description": "系统或扩展页面完成导航但被忽略时的日志消息，{0}为页面URL",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_page_updated": {
+    "message": "活动监控器：实际页面更新完成：{0}",
+    "description": "实际页面更新完成时的日志消息，{0}为页面URL",
+    "_sourceFiles": [
+      "src/background/session/monitors/activity-monitor.ts"
+    ]
+  },
+  "activity_monitor_system_update_ignored": {
+    "message": "活动监控器：忽略系统页面更新：{0}",
+    "description": "系统或扩展页面更新完成但被忽略时的日志消息，{0}为页面URL",
     "_sourceFiles": [
       "src/background/session/monitors/activity-monitor.ts"
     ]
@@ -7237,6 +7286,27 @@
       "src/lib/messaging/base-service.ts"
     ]
   },
+  "messaging_handler_registered": {
+    "message": "[{0}] 已注册消息处理程序: {1}",
+    "description": "消息处理程序注册成功时的日志消息，{0}为服务目标，{1}为消息类型",
+    "_sourceFiles": [
+      "src/lib/messaging/base-service.ts"
+    ]
+  },
+  "messaging_handler_unregistered": {
+    "message": "[{0}] 已移除消息处理程序: {1}",
+    "description": "消息处理程序注销成功时的日志消息，{0}为服务目标，{1}为消息类型",
+    "_sourceFiles": [
+      "src/lib/messaging/base-service.ts"
+    ]
+  },
+  "messaging_all_handlers_unregistered": {
+    "message": "[{0}] 已移除所有 {1} 处理程序",
+    "description": "所有特定类型的消息处理程序注销时的日志消息，{0}为服务目标，{1}为消息类型",
+    "_sourceFiles": [
+      "src/lib/messaging/base-service.ts"
+    ]
+  },
   "handler_response_error": {
     "message": "处理响应失败: {0}",
     "description": "MessageHandlers 中创建响应时的本地化日志",
@@ -7315,85 +7385,85 @@
     ]
   },
   "settings_service_init_failed": {
-    "message": "设置服务初始化失败",
-    "description": "设置服务初始化失败错误",
+    "message": "设置服务初始化失败: {0}",
+    "description": "设置服务初始化失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_cache_load_failed": {
-    "message": "从缓存加载设置失败",
-    "description": "从缓存加载设置失败警告",
+    "message": "从本地缓存加载设置失败: {0}",
+    "description": "从本地缓存加载设置失败时的警告日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_storage_load_failed": {
-    "message": "从存储加载设置失败",
-    "description": "从存储加载设置失败错误",
+    "message": "从存储加载设置失败: {0}",
+    "description": "从存储加载设置失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_storage_save_failed": {
-    "message": "保存设置到存储失败",
-    "description": "保存设置到存储失败错误",
+    "message": "保存设置到存储失败: {0}",
+    "description": "保存设置到存储失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_cache_update_failed": {
-    "message": "更新设置缓存失败",
-    "description": "更新设置缓存失败警告",
+    "message": "更新设置缓存失败: {0}",
+    "description": "更新设置缓存失败时的警告日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_update_failed": {
-    "message": "更新设置失败",
-    "description": "更新设置失败错误",
+    "message": "更新设置失败: {0}",
+    "description": "更新设置失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_refresh_failed": {
-    "message": "刷新设置失败",
-    "description": "刷新设置失败错误",
+    "message": "刷新设置失败: {0}",
+    "description": "刷新设置失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_listener_call_failed": {
-    "message": "调用设置监听器失败",
-    "description": "调用设置监听器失败错误",
+    "message": "调用设置变更监听器失败: {0}",
+    "description": "调用设置变更监听器失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_listener_notify_failed": {
-    "message": "通知设置监听器时出错",
-    "description": "通知设置监听器出错",
+    "message": "通知设置变更监听器失败: {0}",
+    "description": "通知设置变更监听器失败时的错误日志，{0}为错误详情",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_service_init_complete": {
     "message": "设置服务初始化完成",
-    "description": "设置服务初始化完成日志",
+    "description": "设置服务初始化完成时的日志消息",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_loaded_from_storage": {
-    "message": "已从存储加载设置: {0}",
-    "description": "从存储加载设置日志",
+    "message": "已从存储中加载设置",
+    "description": "从存储中成功加载设置时的日志消息",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
   },
   "settings_not_found_using_defaults": {
-    "message": "存储中没有找到设置，使用默认值",
-    "description": "使用默认设置日志",
+    "message": "存储中未找到设置，使用默认值",
+    "description": "在存储中找不到设置时的日志消息",
     "_sourceFiles": [
       "src/lib/settings/service.ts"
     ]
@@ -7991,6 +8061,13 @@
     "description": "通知文本",
     "_sourceFiles": [
       "src/options/index.html"
+    ]
+  },
+  "options_message_service_initialized": {
+    "message": "选项页消息服务已初始化",
+    "description": "选项页消息服务初始化完成时的日志消息",
+    "_sourceFiles": [
+      "src/options/messaging/options-message-service.ts"
     ]
   },
   "settings_handlers_save_settings": {
