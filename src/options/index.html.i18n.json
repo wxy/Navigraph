@@ -159,6 +159,10 @@
     "message": "恢复默认值",
     "description": "底部按钮文本"
   },
+  "options_btn_help": {
+    "message": "帮助",
+    "description": "选项页面中的帮助按钮文本"
+  },
   "options_notify_saved": {
     "message": "设置已保存",
     "description": "通知文本"

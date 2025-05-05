@@ -19,9 +19,17 @@
     "message": "更新主题失败",
     "description": "主题更新失败通知"
   },
+  "options_update_theme_error": {
+    "message": "更新主题失败",
+    "description": "主题更新失败时的错误日志消息"
+  },
   "options_save_failed": {
     "message": "保存设置失败",
     "description": "保存设置失败通知"
+  },
+  "options_save_error": {
+    "message": "保存设置时出错",
+    "description": "保存设置失败时的错误日志消息"
   },
   "options_no_changes": {
     "message": "没有设置被更改",
@@ -55,6 +63,10 @@
     "message": "重置设置失败",
     "description": "设置重置失败通知"
   },
+  "options_reset_error": {
+    "message": "重置设置时出错",
+    "description": "重置设置失败时的错误日志消息"
+  },
   "options_confirm_clear_data": {
     "message": "确定要清除所有导航数据吗？此操作无法撤销！",
     "description": "清除数据确认对话框"
@@ -66,6 +78,10 @@
   "options_clear_failed": {
     "message": "清除数据失败",
     "description": "数据清除失败通知"
+  },
+  "options_clear_error": {
+    "message": "清除数据时出错",
+    "description": "清除数据失败时的错误日志消息"
   },
   "options_dom_loaded_init_start": {
     "message": "DOM已加载，开始初始化选项页...",
@@ -110,5 +126,33 @@
   "options_notification_element_missing": {
     "message": "找不到通知元素",
     "description": "通知元素缺失错误"
+  },
+  "options_help_opening": {
+    "message": "正在打开帮助文档",
+    "description": "打开帮助文档时的日志消息"
+  },
+  "options_help_open_error": {
+    "message": "打开帮助文档时出错",
+    "description": "打开帮助文档失败时的错误消息"
+  },
+  "options_help_log_candidates": {
+    "message": "README文件候选列表",
+    "description": "日志消息：README文件候选列表"
+  },
+  "options_help_log_file_found": {
+    "message": "找到有效的README文件",
+    "description": "日志消息：找到有效的README文件"
+  },
+  "options_help_log_file_not_found": {
+    "message": "未找到README文件",
+    "description": "日志消息：未找到README文件"
+  },
+  "options_help_log_fallback": {
+    "message": "所有候选README文件都不存在，使用默认README.md",
+    "description": "日志消息：使用默认README"
+  },
+  "options_unknown_error": {
+    "message": "未知错误",
+    "description": "通用未知错误消息"
   }
 }
