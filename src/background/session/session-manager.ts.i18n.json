@@ -238,5 +238,9 @@
   "session_manager_not_initialized": {
     "message": "SessionManager实例未初始化",
     "description": "会话管理器未初始化错误"
+  },
+  "session_creation_blocked_by_cooldown": {
+    "message": "会话创建已被阻止（冷却期：{0}秒）",
+    "description": "当尝试在冷却期内创建新会话时显示的消息"
   }
 }

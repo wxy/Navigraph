@@ -139,19 +139,20 @@ export class ActivityMonitor {
   public async markActivity(): Promise<void> {
     const now = Date.now();
     const previousActivityTime = this.lastActivityTime;
-    
-    // 更新最后活动时间
-    this.lastActivityTime = now;
-    
-    // 记录活动日志
-    logger.debug('activity_monitor_activity_marked', 
-      new Date(previousActivityTime).toLocaleString());
+  
+    // 使用防抖，避免短时间内重复处理
+    if (now - this.lastActivityTime < 2000) {
+      return;
+    }
+  
+    // 先检查是否需要创建新会话
+    await this.manager.markSessionActivity(now, previousActivityTime);
     
     // 重置空闲计时器
     this.resetIdleTimer();
     
-    // 通知会话管理器活动发生
-    await this.manager.markSessionActivity(now, previousActivityTime);
+    // 检查完成后再更新最后活动时间
+    this.lastActivityTime = now;
   }
   
   /**

@@ -55,6 +55,11 @@ export class SessionManager {
   // 会话策略工厂
   private strategyFactory: SessionStrategyFactory;
 
+  // 锁机制属性
+  private sessionCreationLock = false;
+  private lastSessionCreationTime = 0;
+  private readonly SESSION_CREATION_COOLDOWN = 10000; // 10秒冷却期
+
   /**
    * 创建会话管理器实例
    */
@@ -935,20 +940,38 @@ export class SessionManager {
     currentTime: number = Date.now(), 
     previousActivityTime: number = 0
   ): Promise<void> {
-    // 如果没有最新会话，创建一个新会话
-    if (!this.latestSessionId) {
-      const strategy = this.strategyFactory.getActiveStrategy();
-      const newSession = await strategy.createSession();
-      this.latestSessionId = newSession.id;
-      
-      // 如果当前没有查看的会话，设置同样的会话为当前会话
-      if (!this.currentSessionId) {
-        this.currentSessionId = newSession.id;
-      }
-      return;
-    }
-    
     try {
+      // 检查锁定状态，防止重复创建会话
+      const isInCooldown = (currentTime - this.lastSessionCreationTime < this.SESSION_CREATION_COOLDOWN);
+      
+      // 如果没有最新会话，创建一个新会话
+      if (!this.latestSessionId) {
+        // 即使没有会话，也受冷却期限制，防止连续创建
+        if (this.sessionCreationLock || isInCooldown) {
+          logger.log('session_creation_blocked_by_cooldown', 
+            Math.round((currentTime - this.lastSessionCreationTime)/1000).toString());
+          return;
+        }
+
+        this.sessionCreationLock = true;
+        try {
+          const strategy = this.strategyFactory.getActiveStrategy();
+          const newSession = await strategy.createSession();
+          this.latestSessionId = newSession.id;
+          
+          // 如果当前没有查看的会话，设置同样的会话为当前会话
+          if (!this.currentSessionId) {
+            this.currentSessionId = newSession.id;
+          }
+          
+          // 更新最后创建时间
+          this.lastSessionCreationTime = Date.now();
+        } finally {
+          this.sessionCreationLock = false;
+        }
+        return;
+      }
+      
       // 检查是否需要创建新会话
       const latestSession = await this.getSessionDetails(this.latestSessionId);
       if (latestSession && previousActivityTime > 0) {
@@ -960,18 +983,35 @@ export class SessionManager {
         );
         
         if (needNewSession) {
-          // 结束当前会话
-          await this.endSession(this.latestSessionId);
+          // 检查锁定和冷却期
+          if (this.sessionCreationLock || isInCooldown) {
+            logger.log('session_creation_blocked_by_cooldown', 
+              Math.round((currentTime - this.lastSessionCreationTime)/1000).toString());
+            return;
+          }
           
-          // 创建新会话
-          const newSession = await strategy.createSession();
-          
-          // 更新最新会话ID
-          this.latestSessionId = newSession.id;
-          
-          // 如果当前会话是原最新会话，也更新当前会话ID
-          if (this.currentSessionId === latestSession.id) {
-            this.currentSessionId = newSession.id;
+          // 设置锁定
+          this.sessionCreationLock = true;
+          try {
+            // 结束当前会话
+            await this.endSession(this.latestSessionId);
+            
+            // 创建新会话
+            const newSession = await strategy.createSession();
+            
+            // 更新最新会话ID
+            this.latestSessionId = newSession.id;
+            
+            // 更新最后创建时间
+            this.lastSessionCreationTime = Date.now();
+            
+            // 如果当前会话是原最新会话，也更新当前会话ID
+            if (this.currentSessionId === latestSession.id) {
+              this.currentSessionId = newSession.id;
+            }
+          } finally {
+            // 确保无论成功失败都解除锁定
+            this.sessionCreationLock = false;
           }
           
           return; // 创建了新会话后直接返回
