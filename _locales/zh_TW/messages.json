@@ -2104,6 +2104,14 @@
       "src/background/session/session-manager.ts"
     ]
   },
+  "session_creation_blocked_by_cooldown": {
+    "message": "會話創建已被阻止（冷卻期：{0}秒）",
+    "description": "当尝试在冷却期内创建新会话时显示的消息",
+    "_sourceFiles": [
+      "src/background/session/session-manager.ts"
+    ],
+    "_untranslated": false
+  },
   "daily_session_no_active": {
     "message": "沒有活躍會話，應建立新會話",
     "description": "检查到没有活跃会话时的日志消息",

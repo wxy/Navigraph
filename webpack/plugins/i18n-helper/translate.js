@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const axios = require('axios');
 const path = require('path');
 const { existsSync, readFileSync } = require('fs');
-require('dotenv').config();  // 加载 .env 文件
+require('dotenv').config({ path: path.join(__dirname, '.env') });  // 加载 .env 文件
 
 // 从环境变量加载API密钥
 async function loadApiKey() {
@@ -149,28 +149,22 @@ function collectTexts(obj) {
   function collect(obj, path = '') {
     if (obj === null || typeof obj !== 'object') return;
     
+    // 检查当前对象是否被标记为未翻译
+    if (obj._untranslated === true && obj.message) {
+      // 只翻译message字段，忽略description
+      textsToTranslate.push(obj.message);
+      pathMap.push({
+        path: path ? `${path}.message` : 'message',
+        parentPath: path, // 记录父路径以便更新_untranslated标记
+        originalValue: obj.message
+      });
+    }
+    
+    // 继续递归搜索子对象
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const value = obj[key];
+      if (obj.hasOwnProperty(key) && typeof obj[key] === 'object' && obj[key] !== null) {
         const currentPath = path ? `${path}.${key}` : key;
-        
-        // 判断是否需要翻译
-        const needsTranslation = 
-          (key === 'message' || key === 'description') && 
-          typeof value === 'string' && 
-          value.trim() !== '' &&
-          (obj._untranslated === true || (key === 'description' && !('_untranslated' in obj)));
-        
-        if (needsTranslation) {
-          textsToTranslate.push(value);
-          pathMap.push({
-            path: currentPath,
-            key: key,
-            originalValue: value
-          });
-        } else if (typeof value === 'object' && value !== null) {
-          collect(value, currentPath);
-        }
+        collect(obj[key], currentPath);
       }
     }
   }
@@ -192,7 +186,7 @@ async function processFile(filePath, apiKey) {
     
     // 收集需要翻译的文本
     const { textsToTranslate, pathMap } = collectTexts(jsonObj);
-    console.log(`找到 ${textsToTranslate.length} 个需要翻译的文本`);
+    console.log(`找到 ${textsToTranslate.length} 个需要翻译的message字段`);
     
     if (textsToTranslate.length === 0) {
       console.log('没有需要翻译的文本，跳过翻译过程');
@@ -210,11 +204,11 @@ async function processFile(filePath, apiKey) {
     // 将翻译结果写回JSON对象
     let modifiedCount = 0;
     for (let i = 0; i < pathMap.length; i++) {
-      const { path, key, originalValue } = pathMap[i];
+      const { path, parentPath, originalValue } = pathMap[i];
       const translation = translations[i];
       
-      if (translation) {
-        // 用点表示法找到并更新字段
+      if (translation && translation !== originalValue) {
+        // 更新翻译
         const pathParts = path.split('.');
         let current = jsonObj;
         
@@ -223,16 +217,20 @@ async function processFile(filePath, apiKey) {
         }
         
         const lastKey = pathParts[pathParts.length - 1];
+        current[lastKey] = translation;
         
-        // 只有当翻译结果与原文不同时才更新
-        if (translation !== originalValue) {
-          current[lastKey] = translation;
+        // 移除_untranslated标记
+        const parentParts = parentPath.split('.');
+        let parent = jsonObj;
+        
+        for (const part of parentParts) {
+          if (part) parent = parent[part];
+        }
+        
+        // 只有成功翻译后才移除未翻译标记
+        if (parent && parent._untranslated) {
+          parent._untranslated = false;
           modifiedCount++;
-          
-          // 更新_untranslated字段
-          if (key === 'message') {
-            current['_untranslated'] = false;
-          }
         }
       }
     }
