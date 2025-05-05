@@ -8126,6 +8126,13 @@
       "src/options/index.html"
     ]
   },
+  "options_btn_help": {
+    "message": "도움말",
+    "description": "选项页面中的帮助按钮文本",
+    "_sourceFiles": [
+      "src/options/index.html"
+    ]
+  },
   "options_notify_saved": {
     "message": "설정이 저장되었습니다",
     "description": "通知文本",
@@ -8182,9 +8189,23 @@
       "src/options/options.ts"
     ]
   },
+  "options_update_theme_error": {
+    "message": "테마 업데이트 실패",
+    "description": "主题更新失败时的错误日志消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
   "options_save_failed": {
     "message": "설정을 저장하지 못했습니다",
     "description": "保存设置失败通知",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_save_error": {
+    "message": "설정 저장 중 오류 발생",
+    "description": "保存设置失败时的错误日志消息",
     "_sourceFiles": [
       "src/options/options.ts"
     ]
@@ -8245,6 +8266,13 @@
       "src/options/options.ts"
     ]
   },
+  "options_reset_error": {
+    "message": "설정 초기화 중 오류 발생",
+    "description": "重置设置失败时的错误日志消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
   "options_confirm_clear_data": {
     "message": "모든 탐색 데이터를 지우시겠습니까? 이 작업은 취소할 수 없습니다!",
     "description": "清除数据确认对话框",
@@ -8262,6 +8290,13 @@
   "options_clear_failed": {
     "message": "데이터 지우기에 실패했습니다",
     "description": "数据清除失败通知",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_clear_error": {
+    "message": "데이터 지우기 중 오류 발생",
+    "description": "清除数据失败时的错误日志消息",
     "_sourceFiles": [
       "src/options/options.ts"
     ]
@@ -8339,6 +8374,55 @@
   "options_notification_element_missing": {
     "message": "알림 요소를 찾을 수 없습니다.",
     "description": "通知元素缺失错误",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_opening": {
+    "message": "도움말 문서 열기",
+    "description": "打开帮助文档时的日志消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_open_error": {
+    "message": "도움말 문서 열기 중 오류 발생",
+    "description": "打开帮助文档失败时的错误消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_candidates": {
+    "message": "README 파일 후보 목록",
+    "description": "日志消息：README文件候选列表",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_file_found": {
+    "message": "유효한 README 파일 발견",
+    "description": "日志消息：找到有效的README文件",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_file_not_found": {
+    "message": "README 파일을 찾을 수 없음",
+    "description": "日志消息：未找到README文件",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_fallback": {
+    "message": "모든 후보 README 파일이 존재하지 않아 기본 README.md 사용",
+    "description": "日志消息：使用默认README",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_unknown_error": {
+    "message": "알 수 없는 오류",
+    "description": "通用未知错误消息",
     "_sourceFiles": [
       "src/options/options.ts"
     ]

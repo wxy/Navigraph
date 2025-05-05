@@ -14,7 +14,7 @@ Navigraph: Visualize Your Browsing History（可视化浏览历史记录）
 ![GitHub manifest.json dynamic](https://img.shields.io/github/manifest-json/manifest_version/wxy/Navigraph?style=for-the-badge&color=FFA500)
 ![Chrome Web Store Rating](https://img.shields.io/chrome-web-store/stars/jfjgdldpgmnhclffkkcnbhleijeopkhi?style=for-the-badge&color=FFA500)
 
-![Supported Locales](https://img.shields.io/badge/Supported%20Locales-zh(CN)-blue?style=for-the-badge&color=8bc34a)
+![Supported Locales](https://img.shields.io/badge/Supported%20Locales-en|zh(CN|HK|TW)|ja|ko|fr|ru|de-blue?style=for-the-badge&color=8bc34a)
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/wxy/Navigraph?style=for-the-badge&color=800080)
 ![GitHub last commit](https://img.shields.io/github/last-commit/wxy/Navigraph?style=for-the-badge&color=800080)
@@ -32,3 +32,10 @@ Navigraph: Visualize Your Browsing History（可视化浏览历史记录）
 
 - [English](docs/README-en.md)
 - [简体中文](docs/README-zh_CN.md)
+- [繁體中文（香港）](docs/README-zh_HK.md)
+- [繁體中文（台灣）](docs/README-zh_TW.md)
+- [日本語](docs/README-ja.md)
+- [한국어](docs/README-ko.md)
+- [Français](docs/README-fr.md)
+- [Русский](docs/README-ru.md)
+- [Deutsch](docs/README-de.md)

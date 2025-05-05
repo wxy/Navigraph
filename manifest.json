@@ -40,7 +40,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["test.html","content/*", "content/styles/*.css", "images/*"],
+      "resources": ["content/*", "content/styles/*.css", "images/*", "docs/*"],
       "matches": ["<all_urls>"]
     }
   ],

@@ -64,8 +64,9 @@ module.exports = {
         // 3. 复制本地化文件夹
         { from: '_locales',    to: '_locales'    },
         // 4. 复制其他静态资源
-        { from: "README.md", to: "README.md" },
-        { from: "LICENSE", to: "./" },
+        { from: 'docs',        to: 'docs'        },
+        { from: "README.md",  to: "README.md" },
+        { from: "LICENSE",    to: "./" },
 
         // 保留原有 content/options 静态文件复制
         { 
@@ -85,6 +86,7 @@ module.exports = {
       filename: 'options/index.html',
       chunks: ['options'],
       cache: false,
+      inject: false, // 如果HTML中已手动引入JS，设为false避免重复注入
     }),
     // 如果有扩展弹出页面HTML，也需要处理
     new HtmlWebpackPlugin({

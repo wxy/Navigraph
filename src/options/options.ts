@@ -1,5 +1,5 @@
 import { Logger } from '../lib/utils/logger.js';
-import { i18n } from '../lib/utils/i18n-utils.js';
+import { i18n, I18nError } from '../lib/utils/i18n-utils.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
 import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
@@ -90,7 +90,7 @@ function setupEventListeners(): void {
       settingsService.updateSettings({ theme })
         .then(() => showNotification('options_theme_updated'))
         .catch(error => {
-          logger.error('更新主题失败:', error);
+          logger.error('options_update_theme_error', error);
           showNotification('options_update_theme_failed', 'error');
         });
     });
@@ -148,6 +148,91 @@ function setupEventListeners(): void {
   if (clearDataBtn) {
     clearDataBtn.addEventListener('click', clearAllData);
   }
+  
+  // 帮助按钮
+  const helpBtn = document.getElementById('help-btn');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', openHelp);
+  }
+}
+
+/**
+ * 打开帮助文档
+ */
+async function openHelp(): Promise<void> {
+  try {
+    // 获取当前浏览器语言
+    const userLanguage = chrome.i18n.getUILanguage();
+    
+    // 通过规则确定README文件路径
+    const readmeFilePath = await findAppropriateReadmeFile(userLanguage);
+    
+    logger.log('options_help_opening', readmeFilePath);
+    
+    // 构建GitHub仓库中文档的URL
+    const githubRepoUrl = 'https://github.com/wxy/Navigraph/blob/master/';
+    const githubDocUrl = githubRepoUrl + readmeFilePath;
+    
+    // 打开新标签页显示GitHub上的README
+    chrome.tabs.create({ url: githubDocUrl });
+  } catch (error) {
+    logger.error('options_help_open_error', error);
+    showNotification('options_help_load_failed', 'error');
+  }
+}
+
+/**
+ * 查找适合当前语言的README文件
+ * 使用智能回退策略，确保总能找到一个合适的文件
+ */
+async function findAppropriateReadmeFile(language: string): Promise<string> {
+  // 将连字符格式(zh-CN)转换为下划线格式(zh_CN)
+  const normalizedLanguage = language.replace(/-/g, '_');
+  
+  // 提取主要语言部分(zh_CN -> zh)和国家/地区部分(zh_CN -> CN)
+  const [mainLang, region] = normalizedLanguage.split('_');
+  
+  // 准备一个查找顺序数组，从最精确到最通用
+  const candidateFiles = [];
+  
+  // 1. 完整语言代码，如zh_CN
+  if (region) {
+    candidateFiles.push(`docs/README-${normalizedLanguage}.md`);
+  }
+  
+  // 2. 主语言部分，如zh
+  candidateFiles.push(`docs/README-${mainLang}.md`);
+  
+  // 3. 英语版本（如果当前不是英语）
+  if (mainLang !== 'en') {
+    candidateFiles.push('docs/README-en.md');
+  }
+  
+  // 4. 最终回退到根目录的README.md
+  candidateFiles.push('README.md');
+  
+  logger.log(i18n('options_help_log_candidates'), candidateFiles);
+  
+  // 检查扩展内部文件是否存在
+  for (const filePath of candidateFiles) {
+    try {
+      const url = chrome.runtime.getURL(filePath);
+      
+      // 使用fetch检查文件是否存在
+      const response = await fetch(url, { method: 'HEAD' });
+      if (response.ok) {
+        logger.log(i18n('options_help_log_file_found'), filePath);
+        return filePath;
+      }
+    } catch (e) {
+      // 忽略错误，继续检查下一个候选文件
+      logger.warn(i18n('options_help_log_file_not_found'), e);
+    }
+  }
+  
+  // 所有文件都不存在，返回默认的README.md
+  logger.warn(i18n('options_help_log_fallback'));
+  return 'README.md';
 }
 
 /**
@@ -300,7 +385,7 @@ async function saveSettings(): Promise<void> {
     // 检查设置变更并显示综合通知
     showSettingsSavedNotification(oldSettings, newSettings);
   } catch (error) {
-    logger.error('保存设置时出错:', error);
+    logger.error('options_save_error', error);
     showNotification('options_save_failed', 'error', 3000);
   }
 }
@@ -421,7 +506,7 @@ async function resetSettings(): Promise<void> {
       showSettingsSavedNotification(oldSettings, currentSettings);
     }
   } catch (error) {
-    logger.error('重置设置时出错:', error);
+    logger.error('options_reset_error', error);
     showNotification('options_reset_failed', 'error');
   }
 }
@@ -439,11 +524,11 @@ async function clearAllData(): Promise<void> {
       if (response && response.success) {
         showNotification('options_data_cleared');
       } else {
-        throw new Error(response?.error || '未知错误');
+        throw new I18nError(response?.error || 'options_unknown_error');
       }
     }
   } catch (error) {
-    logger.error('清除数据时出错:', error);
+    logger.error('options_clear_error', error);
     showNotification('options_clear_failed', 'error');
   }
 }

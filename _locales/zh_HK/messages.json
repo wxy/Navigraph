@@ -8126,6 +8126,13 @@
       "src/options/index.html"
     ]
   },
+  "options_btn_help": {
+    "message": "幫助",
+    "description": "选项页面中的帮助按钮文本",
+    "_sourceFiles": [
+      "src/options/index.html"
+    ]
+  },
   "options_notify_saved": {
     "message": "設定已儲存",
     "description": "通知文本",
@@ -8182,9 +8189,23 @@
       "src/options/options.ts"
     ]
   },
+  "options_update_theme_error": {
+    "message": "更新主題失敗",
+    "description": "主题更新失败时的错误日志消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
   "options_save_failed": {
     "message": "儲存設定失敗",
     "description": "保存设置失败通知",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_save_error": {
+    "message": "保存設定時出錯",
+    "description": "保存设置失败时的错误日志消息",
     "_sourceFiles": [
       "src/options/options.ts"
     ]
@@ -8245,6 +8266,13 @@
       "src/options/options.ts"
     ]
   },
+  "options_reset_error": {
+    "message": "重置設定時出錯",
+    "description": "重置设置失败时的错误日志消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
   "options_confirm_clear_data": {
     "message": "確定要清除所有導航資料嗎？此操作無法撤銷！",
     "description": "清除数据确认对话框",
@@ -8262,6 +8290,13 @@
   "options_clear_failed": {
     "message": "清除資料失敗",
     "description": "数据清除失败通知",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_clear_error": {
+    "message": "清除數據時出錯",
+    "description": "清除数据失败时的错误日志消息",
     "_sourceFiles": [
       "src/options/options.ts"
     ]
@@ -8339,6 +8374,55 @@
   "options_notification_element_missing": {
     "message": "找不到通知元素",
     "description": "通知元素缺失错误",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_opening": {
+    "message": "正在打開幫助文檔",
+    "description": "打开帮助文档时的日志消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_open_error": {
+    "message": "打開幫助文檔時出錯",
+    "description": "打开帮助文档失败时的错误消息",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_candidates": {
+    "message": "README文件候選列表",
+    "description": "日志消息：README文件候选列表",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_file_found": {
+    "message": "找到有效的README文件",
+    "description": "日志消息：找到有效的README文件",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_file_not_found": {
+    "message": "未找到README文件",
+    "description": "日志消息：未找到README文件",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_help_log_fallback": {
+    "message": "所有候選README文件都不存在，使用預設README.md",
+    "description": "日志消息：使用默认README",
+    "_sourceFiles": [
+      "src/options/options.ts"
+    ]
+  },
+  "options_unknown_error": {
+    "message": "未知錯誤",
+    "description": "通用未知错误消息",
     "_sourceFiles": [
       "src/options/options.ts"
     ]
