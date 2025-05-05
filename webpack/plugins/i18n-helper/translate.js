@@ -1,13 +1,16 @@
 const fs = require('fs').promises;
 const axios = require('axios');
 const path = require('path');
+require('dotenv').config();  // 加载 .env 文件
 
-// 加载API密钥
+// 从环境变量加载API密钥
 async function loadApiKey() {
   try {
-    const credentialsPath = path.join(__dirname, 'google-credentials.json');
-    const keyData = await fs.readFile(credentialsPath, 'utf8');
-    return JSON.parse(keyData).apiKey;
+    const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
+    if (!apiKey) {
+      throw new Error('环境变量 GOOGLE_TRANSLATE_API_KEY 未设置');
+    }
+    return apiKey;
   } catch (error) {
     console.error('无法加载API密钥:', error.message);
     process.exit(1);
