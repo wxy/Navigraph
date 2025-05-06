@@ -2104,6 +2104,13 @@
       "src/background/session/session-manager.ts"
     ]
   },
+  "session_creation_blocked_by_cooldown": {
+    "message": "Создание сеанса заблокировано (период восстановления: {0} секунд)",
+    "description": "当尝试在冷却期内创建新会话时显示的消息",
+    "_sourceFiles": [
+      "src/background/session/session-manager.ts"
+    ]
+  },
   "daily_session_no_active": {
     "message": "Нет активного сеанса, необходимо создать новый сеанс.",
     "description": "检查到没有活跃会话时的日志消息",

@@ -5,10 +5,12 @@
     async function sendToBackground(action: string, data?: any): Promise<any> {
       return new Promise((resolve, reject) => {
         try {
+          const requestId = Date.now().toString() + Math.random().toString(36).slice(2, 9);
           chrome.runtime.sendMessage({
             action,
-            ...data,
-            target: 'background' // Explicitly specify target
+            requestId,
+            target: 'background', // Explicitly specify target
+            ...data
           }, (response) => {
             if (chrome.runtime.lastError) {
               reject(chrome.runtime.lastError);
