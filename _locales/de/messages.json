@@ -2109,8 +2109,7 @@
     "description": "当尝试在冷却期内创建新会话时显示的消息",
     "_sourceFiles": [
       "src/background/session/session-manager.ts"
-    ],
-    "_untranslated": false
+    ]
   },
   "daily_session_no_active": {
     "message": "Es gibt keine aktive Sitzung, eine neue Sitzung sollte erstellt werden",
