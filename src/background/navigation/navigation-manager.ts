@@ -159,7 +159,7 @@ export class NavigationManager {
         // 如果没有当前会话，则请求会话管理器创建一个新会话
         logger.log('navigation_manager_create_session_start');
         const newSession = await sessionManager.createAndActivateSession(
-          i18n('navigation_manager_session_name', new Date().toLocaleString())
+          i18n('background_default_session_name', new Date().toLocaleString())
         );
         if (newSession) {
           this.setCurrentSessionId(newSession.id);
@@ -244,7 +244,7 @@ export class NavigationManager {
       
       return { nodes, edges };
     } catch (error) {
-      logger.error(i18n("background_get_session_graph_failed", sessionId), error);
+      logger.error(i18n("background_storage_fetch_session_graph_failed", sessionId), error);
       return { nodes: [], edges: [] };
     }
   }

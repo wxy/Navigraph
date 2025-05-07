@@ -7,33 +7,13 @@
     "message": "配置加载失败: {0}",
     "description": "配置加载失败错误"
   },
-  "content_init_msg_service": {
-    "message": "初始化消息服务...",
-    "description": "初始化消息服务日志"
-  },
   "content_message_service_init_failed": {
     "message": "消息服务初始化失败: {0}",
     "description": "消息服务初始化失败错误"
   },
-  "content_message_system_failed": {
-    "message": "消息系统初始化失败:",
-    "description": "消息系统初始化失败错误消息"
-  },
-  "content_init_failed": {
-    "message": "初始化失败:",
-    "description": "一般初始化失败错误消息"
-  },
-  "content_extension_error": {
-    "message": "Navigraph 扩展错误:",
-    "description": "扩展错误通用前缀"
-  },
   "content_startup_error": {
     "message": "启动初始化过程失败: {0}",
     "description": "内容脚本启动初始化失败错误日志"
-  },
-  "content_script_execution_failed": {
-    "message": "内容脚本执行失败:",
-    "description": "脚本执行失败错误消息"
   },
   "content_init_start": {
     "message": "开始初始化 Navigraph 可视化…",
@@ -122,5 +102,9 @@
   "content_page_focus": {
     "message": "页面获得焦点",
     "description": "页面获得焦点的日志消息"
+  },
+  "content_init_failed": {
+    "message": "初始化失败: {0}",
+    "description": "初始化失败的错误消息"
   }
 }

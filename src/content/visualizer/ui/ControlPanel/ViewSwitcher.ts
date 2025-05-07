@@ -50,11 +50,17 @@ export class ViewSwitcher {
    */
   private switchView(view: 'tree' | 'timeline'): void {
     if (view === this.visualizer.currentView) {
-      logger.log(view === 'tree' ? 'view_already_tree' : 'view_already_timeline');
+      if (view === 'tree') {
+        logger.log('view_already_tree'); 
+      } else {
+        logger.log('view_already_timeline');
+      }
       return;
+    } else if (view === 'tree') {
+      logger.log('view_switching_to_tree');
+    } else {
+      logger.log('view_switching_to_timeline');
     }
-    
-    logger.log(view === 'tree' ? 'view_switching_to_tree' : 'view_switching_to_timeline');
     
     // 调用可视化器的切换视图方法
     this.visualizer.switchView(view);

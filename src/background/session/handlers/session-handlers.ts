@@ -85,15 +85,11 @@ export class SessionMessageHandler {
           })
           .catch((error) => {
             logger.error(
-              i18n(
-                "session_handler_get_sessions_failed",
-                error instanceof Error ? error.message : String(error)
-              ),
-              error
+              i18n("session_handler_get_sessions_failed",
+                error instanceof Error ? error.message : String(error))
             );
             ctx.error(
-              i18n(
-                "session_handler_get_sessions_failed_message",
+              i18n("session_handler_get_sessions_failed_message",
                 error instanceof Error ? error.message : String(error)
               )
             );

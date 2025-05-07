@@ -118,5 +118,9 @@
   "session_list_loaded": {
     "message": "成功加载{0}个会话",
     "description": "会话列表加载成功"
+  },
+  "content_session_list_load_failed": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败错误"
   }
 }

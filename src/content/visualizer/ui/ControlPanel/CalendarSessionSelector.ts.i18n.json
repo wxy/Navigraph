@@ -154,5 +154,33 @@
   "calendar_month_dec": {
     "message": "12月",
     "description": "十二月名称"
+  },
+  "calendar_sunday": {
+    "message": "日",
+    "description": "星期日"
+  },
+  "calendar_monday": {
+    "message": "一",
+    "description": "星期一"
+  },
+  "calendar_tuesday": {
+    "message": "二",
+    "description": "星期二"
+  },
+  "calendar_wednesday": {
+    "message": "三",
+    "description": "星期三"
+  },
+  "calendar_thursday": {
+    "message": "四",
+    "description": "星期四"
+  },
+  "calendar_friday": {
+    "message": "五",
+    "description": "星期五"
+  },
+  "calendar_saturday": {
+    "message": "六",
+    "description": "星期六"
   }
 }

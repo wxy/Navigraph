@@ -124,13 +124,13 @@ export class CalendarSessionSelector {
     
     // 添加星期标题
     const weekdays = [
-      i18n("content_sunday"),
-      i18n("content_monday"), 
-      i18n("content_tuesday"),
-      i18n("content_wednesday"),
-      i18n("content_thursday"),
-      i18n("content_friday"),
-      i18n("content_saturday")
+      i18n("calendar_sunday"),
+      i18n("calendar_monday"), 
+      i18n("calendar_tuesday"),
+      i18n("calendar_wednesday"),
+      i18n("calendar_thursday"),
+      i18n("calendar_friday"),
+      i18n("calendar_saturday")
     ];
     weekdays.forEach(day => {
       const weekday = document.createElement('div');

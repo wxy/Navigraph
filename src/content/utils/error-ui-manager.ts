@@ -22,7 +22,7 @@ const ErrorUIManager = {
       const errorContainer = document.getElementById("navigraph-error");
       if (!errorContainer) {
         logger.error("content_error_container_not_found");
-        this.showNativeAlert("content_extension_error", formattedMessage);
+        this.showNativeAlert(i18n("content_extension_error", "Navigraph 扩展错误:"), formattedMessage);
         return;
       }
 

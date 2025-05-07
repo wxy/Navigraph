@@ -154,5 +154,9 @@
   "options_unknown_error": {
     "message": "未知错误",
     "description": "通用未知错误消息"
+  },
+  "options_help_load_failed": {
+    "message": "加载帮助文档失败",
+    "description": "加载帮助文档失败时的错误消息"
   }
 }

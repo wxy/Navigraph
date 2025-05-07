@@ -1,24 +1,4 @@
 {
-  "content_error_prefix": {
-    "message": "Navigraph错误",
-    "description": "错误消息前缀"
-  },
-  "content_timeline_view_short": {
-    "message": "时间线",
-    "description": "时间线视图短名称"
-  },
-  "content_ui_initialization_failed": {
-    "message": "UI初始化失败",
-    "description": "UI初始化失败错误消息"
-  },
-  "content_ui_init_failed": {
-    "message": "UI 初始化失败: {0}",
-    "description": "UI初始化失败错误日志"
-  },
-  "content_detailed_error_fallback": {
-    "message": "详细错误: {0} {1}",
-    "description": "详细错误回退消息"
-  },
   "ui_manager_created": {
     "message": "UI管理器已创建",
     "description": "UI管理器创建完成日志"

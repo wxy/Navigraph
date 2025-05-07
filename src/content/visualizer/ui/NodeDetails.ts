@@ -281,18 +281,18 @@ export class NodeDetails {
     let result = '';
     
     if (days > 0) {
-      result += `${days}${i18n("content_unit_day")}`;
+      result += days + i18n("content_unit_day");
     }
     
     if (hours > 0 || days > 0) {
-      result += `${hours}${i18n("content_unit_hour")}`;
+      result += hours + i18n("content_unit_hour");
     }
     
     if (minutes > 0 || hours > 0 || days > 0) {
-      result += `${minutes}${i18n("content_unit_minute")}`;
+      result += minutes + i18n("content_unit_minute");
     }
     
-    result += `${seconds}${i18n("content_unit_second")}`;
+    result += seconds + i18n("content_unit_second");
     
     return result;
   }

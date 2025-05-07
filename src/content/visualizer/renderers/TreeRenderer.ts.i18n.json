@@ -174,5 +174,13 @@
   "tree_rendering_complete": {
     "message": "树形图渲染完成，节点数: {0}, 链接数: {1}",
     "description": "树形图渲染完成日志"
+  },
+  "detected_self_loop_node": {
+    "message": "检测到自循环节点: {0}",
+    "description": "检测到自循环节点日志"
+  },
+  "invalid_link_coordinates": {
+    "message": "链接坐标无效: {0} -> {1}",
+    "description": "链接坐标无效日志"
   }
 }

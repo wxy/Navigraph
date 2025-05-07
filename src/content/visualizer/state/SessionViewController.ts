@@ -65,7 +65,7 @@ export class SessionViewController {
       logger.log("session_management_init_complete");
     } catch (error) {
       logger.error("session_management_init_failed", error);
-      this.uiManager.showError("content_session_load_failed");
+      this.uiManager.showError("content_session_load_failed_or_unavailable");
       throw error;
     }
   }

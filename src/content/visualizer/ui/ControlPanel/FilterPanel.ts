@@ -5,13 +5,11 @@ import type { Visualizer } from '../../../types/navigation.js';
 const logger = new Logger('FilterPanel');
 
 /**
- * 过滤器配置定义
+ * 过滤器配置定义 - 简化后
  */
 export interface FilterDefinition {
   id: string;           // 过滤器ID
-  labelId: string;      // 显示标签对应的i18n键
   defaultValue: boolean; // 默认值
-  descriptionId?: string; // 说明文本对应的i18n键
 }
 
 /**
@@ -22,55 +20,39 @@ export class FilterPanel {
   private visualizer: Visualizer;
   private filterContainer: HTMLElement | null = null;
   
-  // 默认过滤器定义 - 这些ID必须与HTML中的ID匹配，使用i18n键
+  // 修改过滤器定义数组
   private filterDefinitions: FilterDefinition[] = [
     {
       id: 'filter-reload',
-      labelId: 'filter_reload_label',
-      defaultValue: true,
-      descriptionId: 'filter_reload_description'
+      defaultValue: true
     },
     {
       id: 'filter-history',
-      labelId: 'filter_history_label',
-      defaultValue: true,
-      descriptionId: 'filter_history_description'
+      defaultValue: true
     },
     {
       id: 'filter-closed',
-      labelId: 'filter_closed_label',
-      defaultValue: false,
-      descriptionId: 'filter_closed_description'
+      defaultValue: false
     },
     {
       id: 'filter-tracking',
-      labelId: 'filter_tracking_label',
-      defaultValue: false,
-      descriptionId: 'filter_tracking_description'
+      defaultValue: false
     },
     {
       id: 'type-link',
-      labelId: 'filter_type_link_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_link_description'
+      defaultValue: true
     },
     {
       id: 'type-address',
-      labelId: 'filter_type_address_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_address_description'
+      defaultValue: true
     },
     {
       id: 'type-form',
-      labelId: 'filter_type_form_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_form_description'
+      defaultValue: true
     },
     {
       id: 'type-js',
-      labelId: 'filter_type_js_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_js_description'
+      defaultValue: true
     }
   ];
   

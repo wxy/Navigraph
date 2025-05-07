@@ -1,8 +1,4 @@
 {
-  "background_session_manager_init_failed": {
-    "message": "会话管理器初始化失败: {0}",
-    "description": "会话管理器初始化失败错误"
-  },
   "session_manager_init_failed": {
     "message": "会话管理器初始化失败: {0}",
     "description": "SessionManager 初始化失败错误"

@@ -95,7 +95,7 @@
     } catch (error) {
       // 处理错误逻辑保持不变
       logger.error('content_init_error', error);
-      showErrorMessage('content_init_failed',
+      showErrorMessage(i18n('content_init_failed',"初始化失败:"),
         error instanceof Error ? error.message : String(error)
       );
       if (error instanceof Error && error.stack) {

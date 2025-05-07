@@ -42,5 +42,13 @@
   "generated_edges_added": {
     "message": "添加了{0}条生成的边",
     "description": "添加生成的边"
+  },
+  "content_calculate_node_depth_failed": {
+    "message": "计算节点深度失败",
+    "description": "当计算节点树的深度时发生错误的日志消息"
+  },
+  "content_no_root_nodes_found": {
+    "message": "没有找到根节点，设置所有节点深度为0",
+    "description": "当节点树中找不到根节点时的日志消息"
   }
 }

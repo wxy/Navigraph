@@ -27,10 +27,6 @@
     "message": "活动超时设置已更改为{0}分钟",
     "description": "活动超时设置更改时的日志消息，{0}为新设置的分钟数"
   },
-  "activity_monitor_activity_marked": {
-    "message": "活动监控器：标记活动，上次活动时间：{0}",
-    "description": "活动被标记时的日志消息，{0}为上次活动时间"
-  },
   "activity_monitor_idle_timer_reset": {
     "message": "重置空闲计时器，超时时间: {0}分钟",
     "description": "重置空闲计时器时的日志消息，{0}为超时分钟数"

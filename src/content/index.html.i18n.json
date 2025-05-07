@@ -146,5 +146,13 @@
   "content_zoom": {
     "message": "缩放",
     "description": "底部状态栏缩放标签"
+  },
+  "content_tree_view": {
+    "message": "树形图视图",
+    "description": "树形图视图"
+  },
+  "content_timeline_view": {
+    "message": "时间线视图",
+    "description": "时间线视图"
   }
 }

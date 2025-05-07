@@ -1,4 +1,12 @@
 {
+  "session_list_load_failed": {
+    "message": "加载会话列表失败: {0}",
+    "description": "加载会话列表失败"
+  },
+  "current_session_load_failed": {
+    "message": "加载当前会话失败: {0}",
+    "description": "加载当前会话失败"
+  },
   "session_list_loading": {
     "message": "加载会话列表...",
     "description": "加载会话列表开始日志"

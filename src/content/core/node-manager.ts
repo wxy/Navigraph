@@ -364,7 +364,7 @@ export class NodeManager {
         this.calculateChildDepths(rootNode, 1);
       });
     } catch (error) {
-      logger.error('计算节点深度失败:', error);
+      logger.error(i18n('content_calculate_node_depth_failed'), error);
       this.setDefaultDepths();
     }
   }
@@ -380,7 +380,7 @@ export class NodeManager {
    * 设置默认深度值
    */
   private setDefaultDepths(): void {
-    logger.log('没有找到根节点，设置所有节点深度为0');
+    logger.log(i18n('content_no_root_nodes_found'));
     this.nodes.forEach(node => {
       node.depth = 0;
     });

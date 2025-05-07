@@ -1,11 +1,11 @@
 {
-  "content_visualizer_component_init_failed": {
-    "message": "可视化组件初始化失败",
-    "description": "可视化组件初始化失败错误消息"
-  },
   "content_d3_lib_missing": {
     "message": "d3 库未加载，可视化功能将不可用。请确保已包含d3.js库。",
     "description": "D3库缺失错误"
+  },
+  "content_init_failed": {
+    "message": "初始化失败: ",
+    "description": "初始化失败错误"
   },
   "content_svg_create_failed": {
     "message": "无法创建SVG元素",
@@ -18,14 +18,6 @@
   "content_view_switch_failed": {
     "message": "切换视图失败",
     "description": "切换视图失败"
-  },
-  "content_no_data_available": {
-    "message": "没有可用数据",
-    "description": "没有数据提示"
-  },
-  "content_drag_handle": {
-    "message": "拖动",
-    "description": "拖动手柄文本"
   },
   "nav_visualizer_init_start": {
     "message": "初始化NavigationVisualizer...",

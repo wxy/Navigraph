@@ -1,12 +1,4 @@
 {
-  "content_unit_minute": {
-    "message": "分钟",
-    "description": "分钟时间单位"
-  },
-  "content_unit_hour": {
-    "message": "小时",
-    "description": "小时时间单位"
-  },
   "content_nodes_count": {
     "message": "节点: {0}",
     "description": "节点数量状态项"

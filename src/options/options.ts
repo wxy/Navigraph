@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     });
   } catch (error) {
     logger.error('options_page_init_failed', error);
-    showNotification('options_load_failed', 'error');
+    showNotification(i18n('options_load_failed'), 'error');
   }
 });
 
@@ -88,10 +88,10 @@ function setupEventListeners(): void {
       
       // 立即更新主题设置
       settingsService.updateSettings({ theme })
-        .then(() => showNotification('options_theme_updated'))
+        .then(() => showNotification(i18n('options_theme_updated')))
         .catch(error => {
           logger.error('options_update_theme_error', error);
-          showNotification('options_update_theme_failed', 'error');
+          showNotification(i18n('options_update_theme_failed'), 'error');
         });
     });
   }
@@ -177,7 +177,7 @@ async function openHelp(): Promise<void> {
     chrome.tabs.create({ url: githubDocUrl });
   } catch (error) {
     logger.error('options_help_open_error', error);
-    showNotification('options_help_load_failed', 'error');
+    showNotification(i18n('options_help_load_failed'), 'error');
   }
 }
 
@@ -282,7 +282,7 @@ async function loadSettings(): Promise<void> {
     logger.log('options_settings_loaded', currentSettings);
   } catch (error) {
     logger.error('options_settings_load_error', error);
-    showNotification('options_load_failed', 'error');
+    showNotification(i18n('options_load_failed'), 'error');
   }
 }
 
@@ -386,7 +386,7 @@ async function saveSettings(): Promise<void> {
     showSettingsSavedNotification(oldSettings, newSettings);
   } catch (error) {
     logger.error('options_save_error', error);
-    showNotification('options_save_failed', 'error', 3000);
+    showNotification(i18n('options_save_failed'), 'error', 3000);
   }
 }
 /**
@@ -398,7 +398,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
   
   // 如果没有变化，显示信息并返回
   if (!hasChanges) {
-    showNotification('options_no_changes', 'success', 2000);
+    showNotification(i18n('options_no_changes'), 'success', 2000);
     return;
   }
   
@@ -413,13 +413,13 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     oldSettings.defaultView !== newSettings.defaultView;
   
   // 根据情况选择适当的本地化消息ID
-  let messageId: string;
+  let message: string;
   let type: 'success' | 'error' = 'success';
   let duration = 3000;
   
   if (affectsBackground) {
     // 使用完整的"需要重载"消息
-    messageId = 'options_settings_saved_reload';
+    message = i18n('options_settings_saved_reload');
     duration = 5000;
     
     // 带按钮的复杂通知
@@ -436,21 +436,19 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
         
         // 添加消息文本，使用本地化字符串
         const msgElement = document.createElement('span');
-        const translatedMsg = chrome.i18n.getMessage(messageId);
-        msgElement.textContent = translatedMsg;
+        msgElement.textContent = message;
         notification.appendChild(msgElement);
         
         // 添加重载按钮，使用单独的本地化字符串
         const reloadBtn = document.createElement('button');
         reloadBtn.className = 'notification-action';
-        const buttonText = chrome.i18n.getMessage('options_reload_now');
-        reloadBtn.textContent = buttonText;
+        reloadBtn.textContent = i18n('options_reload_now');
         reloadBtn.onclick = () => {
           try {
             chrome.runtime.reload();
           } catch (e) {
             logger.error('options_extension_reload_failed', e);
-            showNotification('options_reload_failed', 'error');
+            showNotification(i18n('options_reload_failed'), 'error');
           }
         };
         notification.appendChild(reloadBtn);
@@ -473,15 +471,15 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     }
   } else if (affectsFrontend) {
     // 使用完整的"需要刷新"消息
-    messageId = 'options_settings_saved_refresh';
+    message = i18n('options_settings_saved_refresh');
     duration = 4000;
   } else {
     // 基本的"设置已保存"消息
-    messageId = 'options_settings_saved';
+    message = i18n('options_settings_saved');
   }
   
   // 标准通知
-  showNotification(messageId, type, duration);
+  showNotification(message, type, duration);
 }
 
 /**
@@ -507,7 +505,7 @@ async function resetSettings(): Promise<void> {
     }
   } catch (error) {
     logger.error('options_reset_error', error);
-    showNotification('options_reset_failed', 'error');
+    showNotification(i18n('options_reset_failed'), 'error');
   }
 }
 
@@ -522,14 +520,14 @@ async function clearAllData(): Promise<void> {
       });
       
       if (response && response.success) {
-        showNotification('options_data_cleared');
+        showNotification(i18n('options_data_cleared'));
       } else {
-        throw new I18nError(response?.error || 'options_unknown_error');
+        throw new Error(response?.error || i18n('options_unknown_error'));
       }
     }
   } catch (error) {
     logger.error('options_clear_error', error);
-    showNotification('options_clear_failed', 'error');
+    showNotification(i18n('options_clear_failed'), 'error');
   }
 }
 
