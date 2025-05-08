@@ -1,13 +1,11 @@
 {
   "appName": {
     "message": "Navigraph: Visualize your browsing history",
-    "description": "扩展名称",
-    "_untranslated": false
+    "description": "扩展名称"
   },
   "appDescription": {
     "message": "Display browsing history nodes and links in interactive graphics to help users intuitively analyze access patterns and behaviors.",
-    "description": "扩展描述",
-    "_untranslated": false
+    "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
     "message": "MessageService has not been initialized",
@@ -647,8 +645,7 @@
   },
   "background_get_tab_history_failed": {
     "message": "Failed to get the history of tab [{0}]",
-    "description": "获取标签页历史失败错误",
-    "_untranslated": false
+    "description": "获取标签页历史失败错误"
   },
   "navigation_manager_session_id_retrieved": {
     "message": "Got the current session ID from the session manager: {0}",
@@ -1216,8 +1213,7 @@
   },
   "strategy_factory_fallback_used": {
     "message": "Policy type {0} not available, using default policy 'daily'",
-    "description": "当请求的策略不可用时，使用默认策略的日志消息，{0}为请求的策略类型",
-    "_untranslated": false
+    "description": "当请求的策略不可用时，使用默认策略的日志消息，{0}为请求的策略类型"
   },
   "background_db_open_failed": {
     "message": "Failed to open database: {0}",
@@ -1225,73 +1221,59 @@
   },
   "background_db_init_failed": {
     "message": "Failed to initialize database: {0}",
-    "description": "初始化数据库失败错误",
-    "_untranslated": false
+    "description": "初始化数据库失败错误"
   },
   "background_unknown_error": {
     "message": "Unknown error",
-    "description": "未知错误消息",
-    "_untranslated": false
+    "description": "未知错误消息"
   },
   "background_db_add_failed": {
     "message": "Failed to add data to {0}",
-    "description": "添加数据失败错误",
-    "_untranslated": false
+    "description": "添加数据失败错误"
   },
   "background_db_put_failed": {
     "message": "Failed to update data to {0}",
-    "description": "更新数据失败错误",
-    "_untranslated": false
+    "description": "更新数据失败错误"
   },
   "background_db_get_failed": {
     "message": "Failed to get data in {0}",
-    "description": "获取数据失败错误",
-    "_untranslated": false
+    "description": "获取数据失败错误"
   },
   "background_db_get_all_failed": {
     "message": "Failed to get all data in {0}",
-    "description": "获取所有数据失败错误",
-    "_untranslated": false
+    "description": "获取所有数据失败错误"
   },
   "background_db_transaction_error": {
     "message": "Transaction error: {0}",
-    "description": "数据库事务错误",
-    "_untranslated": false
+    "description": "数据库事务错误"
   },
   "background_db_index_not_found": {
     "message": "Index {0} does not exist at {1}",
-    "description": "索引不存在错误",
-    "_untranslated": false
+    "description": "索引不存在错误"
   },
   "background_db_get_by_index_failed": {
     "message": "Failed to retrieve data at index {0}",
-    "description": "通过索引获取数据失败错误",
-    "_untranslated": false
+    "description": "通过索引获取数据失败错误"
   },
   "background_db_delete_failed": {
     "message": "Failed to delete data in {0}",
-    "description": "删除数据失败错误",
-    "_untranslated": false
+    "description": "删除数据失败错误"
   },
   "background_db_clear_failed": {
     "message": "Failed to clear {0}",
-    "description": "清空存储失败错误",
-    "_untranslated": false
+    "description": "清空存储失败错误"
   },
   "background_db_count_failed": {
     "message": "Failed to get {0} number of records",
-    "description": "获取记录数失败错误",
-    "_untranslated": false
+    "description": "获取记录数失败错误"
   },
   "background_db_exists_failed": {
     "message": "Failed to check if data exists in {0}",
-    "description": "检查数据存在失败错误",
-    "_untranslated": false
+    "description": "检查数据存在失败错误"
   },
   "indexed_db_opened": {
     "message": "Database {0} (version {1}) is already open",
-    "description": "成功打开数据库时的日志消息，{0}为数据库名称，{1}为版本",
-    "_untranslated": false
+    "description": "成功打开数据库时的日志消息，{0}为数据库名称，{1}为版本"
   },
   "nav_storage_initialized": {
     "message": "Navigation storage initialized",
@@ -1415,8 +1397,7 @@
   },
   "background_storage_fetch_session_graph_failed": {
     "message": "Failed to obtain the conversation graph: {0}",
-    "description": "获取会话图谱失败时的错误消息，{0}为错误详情",
-    "_untranslated": false
+    "description": "获取会话图谱失败时的错误消息，{0}为错误详情"
   },
   "background_storage_init_failed": {
     "message": "Failed to initialize storage: {0}",
@@ -2012,13 +1993,11 @@
   },
   "content_prev_month_title": {
     "message": "Previous month",
-    "description": "上一月按钮提示文本",
-    "_untranslated": false
+    "description": "上一月按钮提示文本"
   },
   "content_next_month_title": {
     "message": "Next month",
-    "description": "下一月按钮提示文本",
-    "_untranslated": false
+    "description": "下一月按钮提示文本"
   },
   "content_sunday": {
     "message": "Sun",
@@ -2162,8 +2141,7 @@
   },
   "content_init_failed": {
     "message": "Initialization failed:",
-    "description": "一般初始化失败错误消息",
-    "_untranslated": false
+    "description": "一般初始化失败错误消息"
   },
   "content_extension_error": {
     "message": "Navigraph extension error:",
@@ -2499,13 +2477,11 @@
   },
   "content_tree_view": {
     "message": "Treemap",
-    "description": "树形图视图按钮文本",
-    "_untranslated": false
+    "description": "树形图视图按钮文本"
   },
   "content_timeline_view": {
     "message": "Timeline",
-    "description": "时间线视图按钮文本",
-    "_untranslated": false
+    "description": "时间线视图按钮文本"
   },
   "state_manager_view_state_saved": {
     "message": "{0} view state saved",
@@ -2549,18 +2525,15 @@
   },
   "state_manager_apply_transform_failed": {
     "message": "Failed to apply transformation state: {0}",
-    "description": "应用变换状态失败时的错误日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "应用变换状态失败时的错误日志，{0}为错误详情"
   },
   "state_manager_dynamic_filtering_error": {
     "message": "Error processing dynamic filter: {0}",
-    "description": "处理动态过滤时出错时的警告日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "处理动态过滤时出错时的警告日志，{0}为错误详情"
   },
   "state_manager_dom_filtering_failed": {
     "message": "DOM filtering operation failed: {0}",
-    "description": "DOM过滤操作失败时的警告日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "DOM过滤操作失败时的警告日志，{0}为错误详情"
   },
   "state_manager_statusbar_init": {
     "message": "Initializing the status bar...",
@@ -2576,8 +2549,7 @@
   },
   "state_manager_statusbar_not_found": {
     "message": "The status bar element does not exist",
-    "description": "状态栏元素不存在时的警告日志",
-    "_untranslated": false
+    "description": "状态栏元素不存在时的警告日志"
   },
   "state_manager_show_indicator_failed": {
     "message": "Failed to display filter indicator: {0}",
@@ -2585,13 +2557,11 @@
   },
   "state_manager_hide_indicator_failed": {
     "message": "Failed to hide filter indicator: {0}",
-    "description": "隐藏过滤指示器失败时的警告日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "隐藏过滤指示器失败时的警告日志，{0}为错误详情"
   },
   "state_manager_switch_view_failed": {
     "message": "Failed to switch view type: {0}",
-    "description": "切换视图类型失败时的错误日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "切换视图类型失败时的错误日志，{0}为错误详情"
   },
   "state_manager_container_not_found": {
     "message": "The visual container element could not be found",
@@ -2607,18 +2577,15 @@
   },
   "state_manager_reset_view_failed": {
     "message": "Failed to reset view: {0}",
-    "description": "重置视图失败时的错误日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "重置视图失败时的错误日志，{0}为错误详情"
   },
   "state_manager_show_all_nodes_failed": {
     "message": "Failed to display all nodes: {0}",
-    "description": "显示所有节点失败时的错误日志，{0}为错误详情",
-    "_untranslated": false
+    "description": "显示所有节点失败时的错误日志，{0}为错误详情"
   },
   "state_manager_edge_data_extraction_failed": {
     "message": "Unable to extract source and target IDs from edge data",
-    "description": "无法从边数据中提取源和目标ID时的调试日志",
-    "_untranslated": false
+    "description": "无法从边数据中提取源和目标ID时的调试日志"
   },
   "state_manager_filter_nodes_message": {
     "message": "{0} nodes filtered (zoom in to see more)",
@@ -4162,8 +4129,7 @@
   },
   "logger_debug_stack_view_full": {
     "message": "Use Logger.debugStack(\"full\") to see the full analysis",
-    "description": "查看完整堆栈提示",
-    "_untranslated": false
+    "description": "查看完整堆栈提示"
   },
   "logger_debug_stack_error": {
     "message": "Unable to get stack",
@@ -4595,8 +4561,7 @@
   },
   "options_notification_showing": {
     "message": "Show notification: \"{0}\" ({1})",
-    "description": "显示通知日志",
-    "_untranslated": false
+    "description": "显示通知日志"
   },
   "options_notification_element_missing": {
     "message": "Notification element not found",
@@ -4632,147 +4597,118 @@
   },
   "background_default_session_name": {
     "message": "Session {0}",
-    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
   },
   "indexed_db_instance_created": {
     "message": "Created IndexedDB storage instance: {0}",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "indexed_db_upgrade": {
     "message": "Upgrading database from version {0} to {1}",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "indexed_db_closed": {
     "message": "Closed database {0} (version {1})",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "indexed_db_upgrade_complete": {
     "message": "Database upgrade completed",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "indexed_db_store_deleted": {
     "message": "Deleted storage object: {0}",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "indexed_db_store_created": {
     "message": "Created storage object: {0}",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "indexed_db_index_created": {
     "message": "Created index: {0}",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "background_db_for_each_failed": {
     "message": "Failed to traverse the data in storage {0}",
-    "description": "从TS提取: src/background/store/indexed-db.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/store/indexed-db.ts"
   },
   "content_calculate_node_depth_failed": {
     "message": "Failed to calculate node depth",
-    "description": "从TS提取: src/content/core/node-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/core/node-manager.ts"
   },
   "content_no_root_nodes_found": {
     "message": "No root node found, set all nodes depth to 0",
-    "description": "从TS提取: src/content/core/node-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/core/node-manager.ts"
   },
   "state_manager_apply_transform": {
     "message": "Applying the saved transformation state",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "state_manager_container_type_not_supported": {
     "message": "The container type does not support dynamic filtering",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "state_manager_transform_not_available": {
     "message": "Unable to obtain the current transformation state",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "state_manager_statusbar_date": {
     "message": "Session date: {0}",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "state_manager_statusbar_update_failed": {
     "message": "Failed to update status bar",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "state_manager_node_importance_error": {
     "message": "Error calculating node importance: {0}",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "state_manager_get_connected_nodes_error": {
     "message": "Error getting connection node: {0}",
-    "description": "从TS提取: src/content/utils/state-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/utils/state-manager.ts"
   },
   "detected_self_loop_node": {
     "message": "Self-loop node detected: {0}",
-    "description": "从TS提取: src/content/visualizer/renderers/TreeRenderer.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/renderers/TreeRenderer.ts"
   },
   "invalid_link_coordinates": {
     "message": "Invalid link coordinates: {0} -> {1}",
-    "description": "从TS提取: src/content/visualizer/renderers/TreeRenderer.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/renderers/TreeRenderer.ts"
   },
   "content_session_list_load_failed": {
     "message": "Failed to load session list: {0}",
-    "description": "从TS提取: src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/state/SessionViewController.ts"
   },
   "calendar_sunday": {
     "message": "day",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
     "message": "one",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
     "message": "two",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
     "message": "three",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
     "message": "Four",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
     "message": "five",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
     "message": "six",
-    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {
     "message": "Failed to load help document",
-    "description": "从TS提取: src/options/options.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/options/options.ts"
   }
 }

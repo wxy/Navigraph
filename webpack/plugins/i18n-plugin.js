@@ -100,9 +100,12 @@ class I18nPlugin {
 
         // 检查是否是源代码文件
         const relativePath = path.relative(this.options.srcDir, file);
-        const isSourceFile = this.options.patterns.some((pattern) =>
-          glob.minimatch(relativePath, pattern)
-        );
+        const isSourceFile = this.options.patterns.some((pattern) => {
+          // 使用glob进行匹配
+          const matches = glob.sync(path.join(this.options.srcDir, pattern));
+          const absolutePath = path.resolve(file);
+          return matches.some(match => path.resolve(match) === absolutePath);
+        });
 
         if (
           isSourceFile &&
