@@ -46,9 +46,9 @@ export class SettingsService {
       // 设置初始化完成
       this.initialized = true;
       
-      logger.log('settings_service_init_complete');
+      logger.log(i18n('settings_service_init_complete', '设置服务初始化完成'));
     } catch (error) {
-      logger.error('settings_service_init_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_service_init_failed', '设置服务初始化失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -65,7 +65,7 @@ export class SettingsService {
         this.updateSettingsInternal(settings);
       }
     } catch (error) {
-      logger.warn('settings_cache_load_failed', error instanceof Error ? error.message : String(error));
+      logger.warn(i18n('settings_cache_load_failed', '从本地缓存加载设置失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -81,9 +81,9 @@ export class SettingsService {
         this.updateSettingsInternal(settings);
         // 更新本地缓存
         this.updateCache(settings);
-        logger.log('settings_loaded_from_storage');
+        logger.log(i18n('settings_loaded_from_storage', '已从存储中加载设置'));
       } else {
-        logger.log('settings_not_found_using_defaults');
+        logger.log(i18n('settings_not_found_using_defaults', '存储中未找到设置，使用默认值'));
         // 如果存储中没有设置，保存默认设置
         if (this.initialized) {
           // 如果已经初始化，只更新内部状态，不保存到存储
@@ -95,8 +95,8 @@ export class SettingsService {
         }
       }
     } catch (error) {
-      logger.error('settings_storage_load_failed', error instanceof Error ? error.message : String(error));
-      throw new I18nError('settings_storage_load_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_storage_load_failed', '从存储加载设置失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('settings_storage_load_failed', '从存储加载设置失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -111,8 +111,8 @@ export class SettingsService {
       // 同时更新本地缓存
       this.updateCache(settings);
     } catch (error) {
-      logger.error('settings_storage_save_failed', error instanceof Error ? error.message : String(error));
-      throw new I18nError('settings_storage_save_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_storage_save_failed', '保存设置到存储失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('settings_storage_save_failed', '保存设置到存储失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -130,7 +130,7 @@ export class SettingsService {
       };
       localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(cacheData));
     } catch (error) {
-      logger.warn('settings_cache_update_failed', error instanceof Error ? error.message : String(error));
+      logger.warn(i18n('settings_cache_update_failed', '更新设置缓存失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -197,8 +197,8 @@ export class SettingsService {
       
       // 不再广播设置变更，改为显示用户提示
     } catch (error) {
-      logger.error('settings_update_failed', error instanceof Error ? error.message : String(error));
-      throw new I18nError('settings_update_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_update_failed', '更新设置失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('settings_update_failed', '更新设置失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -215,8 +215,8 @@ export class SettingsService {
       
       // 不再广播设置变更，改为显示用户提示
     } catch (error) {
-      logger.error('settings_reset_failed', error instanceof Error ? error.message : String(error));
-      throw new I18nError('settings_reset_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_reset_failed', '重置设置失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('settings_reset_failed', '重置设置失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -232,7 +232,7 @@ export class SettingsService {
       // 返回最新的设置
       return this.getSettings();
     } catch (error) {
-      logger.error('settings_refresh_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_refresh_failed', '刷新设置失败: {0}'), error instanceof Error ? error.message : String(error));
       return this.getSettings(); // 即使出错也返回当前设置
     }
   }
@@ -248,7 +248,7 @@ export class SettingsService {
       try {
         listener(this.getSettings());
       } catch (error) {
-        logger.error('settings_listener_call_failed', error instanceof Error ? error.message : String(error));
+        logger.error(i18n('settings_listener_call_failed', '调用设置变更监听器失败: {0}'), error instanceof Error ? error.message : String(error));
       }
     }
     
@@ -275,7 +275,7 @@ export class SettingsService {
       try {
         listener(settings);
       } catch (error) {
-        logger.error('settings_listener_notify_failed', error instanceof Error ? error.message : String(error));
+        logger.error(i18n('settings_listener_notify_failed', '通知设置变更监听器失败: {0}'), error instanceof Error ? error.message : String(error));
       }
     }
   }

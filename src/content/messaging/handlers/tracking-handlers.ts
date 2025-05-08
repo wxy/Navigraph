@@ -41,19 +41,19 @@ export function registerTrackingHandlers(messageService: ContentMessageService):
         ctx.success({ nodeId: nodeId || null });
       })
       .catch(error => {
-        ctx.error('tracking_handlers_request_node_id_failed', 
+        ctx.error(i18n('tracking_handlers_request_node_id_failed', '请求节点ID失败: {0}'), 
           error instanceof Error ? error.message : String(error));
       });
     
     return true; // 异步响应
   });
   
-  logger.log('tracking_handlers_registered');
+  logger.log(i18n('tracking_handlers_registered', '跟踪相关消息处理程序已注册'));
   
   // 初始请求节点ID
   setTimeout(() => {
     requestNodeId().catch(err => 
-      logger.error('tracking_handlers_init_node_id_failed', 
+      logger.error(i18n('tracking_handlers_init_node_id_failed', '初始化节点ID失败: {0}'), 
         err instanceof Error ? err.message : String(err)));
   }, 1000);
 }
@@ -64,7 +64,7 @@ export function registerTrackingHandlers(messageService: ContentMessageService):
  */
 async function requestNodeId(): Promise<string | null> {
   if (!isExtensionContextValid()) {
-    logger.warn('tracking_handlers_invalid_context');
+    logger.warn(i18n('tracking_handlers_invalid_context', '扩展上下文无效，无法请求节点ID'));
     return null;
   }
   
@@ -72,7 +72,7 @@ async function requestNodeId(): Promise<string | null> {
   
   // 限制频率
   if (now - lastRequestTime < 5000) {
-    logger.debug('tracking_handlers_request_too_frequent');
+    logger.debug(i18n('tracking_handlers_request_too_frequent', '请求节点ID间隔过短，跳过'));
     // @ts-ignore - 全局变量可能未在类型中声明
     return window.standardNodeId;
   }
@@ -86,7 +86,7 @@ async function requestNodeId(): Promise<string | null> {
   }
   
   try {
-    logger.log('tracking_handlers_request_tab_id');
+    logger.log(i18n('tracking_handlers_request_tab_id', '请求标签页ID...'));
     
     // 获取标签页ID
     const tabIdResponse = await sendToBackground('getTabId', {});
@@ -108,7 +108,7 @@ async function requestNodeId(): Promise<string | null> {
       }
     }
   } catch (error) {
-    logger.error('tracking_handlers_get_node_id_failed', 
+    logger.error(i18n('tracking_handlers_get_node_id_failed', '获取节点ID失败: {0}'), 
       error instanceof Error ? error.message : String(error));
   }
   
@@ -126,7 +126,7 @@ export async function sendLinkClickToBackground(linkInfo: {
   [key: string]: any;
 }): Promise<void> {
   if (!linkInfo) {
-    throw new I18nError('tracking_handlers_missing_link_info');
+    throw new Error(i18n('tracking_handlers_missing_link_info', '缺少链接信息'));
   }
   
   // 使用存储的节点ID
@@ -146,7 +146,7 @@ export async function sendLinkClickToBackground(linkInfo: {
     }
   });
   
-  logger.log('tracking_handlers_link_sent', linkInfo.targetUrl);
+  logger.log(i18n('tracking_handlers_link_sent', '链接点击已发送到后台: {0}'), linkInfo.targetUrl);
 }
 
 /**
@@ -159,7 +159,7 @@ export async function sendFormSubmitToBackground(formInfo: {
   formData?: Record<string, string>;
 }): Promise<void> {
   if (!formInfo) {
-    throw new I18nError('tracking_handlers_missing_form_info');
+    throw new Error(i18n('tracking_handlers_missing_form_info', '缺少表单信息'));
   }
   
   // 使用存储的节点ID
@@ -181,5 +181,5 @@ export async function sendFormSubmitToBackground(formInfo: {
     }
   });
   
-  logger.log('tracking_handlers_form_sent', formInfo.formAction);
+  logger.log(i18n('tracking_handlers_form_sent', '表单提交已发送到后台: {0}'), formInfo.formAction);
 }

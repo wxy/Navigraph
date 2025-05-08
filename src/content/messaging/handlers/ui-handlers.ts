@@ -17,7 +17,7 @@ export function registerUIHandlers(messageService: ContentMessageService): void 
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     
     try {
-      logger.log('ui_handlers_refresh_request');
+      logger.log(i18n('ui_handlers_refresh_request', '处理刷新可视化器请求'));
       
       // 获取可视化器实例并刷新
       const visualizer = window.visualizer;
@@ -31,18 +31,18 @@ export function registerUIHandlers(messageService: ContentMessageService): void 
         
         ctx.success();
       } else {
-        logger.warn('ui_handlers_visualizer_unavailable');
-        ctx.error('ui_handlers_visualizer_error');
+        logger.warn(i18n('ui_handlers_visualizer_unavailable', '可视化器不可用，无法刷新'));
+        ctx.error(i18n('ui_handlers_visualizer_error', '可视化器不可用'));
       }
       return false; // 同步响应
     } catch (error) {
-      logger.error('ui_handlers_refresh_error', 
+      logger.error(i18n('ui_handlers_refresh_error', '刷新可视化器失败: {0}'), 
         error instanceof Error ? error.message : String(error));
-      ctx.error('ui_handlers_refresh_error', 
+      ctx.error(i18n('ui_handlers_refresh_error', '刷新可视化器失败: {0}'), 
         error instanceof Error ? error.message : String(error));
       return false; // 同步响应
     }
   });
   
-  logger.log('ui_handlers_registered');
+  logger.log(i18n('ui_handlers_registered', 'UI相关消息处理程序已注册'));
 }

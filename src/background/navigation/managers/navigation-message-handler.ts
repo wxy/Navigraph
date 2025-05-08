@@ -30,7 +30,7 @@ export class NavigationMessageHandler {
    * 注册所有消息处理程序
    */
   public registerMessageHandlers(): void {
-    logger.groupCollapsed('nav_msg_handler_registering');
+    logger.groupCollapsed(i18n('nav_msg_handler_registering', '注册导航相关消息处理程序'));
     
     // 获取节点ID请求
     this.messageService.registerHandler('getNodeId', (
@@ -52,14 +52,14 @@ export class NavigationMessageHandler {
           });
           
           if (node && node.id) {
-            logger.log('nav_msg_handler_node_assigned', url, node.id);
+            logger.log(i18n('nav_msg_handler_node_assigned', '为URL分配节点ID: {0} -> {1}'), url, node.id);
             ctx.success({ nodeId: node.id });
           } else {
-            ctx.error('nav_msg_error_create_node');
+            ctx.error(i18n('nav_msg_error_create_node', '无法创建节点'));
           }
         } catch (error) {
-          logger.error('nav_msg_handler_get_node_id_failed', error instanceof Error ? error.message : String(error));
-          ctx.error('nav_msg_error_get_node', error instanceof Error ? error.message : String(error));
+          logger.error(i18n('nav_msg_handler_get_node_id_failed', '处理getNodeId失败: {0}'), error instanceof Error ? error.message : String(error));
+          ctx.error(i18n('nav_msg_error_get_node', '获取节点ID失败: {0}'), error instanceof Error ? error.message : String(error));
         }
       };
       
@@ -82,7 +82,7 @@ export class NavigationMessageHandler {
       const url = pageInfo.url || sender.tab?.url || '';
       
       if (!tabId || !url) {
-        return ctx.error('nav_msg_error_missing_page_info');
+        return ctx.error(i18n('nav_msg_error_missing_page_info', '缺少必要的页面信息'));
       }
       
       this.nodeTracker.updatePageMetadata(tabId, {
@@ -93,10 +93,10 @@ export class NavigationMessageHandler {
           if (nodeId) {
             return ctx.success({ nodeId });
           } else {
-            return ctx.error('nav_msg_error_node_not_found');
+            return ctx.error(i18n('nav_msg_error_node_not_found', '未找到此页面的节点ID'));
           }
         })
-        .catch(error => ctx.error('nav_msg_error_page_load', error instanceof Error ? error.message : String(error)));
+        .catch(error => ctx.error(i18n('nav_msg_error_page_load', '处理页面加载失败: {0}'), error instanceof Error ? error.message : String(error)));
         
       return true; // 异步响应
     });
@@ -120,12 +120,12 @@ export class NavigationMessageHandler {
             const url = sender.tab?.url;
             
             if (!tabId || !url) {
-              return ctx.error('nav_msg_error_tab_info');
+              return ctx.error(i18n('nav_msg_error_tab_info', '无法确定标签页信息'));
             }
             
             const result = await this.nodeTracker.getNodeIdForTab(tabId, url);
             if (!result) {
-              return ctx.error('nav_msg_error_node_id_not_found');
+              return ctx.error(i18n('nav_msg_error_node_id_not_found', '未找到节点ID'));
             }
             nodeId = result;
           }
@@ -138,7 +138,7 @@ export class NavigationMessageHandler {
           );
           return ctx.success();
         } catch (error) {
-          return ctx.error('nav_msg_error_update_title', error instanceof Error ? error.message : String(error));
+          return ctx.error(i18n('nav_msg_error_update_title', '更新页面标题失败: {0}'), error instanceof Error ? error.message : String(error));
         }
       };
       
@@ -164,12 +164,12 @@ export class NavigationMessageHandler {
             const url = sender.tab?.url;
             
             if (!tabId || !url) {
-              return ctx.error('nav_msg_error_tab_info');
+              return ctx.error(i18n('nav_msg_error_tab_info', '无法确定标签页信息'));
             }
             
             const result = await this.nodeTracker.getNodeIdForTab(tabId, url);
             if (!result) {
-              return ctx.error('nav_msg_error_node_id_not_found');
+              return ctx.error(i18n('nav_msg_error_node_id_not_found', '未找到节点ID'));
             }
             nodeId = result;
           }
@@ -182,7 +182,7 @@ export class NavigationMessageHandler {
           );
           return ctx.success();
         } catch (error) {
-          return ctx.error('nav_msg_error_update_favicon', error instanceof Error ? error.message : String(error));
+          return ctx.error(i18n('nav_msg_error_update_favicon', '更新页面图标失败: {0}'), error instanceof Error ? error.message : String(error));
         }
       };
       
@@ -227,12 +227,12 @@ export class NavigationMessageHandler {
           
           ctx.success();
         } catch (error) {
-          logger.error('nav_msg_handler_link_click_failed', error instanceof Error ? error.message : String(error));
-          ctx.error('nav_msg_error_link_click', error instanceof Error ? error.message : String(error));
+          logger.error(i18n('nav_msg_handler_link_click_failed', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
+          ctx.error(i18n('nav_msg_error_link_click', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
         }
         return false;
       } else {
-        ctx.error('nav_msg_error_missing_link_info');
+        ctx.error(i18n('nav_msg_error_missing_link_info', '缺少链接信息'));
         return false;
       }
     });
@@ -247,12 +247,12 @@ export class NavigationMessageHandler {
       
       const tabId = sender.tab?.id;
       if (!tabId) {
-        ctx.error('nav_msg_error_tab_id');
+        ctx.error(i18n('nav_msg_error_tab_id', '无法确定标签页ID'));
         return false; // 同步响应
       }
       
       if (!message.formInfo) {
-        ctx.error('nav_msg_error_missing_form_info');
+        ctx.error(i18n('nav_msg_error_missing_form_info', '缺少表单信息'));
         return false; // 同步响应
       }
       
@@ -260,8 +260,8 @@ export class NavigationMessageHandler {
         this.navigationEventHandler.handleFormSubmitted(tabId, message.formInfo);
         ctx.success();
       } catch (error) {
-        logger.error('nav_msg_handler_form_submit_failed', error instanceof Error ? error.message : String(error));
-        ctx.error('nav_msg_error_form_submit', error instanceof Error ? error.message : String(error));
+        logger.error(i18n('nav_msg_handler_form_submit_failed', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
+        ctx.error(i18n('nav_msg_error_form_submit', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
       }
       return false; // 同步响应
     });
@@ -276,15 +276,15 @@ export class NavigationMessageHandler {
       
       const tabId = sender.tab?.id;
       if (!tabId) {
-        return ctx.error('nav_msg_error_tab_id');
+        return ctx.error(i18n('nav_msg_error_tab_id', '无法确定标签页ID'));
       }
       
       try {
         this.navigationEventHandler.handleJsNavigation(tabId, message);
         return ctx.success();
       } catch (error) {
-        logger.error('nav_msg_handler_js_nav_failed', error instanceof Error ? error.message : String(error));
-        return ctx.error('nav_msg_error_js_navigation', error instanceof Error ? error.message : String(error));
+        logger.error(i18n('nav_msg_handler_js_nav_failed', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
+        return ctx.error(i18n('nav_msg_error_js_navigation', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
       }
     });
     
@@ -304,6 +304,6 @@ export class NavigationMessageHandler {
     this.messageService.unregisterHandler('formSubmitted');
     this.messageService.unregisterHandler('jsNavigation');
     
-    logger.log('nav_msg_handler_handlers_cleared');
+    logger.log(i18n('nav_msg_handler_handlers_cleared', '已清理所有导航消息处理程序'));
   }
 }

@@ -1,6 +1,0 @@
-{
-  "settings_handlers_save_settings": {
-    "message": "保存设置: {0}",
-    "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
-  }
-}

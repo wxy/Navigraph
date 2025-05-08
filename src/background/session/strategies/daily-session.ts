@@ -33,7 +33,7 @@ export class DailySessionStrategy implements SessionStrategy {
     currentSession: BrowsingSession | null
   ): Promise<boolean> {
     if (!currentSession) {
-      logger.log('daily_session_no_active');
+      logger.log(i18n('daily_session_no_active', '没有活跃会话，应创建新会话'));
       return true;
     }
     
@@ -54,13 +54,13 @@ export class DailySessionStrategy implements SessionStrategy {
     // 如果工作日不同且空闲时间足够，创建新会话
     if (sessionWorkDay !== currentWorkDay && idleTime > idleThreshold) {
       const idleHours = Math.round(idleTime / (60 * 60 * 1000)).toString();
-      logger.log('daily_session_new_day_idle_enough', idleHours);
+      logger.log(i18n('daily_session_new_day_idle_enough', '检测到新工作日且空闲时间足够({0}小时)，应创建新会话'), idleHours);
       return true;
     } 
     
     if (sessionWorkDay !== currentWorkDay) {
       const idleMinutes = Math.round(idleTime / (60 * 1000)).toString();
-      logger.log('daily_session_new_day_idle_not_enough', idleMinutes);
+      logger.log(i18n('daily_session_new_day_idle_not_enough', '检测到新工作日，但空闲时间不足({0}分钟)，不创建新会话'), idleMinutes);
     }
     
     return false;
@@ -74,11 +74,11 @@ export class DailySessionStrategy implements SessionStrategy {
     const dateStr = now.toLocaleDateString();
     const timeStr = now.toLocaleTimeString();
     
-    logger.log('daily_session_creating', dateStr);
+    logger.log(i18n('daily_session_creating', '创建新的每日会话: {0}'), dateStr);
     
     const options: SessionCreationOptions = {
-      title: i18n('daily_session_title', dateStr),
-      description: i18n('daily_session_description', dateStr, timeStr),
+      title: i18n('daily_session_title', '{0} 浏览会话', dateStr),
+      description: i18n('daily_session_description', '自动创建的 {0} {1} 会话', dateStr, timeStr),
       metadata: {
         type: "daily",
         date: now.getTime()

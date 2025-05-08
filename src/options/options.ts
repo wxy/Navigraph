@@ -12,7 +12,7 @@ const settingsService = getSettingsService();
 let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
 
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
-  logger.log('options_dom_loaded_init_start');
+  logger.log(i18n('options_dom_loaded_init_start', 'DOM已加载，开始初始化选项页...'));
   
   // 初始化通知元素
   const notification = document.getElementById('notification');
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     notification.className = 'notification hidden';
     notification.style.display = 'none';
   } else {
-    logger.warn('options_notification_element_not_found');
+    logger.warn(i18n('options_notification_element_not_found', '未找到通知元素，可能会影响用户反馈'));
   }
   
   // 初始化UI
@@ -33,21 +33,21 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
     
     // 加载设置
     await loadSettings();
-    logger.log('options_settings_loaded_success', currentSettings);
+    logger.log(i18n('options_settings_loaded_success', '配置加载成功: {0}'), currentSettings);
     
     // 应用主题到选项页面
     applyThemeToOptionsPage();
     
     // 添加设置变更监听器
     settingsService.addChangeListener(settings => {
-      logger.log('options_settings_change_detected', settings);
+      logger.log(i18n('options_settings_change_detected', '检测到设置变更: {0}'), settings);
       currentSettings = { ...settings };
       applySettingsToUI();
       applyThemeToOptionsPage();
     });
   } catch (error) {
-    logger.error('options_page_init_failed', error);
-    showNotification(i18n('options_load_failed'), 'error');
+    logger.error(i18n('options_page_init_failed', '初始化选项页面失败: {0}'), error);
+    showNotification(i18n('options_load_failed', '加载设置失败，请重试'), 'error');
   }
 });
 
@@ -88,10 +88,10 @@ function setupEventListeners(): void {
       
       // 立即更新主题设置
       settingsService.updateSettings({ theme })
-        .then(() => showNotification(i18n('options_theme_updated')))
+        .then(() => showNotification(i18n('options_theme_updated', '主题已更新')))
         .catch(error => {
-          logger.error('options_update_theme_error', error);
-          showNotification(i18n('options_update_theme_failed'), 'error');
+          logger.error(i18n('options_update_theme_error', '更新主题失败'), error);
+          showNotification(i18n('options_update_theme_failed', '更新主题失败'), 'error');
         });
     });
   }
@@ -167,7 +167,7 @@ async function openHelp(): Promise<void> {
     // 通过规则确定README文件路径
     const readmeFilePath = await findAppropriateReadmeFile(userLanguage);
     
-    logger.log('options_help_opening', readmeFilePath);
+    logger.log(i18n('options_help_opening', '正在打开帮助文档'), readmeFilePath);
     
     // 构建GitHub仓库中文档的URL
     const githubRepoUrl = 'https://github.com/wxy/Navigraph/blob/master/';
@@ -176,8 +176,8 @@ async function openHelp(): Promise<void> {
     // 打开新标签页显示GitHub上的README
     chrome.tabs.create({ url: githubDocUrl });
   } catch (error) {
-    logger.error('options_help_open_error', error);
-    showNotification(i18n('options_help_load_failed'), 'error');
+    logger.error(i18n('options_help_open_error', '打开帮助文档时出错'), error);
+    showNotification(i18n('options_help_load_failed', '加载帮助文档失败'), 'error');
   }
 }
 
@@ -211,7 +211,7 @@ async function findAppropriateReadmeFile(language: string): Promise<string> {
   // 4. 最终回退到根目录的README.md
   candidateFiles.push('README.md');
   
-  logger.log(i18n('options_help_log_candidates'), candidateFiles);
+  logger.log(i18n('options_help_log_candidates', 'README文件候选列表'), candidateFiles);
   
   // 检查扩展内部文件是否存在
   for (const filePath of candidateFiles) {
@@ -221,17 +221,17 @@ async function findAppropriateReadmeFile(language: string): Promise<string> {
       // 使用fetch检查文件是否存在
       const response = await fetch(url, { method: 'HEAD' });
       if (response.ok) {
-        logger.log(i18n('options_help_log_file_found'), filePath);
+        logger.log(i18n('options_help_log_file_found', '找到有效的README文件'), filePath);
         return filePath;
       }
     } catch (e) {
       // 忽略错误，继续检查下一个候选文件
-      logger.warn(i18n('options_help_log_file_not_found'), e);
+      logger.warn(i18n('options_help_log_file_not_found', '未找到README文件'), e);
     }
   }
   
   // 所有文件都不存在，返回默认的README.md
-  logger.warn(i18n('options_help_log_fallback'));
+  logger.warn(i18n('options_help_log_fallback', '所有候选README文件都不存在，使用默认README.md'));
   return 'README.md';
 }
 
@@ -264,7 +264,7 @@ function updateViewPreview(view: 'tree' | 'timeline'): void {
     
     // 添加数据属性以支持 ::before 伪元素的内容
     previewContainer.setAttribute('data-view-type', 
-      view === 'tree' ? i18n('options_tree_view_label') : i18n('options_timeline_view_label'));
+      view === 'tree' ? i18n('options_tree_view_label', '树形图视图') : i18n('options_timeline_view_label', '时间线视图'));
   }
 }
 
@@ -279,10 +279,10 @@ async function loadSettings(): Promise<void> {
     // 应用设置到UI
     applySettingsToUI();
     
-    logger.log('options_settings_loaded', currentSettings);
+    logger.log(i18n('options_settings_loaded', '设置已加载 {0}'), currentSettings);
   } catch (error) {
-    logger.error('options_settings_load_error', error);
-    showNotification(i18n('options_load_failed'), 'error');
+    logger.error(i18n('options_settings_load_error', '加载设置时出错: {0}'), error);
+    showNotification(i18n('options_load_failed', '加载设置失败，请重试'), 'error');
   }
 }
 
@@ -385,8 +385,8 @@ async function saveSettings(): Promise<void> {
     // 检查设置变更并显示综合通知
     showSettingsSavedNotification(oldSettings, newSettings);
   } catch (error) {
-    logger.error('options_save_error', error);
-    showNotification(i18n('options_save_failed'), 'error', 3000);
+    logger.error(i18n('options_save_error', '保存设置时出错'), error);
+    showNotification(i18n('options_save_failed', '保存设置失败'), 'error', 3000);
   }
 }
 /**
@@ -398,7 +398,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
   
   // 如果没有变化，显示信息并返回
   if (!hasChanges) {
-    showNotification(i18n('options_no_changes'), 'success', 2000);
+    showNotification(i18n('options_no_changes', '没有设置被更改'), 'success', 2000);
     return;
   }
   
@@ -419,7 +419,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
   
   if (affectsBackground) {
     // 使用完整的"需要重载"消息
-    message = i18n('options_settings_saved_reload');
+    message = i18n('options_settings_saved_reload', '设置已保存 - 需要重新加载扩展才能完全生效');
     duration = 5000;
     
     // 带按钮的复杂通知
@@ -442,13 +442,13 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
         // 添加重载按钮，使用单独的本地化字符串
         const reloadBtn = document.createElement('button');
         reloadBtn.className = 'notification-action';
-        reloadBtn.textContent = i18n('options_reload_now');
+        reloadBtn.textContent = i18n('options_reload_now', '立即重载');
         reloadBtn.onclick = () => {
           try {
             chrome.runtime.reload();
           } catch (e) {
-            logger.error('options_extension_reload_failed', e);
-            showNotification(i18n('options_reload_failed'), 'error');
+            logger.error(i18n('options_extension_reload_failed', '重载扩展失败: {0}'), e);
+            showNotification(i18n('options_reload_failed', '重载扩展失败，请手动刷新'), 'error');
           }
         };
         notification.appendChild(reloadBtn);
@@ -467,15 +467,15 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
         return; // 提前返回
       }
     } catch (e) {
-      logger.error('options_complex_notification_failed', e);
+      logger.error(i18n('options_complex_notification_failed', '创建复杂通知失败，回退到标准通知: {0}'), e);
     }
   } else if (affectsFrontend) {
     // 使用完整的"需要刷新"消息
-    message = i18n('options_settings_saved_refresh');
+    message = i18n('options_settings_saved_refresh', '设置已保存 - 请刷新已打开的扩展页以应用新设置');
     duration = 4000;
   } else {
     // 基本的"设置已保存"消息
-    message = i18n('options_settings_saved');
+    message = i18n('options_settings_saved', '设置已保存');
   }
   
   // 标准通知
@@ -487,7 +487,7 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
  */
 async function resetSettings(): Promise<void> {
   try {
-    if (confirm(i18n('options_confirm_reset'))) {
+    if (confirm(i18n('options_confirm_reset', '确定要恢复所有默认设置吗？'))) {
       // 保存现有设置的副本用于比较
       const oldSettings = { ...currentSettings };
       
@@ -504,8 +504,8 @@ async function resetSettings(): Promise<void> {
       showSettingsSavedNotification(oldSettings, currentSettings);
     }
   } catch (error) {
-    logger.error('options_reset_error', error);
-    showNotification(i18n('options_reset_failed'), 'error');
+    logger.error(i18n('options_reset_error', '重置设置时出错'), error);
+    showNotification(i18n('options_reset_failed', '重置设置失败'), 'error');
   }
 }
 
@@ -514,20 +514,20 @@ async function resetSettings(): Promise<void> {
  */
 async function clearAllData(): Promise<void> {
   try {
-    if (confirm(i18n('options_confirm_clear_data'))) {
+    if (confirm(i18n('options_confirm_clear_data', '确定要清除所有导航数据吗？此操作无法撤销！'))) {
       const response = await chrome.runtime.sendMessage({
         action: 'clearAllData'
       });
       
       if (response && response.success) {
-        showNotification(i18n('options_data_cleared'));
+        showNotification(i18n('options_data_cleared', '所有数据已清除'));
       } else {
-        throw new Error(response?.error || i18n('options_unknown_error'));
+        throw new Error(response?.error || i18n('options_unknown_error', '未知错误'));
       }
     }
   } catch (error) {
-    logger.error('options_clear_error', error);
-    showNotification(i18n('options_clear_failed'), 'error');
+    logger.error(i18n('options_clear_error', '清除数据时出错'), error);
+    showNotification(i18n('options_clear_failed', '清除数据失败'), 'error');
   }
 }
 
@@ -542,11 +542,11 @@ const notificationManager = {
    * 显示通知
    */
   show(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
-    logger.log('options_notification_showing', message, type);
+    logger.log(i18n('options_notification_showing', '显示通知: \"{0}\" ({1})'), message, type);
     
     const notification = document.getElementById('notification');
     if (!notification) {
-      logger.error('options_notification_element_missing');
+      logger.error(i18n('options_notification_element_missing', '找不到通知元素'));
       return;
     }
     
@@ -607,7 +607,6 @@ const notificationManager = {
 /**
  * 显示通知 - 简化版，使用通知管理器
  */
-function showNotification(messageOrId: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
-  const message = i18n(messageOrId);
+function showNotification(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
   notificationManager.show(message, type, duration);
 }

@@ -21,12 +21,12 @@ export function registerTabHandlers(messageService: BackgroundMessageService): v
     if (sender.tab && sender.tab.id !== undefined) {
       ctx.success({ tabId: sender.tab.id });
     } else {
-      logger.warn('tab_handlers_warn_no_tab_id');
-      ctx.error('tab_handlers_error_unknown_tab');
+      logger.warn(i18n('tab_handlers_warn_no_tab_id', 'getTabId请求未能获取到标签页ID，可能是从非标签页上下文发起的请求'));
+      ctx.error(i18n('tab_handlers_error_unknown_tab', '无法确定标签页，请求可能来自扩展页面或弹出窗口'));
     }
     
     return false; // 不需要异步响应
   });
-  logger.log('tab_handlers_log_registered');
+  logger.log(i18n('tab_handlers_log_registered', '标签页相关消息处理程序已注册'));
 }
 

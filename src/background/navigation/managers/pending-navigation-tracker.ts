@@ -38,7 +38,7 @@ export class PendingNavigationTracker {
       this.expirationTime = expirationTime;
     }
     
-    logger.log('pending_nav_tracker_initialized');
+    logger.log(i18n('pending_nav_tracker_initialized', '待处理导航追踪器初始化完成'));
   }
   
   /**
@@ -75,7 +75,7 @@ export class PendingNavigationTracker {
     this.addPendingNavigation(targetUrl, pendingNav);
     
     // 添加日志记录
-    logger.log('pending_nav_tracker_link_added', sourceUrl, targetUrl);
+    logger.log(i18n('pending_nav_tracker_link_added', '添加链接点击导航: {0} -> {1}'), sourceUrl, targetUrl);
   }
   
   /**
@@ -105,7 +105,7 @@ export class PendingNavigationTracker {
     this.addPendingNavigation(key, pendingNav);
     
     // 添加日志记录
-    logger.log('pending_nav_tracker_form_added', tabId.toString(), formInfo.formAction);
+    logger.log(i18n('pending_nav_tracker_form_added', '添加表单提交导航: 标签页={0}, 目标={1}'), tabId.toString(), formInfo.formAction);
   }
   
   /**
@@ -150,7 +150,7 @@ export class PendingNavigationTracker {
     this.addPendingNavigation(jsNavInfo.targetUrl, pendingNav);
     
     // 添加日志记录
-    logger.log('pending_nav_tracker_js_added', tabId.toString(), jsNavInfo.sourceUrl, jsNavInfo.targetUrl);
+    logger.log(i18n('pending_nav_tracker_js_added', '添加JS导航: 标签页={0}, 从 {1} 到 {2}'), tabId.toString(), jsNavInfo.sourceUrl, jsNavInfo.targetUrl);
   }
   
   /**
@@ -178,8 +178,7 @@ export class PendingNavigationTracker {
 
     this.addPendingNavigation(redirectInfo.targetUrl, pendingNav);
 
-    logger.log(
-      'pending_nav_tracker_redirect_added',
+    logger.log(i18n('pending_nav_tracker_redirect_added', '添加重定向导航记录: 从 {0} 到 {1}, 标签页={2}'),
       redirectInfo.sourceUrl,
       redirectInfo.targetUrl,
       redirectInfo.tabId.toString()
@@ -342,12 +341,12 @@ export class PendingNavigationTracker {
       
       // 如果有导航被删除且在调试模式，记录日志
       if (totalRemoved > 0) {
-        logger.log('pending_nav_tracker_cleanup_complete', totalRemoved.toString());
+        logger.log(i18n('pending_nav_tracker_cleanup_complete', '清理了 {0} 个过期的待处理导航记录'), totalRemoved.toString());
       }
       
       return totalRemoved;
     } catch (error) {
-      logger.error('pending_nav_tracker_cleanup_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('pending_nav_tracker_cleanup_failed', '清理过期导航失败: {0}'), error instanceof Error ? error.message : String(error));
       return 0;
     }
   }
@@ -378,7 +377,7 @@ export class PendingNavigationTracker {
   reset(): void {
     this.pendingNavigations.clear();
     this.pendingJsNavigations.clear();
-    logger.log('pending_nav_tracker_reset');
+    logger.log(i18n('pending_nav_tracker_reset', '待处理导航追踪器状态已重置'));
   }
   
   /**
@@ -394,7 +393,7 @@ export class PendingNavigationTracker {
     this.pendingNavigations.delete(tabKey);
     
     // 添加日志记录
-    logger.log('pending_nav_tracker_tab_cleared', tabId.toString());
+    logger.log(i18n('pending_nav_tracker_tab_cleared', '已清理标签页 {0} 的导航记录'), tabId.toString());
   }
   
   /**

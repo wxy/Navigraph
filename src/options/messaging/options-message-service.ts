@@ -33,7 +33,7 @@ export class OptionsMessageService extends BaseMessageService<'options'> {
   protected initialize(): void {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
-    logger.log('options_message_service_initialized');
+    logger.log(i18n('options_message_service_initialized', '选项页消息服务已初始化'));
   }
 }
 

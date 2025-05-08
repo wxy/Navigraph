@@ -30,7 +30,7 @@ export class ActivityMonitor {
    * 初始化活动监控器
    */
   public async initialize(): Promise<void> {
-    logger.log('activity_monitor_initialized');
+    logger.log(i18n('activity_monitor_initialized', '活动监控器初始化完成'));
     
     // 恢复最后活动时间
     await this.restoreActivityTime();
@@ -50,7 +50,7 @@ export class ActivityMonitor {
     
     // 如果超时值改变，重置计时器
     if (oldTimeout !== this.idleTimeoutMinutes) {
-      logger.log('activity_monitor_timeout_changed', this.idleTimeoutMinutes.toString());
+      logger.log(i18n('activity_monitor_timeout_changed', '活动超时设置已更改为{0}分钟'), this.idleTimeoutMinutes.toString());
       this.resetIdleTimer();
     }
   }
@@ -63,14 +63,14 @@ export class ActivityMonitor {
       const currentSession = await this.manager.getCurrentSession();
       if (currentSession) {
         this.lastActivityTime = currentSession.lastActivity || currentSession.startTime;
-        logger.log('activity_monitor_restore_time_success', 
+        logger.log(i18n('activity_monitor_restore_time_success', '活动监控器：成功恢复上次活动时间：{0}'), 
           new Date(this.lastActivityTime).toLocaleString());
       } else {
-        logger.log('activity_monitor_session_null');
+        logger.log(i18n('activity_monitor_session_null', '活动监控器：未找到当前会话，使用当前时间'));
         this.lastActivityTime = Date.now();
       }
     } catch (error) {
-      logger.error('activity_monitor_restore_time_failed', 
+      logger.error(i18n('activity_monitor_restore_time_failed', '恢复活动时间失败: {0}'), 
         error instanceof Error ? error.message : String(error));
       this.lastActivityTime = Date.now();
     }
@@ -80,11 +80,11 @@ export class ActivityMonitor {
    * 设置活动监听器
    */
   private setupActivityListeners(): void {
-    logger.log('activity_monitor_setup_listeners');
+    logger.log(i18n('activity_monitor_setup_listeners', '活动监控器：设置活动监听器'));
     
     // 浏览器启动时
     chrome.runtime.onStartup.addListener(() => {
-      logger.log('activity_monitor_browser_startup');
+      logger.log(i18n('activity_monitor_browser_startup', '活动监控器：检测到浏览器启动'));
       this.manager.checkDayTransition();
     });
     
@@ -93,13 +93,13 @@ export class ActivityMonitor {
       try {
         const tab = await chrome.tabs.get(activeInfo.tabId);
         if (tab && tab.url && !UrlUtils.isSystemPage(tab.url)) {
-          logger.debug('activity_monitor_real_page_activated', tab.url);
+          logger.debug(i18n('activity_monitor_real_page_activated', '活动监控器：实际页面被激活：{0}'), tab.url);
           this.markActivity();
         } else if (tab && tab.url) {
-          logger.debug('activity_monitor_system_page_ignored', tab.url);
+          logger.debug(i18n('activity_monitor_system_page_ignored', '活动监控器：忽略系统页面激活：{0}'), tab.url);
         }
       } catch (error) {
-        logger.debug('activity_monitor_tab_get_failed', 
+        logger.debug(i18n('activity_monitor_tab_get_failed', '活动监控器：无法获取标签页信息：{0}'), 
           error instanceof Error ? error.message : String(error));
       }
     });
@@ -107,10 +107,10 @@ export class ActivityMonitor {
     // 导航完成时
     chrome.webNavigation.onCompleted.addListener((details) => {
       if (!UrlUtils.isSystemPage(details.url)) {
-        logger.debug('activity_monitor_navigation_completed', details.url);
+        logger.debug(i18n('activity_monitor_navigation_completed', '活动监控器：实际页面导航完成：{0}'), details.url);
         this.markActivity();
       } else {
-        logger.debug('activity_monitor_system_navigation_ignored', details.url);
+        logger.debug(i18n('activity_monitor_system_navigation_ignored', '活动监控器：忽略系统页面导航：{0}'), details.url);
       }
     });
     
@@ -119,10 +119,10 @@ export class ActivityMonitor {
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (changeInfo.status === 'complete' && tab?.url) {
         if (!UrlUtils.isSystemPage(tab.url)) {
-          logger.debug('activity_monitor_page_updated', tab.url);
+          logger.debug(i18n('activity_monitor_page_updated', '活动监控器：实际页面更新完成：{0}'), tab.url);
           this.markActivity();
         } else {
-          logger.debug('activity_monitor_system_update_ignored', tab.url);
+          logger.debug(i18n('activity_monitor_system_update_ignored', '活动监控器：忽略系统页面更新：{0}'), tab.url);
         }
       }
     });
@@ -167,13 +167,13 @@ export class ActivityMonitor {
     
     // 如果空闲超时为0，不设置计时器
     if (this.idleTimeoutMinutes <= 0) {
-      logger.debug('activity_monitor_idle_timer_disabled');
+      logger.debug(i18n('activity_monitor_idle_timer_disabled', '空闲计时器已禁用'));
       return;
     }
     
     // 设置新的计时器
     const timeoutMs = this.idleTimeoutMinutes * 60 * 1000;
-    logger.debug('activity_monitor_idle_timer_reset', this.idleTimeoutMinutes.toString());
+    logger.debug(i18n('activity_monitor_idle_timer_reset', '重置空闲计时器，超时时间: {0}分钟'), this.idleTimeoutMinutes.toString());
     
     this.idleTimerId = setTimeout(() => {
       this.handleUserIdle();
@@ -185,7 +185,7 @@ export class ActivityMonitor {
    */
   private async handleUserIdle(): Promise<void> {
     const idleHours = this.idleTimeoutMinutes / 60;
-    logger.log('activity_monitor_idle_detected', idleHours.toString());
+    logger.log(i18n('activity_monitor_idle_detected', '检测到用户空闲超过{0}小时'), idleHours.toString());
     await this.manager.handleUserIdle();
   }
   

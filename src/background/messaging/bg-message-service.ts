@@ -35,7 +35,7 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
   protected initialize(): void {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
-    logger.log('bg_message_service_initialized');
+    logger.log(i18n('bg_message_service_initialized', '后台消息服务已初始化'));
   }
 }
 
@@ -50,7 +50,7 @@ export const getBackgroundMessageService = (): BackgroundMessageService => {
 export const registerAllBackgroundHandlers = (): void => {
   const messageService = getBackgroundMessageService();
   
-  logger.groupCollapsed('bg_message_service_registering_handlers');
+  logger.groupCollapsed(i18n('bg_message_service_registering_handlers', '正在注册后台消息处理程序...'));
   
   // 仅注册实际需要的处理程序
   registerTabHandlers(messageService);

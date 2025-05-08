@@ -38,30 +38,28 @@ export abstract class BaseMessageService<T extends MessageTarget> {
   ): boolean {
     // 1. 格式校验
     if (!message || !message.action) {
-      logger.error('message_missing_action_field'); // 日志使用消息ID
+      logger.error(i18n('message_missing_action_field', '缺少 action 字段')); // 日志使用消息ID
       sendResponse({ 
         success: false, 
-        error: i18n('message_missing_action_field'),
-        requestId: message?.requestId || i18n('unknown')
+        error: i18n('message_missing_action_field', '缺少 action 字段'),
+        requestId: message?.requestId || i18n('unknown', '未指定')
       });
       return false;
     }
     
     // 2. 接收日志
-    logger.log(
-      'message_received',
+    logger.log(i18n('message_received', '收到消息 [{0}] 操作: {1} 请求ID: {2}'),
       this.serviceTarget,
       message.action,
-      message.requestId || i18n('unknown')
+      message.requestId || i18n('unknown', '未指定')
     );
     
     // 3. 目标过滤
     if (message.target !== this.serviceTarget) {
-      logger.log(
-        'message_skip_wrong_target',
+      logger.log(i18n('message_skip_wrong_target', '跳过非目标服务消息: 服务={0} 操作={1} 目标={2}'),
         this.serviceTarget,
         message.action,
-        message.target || i18n('unknown')
+        message.target || i18n('unknown', '未指定')
       );
       return false;
     }
@@ -69,11 +67,11 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     // 4. 查找处理程序
     const handlers = this.handlers.get(message.action) || [];
     if (handlers.length === 0) {
-      logger.warn('handler_not_found', message.action);
+      logger.warn(i18n('handler_not_found', '未注册的消息类型: {0}'), message.action);
       sendResponse({ 
         success: false, 
-        error: i18n('handler_not_found', message.action),
-        requestId: message.requestId || i18n('unknown')
+        error: i18n('handler_not_found', '未注册的消息类型: {0}', message.action),
+        requestId: message.requestId || i18n('unknown', '未指定')
       });
       return false;
     }
@@ -82,11 +80,11 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     try {
       return handlers[0](message, sender, sendResponse);
     } catch (error) {
-      logger.error('message_handle_error', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('message_handle_error', '处理消息时出错: {0}'), error instanceof Error ? error.message : String(error));
       sendResponse({ 
         success: false, 
-        error: i18n('message_handle_error', error instanceof Error ? error.message : String(error)),
-        requestId: message.requestId || i18n('unknown')
+        error: i18n('message_handle_error', '处理消息时出错: {0}', error instanceof Error ? error.message : String(error)),
+        requestId: message.requestId || i18n('unknown', '未指定')
       });
       return false;
     }
@@ -104,7 +102,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     }
     
     this.handlers.get(action)!.push(handler);
-    logger.log('messaging_handler_registered', this.serviceTarget, action);
+    logger.log(i18n('messaging_handler_registered', '[{0}] 已注册消息处理程序: {1}'), this.serviceTarget, action);
   }
   
   /**
@@ -132,7 +130,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
       const index = handlers.indexOf(handler);
       if (index !== -1) {
         handlers.splice(index, 1);
-        logger.log('messaging_handler_unregistered', this.serviceTarget, action);
+        logger.log(i18n('messaging_handler_unregistered', '[{0}] 已移除消息处理程序: {1}'), this.serviceTarget, action);
       }
       
       // 如果没有处理程序了，删除整个条目
@@ -142,7 +140,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     } else {
       // 移除所有该类型的处理程序
       this.handlers.delete(action);
-      logger.log('messaging_all_handlers_unregistered', this.serviceTarget, action);
+      logger.log(i18n('messaging_all_handlers_unregistered', '[{0}] 已移除所有 {1} 处理程序'), this.serviceTarget, action);
     }
   }
   
@@ -173,11 +171,23 @@ export abstract class BaseMessageService<T extends MessageTarget> {
         });
         return false; // 表示同步响应已完成
       },
-      error: (msgOrId: string, ...params: any[]) => {
-        const localized = i18n(msgOrId, ...params);
+      error: (msg: string, ...params: any[]) => {
+        // 处理占位符替换
+        let formattedMessage = msg;
+        if (params && params.length > 0) {
+          // 确保所有参数转换为字符串
+          const stringParams = params.map(p => String(p));
+          
+          // 替换所有 {0}, {1}等占位符
+          for (let i = 0; i < stringParams.length; i++) {
+            const placeholder = new RegExp(`\\{${i}\\}`, 'g');
+            formattedMessage = formattedMessage.replace(placeholder, stringParams[i]);
+          }
+        }
+        
         sendResponse({
           success: false,
-          error: localized,
+          error: formattedMessage,
           requestId: message.requestId
         });
         return false; // 表示同步响应已完成

@@ -24,7 +24,7 @@ export class DebugTools {
     
     // 在非开发环境中，只初始化最基本的功能
     if (!isDev()) {
-      logger.debug('debug_tools_disabled_in_production');
+      logger.debug(i18n('debug_tools_disabled_in_production', '生产环境，调试工具功能已禁用'));
       return; // 提前返回，不初始化调试功能
     }
     // 检查URL调试参数（保留用于直接通过URL启动调试）
@@ -33,7 +33,7 @@ export class DebugTools {
     // 设置存储监听器
     this.setupStorageListener();
     
-    logger.log('debug_tools_initialized');
+    logger.log(i18n('debug_tools_initialized', '调试工具已初始化'));
   }
   
   /**
@@ -53,7 +53,7 @@ export class DebugTools {
         if (timestamp > this.lastDebugTimestamp) {
           this.lastDebugTimestamp = timestamp;
           
-          logger.log('debug_command_received_via_storage', command);
+          logger.log(i18n('debug_command_received_via_storage', '通过存储API收到调试命令: {0}'), command);
           this.handleDebugCommand(command);
         }
       }
@@ -66,7 +66,7 @@ export class DebugTools {
         if (result.navigraph_debug_timestamp > this.lastDebugTimestamp) {
           this.lastDebugTimestamp = result.navigraph_debug_timestamp;
           
-          logger.log('debug_command_pending_detected', result.navigraph_debug_command);
+          logger.log(i18n('debug_command_pending_detected', '检测到未处理的调试命令: {0}'), result.navigraph_debug_command);
           this.handleDebugCommand(result.navigraph_debug_command);
         }
       }
@@ -79,7 +79,7 @@ export class DebugTools {
   private setupMessageListener(): void {
     // 使用新的处理程序注册方法
     registerHandler<BaseMessage, BaseResponse>('debug', (message: any, sender, sendResponse) => {
-      logger.log('debug_command_received', message.command);
+      logger.log(i18n('debug_command_received', '收到调试命令: {0}'), message.command);
       
       // 处理调试命令
       if (message.command) {
@@ -101,7 +101,7 @@ export class DebugTools {
   private handleDebugCommand(command: string): void {
     // 在非开发环境中，忽略所有调试命令
     if (!isDev()) {
-      logger.debug('debug_command_ignored_non_dev', command);
+      logger.debug(i18n('debug_command_ignored_non_dev', '非开发环境，忽略调试命令: {0}'), command);
       return;
     }
     switch (command) {
@@ -115,7 +115,7 @@ export class DebugTools {
         this.clearData();
         break;
       default:
-        logger.warn('debug_command_unknown', command);
+        logger.warn(i18n('debug_command_unknown', '未知的调试命令: {0}'), command);
     }
   }
   
@@ -128,7 +128,7 @@ export class DebugTools {
       const debugCommand = urlParams.get('debug');
       
       if (debugCommand) {
-        logger.log('debug_param_detected_in_url', debugCommand);
+        logger.log(i18n('debug_param_detected_in_url', '检测到URL中的调试参数: {0}'), debugCommand);
         
         // 延迟执行，确保页面已完全加载
         setTimeout(() => {
@@ -142,7 +142,7 @@ export class DebugTools {
         }, 800);
       }
     } catch (error) {
-      logger.error('debug_url_param_processing_failed', error);
+      logger.error(i18n('debug_url_param_processing_failed', '处理URL调试参数失败: {0}'), error);
     }
   }
   
@@ -150,43 +150,43 @@ export class DebugTools {
    * 检查数据状态
    */
   public checkData(): void {
-    logger.group('debug_data_status_check');
+    logger.group(i18n('debug_data_status_check', '📊 数据状态检查'));
     
     // 检查会话数据
-    logger.log('debug_current_session', this.visualizer.currentSession);
+    logger.log(i18n('debug_current_session', '当前会话: {0}'), this.visualizer.currentSession);
     if (this.visualizer.currentSession) {
-      logger.log('debug_session_id', this.visualizer.currentSession.id);
-      logger.log('debug_session_start_time', new Date(this.visualizer.currentSession.startTime).toLocaleString());
-      logger.log('debug_session_end_time', this.visualizer.currentSession.endTime ? 
-                 new Date(this.visualizer.currentSession.endTime).toLocaleString() : i18n('debug_session_active'));
+      logger.log(i18n('debug_session_id', '会话ID: {0}'), this.visualizer.currentSession.id);
+      logger.log(i18n('debug_session_start_time', '会话开始时间: {0}'), new Date(this.visualizer.currentSession.startTime).toLocaleString());
+      logger.log(i18n('debug_session_end_time', '会话结束时间: {0}'), this.visualizer.currentSession.endTime ? 
+                 new Date(this.visualizer.currentSession.endTime).toLocaleString() : i18n('debug_session_active', '活跃中'));
     }
     
     // 检查节点和边
     const nodes = this.visualizer.nodes || [];
     const edges = this.visualizer.edges || [];
-    logger.log('debug_node_count', nodes.length);
-    logger.log('debug_edge_count', edges.length);
+    logger.log(i18n('debug_node_count', '节点数量: {0}'), nodes.length);
+    logger.log(i18n('debug_edge_count', '边数量: {0}'), edges.length);
     
     // 样本数据
     if (nodes.length > 0) {
-      logger.log('debug_node_samples', nodes.slice(0, 3));
+      logger.log(i18n('debug_node_samples', '节点样本: {0}'), nodes.slice(0, 3));
     }
     
     if (edges.length > 0) {
-      logger.log('debug_edge_samples', edges.slice(0, 3));
+      logger.log(i18n('debug_edge_samples', '边样本: {0}'), edges.slice(0, 3));
     }
     
     // 检查过滤器状态
-    logger.log('debug_filter_status', this.visualizer.filters);
+    logger.log(i18n('debug_filter_status', '过滤器状态: {0}'), this.visualizer.filters);
     
     logger.groupEnd();
     
     // 显示弹窗反馈
-    const message = i18n('debug_data_check_complete', 
-      this.visualizer.currentSession ? i18n('debug_exists') : i18n('debug_not_exists'),
+    const message = i18n('debug_data_check_complete', "数据检查完成！请查看控制台。\n\n▶ 当前会话: {0}\n▶ 总节点数: {1}\n▶ 总边数: {2}\n▶ 视图类型: {3}", 
+      this.visualizer.currentSession ? i18n('debug_exists', '存在') : i18n('debug_not_exists', '不存在'),
       nodes.length.toString(),
       edges.length.toString(),
-      this.visualizer.currentView || i18n('debug_unknown')
+      this.visualizer.currentView || i18n('debug_unknown', '未知')
     );
     
     alert(message);
@@ -196,7 +196,7 @@ export class DebugTools {
    * 检查DOM状态
    */
   public checkDOM(): void {
-    logger.group('debug_dom_status_check');
+    logger.group(i18n('debug_dom_status_check', '🔍 DOM状态检查'));
     
     // 检查关键元素
     const elements = [
@@ -210,47 +210,47 @@ export class DebugTools {
     
     elements.forEach(id => {
       const el = document.getElementById(id);
-      logger.log(`${id}: ${el ? i18n('debug_element_found') : i18n('debug_element_not_found')}`);
+      logger.log(`${id}: ${el ? i18n('debug_element_found', '✅ 找到') : i18n('debug_element_not_found', '❌ 未找到')}`);
       
       if (el) {
-        logger.log(i18n('debug_element_visibility', getComputedStyle(el).display));
-        logger.log(i18n('debug_element_size', el.clientWidth.toString(), el.clientHeight.toString()));
+        logger.log(i18n('debug_element_visibility', '- 可见性: {0}', getComputedStyle(el).display));
+        logger.log(i18n('debug_element_size', '- 尺寸: {0}x{1}', el.clientWidth.toString(), el.clientHeight.toString()));
       }
     });
     
     // 检查可视化容器尺寸
     const container = document.getElementById('visualization-container');
     if (container) {
-      logger.log('debug_container_styles');
-      logger.log('debug_style_width', getComputedStyle(container).width);
-      logger.log('debug_style_height', getComputedStyle(container).height);
-      logger.log('debug_style_position', getComputedStyle(container).position);
-      logger.log('debug_style_display', getComputedStyle(container).display);
+      logger.log(i18n('debug_container_styles', '可视化容器样式:'));
+      logger.log(i18n('debug_style_width', '- width: {0}'), getComputedStyle(container).width);
+      logger.log(i18n('debug_style_height', '- height: {0}'), getComputedStyle(container).height);
+      logger.log(i18n('debug_style_position', '- position: {0}'), getComputedStyle(container).position);
+      logger.log(i18n('debug_style_display', '- display: {0}'), getComputedStyle(container).display);
     }
     
     // 检查SVG是否存在
     const svg = container?.querySelector('svg');
-    logger.log('debug_svg_element', svg ? i18n('debug_exists') : i18n('debug_not_exists'));
+    logger.log(i18n('debug_svg_element', 'SVG元素: {0}'), svg ? i18n('debug_exists', '存在') : i18n('debug_not_exists', '不存在'));
     if (svg) {
-      logger.log('debug_svg_size', svg.clientWidth.toString(), svg.clientHeight.toString());
-      logger.log('debug_svg_child_count', svg.childNodes.length.toString());
+      logger.log(i18n('debug_svg_size', '- SVG尺寸: {0} x {1}'), svg.clientWidth.toString(), svg.clientHeight.toString());
+      logger.log(i18n('debug_svg_child_count', '- SVG子元素数: {0}'), svg.childNodes.length.toString());
     }
     
     logger.groupEnd();
     
     // 显示弹窗反馈
     const container_status = container ? 
-      i18n('debug_element_found_with_size', container.clientWidth.toString(), container.clientHeight.toString()) : 
-      i18n('debug_element_not_found');
+      i18n('debug_element_found_with_size', '找到 ({0}x{1})', container.clientWidth.toString(), container.clientHeight.toString()) : 
+      i18n('debug_element_not_found', '❌ 未找到');
       
     const svg_status = svg ? 
-      i18n('debug_svg_found_with_children', svg.childNodes.length.toString()) : 
-      i18n('debug_element_not_found');
+      i18n('debug_svg_found_with_children', '找到 ({0} 个子元素)', svg.childNodes.length.toString()) : 
+      i18n('debug_element_not_found', '❌ 未找到');
       
-    const message = i18n('debug_dom_check_complete',
+    const message = i18n('debug_dom_check_complete', "DOM检查完成！请查看控制台。\n\n▶ 可视化容器: {0}\n▶ SVG元素: {1}\n▶ 当前视图: {2}", 
       container_status,
       svg_status,
-      this.visualizer.currentView || i18n('debug_unknown')
+      this.visualizer.currentView || i18n('debug_unknown', '未知')
     );
     
     alert(message);
@@ -260,7 +260,7 @@ export class DebugTools {
    * 清除所有数据
    */
   public async clearData(): Promise<void> {
-    if (!confirm(i18n('debug_clear_data_confirm'))) {
+    if (!confirm(i18n('debug_clear_data_confirm', '警告: 这将删除所有导航数据！确定要继续吗？'))) {
       return;
     }
     
@@ -278,10 +278,10 @@ export class DebugTools {
         });
         
         if (!response.success) {
-          throw new I18nError('debug_clear_data_unknown_error', response.error);
+          throw new Error(i18n('debug_clear_data_unknown_error', '清除数据时发生未知错误: {0}', response.error));
         }
       } catch (error) {
-        logger.error('debug_clear_data_send_failed', error);
+        logger.error(i18n('debug_clear_data_send_failed', '发送清除数据消息失败: {0}'), error);
         throw error;
       }
       
@@ -290,10 +290,10 @@ export class DebugTools {
         window.location.reload();
       }, 500);
       
-      alert(i18n('debug_clear_data_success'));
+      alert(i18n('debug_clear_data_success', '已成功清除所有数据，页面将重新加载...'));
     } catch (error) {
-      logger.error('debug_clear_data_failed', error);
-      alert(i18n('debug_clear_data_failed_message', error instanceof Error ? error.message : String(error)));
+      logger.error(i18n('debug_clear_data_failed', '清除数据失败: {0}'), error);
+      alert(i18n('debug_clear_data_failed_message', '清除数据失败: {0}', error instanceof Error ? error.message : String(error)));
     } finally {
       // 隐藏加载状态
       const loadingElement = document.getElementById('loading');

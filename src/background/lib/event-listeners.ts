@@ -24,7 +24,7 @@ export function setupEventListeners(): void {
  */
 function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): void {
   if (details.reason === 'install') {
-    logger.log('extension_installed');
+    logger.log(i18n('extension_installed', '导航图谱（Navigraph）扩展首次安装'));
     
     // 显示欢迎页面或教程
     chrome.tabs.create({
@@ -32,7 +32,7 @@ function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): voi
       active: true
     });
   } else if (details.reason === 'update') {
-    logger.log('extension_updated', chrome.runtime.getManifest().version);
+    logger.log(i18n('extension_updated', '导航图谱（Navigraph）扩展已更新到版本 {0}'), chrome.runtime.getManifest().version);
   }
 }
 
@@ -40,7 +40,7 @@ function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): voi
  * 处理扩展图标点击事件
  */
 async function handleActionClicked(): Promise<void> {
-  logger.log('icon_clicked');
+  logger.log(i18n('icon_clicked', '导航图谱（Navigraph）扩展图标被点击'));
   
   try {
     // 获取所有标签页
@@ -52,7 +52,7 @@ async function handleActionClicked(): Promise<void> {
     
     if (existingTab && existingTab.id) {
       // 如果已经打开，切换到该标签页
-      logger.log('tab_exists');
+      logger.log(i18n('tab_exists', '导航图谱页面已打开，切换到该标签页'));
       await chrome.tabs.update(existingTab.id, { active: true });
       
       // 如果标签页在其他窗口，则聚焦该窗口
@@ -61,10 +61,10 @@ async function handleActionClicked(): Promise<void> {
       }
     } else {
       // 如果没有打开，创建新标签页
-      logger.log('create_new_tab');
+      logger.log(i18n('create_new_tab', '创建新导航图谱页面'));
       await chrome.tabs.create({ url: indexUrl });
     }
   } catch (error) {
-    logger.error('open_tab_failed', error instanceof Error ? error.message : String(error));
+    logger.error(i18n('open_tab_failed', '打开导航图谱页面失败'), error instanceof Error ? error.message : String(error));
   }
 }

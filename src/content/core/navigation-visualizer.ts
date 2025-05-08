@@ -71,7 +71,7 @@ export class NavigationVisualizer implements Visualizer {
    * 构造函数
    */
   constructor() {
-    logger.log("nav_visualizer_init_start");
+    logger.log(i18n('nav_visualizer_init_start', '初始化NavigationVisualizer...'));
     
     // 初始化视图状态管理器
     this.viewStateManager = new ViewStateManager(this);
@@ -98,10 +98,10 @@ export class NavigationVisualizer implements Visualizer {
     );
     // 检查d3是否已加载
     if (typeof window.d3 === "undefined") {
-      logger.error(i18n("content_d3_lib_missing"));
-      alert(i18n("content_d3_lib_missing"));
+      logger.error(i18n('content_d3_lib_missing', 'd3 库未加载，可视化功能将不可用。请确保已包含d3.js库。'));
+      alert(i18n('content_d3_lib_missing', 'd3 库未加载，可视化功能将不可用。请确保已包含d3.js库。'));
     } else {
-      logger.log("d3_lib_loaded", window.d3.version);
+      logger.log(i18n('d3_lib_loaded', 'd3 库已加载: {0}'), window.d3.version);
     }
   }
 
@@ -144,7 +144,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   async initialize() {
     try {
-      logger.log("nav_visualization_init_start");
+      logger.log(i18n('nav_visualization_init_start', '初始化导航可视化...'));
 
       // 第一阶段：基础配置与消息
       await this.initializeBaseConfig();
@@ -161,10 +161,10 @@ export class NavigationVisualizer implements Visualizer {
       // 第三阶段：数据加载与应用 - 使用会话视图控制器
       await this.sessionViewController.initialize();
 
-      logger.log("nav_visualizer_init_complete");
+      logger.log(i18n('nav_visualizer_init_complete', 'NavigationVisualizer 初始化完成'));
     } catch (error) {
       this.showError(
-        i18n("content_init_failed") + ": " +
+        i18n('content_init_failed', '初始化失败: ') + ": " +
           (error instanceof Error ? error.message : String(error))
       );
     }
@@ -182,13 +182,13 @@ export class NavigationVisualizer implements Visualizer {
 
     // 确保DOM已加载完成
     if (document.readyState !== "complete") {
-      logger.log("waiting_for_dom_complete");
+      logger.log(i18n('waiting_for_dom_complete', '等待DOM加载完成...'));
       await new Promise<void>((resolve) => {
         window.addEventListener("load", () => resolve());
       });
     }
 
-    logger.log("base_config_and_messaging_init_complete");
+    logger.log(i18n('base_config_and_messaging_init_complete', '基础配置与消息监听初始化完成'));
   }
 
   /**
@@ -210,7 +210,7 @@ export class NavigationVisualizer implements Visualizer {
       // 使用渲染管理器配置SVG
       this.renderingManager.setupSvg(svg);
     } else {
-      throw new I18nError("content_svg_create_failed");
+      throw new Error(i18n('content_svg_create_failed', '无法创建SVG元素'));
     }
   }
 
@@ -224,7 +224,7 @@ export class NavigationVisualizer implements Visualizer {
    */
   applyGlobalConfig() {
     if (!window.navigraphSettings) {
-      logger.log("global_config_unavailable_using_defaults");
+      logger.log(i18n('global_config_unavailable_using_defaults', '全局配置不可用，使用默认设置'));
       return;
     }
 
@@ -233,12 +233,12 @@ export class NavigationVisualizer implements Visualizer {
 
       // 应用默认视图
       if (config.defaultView) {
-        logger.log("applying_default_view", config.defaultView);
+        logger.log(i18n('applying_default_view', '应用默认视图: {0}'), config.defaultView);
       }
 
       // 其他配置项应用...
     } catch (error) {
-      logger.warn("global_config_apply_failed", error);
+      logger.warn(i18n('global_config_apply_failed', '应用全局配置出错'), error);
     }
   }
 
@@ -249,11 +249,11 @@ export class NavigationVisualizer implements Visualizer {
     try {
       // 确保调试工具只初始化一次
       if (!this.debugTools) {
-        logger.log("debug_tools_init_start");
+        logger.log(i18n('debug_tools_init_start', '初始化调试工具...'));
         this.debugTools = new DebugTools(this);
       }
     } catch (error) {
-      logger.error("debug_tools_init_failed", error);
+      logger.error(i18n('debug_tools_init_failed', '初始化调试工具失败'), error);
     }
   }
 
@@ -262,7 +262,7 @@ export class NavigationVisualizer implements Visualizer {
    * 在可视化器销毁或者组件卸载时调用
    */
   cleanup(): void {
-    logger.groupCollapsed("visualizer_resources_cleanup_start");
+    logger.groupCollapsed(i18n('visualizer_resources_cleanup_start', '清理可视化器资源...'));
 
     // 清理消息处理器
     this.messageHandler.cleanup();
@@ -311,12 +311,12 @@ export class NavigationVisualizer implements Visualizer {
   triggerRefresh(): void {
     const now = Date.now();
     if (now - this.lastRefreshTime < this.REFRESH_MIN_INTERVAL) {
-      logger.log("refresh_skipped_too_frequent");
+      logger.log(i18n('refresh_skipped_too_frequent', '最近已经刷新过，跳过此次刷新'));
       return;
     }
 
     this.lastRefreshTime = now;
-    logger.log("visualization_refresh_triggered");
+    logger.log(i18n('visualization_refresh_triggered', '触发可视化刷新...'));
 
     // 执行刷新操作
     setTimeout(async () => {
@@ -324,9 +324,9 @@ export class NavigationVisualizer implements Visualizer {
         // 修改：通过会话处理器刷新数据，而不是直接调用sessionServiceClient
         await this.sessionViewController.refreshSessionData();
         this.refreshVisualization();
-        logger.log("page_activity_refresh_complete");
+        logger.log(i18n('page_activity_refresh_complete', '页面活动触发的刷新完成'));
       } catch (err) {
-        logger.error("refresh_trigger_failed", err);
+        logger.error(i18n('refresh_trigger_failed', '触发刷新失败'), err);
       }
     }, 100);
   }
@@ -346,9 +346,9 @@ export class NavigationVisualizer implements Visualizer {
         // 可能触发会话加载的代码...
       }
       
-      logger.log("visualization_refresh_complete");
+      logger.log(i18n('visualization_refresh_complete', '可视化刷新完成'));
     } catch (error) {
-      logger.error("visualization_refresh_failed", error);
+      logger.error(i18n('visualization_refresh_failed', '可视化刷新失败'), error);
     }
   }
 
@@ -377,14 +377,14 @@ export class NavigationVisualizer implements Visualizer {
         // 使用渲染管理器配置SVG
         this.renderingManager.setupSvg(svg);
       } else {
-        throw new I18nError("content_svg_missing");
+        throw new Error(i18n('content_svg_missing', 'SVG元素不存在'));
       }
 
       // 使用渲染管理器重新渲染
       this.refreshVisualization(undefined, { restoreTransform: true });
     } catch (error) {
-      logger.error("reinit_view_failed", error);
-      this.showError(i18n("content_view_switch_failed") + ": " + (error instanceof Error ? error.message : String(error)));
+      logger.error(i18n('reinit_view_failed', '重新初始化视图失败'), error);
+      this.showError(i18n('content_view_switch_failed', '切换视图失败') + ": " + (error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -469,7 +469,7 @@ export class NavigationVisualizer implements Visualizer {
   updateNodeMetadata(nodeId: string, metadata: {[key: string]: string}): void {
     if (!nodeId || !metadata) return;
     
-    logger.debug('node_metadata_updating', nodeId, metadata);
+    logger.debug(i18n('node_metadata_updating', '更新节点元信息: {0}'), nodeId, metadata);
     
     // 委托给节点管理器
     const updated = nodeManager.updateNodeMetadata(nodeId, metadata);
@@ -477,9 +477,9 @@ export class NavigationVisualizer implements Visualizer {
     if (updated) {
       // 如果更新成功，更新节点视觉效果
       this.updateNodeVisual(nodeId);
-      logger.debug('node_metadata_updated', nodeId);
+      logger.debug(i18n('node_metadata_updated', '节点{0}元信息已更新'), nodeId);
     } else {
-      logger.warn('node_update_failed', nodeId);
+      logger.warn(i18n('node_update_failed', '未能更新节点: {0}'), nodeId);
     }
   }
 
@@ -522,9 +522,9 @@ export class NavigationVisualizer implements Visualizer {
     try {
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
-      logger.log("page_load_refresh_complete");
+      logger.log(i18n('page_load_refresh_complete', '页面加载后刷新可视化完成'));
     } catch (error) {
-      logger.error("page_load_refresh_failed", error);
+      logger.error(i18n('page_load_refresh_failed', '页面加载后刷新可视化失败'), error);
       throw error;
     }
   }
@@ -536,9 +536,9 @@ export class NavigationVisualizer implements Visualizer {
     try {
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
-      logger.log("link_click_refresh_complete");
+      logger.log(i18n('link_click_refresh_complete', '基于链接点击刷新可视化完成'));
     } catch (error) {
-      logger.error("link_click_refresh_failed", error);
+      logger.error(i18n('link_click_refresh_failed', '链接点击后刷新可视化失败'), error);
       throw error;
     }
   }
@@ -550,9 +550,9 @@ export class NavigationVisualizer implements Visualizer {
     try {
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
-      logger.log("form_submit_refresh_complete");
+      logger.log(i18n('form_submit_refresh_complete', '基于表单提交刷新可视化完成'));
     } catch (error) {
-      logger.error("form_submit_refresh_failed", error);
+      logger.error(i18n('form_submit_refresh_failed', '表单提交后刷新可视化失败'), error);
       throw error;
     }
   }
@@ -564,9 +564,9 @@ export class NavigationVisualizer implements Visualizer {
     try {
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
-      logger.log("js_navigation_refresh_complete");
+      logger.log(i18n('js_navigation_refresh_complete', '基于JS导航刷新可视化完成'));
     } catch (error) {
-      logger.error("js_navigation_refresh_failed", error);
+      logger.error(i18n('js_navigation_refresh_failed', 'JS导航后刷新可视化失败'), error);
       throw error;
     }
   }
@@ -578,9 +578,9 @@ export class NavigationVisualizer implements Visualizer {
     try {
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
-      logger.log("data_refresh_complete");
+      logger.log(i18n('data_refresh_complete', '刷新数据完成'));
     } catch (error) {
-      logger.error("data_refresh_failed", error);
+      logger.error(i18n('data_refresh_failed', '刷新数据失败'), error);
       throw error;
     }
   }

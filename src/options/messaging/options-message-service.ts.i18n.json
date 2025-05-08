@@ -1,6 +1,0 @@
-{
-  "options_message_service_initialized": {
-    "message": "选项页消息服务已初始化",
-    "description": "选项页消息服务初始化完成时的日志消息"
-  }
-}

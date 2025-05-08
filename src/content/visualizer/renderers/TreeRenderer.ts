@@ -50,7 +50,7 @@ export class TreeRenderer implements BaseRenderer {
     this.width = width;
     this.height = height;
     
-    logger.log('tree_renderer_initialized', { width, height });
+    logger.log(i18n('tree_renderer_initialized', '树形图渲染器已初始化'), { width, height });
   }
   
   /**
@@ -58,7 +58,7 @@ export class TreeRenderer implements BaseRenderer {
    */
   render(nodes: NavNode[], edges: NavLink[], options: { restoreTransform?: boolean } = {}): void {
     if (!this.svg || !this.container) {
-      logger.error('renderer_cannot_render_no_container');
+      logger.error(i18n('renderer_cannot_render_no_container', '无法渲染：SVG或容器未初始化'));
       return;
     }
     
@@ -81,7 +81,7 @@ export class TreeRenderer implements BaseRenderer {
     // 清理任何需要释放的资源
     this.svg = null;
     this.container = null;
-    logger.log('tree_renderer_cleaned_up');
+    logger.log(i18n('tree_renderer_cleaned_up', '树形图渲染器已清理'));
   }
 }
 
@@ -95,7 +95,7 @@ function renderTreeLayout(
   height: number, 
   visualizer: Visualizer
 ): void {
-  logger.log('using_modular_tree_renderer');
+  logger.log(i18n('using_modular_tree_renderer', '使用模块化树形图渲染器'));
   
   try {
     // 声明并初始化saveStateTimeout变量
@@ -112,7 +112,7 @@ function renderTreeLayout(
     if (savedState && savedState.transform) {
       const { x, y, k } = savedState.transform;
       if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
-        logger.log('tree_state_detected', savedState.transform);
+        logger.log(i18n('tree_state_detected', '检测到保存的树形图状态: {0}'), savedState.transform);
         shouldRestoreTransform = true;
         transformToRestore = savedState.transform;
       }
@@ -127,12 +127,12 @@ function renderTreeLayout(
     );
     
     if (needsNormalization) {
-      logger.warn('links_normalized_to_string_ids');
+      logger.warn(i18n('links_normalized_to_string_ids', '链接已规范化为字符串ID'));
     }
     
     // 1. 确保基本DOM结构存在
     if (!svg.select('.main-group').node()) {
-      logger.log('creating_main_view_group');
+      logger.log(i18n('creating_main_view_group', '创建主视图组'));
       svg.append('g').attr('class', 'main-group');
     }
     
@@ -151,7 +151,7 @@ function renderTreeLayout(
     // 2. 首先配置和应用缩放行为
     // 始终创建新的缩放行为，确保每次渲染后缩放都能正常工作
     try {
-      logger.log('tree_view_zoom_setup_start');
+      logger.log(i18n('tree_view_zoom_setup_start', '为树形图视图设置缩放行为'));
       
       // 先清除旧的缩放事件
       // 获取DOM引用
@@ -208,9 +208,9 @@ function renderTreeLayout(
       svg.call(zoom)
         .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动;
       
-      logger.log('tree_view_zoom_setup_complete');
+      logger.log(i18n('tree_view_zoom_setup_complete', '已设置树形图缩放行为'));
     } catch (error) {
-      logger.error('tree_view_zoom_setup_failed', error);
+      logger.error(i18n('tree_view_zoom_setup_failed', '设置树形图缩放失败: {0}'), error);
     }
     
     // 3. 然后清除现有节点和链接，但保留基本结构
@@ -228,8 +228,8 @@ function renderTreeLayout(
       id: 'session-root',
       type: 'session',
       title: visualizer.currentSession ? 
-        i18n('session_date', new Date(visualizer.currentSession.startTime).toLocaleString()) : 
-        i18n('current_session'),
+        i18n('session_date', '会话日期: {0}', new Date(visualizer.currentSession.startTime).toLocaleString()) : 
+        i18n('current_session', '当前会话'),
       timestamp: Date.now(),
       url: '',
       depth: 0
@@ -249,7 +249,7 @@ function renderTreeLayout(
     nodes.forEach(node => {
       const extNode = nodeById[node.id];
       if (node.parentId === node.id) {
-        logger.log('detected_self_loop_node', node.id);
+        logger.log(i18n('detected_self_loop_node', '检测到自循环节点: {0}'), node.id);
         extNode.isSelfLoop = true;
         // 将自循环节点的parentId设为空字符串，使其成为根节点
         extNode.parentId = '';
@@ -280,7 +280,7 @@ function renderTreeLayout(
       }
     });
     
-    logger.log('found_root_and_self_loop_nodes', String(rootNodes.length), String(selfLoopNodes.length));
+    logger.log(i18n('found_root_and_self_loop_nodes', '找到根节点和自循环节点: {0}, {1}'), String(rootNodes.length), String(selfLoopNodes.length));
     
     // 计算层级
     function assignLevels(node: ExtendedNavNode, level: number): void {
@@ -293,7 +293,7 @@ function renderTreeLayout(
     if (rootNodes.length > 0) {
       rootNodes.forEach(root => assignLevels(root, 1));
     } else {
-      logger.warn('no_root_nodes_found');
+      logger.warn(i18n('no_root_nodes_found', '未找到根节点'));
       // 创建一个虚拟根节点连接所有孤立节点
       nodes.forEach(node => {
         if (!node.parentId) {
@@ -334,18 +334,18 @@ function renderTreeLayout(
     // 如果移除了链接，显示警告
     if (safeLinks.length < allLinks.length) {
       const removedCount = allLinks.length - safeLinks.length;
-      logger.log('removed_cycle_links', String(removedCount));
+      logger.log(i18n('removed_cycle_links', '移除了 {0} 个导致循环的链接'), String(removedCount));
       
       // 添加视觉警告提示
       svg.append('text')
         .attr('x', width - 200)
         .attr('y', 20)
         .attr('class', 'cycle-message')
-        .text(i18n('fixed_cycle_connections', String(removedCount)));
+        .text(i18n('fixed_cycle_connections', '已移除 {0} 个循环连接', String(removedCount)));
     }
 
     // 在应用布局之前对根节点进行分组
-    logger.log('balancing_root_nodes', String(rootNodes.length));
+    logger.log(i18n('balancing_root_nodes', '平衡根节点: {0}'), String(rootNodes.length));
 
     // 按时间戳排序根节点
     rootNodes.sort((a, b) => a.timestamp - b.timestamp);
@@ -355,7 +355,7 @@ function renderTreeLayout(
     const leftRootNodes = rootNodes.slice(0, mid);
     const rightRootNodes = rootNodes.slice(mid);
 
-    logger.log('root_nodes_distribution', String(leftRootNodes.length), String(rightRootNodes.length));
+    logger.log(i18n('root_nodes_distribution', '根节点分布: 左={0}，右={1}'), String(leftRootNodes.length), String(rightRootNodes.length));
 
     // 创建左右会话虚拟根节点
     const leftSessionNode: ExtendedNavNode = {
@@ -496,27 +496,27 @@ function renderTreeLayout(
       }
 
     } catch (err) {
-      logger.error('tree_layout_calculation_failed', err);
+      logger.error(i18n('tree_layout_calculation_failed', '树形图布局计算失败: {0}'), err);
       
       // 更简洁的错误处理
-      let errorMessage = i18n('tree_layout_calculation_failed_msg');
+      let errorMessage = i18n('tree_layout_calculation_failed_msg', '无法计算树形图布局');
       const errMsg = err instanceof Error ? err.message : String(err);
       
       // 检查是否包含循环依赖错误
       if (errMsg.includes('cycle')) {
-        errorMessage = i18n('unresolvable_cyclic_dependency');
+        errorMessage = i18n('unresolvable_cyclic_dependency', '无法解决的循环依赖');
         
         // 尝试渲染可视化的错误信息，帮助用户理解
         svg.append('text')
           .attr('x', width / 2)
           .attr('y', height / 2 - 40)
-          .text(i18n('cannot_render_tree_cyclic_dependency'));
+          .text(i18n('cannot_render_tree_cyclic_dependency', '由于存在循环依赖，无法渲染树形图'));
           
         svg.append('text')
           .attr('x', width / 2)
           .attr('y', height / 2)
           .attr('class', 'empty-tree-message')
-          .text(i18n('try_timeline_view_or_filter_nodes'));
+          .text(i18n('try_timeline_view_or_filter_nodes', '尝试使用时间线视图或筛选节点'));
           
         // 如果visualizer可用，建议切换视图
         if (visualizer && typeof visualizer.switchView === 'function') {
@@ -524,7 +524,7 @@ function renderTreeLayout(
             .attr('x', width / 2)
             .attr('y', height / 2 + 30)
             .attr('class', 'error-action')
-            .text(i18n('click_to_switch_to_timeline'))
+            .text(i18n('click_to_switch_to_timeline', '点击切换到时间线视图'))
             .on('click', () => {
               visualizer.switchView('timeline');
             });
@@ -614,12 +614,12 @@ function renderTreeLayout(
             treeLinks.push({ source, target } as D3TreeLink);
           } else {
             missingLinks++;
-            logger.log('left_tree_link_not_found', sourceId, targetId);
+            logger.log(i18n('left_tree_link_not_found', '左侧树链接未找到: {0} -> {1}'), sourceId, targetId);
           }
         });
       
       if (missingLinks > 0) {
-        logger.warn('left_tree_missing_links', String(missingLinks));
+        logger.warn(i18n('left_tree_missing_links', '左侧树缺失 {0} 个链接'), String(missingLinks));
       }
     }
 
@@ -638,12 +638,12 @@ function renderTreeLayout(
             treeLinks.push({ source, target } as D3TreeLink);
           } else {
             missingLinks++;
-            logger.log('right_tree_link_not_found', sourceId, targetId);
+            logger.log(i18n('right_tree_link_not_found', '右侧树链接未找到: {0} -> {1}'), sourceId, targetId);
           }
         });
       
       if (missingLinks > 0) {
-        logger.warn('right_tree_missing_links', String(missingLinks));
+        logger.warn(i18n('right_tree_missing_links', '右侧树缺失 {0} 个链接'), String(missingLinks));
       }
     }
 
@@ -665,7 +665,7 @@ function renderTreeLayout(
         
         // 检查坐标是否有效
         if (isNaN(sourceX) || isNaN(sourceY) || isNaN(targetX) || isNaN(targetY)) {
-          logger.warn('invalid_link_coordinates', {
+          logger.warn(i18n('invalid_link_coordinates', '链接坐标无效: {0} -> {1}'), {
             source: d.source.data.id,
             target: d.target.data.id,
             coords: {sourceX, sourceY, targetX, targetY}
@@ -748,7 +748,7 @@ function renderTreeLayout(
     
     // 添加节点标题
     node.append('title')
-      .text((d: D3TreeNode) => d.data.title || d.data.url || i18n('unnamed_node'));
+      .text((d: D3TreeNode) => d.data.title || d.data.url || i18n('unnamed_node', '未命名节点'));
     
     // 为会话节点添加文字标签
     node.filter((d: D3TreeNode) => d.data.id === 'session-root')
@@ -758,7 +758,7 @@ function renderTreeLayout(
           const date = new Date(visualizer.currentSession.startTime);
           return date.toLocaleDateString();
         }
-        return i18n('current_session');
+        return i18n('current_session', '当前会话');
       });
     
     // 为普通节点添加简短标签
@@ -778,7 +778,7 @@ function renderTreeLayout(
       .attr('cy', -18)
       .attr('class', 'filtered-indicator')
       .append('title')
-      .text((d: D3TreeNode) => i18n('contains_filtered_nodes', String(d.data.filteredChildrenCount || 0)));
+      .text((d: D3TreeNode) => i18n('contains_filtered_nodes', '包含 {0} 个已过滤节点', String(d.data.filteredChildrenCount || 0)));
 
     // 为自循环节点添加特殊标记
     node.filter((d: D3TreeNode) => d.data.isSelfLoop)
@@ -788,7 +788,7 @@ function renderTreeLayout(
       .attr('cy', 18)
       .attr('class', 'self-loop-indicator')
       .append('title')
-      .text(i18n('page_has_self_refresh'));
+      .text(i18n('page_has_self_refresh', '页面存在自我刷新'));
 
     // 给自循环节点添加循环箭头图标
     node.filter((d: D3TreeNode) => d.data.isSelfLoop)
@@ -802,12 +802,12 @@ function renderTreeLayout(
       .append("path")
       .attr("d", "M370.72 133.28C339.458 104.008 298.888 87.962 255.848 88c-77.458.068-144.328 53.178-162.791 126.85-1.344 5.363-6.122 9.15-11.651 9.15H24.103c-7.498 0-13.194-6.807-11.807-14.176C33.933 94.924 134.813 8 256 8c66.448 0 126.791 26.136 171.315 68.685L463.03 40.97C478.149 25.851 504 36.559 504 57.941V192c0 13.255-10.745 24-24 24H345.941c-21.382 0-32.09-25.851-16.971-40.971l41.75-41.749zM32 296h134.059c21.382 0 32.09 25.851 16.971 40.971l-41.75 41.75c31.262 29.273 71.835 45.319 114.876 45.28 77.418-.07 144.315-53.144 162.787-126.849 1.344-5.363 6.122-9.15 11.651-9.15h57.304c7.498 0 13.194 6.807 11.807 14.176C478.067 417.076 377.187 504 256 504c-66.448 0-126.791-26.136-171.315-68.685L48.97 471.03C33.851 486.149 8 475.441 8 454.059V320c0-13.255 10.745-24 24-24z")
       .append('title')
-      .text(i18n('page_has_self_refresh'));
+      .text(i18n('page_has_self_refresh', '页面存在自我刷新'));
 
     // 在渲染树之前，处理重定向节点
     const redirectNodes = nodes.filter(node => node.type === 'redirect');
     if (redirectNodes.length > 0) {
-      logger.log('detected_redirect_nodes', String(redirectNodes.length));
+      logger.log(i18n('detected_redirect_nodes', '检测到重定向节点: {0}'), String(redirectNodes.length));
       
       // 为重定向节点添加特殊样式
       redirectNodes.forEach(node => {
@@ -865,7 +865,7 @@ function renderTreeLayout(
       
       // 尝试应用保存的变换
       if (shouldRestoreTransform && transformToRestore) {
-        logger.log('tree_restore_state', transformToRestore);
+        logger.log(i18n('tree_restore_state', '恢复树形图状态: {0}'), transformToRestore);
         
         const transform = d3.zoomIdentity
           .translate(transformToRestore.x, transformToRestore.y)
@@ -876,7 +876,7 @@ function renderTreeLayout(
       }
       
       // 否则应用默认初始变换
-      logger.log('tree_transform_applying', {
+      logger.log(i18n('tree_transform_applying', '应用树形图变换: {0}'), {
         translate: [centerX - treeWidth / 2, centerY - treeHeight / 2],
         scale: finalScaleFactor
       });
@@ -886,17 +886,17 @@ function renderTreeLayout(
     visualizer.updateStatusBar();
     
     // 7. 添加调试信息
-    logger.log('tree_rendering_complete', descendants.length.toString(), treeLinks.length.toString());
+    logger.log(i18n('tree_rendering_complete', '树形图渲染完成，节点数: {0}, 链接数: {1}'), descendants.length.toString(), treeLinks.length.toString());
     // 验证变换是否被正确应用
     setTimeout(() => {
       try {
         const currentTransform = d3.zoomTransform(svg.node());
         } catch (e) {
-        logger.error('tree_get_transform_failed', e);
+        logger.error(i18n('tree_get_transform_failed', '获取变换信息失败: {0}'), e);
         }
     }, 10);
   } catch (err) {
-    logger.error('tree_rendering_failed', err);
+    logger.error(i18n('tree_rendering_failed', '树形图渲染过程中出错: {0}'), err);
     
     // 添加错误信息显示
     svg.append('text')
@@ -904,7 +904,7 @@ function renderTreeLayout(
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
       .attr('fill', 'red')
-      .text(i18n('tree_rendering_error', err instanceof Error ? err.message : i18n('unknown_error')));
+      .text(i18n('tree_rendering_error', '渲染错误: {0}', err instanceof Error ? err.message : i18n('unknown_error', '未知错误')));
   }
 }
 
@@ -929,7 +929,7 @@ function normalizeLinks(links: any[]): NavLink[] {
  * @returns 安全连接列表（仅移除回边）
  */
 function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLink[] {
-  logger.log('tree_detect_break_cycles');
+  logger.log(i18n('tree_detect_break_cycles', '检测并打破循环...'));
   
   // 创建节点ID映射表
   const nodeById: Record<string, ExtendedNavNode> = {};
@@ -943,7 +943,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     const isSelfLoop = link.source === link.target;
     
     if (isSelfLoop) {
-      logger.log('tree_skip_self_loop', link.source, link.target);
+      logger.log(i18n('tree_skip_self_loop', '跳过自循环连接: {0} -> {1} (将作为根节点处理)'), link.source, link.target);
       return false;
     }
     return true;
@@ -969,7 +969,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
   function detectCycle(nodeId: string, visited: Set<string>, path: Set<string>, pathList: string[]): boolean {
     // 当前节点已在路径中 -> 发现循环!
     if (path.has(nodeId)) {
-      logger.log('tree_cycle_detected', [...pathList, nodeId].join(' -> '));
+      logger.log(i18n('tree_cycle_detected', '检测到循环: {0}'), [...pathList, nodeId].join(' -> '));
       
       // 标记循环中的回边（最后一条边）
       const cycleStart = pathList.indexOf(nodeId);
@@ -981,7 +981,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
         const backEdgeId = `${lastNodeInCycle}->${nodeId}`;
         
         backEdges.add(backEdgeId);
-        logger.log('tree_back_edge_marked', lastNodeInCycle, nodeId);
+        logger.log(i18n('tree_back_edge_marked', '标记回边: {0} -> {1}'), lastNodeInCycle, nodeId);
       }
       
       return true;
@@ -1024,7 +1024,7 @@ function detectAndBreakCycles(nodes: ExtendedNavNode[], links: NavLink[]): NavLi
     const isSafe = !backEdges.has(linkId);
     
     if (!isSafe) {
-      logger.log('tree_remove_back_edge', link.source, link.target);
+      logger.log(i18n('tree_remove_back_edge', '移除回边: {0} -> {1}'), link.source, link.target);
     }
     
     return isSafe;

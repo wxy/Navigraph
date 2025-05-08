@@ -37,7 +37,7 @@ export function createErrorResponse<T extends Omit<BaseResponse, 'success' | 're
   return {
     success: false,
     requestId,
-    error: i18n(error), // 本地化错误消息
+    error: error,
     ...data
   };
 }
@@ -61,14 +61,24 @@ export function createMessageContext<TRequest, TResponse extends BaseResponse>(
         ...data
       } as TResponse);
     },
-    error: (msgOrId: string, ...params: any[]) => {
-      // 本地化错误消息
-      const localized = i18n(msgOrId, ...params);
-      logger.error('handler_response_error', localized);  // 日志也本地化
+    error: (msg: string, ...params: any[]) => {
+      // 处理占位符替换
+      let formattedMessage = msg;
+      if (params && params.length > 0) {
+        // 确保所有参数转换为字符串
+        const stringParams = params.map(p => String(p));
+        
+        // 替换所有 {0}, {1}等占位符
+        for (let i = 0; i < stringParams.length; i++) {
+          const placeholder = new RegExp(`\\{${i}\\}`, 'g');
+          formattedMessage = formattedMessage.replace(placeholder, stringParams[i]);
+        }
+      }
+      logger.error(i18n('handler_response_error', '处理响应失败: {0}'), formattedMessage);  // 日志也本地化
       sendResponse({
         success: false,
         requestId: message.requestId,
-        error: localized
+        error: formattedMessage
       } as TResponse);
     }
   };

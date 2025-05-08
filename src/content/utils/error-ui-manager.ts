@@ -10,18 +10,17 @@ const logger = new Logger("ErrorUIManager");
 const ErrorUIManager = {
   /**
    * 显示标准错误消息
-   * @param messageId 错误消息ID
+   * @param message 错误消息文本
    * @param params 消息替换参数
    */
-  showErrorMessage(messageId: string, ...params: string[]): void {
+  showErrorMessage(message: string, ...params: string[]): void {
     try {
-      // 获取本地化消息
-      const message = i18n(messageId);
+      // 直接使用传入的消息文本，只进行参数替换
       const formattedMessage = this.formatMessage(message, params);
 
       const errorContainer = document.getElementById("navigraph-error");
       if (!errorContainer) {
-        logger.error("content_error_container_not_found");
+        logger.error(i18n('content_error_container_not_found', '找不到错误UI容器，降级到alert'));
         this.showNativeAlert(i18n("content_extension_error", "Navigraph 扩展错误:"), formattedMessage);
         return;
       }
@@ -33,26 +32,23 @@ const ErrorUIManager = {
 
       errorContainer.style.display = "block";
     } catch (err) {
-      logger.error("content_error_ui_display_failed", err);
-      alert(messageId); // 直接显示消息ID，以便快速发现问题
+      logger.error(i18n('content_error_ui_display_failed', '显示错误UI失败: {0}'), err);
+      alert(message); // 直接显示传入的消息
     }
   },
 
   /**
    * 显示详细的错误消息
-   * @param titleId 标题消息ID
+   * @param title 标题文本
    * @param error 错误对象
    */
-  showDetailedErrorMessage(titleId: string, error: any): void {
+  showDetailedErrorMessage(title: string, error: any): void {
     try {
-      const title = i18n(titleId);
-
-      const errorContainer = document.getElementById(
-        "navigraph-error-detailed"
-      );
+      // 直接使用传入的标题
+      const errorContainer = document.getElementById("navigraph-error-detailed");
       if (!errorContainer) {
         this.showErrorMessage(
-          titleId,
+          title,
           error instanceof Error ? error.message : String(error)
         );
         return;
@@ -95,9 +91,9 @@ const ErrorUIManager = {
       // 显示容器
       errorContainer.style.display = "block";
     } catch (err) {
-      logger.error("content_detailed_error_ui_failed", err);
+      logger.error(i18n('content_detailed_error_ui_failed', '显示详细错误UI失败: {0}'), err);
       this.showErrorMessage(
-        titleId,
+        title,
         error instanceof Error ? error.message : String(error)
       );
     }
@@ -105,17 +101,17 @@ const ErrorUIManager = {
 
   /**
    * 显示通知消息
-   * @param messageId 通知消息ID
+   * @param message 通知消息文本
    * @param duration 显示时长（毫秒）
    * @param params 消息替换参数
    */
   showToast(
-    messageId: string,
+    message: string,
     duration: number = 5000,
     ...params: string[]
   ): void {
     try {
-      const message = i18n(messageId);
+      // 直接使用传入的消息文本
       const formattedMessage = this.formatMessage(message, params);
 
       const toastEl = document.getElementById("navigraph-toast");
@@ -131,17 +127,17 @@ const ErrorUIManager = {
         }
       }, duration);
     } catch (err) {
-      logger.error("content_toast_display_failed", err);
+      logger.error(i18n('content_toast_display_failed', '显示通知消息失败: {0}'), err);
     }
   },
 
   /**
    * 显示系统原生警告框
-   * @param prefixId 前缀消息ID
+   * @param prefix 前缀文本
    * @param message 消息内容
    */
-  showNativeAlert(prefixId: string, message: string): void {
-    const prefix = i18n(prefixId);
+  showNativeAlert(prefix: string, message: string): void {
+    // 直接使用传入的前缀
     alert(`${prefix} ${message}`);
   },
 
@@ -164,41 +160,41 @@ const ErrorUIManager = {
 
 /**
  * 显示标准错误消息（便捷方法）
- * @param messageId 错误消息ID
+ * @param message 错误消息文本
  * @param params 消息替换参数
  */
-export function showErrorMessage(messageId: string, ...params: string[]): void {
-  ErrorUIManager.showErrorMessage(messageId, ...params);
+export function showErrorMessage(message: string, ...params: string[]): void {
+  ErrorUIManager.showErrorMessage(message, ...params);
 }
 
 /**
  * 显示详细的错误消息（便捷方法）
- * @param titleId 标题消息ID
+ * @param title 标题文本
  * @param error 错误对象
  */
-export function showDetailedErrorMessage(titleId: string, error: any): void {
-  ErrorUIManager.showDetailedErrorMessage(titleId, error);
+export function showDetailedErrorMessage(title: string, error: any): void {
+  ErrorUIManager.showDetailedErrorMessage(title, error);
 }
 
 /**
  * 显示通知消息（便捷方法）
- * @param messageId 通知消息ID
+ * @param message 通知消息文本
  * @param duration 显示时长（毫秒）
  * @param params 消息替换参数
  */
 export function showToast(
-  messageId: string,
+  message: string,
   duration?: number,
   ...params: string[]
 ): void {
-  ErrorUIManager.showToast(messageId, duration || 5000, ...params);
+  ErrorUIManager.showToast(message, duration || 5000, ...params);
 }
 
 /**
  * 显示系统原生警告框（便捷方法）
- * @param prefixId 前缀消息ID
+ * @param prefix 前缀文本
  * @param message 消息内容
  */
-export function showNativeAlert(prefixId: string, message: string): void {
-  ErrorUIManager.showNativeAlert(prefixId, message);
+export function showNativeAlert(prefix: string, message: string): void {
+  ErrorUIManager.showNativeAlert(prefix, message);
 }
