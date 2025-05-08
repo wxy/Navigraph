@@ -1,11 +1,11 @@
 {
   "appName": {
-    "message": "appName",
-    "description": "导航图谱(Navigraph)：可视化浏览历史"
+    "message": "导航图谱(Navigraph)：可视化浏览历史",
+    "description": "扩展名称"
   },
   "appDescription": {
-    "message": "appDescription",
-    "description": "以交互式图形展示浏览历史节点和链接，帮助用户直观分析访问模式和行为。"
+    "message": "以交互式图形展示浏览历史节点和链接，帮助用户直观分析访问模式和行为。",
+    "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
     "message": "MessageService 尚未初始化",
