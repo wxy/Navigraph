@@ -343,7 +343,7 @@ export class Logger {
         });
       } else {
         console.log(i18n('logger_debug_stack_first_five', '堆栈前5行:'), lines.slice(0, 5));
-        console.log(i18n('logger_debug_stack_view_full', '使用Logger.debugStack(\"full\")查看完整分析'));
+        console.log(i18n('logger_debug_stack_view_full', '使用Logger.debugStack("full")查看完整分析'));
       }
     } catch (e) {
       console.error(i18n('logger_debug_stack_error', '无法获取堆栈'), e);

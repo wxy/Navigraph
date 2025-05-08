@@ -357,7 +357,7 @@ export class IndexedDBStorage {
         const { transaction, store } = await this.startTransaction(storeName);
         
         if (!store.indexNames.contains(indexName)) {
-          reject(new Error(i18n('background_db_index_not_found', '存储 {0} 中未找到指定的索引', storeName)));
+          reject(new Error(i18n('background_db_index_not_found', '存储 {0} 中未找到指定的索引 {1}', storeName, indexName)));
           return;
         }
         

@@ -542,7 +542,7 @@ const notificationManager = {
    * 显示通知
    */
   show(message: string, type: 'success' | 'error' = 'success', duration: number = 3000): void {
-    logger.log(i18n('options_notification_showing', '显示通知: \"{0}\" ({1})'), message, type);
+    logger.log(i18n('options_notification_showing', '显示通知: {0} ({1})'), message, type);
     
     const notification = document.getElementById('notification');
     if (!notification) {

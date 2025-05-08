@@ -56,7 +56,7 @@ export class SessionStrategyFactory {
     const strategy = this.strategies.get(this.activeStrategyType);
     if (!strategy) {
       // 回退到默认策略
-      logger.warn(i18n('strategy_factory_fallback_used', '策略类型 {0} 不可用，使用默认策略 \'daily\''), this.activeStrategyType);
+      logger.warn(i18n('strategy_factory_fallback_used', '策略类型 {0} 不可用，使用默认策略 “daily”'), this.activeStrategyType);
       return this.strategies.get('daily')!;
     }
     return strategy;

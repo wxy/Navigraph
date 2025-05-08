@@ -199,7 +199,7 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     updateStatusBar(visualizer);
     
   } catch (err) {
-    logger.error(i18n('state_manager_apply_transform_failed', '应用变换状态失败'), err);
+    logger.error(i18n('state_manager_apply_transform_failed', '应用变换状态失败：{0}'), err);
   }
 }
 
@@ -258,7 +258,7 @@ function handleDynamicFiltering(transform: any, visualizer: Visualizer): void {
       logger.warn(i18n('state_manager_container_type_not_supported', '容器类型不支持动态过滤'));
     }
   } catch (err) {
-    logger.warn(i18n('state_manager_dynamic_filtering_error', '处理动态过滤时出错'), err);
+    logger.warn(i18n('state_manager_dynamic_filtering_error', '处理动态过滤时出错：{0}'), err);
   }
 }
 
@@ -334,7 +334,7 @@ function handleDOMFiltering(
       hideFilteringIndicator(visualizer);
     }
   } catch (err) {
-    logger.warn(i18n('state_manager_dom_filtering_failed', 'DOM过滤操作失败'), err);
+    logger.warn(i18n('state_manager_dom_filtering_failed', 'DOM过滤操作失败：{0}'), err);
   }
 }
 
@@ -356,11 +356,11 @@ export function initStatusBar(visualizer: Visualizer): void {
     // 添加HTML结构
     newStatusBar.innerHTML = `
       <div class="status-cell" id="status-date">${i18n('state_manager_statusbar_no_date', '会话日期: --')}</div>
-      <div class="status-cell" id="status-duration">${i18n('state_manager_statusbar_duration', '0分钟')}</div>
-      <div class="status-cell" id="status-nodes">${i18n('state_manager_statusbar_nodes', '0')}</div>
-      <div class="status-cell" id="status-filtered">${i18n('state_manager_statusbar_filtered', '0')}</div>
+      <div class="status-cell" id="status-duration">${i18n('state_manager_statusbar_duration', '时长: {0}', '0')}</div>
+      <div class="status-cell" id="status-nodes">${i18n('state_manager_statusbar_nodes', "节点: {0}", '0')}</div>
+      <div class="status-cell" id="status-filtered">${i18n('state_manager_statusbar_filtered', "已过滤: {0}", '0')}</div>
       <div class="status-cell" id="status-view">${visualizer.currentView === 'tree' ? i18n('state_manager_view_tree', '树形图') : i18n('state_manager_view_timeline', '时间线')}</div>
-      <div class="status-cell" id="status-zoom">${i18n('state_manager_statusbar_zoom', '100')}</div>
+      <div class="status-cell" id="status-zoom">${i18n('state_manager_statusbar_zoom', "缩放: {0}%", '100')}</div>
       <div class="status-cell status-cell-stretch" id="status-message">${i18n('state_manager_statusbar_ready', '就绪')}</div>
     `;
     
@@ -445,16 +445,16 @@ export function updateStatusBar(visualizer: Visualizer): void {
     
     // 准备状态信息
     const status: Record<string, string> = {
-      'status-nodes': i18n('state_manager_statusbar_nodes', nodeCount.toString()),
-      'status-view': i18n('state_manager_statusbar_view', '视图状态', viewTypeName),
-      'status-zoom': i18n('state_manager_statusbar_zoom', zoom.toString())
+      'status-nodes': i18n('state_manager_statusbar_nodes', "节点: {0}", nodeCount.toString()),
+      'status-view': i18n('state_manager_statusbar_view', '视图: {0}', viewTypeName),
+      'status-zoom': i18n('state_manager_statusbar_zoom',"缩放: {0}%", zoom.toString())
     };
     
     // 如果有过滤节点，显示过滤信息
     if (visibleNodeCount < nodeCount) {
-      status['status-filtered'] = i18n('state_manager_statusbar_filtered', (nodeCount - visibleNodeCount).toString());
+      status['status-filtered'] = i18n('state_manager_statusbar_filtered', "已过滤: {0}", (nodeCount - visibleNodeCount).toString());
     } else {
-      status['status-filtered'] = i18n('state_manager_statusbar_filtered', '0');
+      status['status-filtered'] = i18n('state_manager_statusbar_filtered', "已过滤: {0}", '0');
     }
     
     // 如果当前会话存在，显示会话信息
@@ -468,7 +468,7 @@ export function updateStatusBar(visualizer: Visualizer): void {
       const formattedDuration = `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
       
       status['status-date'] = i18n('state_manager_statusbar_date', '会话日期: {0}', startDate.toLocaleDateString());
-      status['status-duration'] = i18n('state_manager_statusbar_duration', formattedDuration);
+      status['status-duration'] = i18n('state_manager_statusbar_duration', "时长: {0}", formattedDuration);
     }
     
     // 添加消息
@@ -523,7 +523,7 @@ export function hideFilteringIndicator(visualizer: Visualizer): void {
       indicator.style.display = 'none';
     }
   } catch (err) {
-    logger.warn(i18n('state_manager_hide_indicator_failed', '隐藏过滤指示器失败'), err);
+    logger.warn(i18n('state_manager_hide_indicator_failed', '隐藏过滤指示器失败：{0}'), err);
   }
 }
 
@@ -570,7 +570,7 @@ export function switchViewType(visualizer: Visualizer, viewType: string): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    logger.error(i18n('state_manager_switch_view_failed', '切换视图类型失败'), err);
+    logger.error(i18n('state_manager_switch_view_failed', '切换视图类型失败：{0}'), err);
   }
 }
 
@@ -689,7 +689,7 @@ function resetView(visualizer: Visualizer): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    logger.error(i18n('state_manager_reset_view_failed', '重置视图失败'), err);
+    logger.error(i18n('state_manager_reset_view_failed', '重置视图失败：{0}'), err);
   }
 }
 
@@ -714,7 +714,7 @@ function showAllNodes(visualizer: Visualizer): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    logger.error(i18n('state_manager_show_all_nodes_failed', '显示所有节点失败'), err);
+    logger.error(i18n('state_manager_show_all_nodes_failed', '显示所有节点失败：{0}'), err);
   }
 }
 
@@ -745,7 +745,7 @@ function getNodeImportance(node: Element): number {
     const childCount = node.querySelectorAll('.node').length;
     score += Math.min(childCount * 5, 25); // 最多加25分
   } catch (err) {
-    logger.warn(i18n('state_manager_node_importance_error', '计算节点重要性时出错'), err);
+    logger.warn(i18n('state_manager_node_importance_error', '计算节点重要性时出错：{0}'), err);
   }
   
   return score;
@@ -814,7 +814,7 @@ function getConnectedNodes(edge: Element, container: Element): Element[] {
     
     // 4. 如果仍无法获取ID，则放弃并返回空数组
     if (!sourceId || !targetId) {
-      logger.debug(i18n('state_manager_edge_data_extraction_failed', '无法从边数据中提取源和目标ID'), edge);
+      logger.debug(i18n('state_manager_edge_data_extraction_failed', '无法从边数据中提取源和目标ID：{0}'), edge);
       return [];
     }
     
@@ -850,7 +850,7 @@ function getConnectedNodes(edge: Element, container: Element): Element[] {
     // 返回找到的节点，过滤掉null值
     return [sourceNode, targetNode].filter((node): node is Element => node !== null);
   } catch (err) {
-    logger.warn(i18n('state_manager_get_connected_nodes_error', '获取连接节点时出错'), err);
+    logger.warn(i18n('state_manager_get_connected_nodes_error', '获取连接节点时出错：{0}'), err);
     return [];
   }
 }
