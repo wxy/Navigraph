@@ -37,7 +37,7 @@ export class ControlPanel {
     this.calendarSessionSelector = new CalendarSessionSelector(visualizer);
     this.filterPanel = new FilterPanel(visualizer);
     
-    logger.log('control_panel_created');
+    logger.log(i18n('control_panel_created', '控制面板已创建'));
   }
   
   /**
@@ -49,7 +49,7 @@ export class ControlPanel {
     this.handleElement = document.getElementById('control-panel-handle');
     
     if (!this.controlPanelElement || !this.handleElement) {
-      logger.error('control_panel_elements_not_found');
+      logger.error(i18n('control_panel_elements_not_found', '控制面板元素未找到'));
       return;
     }
     
@@ -61,7 +61,7 @@ export class ControlPanel {
     // 初始化控制面板交互行为
     this.initializeControlPanelInteraction(container);
     
-    logger.log('control_panel_components_initialized');
+    logger.log(i18n('control_panel_components_initialized', '控制面板及所有子组件已初始化'));
   }
   
   /**
@@ -162,7 +162,7 @@ export class ControlPanel {
       this.handleElement.classList.add('panel-visible');
     }
     
-    logger.log('control_panel_interaction_initialized');
+    logger.log(i18n('control_panel_interaction_initialized', '控制面板交互初始化完成'));
   }
 
   /**
@@ -173,7 +173,7 @@ export class ControlPanel {
     header.className = 'section-header';
     
     const title = document.createElement('h3');
-    title.textContent = i18n('control_panel_session_history');
+    title.textContent = i18n('control_panel_session_history', '会话历史');
     title.className = 'section-title';
     header.appendChild(title);
     
@@ -246,7 +246,7 @@ export class ControlPanel {
   public updateSessionSelector(sessions: any[], currentSessionId?: string, latestSessionId?: string): void {
     // 如果会话数量较多，使用优化的更新方式
     if (sessions.length > 0) {
-      logger.log('control_panel_update_session_selector', sessions.length);
+      logger.log(i18n('control_panel_update_session_selector', '控制面板更新会话选择器，共 {0} 个会话'), sessions.length);
       
       // 使用requestAnimationFrame确保UI渲染优先
       requestAnimationFrame(() => {

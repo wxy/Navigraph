@@ -37,7 +37,7 @@ export class ThemeManager {
   public async initialize(): Promise<void> {
     // 防止重复初始化
     if (this.initialized) {
-      logger.log("theme_manager_already_initialized");
+      logger.log(i18n('theme_manager_already_initialized', '主题管理器已初始化，跳过'));
       return;
     }
     
@@ -55,21 +55,21 @@ export class ThemeManager {
       
       if (window.navigraphSettings && window.navigraphSettings.theme) {
         theme = window.navigraphSettings.theme;
-        logger.log('theme_manager_read_global_config', theme);
+        logger.log(i18n('theme_manager_read_global_config', '从全局配置读取主题设置: {0}'), theme);
       } else {
         // 尝试从设置服务获取
         theme = this.settingsService.getSetting("theme") || 'system';
-        logger.log('theme_manager_read_settings_service', theme);
+        logger.log(i18n('theme_manager_read_settings_service', '从设置服务读取主题设置: {0}'), theme);
       }
       
       // 在初始化时应用主题
       this.applyTheme(theme);
     } catch (error) {
-      logger.warn("theme_manager_settings_failed", error instanceof Error ? error.message : String(error));
+      logger.warn(i18n('theme_manager_settings_failed', '获取主题设置失败，使用系统主题: {0}'), error instanceof Error ? error.message : String(error));
       this.applyTheme("system");
     }
   
-    logger.log("theme_manager_init_complete", this.currentTheme);
+    logger.log(i18n('theme_manager_init_complete', '主题管理器初始化完成，当前主题: {0}'), this.currentTheme);
   }
 
   /**
@@ -103,7 +103,7 @@ export class ThemeManager {
    * 解析主题设置并应用相应的主题
    */
   public applyTheme(theme: Theme): void {
-    logger.log("theme_manager_applying_theme", theme);
+    logger.log(i18n('theme_manager_applying_theme', '应用主题设置: {0}'), theme);
     
     if (theme === "system") {
       // 使用系统主题
@@ -124,11 +124,11 @@ export class ThemeManager {
     document.documentElement.setAttribute("data-theme", theme);
     // 如果主题已经应用，避免重复工作
     if (this.currentTheme === theme) {
-      logger.log("theme_manager_no_change_needed", theme);
+      logger.log(i18n('theme_manager_no_change_needed', '主题已经是 {0}，无需更改'), theme);
       return;
     }
 
-    logger.log("theme_manager_setting_theme", theme);
+    logger.log(i18n('theme_manager_setting_theme', '设置主题为: {0}'), theme);
     this.currentTheme = theme;
 
     // 更新SVG元素
@@ -139,7 +139,7 @@ export class ThemeManager {
       this.saveThemeToLocalStorage(theme);
     }
 
-    logger.log("theme_manager_theme_updated", theme);
+    logger.log(i18n('theme_manager_theme_updated', '已更新主题为: {0}'), theme);
   }
 
   /**
@@ -166,7 +166,7 @@ export class ThemeManager {
       const theme = localStorage.getItem("navigraph_theme") as Theme;
       return theme || null;
     } catch (error) {
-      logger.warn("theme_manager_localstorage_get_failed", error instanceof Error ? error.message : String(error));
+      logger.warn(i18n('theme_manager_localstorage_get_failed', '从本地存储获取主题失败: {0}'), error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -178,7 +178,7 @@ export class ThemeManager {
     try {
       localStorage.setItem("navigraph_theme", theme);
     } catch (error) {
-      logger.warn("theme_manager_localstorage_save_failed", error instanceof Error ? error.message : String(error));
+      logger.warn(i18n('theme_manager_localstorage_save_failed', '保存主题到本地存储失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -193,7 +193,7 @@ export class ThemeManager {
       link.rel = "stylesheet";
       link.href = chrome.runtime.getURL("content/styles/themes.css");
       document.head.appendChild(link);
-      logger.log("theme_manager_stylesheet_added");
+      logger.log(i18n('theme_manager_stylesheet_added', '已添加主题样式表'));
     }
   }
 

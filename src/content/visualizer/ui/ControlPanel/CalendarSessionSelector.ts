@@ -41,18 +41,18 @@ export class CalendarSessionSelector {
    */
   private getMonthNames(): string[] {
     return [
-      i18n("calendar_month_jan"),
-      i18n("calendar_month_feb"),
-      i18n("calendar_month_mar"),
-      i18n("calendar_month_apr"),
-      i18n("calendar_month_may"),
-      i18n("calendar_month_jun"),
-      i18n("calendar_month_jul"),
-      i18n("calendar_month_aug"),
-      i18n("calendar_month_sep"),
-      i18n("calendar_month_oct"),
-      i18n("calendar_month_nov"),
-      i18n("calendar_month_dec")
+      i18n('calendar_month_jan', '1月'),
+      i18n('calendar_month_feb', '2月'),
+      i18n('calendar_month_mar', '3月'),
+      i18n('calendar_month_apr', '4月'),
+      i18n('calendar_month_may', '5月'),
+      i18n('calendar_month_jun', '6月'),
+      i18n('calendar_month_jul', '7月'),
+      i18n('calendar_month_aug', '8月'),
+      i18n('calendar_month_sep', '9月'),
+      i18n('calendar_month_oct', '10月'),
+      i18n('calendar_month_nov', '11月'),
+      i18n('calendar_month_dec', '12月')
     ];
   }
   
@@ -64,7 +64,7 @@ export class CalendarSessionSelector {
     this.container = document.getElementById('calendar-session-selector');
     
     if (!this.container) {
-      logger.error('calendar_selector_container_not_found');
+      logger.error(i18n('calendar_selector_container_not_found', '日历选择器容器未找到'));
       return;
     }
     
@@ -77,7 +77,7 @@ export class CalendarSessionSelector {
     // 设置事件监听器
     this.setupEventListeners();
     
-    logger.log('calendar_session_selector_initialized');
+    logger.log(i18n('calendar_session_selector_initialized', '日历会话选择器已初始化'));
   }
   
   /**
@@ -98,20 +98,20 @@ export class CalendarSessionSelector {
     // 创建上个月按钮
     const prevButton = document.createElement('button');
     prevButton.className = 'month-nav prev';
-    prevButton.title = i18n('calendar_prev_month');
+    prevButton.title = i18n('calendar_prev_month', '上个月');
     prevButton.textContent = '◀';
     calendarHeader.appendChild(prevButton);
     
     // 创建月份标题
     const monthTitle = document.createElement('h3');
     monthTitle.className = 'current-month';
-    monthTitle.textContent = i18n('calendar_month_year', `${this.currentYear}`, this.getMonthNames()[this.currentMonth]);
+    monthTitle.textContent = i18n('calendar_month_year', '{0}年{1}', `${this.currentYear}`, this.getMonthNames()[this.currentMonth]);
     calendarHeader.appendChild(monthTitle);
     
     // 创建下个月按钮
     const nextButton = document.createElement('button');
     nextButton.className = 'month-nav next';
-    nextButton.title = i18n('calendar_next_month');
+    nextButton.title = i18n('calendar_next_month', '下个月');
     nextButton.textContent = '▶';
     calendarHeader.appendChild(nextButton);
     
@@ -124,13 +124,13 @@ export class CalendarSessionSelector {
     
     // 添加星期标题
     const weekdays = [
-      i18n("content_sunday"),
-      i18n("content_monday"), 
-      i18n("content_tuesday"),
-      i18n("content_wednesday"),
-      i18n("content_thursday"),
-      i18n("content_friday"),
-      i18n("content_saturday")
+      i18n('calendar_sunday', '日'),
+      i18n('calendar_monday', '一'), 
+      i18n('calendar_tuesday', '二'),
+      i18n('calendar_wednesday', '三'),
+      i18n('calendar_thursday', '四'),
+      i18n('calendar_friday', '五'),
+      i18n('calendar_saturday', '六')
     ];
     weekdays.forEach(day => {
       const weekday = document.createElement('div');
@@ -152,7 +152,7 @@ export class CalendarSessionSelector {
     loadingElement.appendChild(spinner);
     
     const loadingText = document.createElement('span');
-    loadingText.textContent = i18n('calendar_loading_data');
+    loadingText.textContent = i18n('calendar_loading_data', '加载会话数据...');
     loadingElement.appendChild(loadingText);
     
     // 添加加载指示器到容器
@@ -183,7 +183,7 @@ export class CalendarSessionSelector {
     
     const title = document.createElement('h4');
     title.className = 'session-list-title';
-    title.textContent = i18n('calendar_select_session');
+    title.textContent = i18n('calendar_select_session', '选择会话');
     header.appendChild(title);
     
     const closeButton = document.createElement('button');
@@ -213,7 +213,7 @@ export class CalendarSessionSelector {
    */
   public update(sessionList: any[] = [], currentSessionId?: string, latestSessionId?: string): void {
     if (!this.container) {
-      logger.warn('calendar_container_not_exists');
+      logger.warn(i18n('calendar_container_not_exists', '日历容器不存在，无法更新'));
       return;
     }
     
@@ -222,13 +222,13 @@ export class CalendarSessionSelector {
     
     // 如果与上次更新相同，跳过更新
     if (this.lastUpdateHash === updateHash) {
-      logger.debug('calendar_skip_duplicate_update');
+      logger.debug(i18n('calendar_skip_duplicate_update', '跳过重复的日历选择器更新'));
       return;
     }
     
     this.lastUpdateHash = updateHash;
     
-    logger.log('calendar_update', sessionList.length);
+    logger.log(i18n('calendar_update', '更新日历选择器，会话数量: {0}'), sessionList.length);
     
     // 显示加载指示器
     this.setLoading(true);
@@ -250,14 +250,14 @@ export class CalendarSessionSelector {
       
       // 强制确保日历结构存在
       if (!this.container?.querySelector('.calendar-grid')) {
-        logger.warn('calendar_grid_missing');
+        logger.warn(i18n('calendar_grid_missing', '日历网格不存在，重新创建结构'));
         this.createCalendarStructure();
       }
       
       this.renderCalendarDays();
       this.setLoading(false); // 隐藏加载指示器
       
-      logger.log('calendar_update_complete');
+      logger.log(i18n('calendar_update_complete', '日历会话选择器更新完成'));
     });
   }
   
@@ -271,7 +271,7 @@ export class CalendarSessionSelector {
     // 更新月份标题
     const monthHeader = this.container?.querySelector('.current-month');
     if (monthHeader) {
-      monthHeader.textContent = i18n('calendar_month_year', `${this.currentYear}`, this.getMonthNames()[this.currentMonth]);
+      monthHeader.textContent = i18n('calendar_month_year', '{0}年{1}', `${this.currentYear}`, this.getMonthNames()[this.currentMonth]);
     }
     
     // 移除旧的日期单元格
@@ -371,7 +371,7 @@ export class CalendarSessionSelector {
     // 一次性添加所有单元格到网格
     calendarGrid.appendChild(fragment);
     
-    logger.log('calendar_days_rendered', daysInMonth);
+    logger.log(i18n('calendar_days_rendered', '日历天数渲染完成，本月共{0}天'), daysInMonth);
   }
   /**
    * 判断日期是否为最新会话的开始日期
@@ -418,11 +418,11 @@ export class CalendarSessionSelector {
       }
       
       if (className.includes('latest-day') && className.includes('selected-day')) {
-        cell.title = i18n('calendar_current_and_latest_session');
+        cell.title = i18n('calendar_current_and_latest_session', '当前查看会话 & 最新活跃会话');
       } else if (className.includes('latest-day')) {
-        cell.title = i18n('calendar_latest_session');
+        cell.title = i18n('calendar_latest_session', '最新活跃会话');
       } else if (className.includes('selected-day')) {
-        cell.title = i18n('calendar_current_session');
+        cell.title = i18n('calendar_current_session', '当前查看会话');
       }
       cell.appendChild(indicator);
     }
@@ -623,7 +623,7 @@ export class CalendarSessionSelector {
           return;
         }
       } catch (e) {
-        logger.error('calendar_parse_sessions_error', e);
+        logger.error(i18n('calendar_parse_sessions_error', '解析会话ID数组失败: {0}'), e);
         const sessionId = cell.dataset.sessionId;
         if (sessionId) {
           this.selectSession(sessionId);
@@ -646,7 +646,7 @@ export class CalendarSessionSelector {
     const listContainer = document.getElementById('session-list-container');
     const sessionList = document.getElementById('session-list');
     if (!listContainer || !sessionList) {
-      logger.error('calendar_session_list_container_missing');
+      logger.error(i18n('calendar_session_list_container_missing', '找不到会话列表容器元素'));
       return;
     }
     
@@ -660,7 +660,7 @@ export class CalendarSessionSelector {
       const date = new Date(dateStr);
       const title = listContainer.querySelector('.session-list-title');
       if (title && date instanceof Date && !isNaN(date.getTime())) {
-        title.textContent = i18n('calendar_sessions_for_date', `${date.getFullYear()}`, `${date.getMonth() + 1}`, `${date.getDate()}`);
+        title.textContent = i18n('calendar_sessions_for_date', '{0}年{1}月{2}日的会话', `${date.getFullYear()}`, `${date.getMonth() + 1}`, `${date.getDate()}`);
       }
     }
     
@@ -692,22 +692,22 @@ export class CalendarSessionSelector {
       infoElement.className = 'session-info';
       
       // 计算会话时长
-      let durationStr = i18n('calendar_session_in_progress');
+      let durationStr = i18n('calendar_session_in_progress', '进行中');
       if (session.endTime) {
         const endTime = new Date(session.endTime);
         const durationMs = endTime.getTime() - startTime.getTime();
         const durationMin = Math.floor(durationMs / 60000);
         
         if (durationMin < 1) {
-          durationStr = i18n('calendar_duration_less_than_minute');
+          durationStr = i18n('calendar_duration_less_than_minute', '不足1分钟');
         } else if (durationMin < 60) {
-          durationStr = i18n('calendar_duration_minutes', `${durationMin}`);
+          durationStr = i18n('calendar_duration_minutes', '{0}分钟', `${durationMin}`);
         } else {
           const hours = Math.floor(durationMin / 60);
           const mins = durationMin % 60;
           durationStr = mins > 0 ? 
-            i18n('calendar_duration_hours_minutes', `${hours}`, `${mins}`) :
-            i18n('calendar_duration_hours', `${hours}`);
+            i18n('calendar_duration_hours_minutes', '{0}小时 {1}分钟', `${hours}`, `${mins}`) :
+            i18n('calendar_duration_hours', '{0}小时', `${hours}`);
         }
       }
       
@@ -782,11 +782,11 @@ export class CalendarSessionSelector {
     // 调用会话服务加载选中会话
     sessionServiceClient.loadSession(sessionId)
       .then(() => {
-        logger.log('calendar_session_selected', sessionId);
+        logger.log(i18n('calendar_session_selected', '会话已选择: {0}'), sessionId);
         this.renderCalendarDays(); // 更新选中状态
       })
       .catch(error => {
-        logger.error('calendar_load_session_failed', error);
+        logger.error(i18n('calendar_load_session_failed', '加载会话失败: {0}'), error);
       });
   }
   
@@ -822,6 +822,6 @@ export class CalendarSessionSelector {
    */
   public dispose(): void {
     this.removeEventListeners();
-    logger.log('calendar_disposed');
+    logger.log(i18n('calendar_disposed', '日历会话选择器资源已清理'));
   }
 }

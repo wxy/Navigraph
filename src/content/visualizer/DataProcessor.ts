@@ -46,7 +46,7 @@ export class DataProcessor {
     edges: NavLink[], 
     filters: FilterStates
   ): { nodes: NavNode[]; edges: NavLink[] } {
-    logger.log('data_processor_applying_filters', filters);
+    logger.log(i18n('data_processor_applying_filters', '应用筛选器: {0}'), filters);
     
     // 筛选节点
     const filteredNodes = this.filterNodes(nodes, filters);
@@ -59,7 +59,7 @@ export class DataProcessor {
       return nodeIds.has(edge.source) && nodeIds.has(edge.target);
     });
     
-    logger.log('data_processor_filter_result', nodes.length, filteredNodes.length);
+    logger.log(i18n('data_processor_filter_result', '过滤结果: 从{0}个节点中筛选出{1}个符合条件的节点'), nodes.length, filteredNodes.length);
     
     return { nodes: filteredNodes, edges: filteredEdges };
   }

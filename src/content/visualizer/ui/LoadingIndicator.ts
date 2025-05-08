@@ -30,7 +30,7 @@ export class LoadingIndicator {
       this.createLoadingElements();
     }
 
-    logger.log('loading_indicator_initialized');
+    logger.log(i18n('loading_indicator_initialized', '加载指示器已初始化'));
   }
 
   /**
@@ -56,7 +56,7 @@ export class LoadingIndicator {
     // 添加加载文本
     const loadingText = document.createElement('div');
     loadingText.className = 'loading-text';
-    loadingText.textContent = i18n('content_loading_indicator');
+    loadingText.textContent = i18n('content_loading_indicator', '加载中...');
     this.element.appendChild(loadingText);
 
     document.body.appendChild(this.element);
@@ -87,7 +87,7 @@ export class LoadingIndicator {
     } else {
       const textElement = this.element?.querySelector('.loading-text');
       if (textElement) {
-        textElement.textContent = i18n('content_loading_indicator');
+        textElement.textContent = i18n('content_loading_indicator', '加载中...');
       }
     }
 
@@ -103,12 +103,12 @@ export class LoadingIndicator {
 
     this.isVisible = true;
 
-    logger.log('loading_indicator_shown', message || '');
+    logger.log(i18n('loading_indicator_shown', '显示加载指示器{0}'), message || '');
 
     // 设置安全超时，防止加载状态卡住
     this.loadingTimeoutId = window.setTimeout(() => {
       this.hide();
-      logger.warn('loading_indicator_timeout');
+      logger.warn(i18n('loading_indicator_timeout', '加载超时，自动隐藏加载指示器'));
     }, 30000); // 30秒超时
   }
 
@@ -134,7 +134,7 @@ export class LoadingIndicator {
 
     this.isVisible = false;
 
-    logger.log('loading_indicator_hidden');
+    logger.log(i18n('loading_indicator_hidden', '隐藏加载指示器'));
   }
 
   /**

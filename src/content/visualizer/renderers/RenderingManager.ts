@@ -29,21 +29,21 @@ export class RenderingManager {
     this.visualizer = visualizer;
     this.viewStateManager = viewStateManager;
     this.uiManager = uiManager;
-    logger.log('rendering_manager_init');
+    logger.log(i18n('rendering_manager_init', '渲染管理器初始化'));
   }
   
   /**
    * 初始化渲染管理器
    */
   initialize(container: HTMLElement): void {
-    logger.log("rendering_manager_init_start");
+    logger.log(i18n('rendering_manager_init_start', '开始初始化渲染管理器'));
     
     this.container = container;
     
     // 更新容器大小
     this.updateContainerSize();
     
-    logger.log("rendering_manager_init_complete");
+    logger.log(i18n('rendering_manager_init_complete', '渲染管理器初始化完成'));
   }
   
   /**
@@ -55,7 +55,7 @@ export class RenderingManager {
     data?: any,
     options: { restoreTransform?: boolean } = {}
   ): void {
-    logger.log("visualization_refresh_start", data ? i18n("using_provided_data") : i18n("using_existing_data"));
+    logger.log(i18n('visualization_refresh_start', '开始刷新可视化：{0}'), data ? i18n('using_provided_data', '使用提供的数据') : i18n('using_existing_data', '使用现有数据'));
 
     try {
       // 如果提供了新数据，通知可视化器更新数据
@@ -76,10 +76,10 @@ export class RenderingManager {
       // 更新URL和状态栏
       this.updateUrlAndUI();
 
-      logger.log("visualization_refresh_complete");
+      logger.log(i18n('visualization_refresh_complete', '可视化刷新完成'));
     } catch (error) {
       this.uiManager.showError(
-        i18n("refresh_failed", error instanceof Error ? error.message : String(error))
+        i18n('refresh_failed', '刷新失败：{0}', error instanceof Error ? error.message : String(error))
       );
     }
   }
@@ -114,9 +114,9 @@ export class RenderingManager {
       // 不触发页面刷新的情况下更新URL
       window.history.replaceState(null, "", url);
 
-      logger.log("url_updated_for_view_filters");
+      logger.log(i18n('url_updated_for_view_filters', '已更新URL以反映当前视图和筛选状态'));
     } catch (error) {
-      logger.warn("url_update_failed", 
+      logger.warn(i18n('url_update_failed', '更新URL失败: {0}'), 
         error instanceof Error ? error.message : String(error));
     }
   }
@@ -126,7 +126,7 @@ export class RenderingManager {
    */
   renderVisualization(options: { restoreTransform?: boolean } = {}): void {
     if (!this.container || !this.viewStateManager.svg) {
-      logger.error("render_failed_no_container_svg");
+      logger.error(i18n('render_failed_no_container_svg', '渲染失败：容器或SVG元素不存在'));
       return;
     }
 
@@ -154,8 +154,7 @@ export class RenderingManager {
       // 检查是否有数据可渲染
       const hasData = nodes && nodes.length > 0;
 
-      logger.log(
-        "visualization_render_start",
+      logger.log(i18n('visualization_render_start', '开始渲染可视化：视图={0}，节点数={1}，边数={2}，尺寸={3}'),
         this.viewStateManager.currentView,
         String(hasData ? nodes.length : 0),
         String(hasData ? edges.length : 0),
@@ -199,17 +198,17 @@ export class RenderingManager {
 
       // 将一个日志消息拆分成两种情况的不同消息ID
       if (this.viewStateManager.zoom) {
-        logger.log("visualization_render_complete_with_zoom", 
+        logger.log(i18n('visualization_render_complete_with_zoom', '可视化渲染完成：视图={0}，缩放已设置，有数据={1}'), 
           this.viewStateManager.currentView,
           String(hasData));
       } else {
-        logger.log("visualization_render_complete_without_zoom", 
+        logger.log(i18n('visualization_render_complete_without_zoom', '可视化渲染完成：视图={0}，缩放未设置，有数据={1}'), 
           this.viewStateManager.currentView,
           String(hasData));
       }
     } catch (error) {
       this.uiManager.showError(
-        i18n("render_failed", error instanceof Error ? error.message : String(error))
+        i18n('render_failed', '渲染失败：{0}', error instanceof Error ? error.message : String(error))
       );
     }
   }
@@ -246,7 +245,7 @@ export class RenderingManager {
       .attr("href", chrome.runtime.getURL("images/logo-48.png"));
 
     // 添加提示文字 - 本地化
-    const sessionTitle = currentSession?.title || i18n("content_current_session");
+    const sessionTitle = currentSession?.title || i18n('content_current_session', '当前会话');
     sessionNode
       .append("text")
       .attr("class", "node-label empty-node-label")
@@ -255,7 +254,7 @@ export class RenderingManager {
       .text(sessionTitle);
 
     // 添加无数据提示，包含隐藏节点信息 - 本地化
-    let emptyMessage = i18n("content_no_open_records");
+    let emptyMessage = i18n('content_no_open_records', '没有打开的页面记录');
     
     // 检查当前会话中是否有已关闭节点
     if (currentSession?.records) {
@@ -265,7 +264,7 @@ export class RenderingManager {
       ).length;
       
       if (closedNodesCount > 0) {
-        emptyMessage = i18n("content_no_open_records_with_closed", closedNodesCount.toString());
+        emptyMessage = i18n('content_no_open_records_with_closed', '没有打开的页面（已关闭{0}个页面）', closedNodesCount.toString());
       }
     }
     // 添加无数据提示
@@ -286,7 +285,7 @@ export class RenderingManager {
         .attr("text-anchor", "middle")
         .attr("font-size", "12px")
         .attr("fill", "#4285f4")
-        .text(i18n("content_filter_show_closed_hint"));
+        .text(i18n('content_filter_show_closed_hint', '点击此处显示已关闭的页面'));
     }
     
     // 为空会话节点添加闪烁动画
@@ -362,12 +361,12 @@ export class RenderingManager {
    * @param svgElement 由UIManager创建的原生SVG元素
    */
   setupSvg(svgElement: SVGElement): void {
-    logger.log("svg_setup_start");
+    logger.log(i18n('svg_setup_start', '开始配置SVG元素'));
 
     try {
       // 确保有效的SVG元素
       if (!svgElement) {
-        throw new I18nError("svg_element_empty");
+        throw new Error(i18n('svg_element_empty', 'SVG元素为空'));
       }
       
       // 将原生SVG元素转换为D3选择集
@@ -389,9 +388,9 @@ export class RenderingManager {
       // 使用视图状态管理器设置缩放行为
       this.viewStateManager.setupBasicZoom();
 
-      logger.log("svg_setup_complete");
+      logger.log(i18n('svg_setup_complete', 'SVG元素配置完成'));
     } catch (error) {
-      logger.error("svg_setup_failed", 
+      logger.error(i18n('svg_setup_failed', 'SVG元素配置失败：{0}'), 
         error instanceof Error ? error.message : String(error));
       throw error;
     }
@@ -429,7 +428,7 @@ export class RenderingManager {
       Math.abs(width - oldWidth) > threshold ||
       Math.abs(height - oldHeight) > threshold
     ) {
-      logger.log("container_size_updated", `${width}x${height}`);
+      logger.log(i18n('container_size_updated', '容器大小已更新：{0}'), `${width}x${height}`);
 
       // 应用尺寸
       this.container.style.width = `${width}px`;
@@ -444,7 +443,7 @@ export class RenderingManager {
 
       return true;
     } else {
-      logger.log("container_size_change_insignificant");
+      logger.log(i18n('container_size_change_insignificant', '容器大小变化不显著，跳过更新'));
       return false;
     }
   }
@@ -466,7 +465,7 @@ export class RenderingManager {
    * 清理资源
    */
   cleanup(): void {
-    logger.log("rendering_manager_cleanup");
+    logger.log(i18n('rendering_manager_cleanup', '正在清理渲染管理器资源'));
     // 当前没有需要特别清理的资源
   }
 }

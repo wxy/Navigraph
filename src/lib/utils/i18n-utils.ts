@@ -194,22 +194,40 @@ export class I18nError extends Error {
 /**
  * 获取本地化字符串并支持参数替换
  * @param messageId 消息ID
- * @param args 用于替换消息中的{0}, {1}等占位符的参数
+ * @param defaultMessage 默认消息字符串，当无法找到messageId对应的消息时使用
+ * @param args 用于替换消息中的{0}, {1}等占位符的参数，可以是数组或多个单独参数
  * @returns 本地化后的字符串
  */
-export function i18n(messageId: string, ...args: string[]): string {
-  // 首先获取基本消息字符串
-  const message = I18nUtils.getInstance().getMessage(messageId);
+export function i18n(messageId: string, defaultMessage: string, ...args: any[]): string {
+  // 获取基本消息字符串，如果找不到则使用默认消息
+  const message = I18nUtils.getInstance().getMessage(messageId, defaultMessage);
   
-  // 如果没有参数需要替换，直接返回
-  if (!args || args.length === 0) {
+  // 处理替换参数
+  let replacementArgs: any[] = [];
+  
+  // 如果有参数
+  if (args.length > 0) {
+    // 检查第一个参数是否为数组
+    if (args.length === 1 && Array.isArray(args[0])) {
+      // 如果是数组，使用数组内容作为替换参数
+      replacementArgs = args[0];
+    } else {
+      // 否则使用所有参数作为替换参数
+      replacementArgs = args;
+    }
+  }
+  
+  // 如果没有替换参数，直接返回消息
+  if (replacementArgs.length === 0) {
     return message;
   }
   
   // 替换所有 {0}, {1}, {2} 等占位符
   let result = message;
-  for (let i = 0; i < args.length; i++) {
-    result = result.replace(new RegExp('\\{' + i + '\\}', 'g'), args[i]);
+  for (let i = 0; i < replacementArgs.length; i++) {
+    // 确保参数是字符串
+    const argString = String(replacementArgs[i] ?? '');
+    result = result.replace(new RegExp('\\{' + i + '\\}', 'g'), argString);
   }
   
   return result;

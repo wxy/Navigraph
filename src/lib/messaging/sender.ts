@@ -31,8 +31,7 @@ export function sendMessage<T extends MessageTarget, A extends string>(
 
       // 本地化发送日志
       if (!retryInfo || retryInfo.isLastAttempt || retryInfo.attempt === 0) {
-        logger.log(
-          'message_send',
+        logger.log(i18n('message_send', '发送消息: {0} [ID:{1}] 目标:{2}'),
           action,
           requestId,
           target
@@ -57,8 +56,8 @@ export function sendMessage<T extends MessageTarget, A extends string>(
           });
         } else {
           // 使用 I18nError 并本地化日志
-          const err = new I18nError('message_missing_tab_id');
-          logger.error('message_missing_tab_id');
+          const err = new Error(i18n('message_missing_tab_id', '发送到内容脚本时必须指定 tabId'));
+          logger.error(i18n('message_missing_tab_id', '发送到内容脚本时必须指定 tabId'));
           reject(err);
         }
       } else {
@@ -70,11 +69,11 @@ export function sendMessage<T extends MessageTarget, A extends string>(
     } catch (error) {
       // 只有在最后一次尝试时才记录错误
       if (!retryInfo || retryInfo.isLastAttempt) {
-        logger.error('message_send_error', error instanceof Error ? error.message : String(error));
+        logger.error(i18n('message_send_error', '发送消息异常: {0}'), error instanceof Error ? error.message : String(error));
       } 
       const msg = error instanceof I18nError
         ? error
-        : new I18nError('message_send_error', error instanceof Error ? error.message : String(error));
+        : new Error(i18n('message_send_error', '发送消息异常: {0}', error instanceof Error ? error.message : String(error)));
       reject(msg);
     }
   });
@@ -93,25 +92,25 @@ function handleResponse<T extends BaseResponse>(
 
   if (chrome.runtime.lastError) {
     if (!suppressErrors) {
-      logger.error('message_runtime_error', chrome.runtime.lastError.message);
+      logger.error(i18n('message_runtime_error', '运行时错误: {0}'), chrome.runtime.lastError.message);
     }
-    reject(new I18nError('message_runtime_error', chrome.runtime.lastError.message));
+    reject(new Error(i18n('message_runtime_error', '运行时错误: {0}', chrome.runtime.lastError.message)));
     return;
   }
 
   if (!response) {
-    const err = new I18nError('message_no_response');
+    const err = new Error(i18n('message_no_response', '没有收到响应'));
     if (!suppressErrors) {
-      logger.error('message_no_response');
+      logger.error(i18n('message_no_response', '没有收到响应'));
     }
     reject(err);
     return;
   }
 
   if (!response.success) {
-    const err = new I18nError('message_response_error', response.error);
+    const err = new Error(i18n('message_response_error', '收到错误响应: {0}', response.error));
     if (!suppressErrors) {
-      logger.error('message_response_error', response.error);
+      logger.error(i18n('message_response_error', '收到错误响应: {0}'), response.error);
     }
     reject(err);
     return;
@@ -223,7 +222,7 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
-          logger.log('message_retry', attempt, maxRetries, action);
+          logger.log(i18n('message_retry', '重试发送消息 ({0}/{1}): {2}'), attempt, maxRetries, action);
           await new Promise(r => setTimeout(r, currentDelay));
 
           // 计算下一次延迟（如果启用指数退避）
@@ -250,7 +249,7 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
         // 如果是扩展上下文失效错误，不再重试
         if (error instanceof Error &&
           (error.message.includes('invalid') || error.message.includes('closed'))) {
-          logger.error('message_extension_context_invalid', error.message);
+          logger.error(i18n('message_extension_context_invalid', '扩展上下文失效或端口已关闭: {0}'), error.message);
           break;
         }
       }
@@ -258,15 +257,15 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
 
     // 所有重试都失败了
     if (defaultValue !== undefined) {
-      logger.warn('message_send_failed_default', action);
+      logger.warn(i18n('message_send_failed_default', '发送消息 {0} 失败，已使用默认值'), action);
       resolve(defaultValue);
     } else {
       // 最终失败时记录一条整体错误
-      logger.error('message_send_final_failed', action, maxRetries + 1);
+      logger.error(i18n('message_send_final_failed', '在第 {1} 次尝试后发送消息失败: {0}'), action, maxRetries + 1);
       reject(
         lastError instanceof I18nError
           ? lastError
-          : new I18nError('message_send_final_failed', action, `${maxRetries + 1}`)
+          : new Error(i18n('message_send_final_failed', '在第 {1} 次尝试后发送消息失败: {0}', [action, `${maxRetries + 1}`]))
       );
     }
   });
@@ -282,7 +281,7 @@ export function isExtensionContextValid(): boolean {
     const id = chrome.runtime.id;
     return !!id;
   } catch (e) {
-    logger.warn('message_extension_context_invalid', e instanceof Error ? e.message : String(e));
+    logger.warn(i18n('message_extension_context_invalid', '扩展上下文失效或端口已关闭: {0}'), e instanceof Error ? e.message : String(e));
     return false;
   }
 }

@@ -111,18 +111,28 @@ export class Logger {
       }
     });
 
-    // 尝试本地化首个字符串参数，使用收集的参数进行占位符替换
-    let localized: string;
-    try {
-      // 确保所有占位符参数都转换为字符串
-      const stringifiedParams = placeholderParams.map(p => String(p));
-      localized = i18n(rawMsg, ...stringifiedParams);
-    } catch {
-      localized = rawMsg;
+    // 进行占位符替换处理
+    let formattedMessage = rawMsg; // 更改变量名以反映实际功能
+
+    // 手动替换占位符
+    if (placeholderParams.length > 0) {
+      try {
+        // 确保所有占位符参数都转换为字符串
+        const stringifiedParams = placeholderParams.map(p => String(p));
+        
+        // 手动替换所有{0}, {1}等占位符
+        stringifiedParams.forEach((param, index) => {
+          const placeholder = new RegExp(`\\{${index}\\}`, 'g');
+          formattedMessage = formattedMessage.replace(placeholder, param);
+        });
+      } catch {
+        // 发生错误时回退到原始消息
+        formattedMessage = rawMsg;
+      }
     }
-    
-    // 替换为本地化后的消息和元数据参数（不包含用于占位符的参数）
-    args = [localized, ...metaParams];
+
+    // 替换为处理后的消息和元数据参数
+    args = [formattedMessage, ...metaParams];
     
     const timestamp = getSimpleTimestamp();
     const fileInfo = getCallerInfo();
@@ -211,12 +221,12 @@ export class Logger {
     }
 
     const startTime = performance.now();
-    this.debug('logger_session_started', sessionName);
+    this.debug(i18n('logger_session_started', '{0} - 开始', sessionName));
 
     return {
       end: () => {
         const duration = performance.now() - startTime;
-        this.debug('logger_session_ended', sessionName, duration.toFixed(2));
+        this.debug(i18n('logger_session_ended', '{0} - 结束 (耗时: {1}ms)', sessionName, duration.toFixed(2)));
       },
     };
   }
@@ -269,7 +279,7 @@ export class Logger {
     return {
       end: () => {
         const duration = performance.now() - startTime;
-        this.log('logger_total_duration', duration.toFixed(2));
+        this.log(i18n('logger_total_duration', '总耗时: {0}ms', duration.toFixed(2)));
         this.groupEnd();
       }
     };
@@ -316,31 +326,27 @@ export class Logger {
       const lines = stack.split("\n");
 
       if (detailLevel === "full") {
-        console.log(i18n("logger_debug_full_stack"), lines);
+        console.log(i18n('logger_debug_full_stack', '完整堆栈:'), lines);
 
         // 分析每一行
         lines.forEach((line, i) => {
-          console.log(i18n("logger_debug_line_number", i.toString()), line);
+          console.log(i18n('logger_debug_line_number', '行 {0}:', i.toString()), line);
 
           // 测试各种正则表达式
-          console.log(
-            i18n("logger_debug_chrome_standard_format"),
-            line.match(/at .+? \((.+?):(\d+):\d+\)/)
+          console.log(i18n('logger_debug_chrome_standard_format', ' Chrome标准格式:'),line.match(/at .+? \((.+?):(\d+):\d+\)/)
           );
-          console.log(i18n("logger_debug_chrome_simple_format"), line.match(/at (.+?):(\d+):\d+/));
-          console.log(i18n("logger_debug_firefox_format"), line.match(/(.+?)@(.+?):(\d+):\d+/));
-          console.log(
-            i18n("logger_debug_fallback_format"),
-            line.match(/([^\/\\]+\.(js|ts|jsx|tsx|vue|html))(?::(\d+))?/i)
+          console.log(i18n('logger_debug_chrome_simple_format', ' Chrome简单格式:'), line.match(/at (.+?):(\d+):\d+/));
+          console.log(i18n('logger_debug_firefox_format', ' Firefox格式:'), line.match(/(.+?)@(.+?):(\d+):\d+/));
+          console.log(i18n('logger_debug_fallback_format', ' 后备格式:'),line.match(/([^\/\\]+\.(js|ts|jsx|tsx|vue|html))(?::(\d+))?/i)
           );
           console.log("---");
         });
       } else {
-        console.log(i18n("logger_debug_stack_first_five"), lines.slice(0, 5));
-        console.log(i18n("logger_debug_stack_view_full"));
+        console.log(i18n('logger_debug_stack_first_five', '堆栈前5行:'), lines.slice(0, 5));
+        console.log(i18n('logger_debug_stack_view_full', '使用Logger.debugStack("full")查看完整分析'));
       }
     } catch (e) {
-      console.error(i18n("logger_debug_stack_error"), e);
+      console.error(i18n('logger_debug_stack_error', '无法获取堆栈'), e);
     }
   }
 }
@@ -375,53 +381,52 @@ function getModuleColor(moduleName: string): string {
 function addCompletionEmoji(message: string): string {
   if (!config.useCompletion) return message;
   
-  // 关键词到表情符的固定映射
+  // 使用i18n函数获取本地化关键词
   const completionEmojiMap: Record<string, string> = {
     // 基础状态
-    '完成': '✅',
-    '成功': '🎉',
-    '结束': '🏁',
-    '失败': '❌',
-    '错误': '❗️',
-    '警告': '⚠️',
+    [i18n('logger_keyword_completed', '完成')]: '✅',
+    [i18n('logger_keyword_success', '成功')]: '🎉',
+    [i18n('logger_keyword_ended', '结束')]: '🏁',
+    [i18n('logger_keyword_failed', '失败')]: '❌',
+    [i18n('logger_keyword_error', '错误')]: '❗️',
+    [i18n('logger_keyword_warning', '警告')]: '⚠️',
     
     // 初始化相关
-    '已初始化': '🚀',
-    '初始化完成': '🚀',
-    '初始化成功': '🚀',
-    '启动完成': '🚀',
+    [i18n('logger_keyword_initialized', '已初始化')]: '🚀',
+    [i18n('logger_keyword_init_complete', '初始化完成')]: '🚀',
+    [i18n('logger_keyword_init_success', '初始化成功')]: '🚀',
+    [i18n('logger_keyword_started', '启动完成')]: '🚀',
     
     // 数据相关
-    '已加载': '📦',
-    '加载完成': '📦',
-    '已保存': '💾',
-    '保存成功': '💾',
-    '已下载': '⬇️',
-    '已上传': '⬆️',
+    [i18n('logger_keyword_loaded', '已加载')]: '📦',
+    [i18n('logger_keyword_load_complete', '加载完成')]: '📦',
+    [i18n('logger_keyword_saved', '已保存')]: '💾',
+    [i18n('logger_keyword_save_success', '保存成功')]: '💾',
+    [i18n('logger_keyword_downloaded', '已下载')]: '⬇️',
+    [i18n('logger_keyword_uploaded', '已上传')]: '⬆️',
     
     // 注册与创建
-    '已创建': '🆕',
-    '已注册': '📝',
-    '已添加': '➕',
-    '已删除': '🗑️',
+    [i18n('logger_keyword_created', '已创建')]: '🆕',
+    [i18n('logger_keyword_registered', '已注册')]: '📝',
+    [i18n('logger_keyword_added', '已添加')]: '➕',
+    [i18n('logger_keyword_deleted', '已删除')]: '🗑️',
     
     // 设置与配置
-    '已设置': '⚙️',
-    '已配置': '⚙️',
-    '设置完成': '⚙️',
+    [i18n('logger_keyword_set', '已设置')]: '⚙️',
+    [i18n('logger_keyword_configured', '已配置')]: '⚙️',
+    [i18n('logger_keyword_settings_complete', '设置完成')]: '⚙️',
     
     // 运行状态
-    '已启动': '▶️',
-    '已停止': '⏹️',
-    '已暂停': '⏸️',
-    '已恢复': '⏯️',
-    '已就绪': '👌',
-    '已准备': '👍',
+    [i18n('logger_keyword_started_action', '已启动')]: '▶️',
+    [i18n('logger_keyword_stopped', '已停止')]: '⏹️',
+    [i18n('logger_keyword_paused', '已暂停')]: '⏸️',
+    [i18n('logger_keyword_resumed', '已恢复')]: '⏯️',
+    [i18n('logger_keyword_ready', '已就绪')]: '👌',
+    [i18n('logger_keyword_prepared', '已准备')]: '👍',
 
-    '...' : '⏳', // 省略号
-    '正在': '⏳', // 进行中的状态
-    '处理中': '⏳', // 处理中的状态
-    };
+    [i18n('logger_keyword_in_progress', '...')]: '⏳', // 省略号
+    [i18n('logger_keyword_processing', '处理中')]: '⏳', // 处理中的状态
+  };
   
   // 检查消息中是否包含关键词
   if (typeof message === 'string') {

@@ -29,7 +29,7 @@ function setupDebugContextMenu(): void {
     // 创建父级菜单
     chrome.contextMenus.create({
       id: 'navigraph-debug',
-      title: i18n('debug_menu_title'),
+      title: i18n('debug_menu_title', '🐞 Navigraph调试工具'),
       contexts: ['action'] // 仅在扩展图标的右键菜单中显示
     });
 
@@ -37,25 +37,25 @@ function setupDebugContextMenu(): void {
     chrome.contextMenus.create({
       id: 'debug-check-data',
       parentId: 'navigraph-debug',
-      title: i18n('debug_menu_check_data'),
+      title: i18n('debug_menu_check_data', '检查数据'),
       contexts: ['action']
     });
 
     chrome.contextMenus.create({
       id: 'debug-check-dom',
       parentId: 'navigraph-debug',
-      title: i18n('debug_menu_check_dom'),
+      title: i18n('debug_menu_check_dom', '检查DOM'),
       contexts: ['action']
     });
 
     chrome.contextMenus.create({
       id: 'debug-clear-data',
       parentId: 'navigraph-debug',
-      title: i18n('debug_menu_clear_data'),
+      title: i18n('debug_menu_clear_data', '清除数据'),
       contexts: ['action']
     });
 
-    logger.log('debug_menu_setup_complete');
+    logger.log(i18n('debug_menu_setup_complete', '创建调试上下文菜单完成'));
   });
 }
 
@@ -84,7 +84,7 @@ function handleDebugMenuAction(command: string): void {
     if (existingTabs && existingTabs.length > 0) {
       // 找到现有标签页
       const tab = existingTabs[0];
-      logger.log('debug_menu_found_tab', tab.id?.toString());
+      logger.log(i18n('debug_menu_found_tab', '找到现有扩展页面: {0}'), tab.id?.toString());
       
       // 激活标签页
       chrome.tabs.update(tab.id!, { active: true }, () => {
@@ -94,16 +94,16 @@ function handleDebugMenuAction(command: string): void {
           'navigraph_debug_timestamp': Date.now()
         }, () => {
           if (chrome.runtime.lastError) {
-            logger.error('debug_menu_command_error', chrome.runtime.lastError.message || i18n('unknown_error'));
+            logger.error(i18n('debug_menu_command_error', '设置调试命令失败: {0}'), chrome.runtime.lastError.message || i18n('unknown_error', '未知错误'));
             return;
           }
           
-          logger.log('debug_menu_command_sent', command);
+          logger.log(i18n('debug_menu_command_sent', '已向存储API发送调试命令: {0}'), command);
         });
       });
     } else {
       // 如果没有找到扩展页面，创建新标签页
-      logger.log('debug_menu_creating_tab');
+      logger.log(i18n('debug_menu_creating_tab', '未找到扩展页面，创建新标签页'));
       
       // 先设置调试命令，然后创建页面
       chrome.storage.local.set({

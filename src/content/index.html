@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="content_title">Navigation Graph</title>
+  <title data-i18n="content_title">导航图谱</title>
   <link rel="stylesheet" href="styles/main.css">
   <script src="d3.v7.min.js"></script>
 </head>
@@ -13,8 +13,8 @@
     <div class="main-container">
       <!-- Logo和名称移至主视图左上角 -->
       <div class="logo-container">
-        <img src="../../images/logo-48.png" alt="Navigation Graph" data-i18n="content_logo_alt">
-        <h1 data-i18n="content_heading">Navigation Graph</h1>
+        <img src="../../images/logo-48.png" alt="Navigation Graph">
+        <h1 data-i18n="content_heading">导航图谱</h1>
       </div>
       
       <!-- 中间可视化区域 -->
@@ -31,32 +31,32 @@
       <div class="control-panel" id="control-panel">
         <!-- 视图切换 -->
         <div id="view-switcher-container" class="view-mode">
-          <button id="tree-view" class="active" data-i18n="content_tree_view">Tree View</button>
-          <button id="timeline-view" data-i18n="content_timeline_view">Timeline View</button>
+          <button id="tree-view" class="active" data-i18n="content_tree_view">树形图视图</button>
+          <button id="timeline-view" data-i18n="content_timeline_view">时间线视图</button>
         </div>
 
         <div id="calendar-session-selector" class="calendar-session-selector">
           <div class="calendar-header">
-            <button class="month-nav prev" title="Previous Month" data-i18n="content_prev_month_title">◀</button>
+            <button class="month-nav prev" data-i18n="content_prev_month_title">◀</button>
             <h3 class="current-month"></h3>
-            <button class="month-nav next" title="Next Month" data-i18n="content_next_month_title">▶</button>
+            <button class="month-nav next" data-i18n="content_next_month_title">▶</button>
           </div>
           
           <div class="calendar-grid">
-            <div class="weekday" data-i18n="content_sunday">Sun</div>
-            <div class="weekday" data-i18n="content_monday">Mon</div>
-            <div class="weekday" data-i18n="content_tuesday">Tue</div>
-            <div class="weekday" data-i18n="content_wednesday">Wed</div>
-            <div class="weekday" data-i18n="content_thursday">Thu</div>
-            <div class="weekday" data-i18n="content_friday">Fri</div>
-            <div class="weekday" data-i18n="content_saturday">Sat</div>
+            <div class="weekday" data-i18n="content_sunday">日</div>
+            <div class="weekday" data-i18n="content_monday">一</div>
+            <div class="weekday" data-i18n="content_tuesday">二</div>
+            <div class="weekday" data-i18n="content_wednesday">三</div>
+            <div class="weekday" data-i18n="content_thursday">四</div>
+            <div class="weekday" data-i18n="content_friday">五</div>
+            <div class="weekday" data-i18n="content_saturday">六</div>
             <!-- 日期单元格由JS动态生成 -->
           </div>
           
           <!-- 添加多会话列表容器 -->
           <div class="session-list-container" id="session-list-container" style="display: none;">
             <div class="session-list-header">
-              <h4 class="session-list-title" data-i18n="content_select_session">Select Session</h4>
+              <h4 class="session-list-title" data-i18n="content_select_session">选择会话</h4>
               <button class="session-list-close" id="session-list-close">&times;</button>
             </div>
             <div class="session-list" id="session-list">
@@ -66,51 +66,49 @@
         </div>
         <!-- 筛选面板 -->
         <div id="filter-panel-container" class="filters-panel">
-          <h2 data-i18n="content_filters">Filters</h2>
+          <h2 data-i18n="content_filters">筛选器</h2>
           
           <div class="filter-section">
-            <h3 data-i18n="content_navigation_type">Navigation Type</h3>
+            <h3 data-i18n="content_navigation_type">导航类型</h3>
             <div class="filter-option">
               <input type="checkbox" id="type-link" checked>
-              <label for="type-link" data-i18n="content_link_click">Link Click</label>
+              <label for="type-link" data-i18n="content_link_click">链接点击</label>
             </div>
             <div class="filter-option">
               <input type="checkbox" id="type-address" checked>
-              <label for="type-address" data-i18n="content_address_bar">Address Bar</label>
+              <label for="type-address" data-i18n="content_address_bar">地址栏</label>
             </div>
             <div class="filter-option">
               <input type="checkbox" id="type-form" checked>
-              <label for="type-form" data-i18n="content_form_submit">Form Submit</label>
+              <label for="type-form" data-i18n="content_form_submit">表单提交</label>
             </div>
             <div class="filter-option">
               <input type="checkbox" id="type-js" checked>
-              <label for="type-js" data-i18n="content_js_redirect">JavaScript/Redirect</label>
+              <label for="type-js" data-i18n="content_js_redirect">JavaScript/重定向</label>
             </div>
           </div>
           
           <div class="filter-section">
-            <h3 data-i18n="content_navigation_behavior">Navigation Behavior</h3>
+            <h3 data-i18n="content_navigation_behavior">导航行为</h3>
             <div class="filter-option">
               <input type="checkbox" id="filter-reload" checked>
-              <label for="filter-reload" data-i18n="content_show_reload">Show Page Reload</label>
+              <label for="filter-reload" data-i18n="content_show_reload">显示页面重载</label>
             </div>
             <div class="filter-option">
               <input type="checkbox" id="filter-history" checked>
-              <label for="filter-history" data-i18n="content_show_history">Show History Navigation</label>
+              <label for="filter-history" data-i18n="content_show_history">显示历史导航</label>
             </div>
           </div>
           
           <div class="filter-section">
-            <h3 data-i18n="content_page_status">Page Status</h3>
+            <h3 data-i18n="content_page_status">页面状态</h3>
             <div class="filter-option">
               <input type="checkbox" id="filter-closed">
-              <label for="filter-closed" data-i18n="content_show_closed">Show Closed Pages</label>
+              <label for="filter-closed" data-i18n="content_show_closed">显示已关闭页面</label>
             </div>
             <div class="filter-option">
               <input type="checkbox" id="filter-tracking">
-              <label for="filter-tracking" data-i18n="content_show_tracking">
-                Show Tracking Pages
-              </label>
+              <label for="filter-tracking" data-i18n="content_show_tracking">显示跟踪页面</label>
             </div>
           </div>
         </div>
@@ -126,19 +124,19 @@
     <!-- 加载和错误提示 -->
     <div id="loading" style="display: none;">
       <div class="spinner"></div>
-      <p data-i18n="content_loading">Loading data...</p>
+      <p data-i18n="content_loading">正在加载数据...</p>
     </div>
     
     <!-- 错误UI组件 - 默认隐藏 -->
     <div id="navigraph-error" class="error-container" style="display: none;">
       <div class="error-header">
-        <h3 class="error-title" data-i18n="content_error">Error</h3>
+        <h3 class="error-title" data-i18n="content_error">错误</h3>
         <button class="close-button" onclick="this.parentNode.parentNode.style.display='none'">&times;</button>
       </div>
       <p class="error-message"></p>
       <div class="error-actions">
-        <button class="refresh-button" onclick="location.reload()" data-i18n="content_refresh_page">Refresh Page</button>
-        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'" data-i18n="content_close">Close</button>
+        <button class="refresh-button" onclick="location.reload()" data-i18n="content_refresh_page">刷新页面</button>
+        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'" data-i18n="content_close">关闭</button>
       </div>
     </div>
     
@@ -150,12 +148,12 @@
       </div>
       <p class="error-message"></p>
       <details>
-        <summary data-i18n="content_tech_details">Technical Details</summary>
+        <summary data-i18n="content_tech_details">技术细节</summary>
         <pre class="error-stack"></pre>
       </details>
       <div class="error-actions">
-        <button class="refresh-button" onclick="location.reload()" data-i18n="content_refresh_page">Refresh Page</button>
-        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'" data-i18n="content_close">Close</button>
+        <button class="refresh-button" onclick="location.reload()" data-i18n="content_refresh_page">刷新页面</button>
+        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'" data-i18n="content_close">关闭</button>
       </div>
     </div>
     
@@ -164,12 +162,12 @@
     
     <!-- 底部状态栏 -->
     <div class="windows-status-bar">
-      <div class="status-cell" id="status-date"><span data-i18n="content_session_date">Session Date</span>: --</div>
-      <div class="status-cell" id="status-duration"><span data-i18n="content_duration">Duration</span>: 0min</div>
-      <div class="status-cell" id="status-nodes"><span data-i18n="content_nodes">Nodes</span>: 0</div>
-      <div class="status-cell" id="status-filtered"><span data-i18n="content_hidden">Hidden</span>: 0</div>
-      <div class="status-cell" id="status-view"><span data-i18n="content_view">View</span>: <span data-i18n="content_tree_view_short">Tree</span></div>
-      <div class="status-cell status-cell-stretch" id="status-zoom"><span data-i18n="content_zoom">Zoom</span>: 100%</div>
+      <div class="status-cell" id="status-date"><span data-i18n="content_session_date">会话日期</span>: --</div>
+      <div class="status-cell" id="status-duration"><span data-i18n="content_duration">时长</span>: 0min</div>
+      <div class="status-cell" id="status-nodes"><span data-i18n="content_nodes">节点</span>: 0</div>
+      <div class="status-cell" id="status-filtered"><span data-i18n="content_hidden">已隐藏</span>: 0</div>
+      <div class="status-cell" id="status-view"><span data-i18n="content_view">视图</span>: <span data-i18n="content_tree_view_short">树形图</span></div>
+      <div class="status-cell status-cell-stretch" id="status-zoom"><span data-i18n="content_zoom">缩放</span>: 100%</div>
     </div>
   </div>
   

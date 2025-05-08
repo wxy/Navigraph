@@ -134,7 +134,7 @@ export class UrlUtils {
    */
   static extractTitle(url: string): string {
     try {
-      if (!url) return i18n('url_utils_unknown_page');
+      if (!url) return i18n('url_utils_unknown_page', '未知页面');
       
       // 解析URL
       let parsedUrl;
@@ -142,7 +142,7 @@ export class UrlUtils {
         parsedUrl = new URL(url);
       } catch (e) {
         // 处理无效URL
-        return url.substring(0, 30) || i18n('url_utils_unknown_page');
+        return url.substring(0, 30) || i18n('url_utils_unknown_page', '未知页面');
       }
       
       // 获取不带www的主机名
@@ -186,7 +186,7 @@ export class UrlUtils {
         return hostname;
       }
     } catch (error) {
-      return url.substring(0, 30) || i18n('url_utils_unknown_page');
+      return url.substring(0, 30) || i18n('url_utils_unknown_page', '未知页面');
     }
   }
 

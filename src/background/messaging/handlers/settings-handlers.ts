@@ -17,7 +17,7 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     if (!ctx) {
-      logger.error('settings_context_failed');
+      logger.error(i18n('settings_context_failed', '创建消息上下文失败'));
       return false;
     }
     const settingsService = getSettingsService();
@@ -29,12 +29,12 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success({ settings: settings || {} });
         })
         .catch((error: Error) => {
-          logger.error('settings_get_error', error);
-          ctx.error('settings_get_failed', error.message);
+          logger.error(i18n('settings_get_error', '获取设置时出错'), error);
+          ctx.error(i18n('settings_get_failed', '获取设置失败: {0}'), error.message);
         });
     } catch (error) {
-      logger.error('settings_handler_error', 'getSettings');
-      ctx.error('settings_request_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_handler_error', '处理{0}请求时出错'), 'getSettings');
+      ctx.error(i18n('settings_request_failed', '处理请求失败: {0}'), error instanceof Error ? error.message : String(error));
     }
     
     return true; // 需要异步响应
@@ -48,14 +48,14 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     if (!ctx) {
-      logger.error('settings_context_failed');
+      logger.error(i18n('settings_context_failed', '创建消息上下文失败'));
       return false;
     }
     const settingsService = getSettingsService();
     const { settings } = message;
     
     if (!settings) {
-      ctx.error('settings_missing_data');
+      ctx.error(i18n('settings_missing_data', '缺少设置数据'));
       return false;
     }
     
@@ -66,12 +66,12 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
           ctx.success();
         })
         .catch((error: Error) => {
-          logger.error('settings_save_error', error);
-          ctx.error('settings_save_failed', error.message);
+          logger.error(i18n('settings_save_error', '保存设置时出错'), error);
+          ctx.error(i18n('settings_save_failed', '保存设置失败: {0}'), error.message);
         });
     } catch (error) {
-      logger.error('settings_handler_error', 'saveSettings');
-      ctx.error('settings_request_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('settings_handler_error', '处理{0}请求时出错'), 'saveSettings');
+      ctx.error(i18n('settings_request_failed', '处理请求失败: {0}'), error instanceof Error ? error.message : String(error));
     }
     
     return true; // 需要异步响应
@@ -85,13 +85,13 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
   ) => {
     const ctx = messageService.createMessageContext(message, sender, sendResponse);
     if (!ctx) {
-      logger.error('settings_context_failed');
+      logger.error(i18n('settings_context_failed', '创建消息上下文失败'));
       return false;
     }
     const settingsService = getSettingsService();
     
     if (!message) {
-      ctx.error('settings_invalid_request');
+      ctx.error(i18n('settings_invalid_request', '无效的请求'));
       return false;
     }
 
@@ -99,12 +99,12 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     settingsService.resetSettings()
       .then(() => ctx.success())
       .catch(error => {
-        logger.error('settings_reset_error', error);
-        ctx.error('settings_reset_failed', error instanceof Error ? error.message : String(error));
+        logger.error(i18n('settings_reset_error', '重置设置时出错'), error);
+        ctx.error(i18n('settings_reset_failed', '重置设置失败: {0}'), error instanceof Error ? error.message : String(error));
       });
     
     return true; // 需要异步响应
   });
   
-  logger.log('settings_handlers_registered');
+  logger.log(i18n('settings_handlers_registered', '设置相关消息处理程序已注册'));
 }

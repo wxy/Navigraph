@@ -12,7 +12,7 @@ const logger = new Logger('ContentMessageHandlers');
 export function registerContentMessageHandlers(): void {
   const messageService = getContentMessageService();
   
-  logger.groupCollapsed('content_message_registering_handlers');
+  logger.groupCollapsed(i18n('content_message_registering_handlers', '正在注册内容脚本消息处理程序...'));
   
   try {
     // 注册UI相关处理程序
@@ -23,7 +23,7 @@ export function registerContentMessageHandlers(): void {
     
     logger.groupEnd();
   } catch (error) {
-    logger.error('content_message_registration_failed', 
+    logger.error(i18n('content_message_registration_failed', '注册内容脚本消息处理程序失败: {0}'), 
       error instanceof Error ? error.message : String(error));
   }
 }

@@ -44,7 +44,7 @@ export class NodeTracker {
     this.tabStateManager = tabStateManager;
     this.sessionId = sessionId;
 
-    logger.log('node_tracker_initialized');
+    logger.log(i18n('node_tracker_initialized', '节点追踪器初始化完成'));
   }
 
   /**
@@ -106,7 +106,7 @@ export class NodeTracker {
           favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
         }
       } catch (e) {
-        logger.warn('background_tab_info_failed', e);
+        logger.warn(i18n('background_tab_info_failed', '获取标签页信息失败'), e);
       }
 
       // 创建导航记录
@@ -135,7 +135,7 @@ export class NodeTracker {
 
       return nodeId;
     } catch (error) {
-      logger.error('node_tracker_create_failed', error);
+      logger.error(i18n('node_tracker_create_failed', '创建节点失败: {0}'), error);
       return null;
     }
   }
@@ -247,7 +247,7 @@ export class NodeTracker {
 
       return { id: nodeId, isNew: true };
     } catch (error) {
-      logger.error('node_tracker_get_or_create_failed', error);
+      logger.error(i18n('node_tracker_get_or_create_failed', '获取或创建URL节点失败: {0}'), error);
       return null;
     }
   }
@@ -265,16 +265,16 @@ export class NodeTracker {
     source: MetadataSource = "chrome_api"
   ): Promise<UpdateNodeResult> {
     if (!nodeId) {
-      logger.warn('background_node_metadata_invalid_id');
-      return { success: false, error: i18n('background_node_metadata_invalid_id') };
+      logger.warn(i18n('background_node_metadata_invalid_id', '更新元数据失败：无效的节点ID'));
+      return { success: false, error: i18n('background_node_metadata_invalid_id', '更新元数据失败：无效的节点ID') };
     }
 
     try {
       // 获取现有记录
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) {
-        logger.warn('node_tracker_node_not_found_for_metadata', nodeId);
-        return { success: false, error: i18n('background_node_not_found', nodeId) };
+        logger.warn(i18n('node_tracker_node_not_found_for_metadata', '找不到要更新元数据的节点: {0}'), nodeId);
+        return { success: false, error: i18n('background_node_not_found', '找不到节点: {0}', nodeId) };
       }
 
       // 准备更新对象
@@ -306,8 +306,8 @@ export class NodeTracker {
         }
 
         if (updates.title) {
-          logger.log('node_tracker_title_update', 
-            record.title || i18n('content_unnamed_page'), 
+          logger.log(i18n('node_tracker_title_update', '更新标题: {0} → {1}'), 
+            record.title || i18n('content_unnamed_page', '未命名页面'), 
             updates.title
           );
         }
@@ -370,11 +370,10 @@ export class NodeTracker {
 
       return { success: true, updatedFields: [] };
     } catch (error) {
-      logger.error('node_tracker_update_metadata_failed', error);
+      logger.error(i18n('node_tracker_update_metadata_failed', '更新节点元数据失败: {0}'), error);
       return {
         success: false,
-        error: i18n('background_node_metadata_update_failed', 
-          error instanceof Error ? error.message : String(error))
+        error: i18n('background_node_metadata_update_failed', '更新节点元数据失败: {0}', error instanceof Error ? error.message : String(error))
       };
     }
   }
@@ -402,7 +401,7 @@ export class NodeTracker {
     const nodeId = await this.getNodeIdForTab(tabId, url);
 
     if (!nodeId) {
-      logger.log('node_tracker_tab_node_not_found', tabId, url);
+      logger.log(i18n('node_tracker_tab_node_not_found', '标签页 {0} 找不到匹配URL的节点: {1}'), tabId, url);
       return null;
     }
 
@@ -468,7 +467,7 @@ export class NodeTracker {
 
       return matchingRecord?.id || null;
     } catch (error) {
-      logger.error('node_tracker_find_by_url_failed', error);
+      logger.error(i18n('node_tracker_find_by_url_failed', '根据URL查找节点失败: {0}'), error);
       return null;
     }
   }
@@ -525,7 +524,7 @@ export class NodeTracker {
 
       return UrlUtils.isSameUrl(record.url, url);
     } catch (e) {
-      logger.warn('node_tracker_check_url_match_failed', nodeId, e);
+      logger.warn(i18n('node_tracker_check_url_match_failed', '检查节点 {0} URL匹配失败: {1}'), nodeId, e);
       return false;
     }
   }
@@ -571,7 +570,7 @@ export class NodeTracker {
         "navigation_event"
       );
     } catch (error) {
-      logger.error('node_tracker_handling_navigation_completed_failed', error);
+      logger.error(i18n('node_tracker_handling_navigation_completed_failed', '处理导航完成失败: {0}'), error);
     }
   }
 
@@ -657,7 +656,7 @@ export class NodeTracker {
 
       return activeNodes;
     } catch (error) {
-      logger.error('node_tracker_get_active_nodes_failed', error);
+      logger.error(i18n('node_tracker_get_active_nodes_failed', '获取活跃节点失败: {0}'), error);
       return [];
     }
   }
@@ -698,10 +697,10 @@ export class NodeTracker {
       }
 
       if (totalRemoved > 0) {
-        logger.log('node_tracker_cache_cleanup_complete', totalRemoved.toString());
+        logger.log(i18n('node_tracker_cache_cleanup_complete', '清理了 {0} 个无效缓存项'), totalRemoved.toString());
       }
     } catch (error) {
-      logger.error('node_tracker_cache_cleanup_failed', error);
+      logger.error(i18n('node_tracker_cache_cleanup_failed', '清理缓存失败: {0}'), error);
     }
   }
 
@@ -714,7 +713,7 @@ export class NodeTracker {
     this.urlToNodeCache.clear();
     this.pendingUpdates.clear();
 
-    logger.log('node_tracker_reset_complete');
+    logger.log(i18n('node_tracker_reset_complete', '节点追踪器已重置'));
   }
 
   /**
@@ -723,7 +722,7 @@ export class NodeTracker {
    */
   public async closeAllNodesInSession(sessionId: string): Promise<void> {
     try {
-      logger.log('node_tracker_close_all_nodes_start', sessionId);
+      logger.log(i18n('node_tracker_close_all_nodes_start', '开始关闭会话 {0} 中的所有节点'), sessionId);
       
       // 查询此会话的所有活跃节点
       const activeNodes = await this.navigationStorage.queryNodes({
@@ -732,11 +731,11 @@ export class NodeTracker {
       });
       
       if (activeNodes.length === 0) {
-        logger.log('node_tracker_no_active_nodes', sessionId);
+        logger.log(i18n('node_tracker_no_active_nodes', '会话 {0} 中没有活跃节点'), sessionId);
         return;
       }
       
-      logger.log('node_tracker_found_active_nodes', activeNodes.length.toString());
+      logger.log(i18n('node_tracker_found_active_nodes', '找到 {0} 个活跃节点'), activeNodes.length.toString());
       const now = Date.now();
       
       // 批量更新这些节点为已关闭状态
@@ -747,9 +746,9 @@ export class NodeTracker {
         });
       }
       
-      logger.log('node_tracker_nodes_marked_closed', sessionId, activeNodes.length.toString());
+      logger.log(i18n('node_tracker_nodes_marked_closed', '会话 {0} 中的 {1} 个节点已标记为关闭'), sessionId, activeNodes.length.toString());
     } catch (error) {
-      logger.error('node_tracker_close_nodes_failed', sessionId, error);
+      logger.error(i18n('node_tracker_close_nodes_failed', '关闭会话 {0} 中的节点失败: {1}'), sessionId, error);
     }
   }
 
@@ -759,7 +758,7 @@ export class NodeTracker {
    */
   public async associateOpenTabsWithSession(sessionId: string): Promise<void> {
     try {
-      logger.log('node_tracker_associate_tabs_start', sessionId);
+      logger.log(i18n('node_tracker_associate_tabs_start', '开始将打开的标签页关联到会话 {0}'), sessionId);
       
       // 获取所有活跃标签页
       const tabs = await chrome.tabs.query({});
@@ -768,11 +767,11 @@ export class NodeTracker {
       );
       
       if (relevantTabs.length === 0) {
-        logger.log('node_tracker_no_tabs_to_associate');
+        logger.log(i18n('node_tracker_no_tabs_to_associate', '没有找到需要关联的标签页'));
         return;
       }
       
-      logger.log('node_tracker_found_tabs_to_associate', relevantTabs.length.toString());
+      logger.log(i18n('node_tracker_found_tabs_to_associate', '找到 {0} 个需要关联的标签页'), relevantTabs.length.toString());
       
       // 为每个标签页创建节点
       for (const tab of relevantTabs) {
@@ -801,17 +800,17 @@ export class NodeTracker {
                 });
               }
               
-              logger.log('node_tracker_tab_associated', tab.id.toString(), tab.url, sessionId);
+              logger.log(i18n('node_tracker_tab_associated', '标签页 {0}（{1}）已关联到会话 {2}'), tab.id.toString(), tab.url, sessionId);
             }
           } catch (tabError) {
-            logger.error('node_tracker_tab_association_failed', tab.id?.toString() || '0', tabError);
+            logger.error(i18n('node_tracker_tab_association_failed', '关联标签页 {0} 失败: {1}'), tab.id?.toString() || '0', tabError);
           }
         }
       }
       
-      logger.log('node_tracker_association_complete', sessionId);
+      logger.log(i18n('node_tracker_association_complete', '将标签页关联到会话 {0} 完成'), sessionId);
     } catch (error) {
-      logger.error('node_tracker_association_failed', sessionId, error);
+      logger.error(i18n('node_tracker_association_failed', '关联标签页到会话 {0} 失败: {1}'), sessionId, error);
     }
   }
 
@@ -823,7 +822,7 @@ export class NodeTracker {
     try {
       return await this.navigationStorage.queryNodes(queryParams);
     } catch (error) {
-      logger.error('node_tracker_query_failed', error);
+      logger.error(i18n('node_tracker_query_failed', '查询节点失败: {0}'), error);
       return [];
     }
   }
@@ -838,7 +837,7 @@ export class NodeTracker {
       await this.navigationStorage.updateNode(nodeId, updates);
       return true; // 成功则返回true
     } catch (error) {
-      logger.error('node_tracker_update_failed', nodeId, error);
+      logger.error(i18n('node_tracker_update_failed', '更新节点 {0} 失败: {1}'), nodeId, error);
       return false; // 失败返回false
     }
   }
@@ -871,9 +870,9 @@ export class NodeTracker {
         });
       }
       
-      logger.log('node_tracker_tab_nodes_closed', tabId.toString(), activeNodes.length.toString());
+      logger.log(i18n('node_tracker_tab_nodes_closed', '已关闭标签页 {0} 的 {1} 个节点'), tabId.toString(), activeNodes.length.toString());
     } catch (error) {
-      logger.error('node_tracker_close_tab_nodes_failed', tabId.toString(), error);
+      logger.error(i18n('node_tracker_close_tab_nodes_failed', '关闭标签页 {0} 的节点失败: {1}'), tabId.toString(), error);
     }
   }
 }

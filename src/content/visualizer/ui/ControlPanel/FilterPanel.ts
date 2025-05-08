@@ -5,13 +5,11 @@ import type { Visualizer } from '../../../types/navigation.js';
 const logger = new Logger('FilterPanel');
 
 /**
- * 过滤器配置定义
+ * 过滤器配置定义 - 简化后
  */
 export interface FilterDefinition {
   id: string;           // 过滤器ID
-  labelId: string;      // 显示标签对应的i18n键
   defaultValue: boolean; // 默认值
-  descriptionId?: string; // 说明文本对应的i18n键
 }
 
 /**
@@ -22,55 +20,39 @@ export class FilterPanel {
   private visualizer: Visualizer;
   private filterContainer: HTMLElement | null = null;
   
-  // 默认过滤器定义 - 这些ID必须与HTML中的ID匹配，使用i18n键
+  // 修改过滤器定义数组
   private filterDefinitions: FilterDefinition[] = [
     {
       id: 'filter-reload',
-      labelId: 'filter_reload_label',
-      defaultValue: true,
-      descriptionId: 'filter_reload_description'
+      defaultValue: true
     },
     {
       id: 'filter-history',
-      labelId: 'filter_history_label',
-      defaultValue: true,
-      descriptionId: 'filter_history_description'
+      defaultValue: true
     },
     {
       id: 'filter-closed',
-      labelId: 'filter_closed_label',
-      defaultValue: false,
-      descriptionId: 'filter_closed_description'
+      defaultValue: false
     },
     {
       id: 'filter-tracking',
-      labelId: 'filter_tracking_label',
-      defaultValue: false,
-      descriptionId: 'filter_tracking_description'
+      defaultValue: false
     },
     {
       id: 'type-link',
-      labelId: 'filter_type_link_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_link_description'
+      defaultValue: true
     },
     {
       id: 'type-address',
-      labelId: 'filter_type_address_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_address_description'
+      defaultValue: true
     },
     {
       id: 'type-form',
-      labelId: 'filter_type_form_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_form_description'
+      defaultValue: true
     },
     {
       id: 'type-js',
-      labelId: 'filter_type_js_label',
-      defaultValue: true,
-      descriptionId: 'filter_type_js_description'
+      defaultValue: true
     }
   ];
   
@@ -85,14 +67,14 @@ export class FilterPanel {
     this.filterContainer = document.getElementById('filter-panel-container');
     
     if (!this.filterContainer) {
-      logger.warn('filter_panel_container_not_found');
+      logger.warn(i18n('filter_panel_container_not_found', '筛选器容器未找到'));
       return;
     }
     
     // 添加事件监听器到现有筛选器
     this.attachEventListenersToExistingFilters();
     
-    logger.log('filter_panel_initialized');
+    logger.log(i18n('filter_panel_initialized', '筛选面板已初始化'));
   }
   
   /**
@@ -117,9 +99,9 @@ export class FilterPanel {
           this.handleFilterChange(filter.id, checkbox.checked);
         });
         
-        logger.debug('filter_listener_added', filter.id, initialValue);
+        logger.debug(i18n('filter_listener_added', '为筛选器 {0} 添加了事件监听器，初始值: {1}'), filter.id, initialValue);
       } else {
-        logger.warn('filter_element_not_found', filter.id);
+        logger.warn(i18n('filter_element_not_found', '筛选器元素 {0} 未找到'), filter.id);
       }
     });
   }
@@ -136,13 +118,13 @@ export class FilterPanel {
    * 处理筛选器变更
    */
   private handleFilterChange(filterId: string, value: boolean): void {
-    logger.log('filter_change', filterId, value);
+    logger.log(i18n('filter_change', '筛选器变更: {0} = {1}'), filterId, value);
     
     // 检查可视化器是否有handleFilterChange方法
     if (typeof (this.visualizer as any).handleFilterChange === 'function') {
       // 直接调用NavigationVisualizer的handleFilterChange方法
       (this.visualizer as any).handleFilterChange(filterId, value);
-      logger.debug('filter_using_visualizer_handler');
+      logger.debug(i18n('filter_using_visualizer_handler', '使用可视化器的handleFilterChange方法处理筛选器变化'));
     } else {
       // 否则使用默认实现
       // 更新可视化器的筛选器配置
@@ -180,14 +162,14 @@ export class FilterPanel {
         // 向可视化器通知筛选器变化
         this.handleFilterChange(filter.id, filter.defaultValue);
       } else {
-        logger.warn('filter_reset_element_not_found', filter.id);
+        logger.warn(i18n('filter_reset_element_not_found', '重置筛选器时未找到元素: {0}'), filter.id);
       }
     });
     
     // 更新UI状态
     this.updateUI(this.visualizer.filters);
     
-    logger.log('filter_all_reset_to_default');
+    logger.log(i18n('filter_all_reset_to_default', '所有筛选器已重置为默认值'));
   }
   
   /**
@@ -197,7 +179,7 @@ export class FilterPanel {
   public updateUI(filters: any): void {
     if (!filters) return;
 
-    logger.log('filter_ui_updating');
+    logger.log(i18n('filter_ui_updating', '更新筛选器UI状态'));
     
     // 映射筛选器ID
     const idMappings: Record<string, string> = {
@@ -223,7 +205,7 @@ export class FilterPanel {
         const checkbox = document.getElementById(htmlId) as HTMLInputElement;
         if (checkbox) {
           checkbox.checked = !!value;
-          logger.debug('filter_status_updated', htmlId, checkbox.checked);
+          logger.debug(i18n('filter_status_updated', '筛选器 {0} 状态已更新为: {1}'), htmlId, checkbox.checked);
         }
       }
     });

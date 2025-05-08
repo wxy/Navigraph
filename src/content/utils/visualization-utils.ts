@@ -142,7 +142,7 @@ export function getLinkType(d3Link: any, links: NavLink[]): string {
     
     return originalLink ? originalLink.type : 'default';
   } catch (err) {
-    logger.warn('vis_utils_link_type_error', err instanceof Error ? err.message : String(err));
+    logger.warn(i18n('vis_utils_link_type_error', '获取链接类型时出错: {0}'), err instanceof Error ? err.message : String(err));
     return 'default';
   }
 }
@@ -157,7 +157,7 @@ export function renderEmptyTreeMessage(svg: any, width: number, height: number):
     .attr('y', height / 2)
     .attr('text-anchor', 'middle')
     .attr('fill', '#999')
-    .text(i18n('content_no_navigation_data'));
+    .text(i18n('content_no_navigation_data', '暂无导航数据'));
 }
 
 /**
@@ -167,21 +167,21 @@ export function renderEmptyTreeMessage(svg: any, width: number, height: number):
 export function getNodeTypeName(type: string): string {
   switch (type) {
     case 'link_click':
-      return i18n('vis_utils_node_type_link_click');
+      return i18n('vis_utils_node_type_link_click', '链接点击');
     case 'address_bar':
-      return i18n('vis_utils_node_type_address_bar');
+      return i18n('vis_utils_node_type_address_bar', '地址栏输入');
     case 'form_submit':
-      return i18n('vis_utils_node_type_form_submit');
+      return i18n('vis_utils_node_type_form_submit', '表单提交');
     case 'reload':
-      return i18n('vis_utils_node_type_reload');
+      return i18n('vis_utils_node_type_reload', '页面刷新');
     case 'history_back':
     case 'history_forward':
-      return i18n('vis_utils_node_type_history_navigation');
+      return i18n('vis_utils_node_type_history_navigation', '历史导航');
     case 'redirect':
-      return i18n('vis_utils_node_type_redirect');
+      return i18n('vis_utils_node_type_redirect', '页面重定向');
     case 'javascript':
-      return i18n('vis_utils_node_type_javascript');
+      return i18n('vis_utils_node_type_javascript', 'JavaScript导航');
     default:
-      return i18n('vis_utils_node_type_default');
+      return i18n('vis_utils_node_type_default', '默认');
   }
 }

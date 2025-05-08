@@ -86,7 +86,7 @@ export class NavigationEventHandler {
    */
   public setupEventListeners(): void {
     if (this.eventListenersSet) {
-      logger.warn('nav_event_handler_listeners_already_set');
+      logger.warn(i18n('nav_event_handler_listeners_already_set', '事件监听器已经设置，不会重复设置'));
       return;
     }
 
@@ -114,7 +114,7 @@ export class NavigationEventHandler {
     );
 
     this.eventListenersSet = true;
-    logger.log('nav_event_handler_listeners_setup');
+    logger.log(i18n('nav_event_handler_listeners_setup', '已设置所有导航事件监听器'));
   }
 
   /**
@@ -146,7 +146,7 @@ export class NavigationEventHandler {
     );
 
     this.eventListenersSet = false;
-    logger.log('nav_event_handler_listeners_removed');
+    logger.log(i18n('nav_event_handler_listeners_removed', '已移除所有导航事件监听器'));
   }
 
   /**
@@ -158,7 +158,7 @@ export class NavigationEventHandler {
       this.removeEventListeners();
     }
 
-    logger.log('nav_event_handler_reset');
+    logger.log(i18n('nav_event_handler_reset', '导航事件处理器已重置'));
   }
 
   /**
@@ -194,7 +194,7 @@ export class NavigationEventHandler {
         await this.handleInitialNavigation(tabId, url, parentNodeId);
       }
     } catch (error) {
-      logger.error('nav_event_handler_tab_create_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_tab_create_failed', '处理标签页创建失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -240,7 +240,7 @@ export class NavigationEventHandler {
       // 清理已更新的节点
       this.nodeTracker.clearPendingUpdates(tabId);
     } catch (error) {
-      logger.error('nav_event_handler_tab_update_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_tab_update_failed', '处理标签页更新失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -286,11 +286,11 @@ export class NavigationEventHandler {
             lastActiveTime: now,
           });
         } catch (err) {
-          logger.warn('nav_event_handler_get_tab_failed', err instanceof Error ? err.message : String(err));
+          logger.warn(i18n('nav_event_handler_get_tab_failed', '获取标签页信息失败: {0}'), err instanceof Error ? err.message : String(err));
         }
       }
     } catch (error) {
-      logger.error('nav_event_handler_tab_activate_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_tab_activate_failed', '处理标签页激活失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -318,7 +318,7 @@ export class NavigationEventHandler {
             await this.navigationStorage.updateNode(nodeId, { isClosed: true });
           }
         } catch (e) {
-          logger.warn('nav_event_handler_update_node_close_failed', nodeId);
+          logger.warn(i18n('nav_event_handler_update_node_close_failed', '更新节点关闭状态失败: {0}'), nodeId);
         }
       }
 
@@ -329,7 +329,7 @@ export class NavigationEventHandler {
       this.nodeTracker.clearPendingUpdates(tabId);
       this.pendingNavigationTracker.clearTabNavigations(tabId);
     } catch (error) {
-      logger.error('nav_event_handler_tab_remove_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_tab_remove_failed', '处理标签页移除失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -414,7 +414,7 @@ export class NavigationEventHandler {
       // 处理常规导航
       await this.handleRegularNavigation(details, navigationType, openTarget);
     } catch (error) {
-      logger.error('nav_event_handler_commit_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_commit_failed', '处理导航提交事件失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -445,7 +445,7 @@ export class NavigationEventHandler {
       // 委托给 NodeTracker 处理所有节点相关的逻辑
       await this.nodeTracker.handleNavigationCompleted(details);
     } catch (error) {
-      logger.error('nav_event_handler_complete_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_complete_failed', '处理导航完成失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -528,7 +528,7 @@ export class NavigationEventHandler {
           favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
         }
       } catch (e) {
-        logger.warn('nav_event_handler_get_tab_failed', e instanceof Error ? e.message : String(e));
+        logger.warn(i18n('nav_event_handler_get_tab_failed', '获取标签页信息失败: {0}'), e instanceof Error ? e.message : String(e));
       }
 
       // 创建导航记录
@@ -564,7 +564,7 @@ export class NavigationEventHandler {
         sessionId: this.currentSessionId,
       });
     } catch (error) {
-      logger.error('nav_event_handler_history_update_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_history_update_failed', '处理历史状态更新失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -606,7 +606,7 @@ export class NavigationEventHandler {
               const originalUrl = new URL(details.url);
               redirectUrl = `${originalUrl.origin}${redirectUrl}`;
             } catch (e) {
-              logger.warn('nav_event_handler_relative_url_failed', redirectUrl);
+              logger.warn(i18n('nav_event_handler_relative_url_failed', '无法将相对路径转换为绝对URL: {0}'), redirectUrl);
             }
           }
         }
@@ -656,7 +656,7 @@ export class NavigationEventHandler {
       // 重定向事件本身并不创建节点，而是记录信息供onCommitted事件使用
       // 在onCommitted事件中，会根据找到的待处理导航信息完成节点和边的创建
     } catch (error) {
-      logger.error('nav_event_handler_redirect_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_redirect_failed', '处理重定向事件失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -709,7 +709,7 @@ export class NavigationEventHandler {
           favicon = UrlUtils.getFaviconUrl(url, tab.favIconUrl);
         }
       } catch (e) {
-        logger.warn('nav_event_handler_get_tab_failed', e instanceof Error ? e.message : String(e));
+        logger.warn(i18n('nav_event_handler_get_tab_failed', '获取标签页信息失败: {0}'), e instanceof Error ? e.message : String(e));
       }
 
       // 创建导航记录
@@ -749,7 +749,7 @@ export class NavigationEventHandler {
 
       return nodeId;
     } catch (error) {
-      logger.error('nav_event_handler_initial_nav_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_initial_nav_failed', '处理初始导航失败: {0}'), error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -891,7 +891,7 @@ export class NavigationEventHandler {
           }
         }
       } catch (e) {
-        logger.warn('nav_event_handler_get_tab_failed', e instanceof Error ? e.message : String(e));
+        logger.warn(i18n('nav_event_handler_get_tab_failed', '获取标签页信息失败: {0}'), e instanceof Error ? e.message : String(e));
       }
 
       // 13. 保存记录
@@ -908,7 +908,7 @@ export class NavigationEventHandler {
         });
       }
     } catch (error) {
-      logger.error('nav_event_handler_regular_nav_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_regular_nav_failed', '处理常规导航失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -943,7 +943,7 @@ export class NavigationEventHandler {
         });
       }
     } catch (error) {
-      logger.warn('nav_event_handler_update_active_time_failed', error instanceof Error ? error.message : String(error));
+      logger.warn(i18n('nav_event_handler_update_active_time_failed', '更新标签页活跃时间失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -987,10 +987,10 @@ export class NavigationEventHandler {
       const removed = this.pendingNavigationTracker.cleanupExpiredNavigations();
 
       if (removed > 0) {
-        logger.log('nav_event_handler_expired_cleanup', removed.toString());
+        logger.log(i18n('nav_event_handler_expired_cleanup', '清理了 {0} 个过期的待处理导航记录'), removed.toString());
       }
     } catch (error) {
-      logger.error('nav_event_handler_cleanup_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_cleanup_failed', '清理过期导航失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -1008,7 +1008,7 @@ export class NavigationEventHandler {
     try {
       this.pendingNavigationTracker.addLinkNavigation(linkInfo);
     } catch (error) {
-      logger.error('nav_event_handler_link_click_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_link_click_failed', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -1022,7 +1022,7 @@ export class NavigationEventHandler {
     try {
       this.pendingNavigationTracker.addFormSubmission(tabId, formInfo);
     } catch (error) {
-      logger.error('nav_event_handler_form_submit_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_form_submit_failed', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -1041,7 +1041,7 @@ export class NavigationEventHandler {
         timestamp: message.timestamp,
       });
     } catch (error) {
-      logger.error('nav_event_handler_js_nav_failed', error instanceof Error ? error.message : String(error));
+      logger.error(i18n('nav_event_handler_js_nav_failed', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 }

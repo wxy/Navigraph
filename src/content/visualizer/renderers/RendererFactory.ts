@@ -3,6 +3,7 @@
  * 根据视图类型创建相应的渲染器
  */
 import { Logger } from '../../../lib/utils/logger.js';
+import { i18n } from '../../../lib/utils/i18n-utils.js';
 import { Visualizer } from '../../types/navigation.js';
 import { BaseRenderer } from './BaseRenderer.js';
 import { TreeRenderer } from './TreeRenderer.js';
@@ -18,7 +19,7 @@ export class RendererFactory {
    * @returns 相应类型的渲染器
    */
   static createRenderer(viewType: 'tree' | 'timeline', visualizer: Visualizer): BaseRenderer {
-    logger.log('renderer_factory_create_renderer');
+    logger.log(i18n('renderer_factory_create_renderer', '创建 {0} 渲染器'));
     
     switch (viewType) {
       case 'tree':
@@ -26,7 +27,7 @@ export class RendererFactory {
       case 'timeline':
         return new TimelineRenderer(visualizer);
       default:
-        logger.warn('renderer_factory_unknown_type');
+        logger.warn(i18n('renderer_factory_unknown_type', '未知视图类型: {0}，使用默认树形渲染器'));
         return new TreeRenderer(visualizer);
     }
   }
