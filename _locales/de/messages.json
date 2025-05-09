@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Zeigen Sie Knoten und Links zum Browserverlauf in interaktiven Grafiken an, um Benutzern die intuitive Analyse von Zugriffsmustern und Verhaltensweisen zu erleichtern.",
+    "message": "Zeigt Browsing-Verlaufsknoten und -verbindungen in interaktiven Grafiken an und hilft Benutzern dabei, Navigationsmuster und -verhalten visuell zu analysieren.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {

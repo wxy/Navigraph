@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Il est facile de naviguer et d’interagir avec vos amis et votre famille, et c’est un excellent moyen d’analyser votre intuition et de vous permettre de la comprendre et de la comprendre facilement.",
+    "message": "Affiche les nœuds et liens de l'historique de navigation sous forme de graphiques interactifs, aidant les utilisateurs à analyser visuellement les modèles et comportements de navigation.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {

@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "동작을 설명할 수 있도록 탐색하기 위해 별도의 링크를 대화형 그래픽으로 표시합니다.",
+    "message": "대화형 그래픽으로 탐색 기록 노드와 링크를 표시하여 사용자가 탐색 패턴과 행동을 시각적으로 분석할 수 있도록 돕습니다.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {

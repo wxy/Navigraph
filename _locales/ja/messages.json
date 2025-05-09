@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "続きを読む パターンとアクションを直感的に分析できます。",
+    "message": "インタラクティブなグラフィックで閲覧履歴のノードとリンクを表示し、ユーザーが閲覧パターンと行動を視覚的に分析できるよう支援します。",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
