@@ -170,18 +170,23 @@ export class SessionManager {
       });
   
       if (activeSessions.length > 0) {
-        // 使用最近的活跃会话作为当前会话和最新会话
+        // 使用最近的活跃会话
         const mostRecent = activeSessions.sort(
           (a, b) => b.startTime - a.startTime
         )[0];
+        
+        // 设置为当前和最新会话
         this.currentSessionId = mostRecent.id;
         this.latestSessionId = mostRecent.id;
-  
+        
+        // 通知NavigationManager
+        this.notifyNavManagerLatestSessionChanged(mostRecent.id);
+        
         logger.log(i18n('session_manager_loaded_active', '已加载活跃会话: {0} - {1}'), mostRecent.id, mostRecent.title);
-        return;  // 找到活跃会话，直接返回
+        return;
       }
   
-      // 2. 没有活跃会话，查找最近的已结束会话
+      // 2. 查找最近的已结束会话
       const recentSessions = await this.storage.getSessions({
         includeInactive: true,
         sortBy: 'endTime',
@@ -195,36 +200,34 @@ export class SessionManager {
         const now = Date.now();
         const timeSinceLastActivity = now - lastActivityTime;
         
-        // 如果最后活动时间在合理范围内（默认12小时），重用该会话
-        const maxReusePeriod = 12 * 60 * 60 * 1000;  // 12小时
+        // 如果最后活动时间在合理范围内（12小时），重用该会话
+        const maxReusePeriod = 12 * 60 * 60 * 1000;
         if (timeSinceLastActivity < maxReusePeriod) {
-          logger.log(i18n('session_manager_reuse_recent', '重用最近会话: {0}，超过活跃时间 {1} 小时'), mostRecent.id, Math.round(timeSinceLastActivity / (1000 * 60 * 60)));
+          logger.log(i18n('session_manager_reuse_recent', '重用最近会话: {0}，超过活跃时间 {1} 小时'), 
+            mostRecent.id, Math.round(timeSinceLastActivity / (1000 * 60 * 60)));
           
-          // 重新激活该会话
-          mostRecent.isActive = true;
-          mostRecent.lastActivity = now;
-          await this.storage.saveSession(mostRecent);
+          // 重新激活会话
+          await this._activateSession(mostRecent.id);
           
-          this.currentSessionId = mostRecent.id;
-          this.latestSessionId = mostRecent.id;
+          // 设置为当前会话
+          await this._setCurrentSession(mostRecent.id);
           
-          sessionEvents.emitSessionActivated(mostRecent.id);
           return;
         }
       }
   
       // 3. 没有找到活跃会话或最近会话已过期，创建新会话
       logger.log(i18n('session_manager_create_new_session', '创建新会话'));
-      const strategy = this.strategyFactory.getActiveStrategy();
-      const newSession = await strategy.createSession();
       
-      // 设置为当前和最新会话
-      this.currentSessionId = newSession.id;
-      this.latestSessionId = newSession.id;
+      // 使用统一创建方法，但跳过锁定和冷却检查
+      await this.createSession({
+        makeActive: true,
+        updateCurrent: true,
+        skipCooldown: true
+      }, true);
     } catch (error) {
       logger.error(i18n('session_manager_load_active_failed', '加载活跃会话失败: {0}'), error);
-      throw new Error(i18n('session_manager_load_active_failed', '加载活跃会话失败: {0}', error instanceof Error ? error.message : String(error))
-      );
+      throw new Error(i18n('session_manager_load_active_failed', '加载活跃会话失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -353,6 +356,7 @@ export class SessionManager {
   
   /**
    * 创建新会话
+   * 统一的会话创建入口
    */
   public async createSession(
     options?: SessionCreationOptions,
@@ -364,95 +368,69 @@ export class SessionManager {
     }
   
     try {
-      // 生成会话ID
-      const sessionId = IdGenerator.generateSessionId();
-  
-      // 构建新会话对象
-      const newSession: BrowsingSession = {
-        id: sessionId,
-        title: options?.title || i18n('session_manager_default_session_name', '会话 {0}', new Date().toLocaleString()),
-        description: options?.description || "",
-        startTime: Date.now(),
-        isActive: true,
-        nodeCount: 0,
-        tabCount: 0,
-        lastActivity: Date.now(), // 初始化为创建时间
-        metadata: options?.metadata || {},
-        records: {},
-        edges: {},
-        rootIds: [],
-      };
-  
-      // 如果设置为活跃会话或未指定（默认为true）
-      const makeActive = options?.makeActive !== false;
-  
-      if (makeActive) {
-        // 将当前活跃会话设为非活跃
-        if (this.latestSessionId) {
-          await this.deactivateSession(this.latestSessionId);
-        }
-  
-        // 更新最新会话ID和当前会话ID
-        this.latestSessionId = sessionId;
-        
-        // 如果没有指定不更新查看会话，也更新当前会话ID
-        if (options?.updateCurrent !== false) {
-          this.currentSessionId = sessionId;
-        }
+      // 检查冷却期
+      const now = Date.now();
+      const isInCooldown = (now - this.lastSessionCreationTime < this.SESSION_CREATION_COOLDOWN);
+      if (isInCooldown && !options?.skipCooldown) {
+        const remainingTime = Math.ceil((this.SESSION_CREATION_COOLDOWN - (now - this.lastSessionCreationTime)) / 1000);
+        logger.warn(i18n('session_creation_cooldown', '会话创建冷却期中，剩余{0}秒'), remainingTime);
+        throw new Error(i18n('session_creation_cooldown_error', '会话创建过于频繁，请等待{0}秒后再试', remainingTime.toString()));
       }
-  
-      // 保存到存储和缓存
-      await this.storage.saveSession(newSession);
-  
-      logger.log(i18n('session_manager_created_session', '已创建会话: {0} - {1}'), sessionId, newSession.title);
-  
-      // 发出事件
-      sessionEvents.emitSessionCreated(sessionId, {
-        title: newSession.title,
-        makeActive,
-      });
-  
-      if (makeActive) {
-        sessionEvents.emitSessionActivated(sessionId);
-        
-        // 如果同时也设置为当前查看会话
-        if (this.currentSessionId === sessionId) {
-          sessionEvents.emitSessionViewed(sessionId);
-        }
+      
+      // 检查锁定状态
+      if (this.sessionCreationLock) {
+        throw new Error(i18n('session_creation_locked', '会话创建已锁定，请稍后再试'));
       }
-  
-      return newSession;
+      
+      // 设置锁定
+      this.sessionCreationLock = true;
+      
+      try {
+        // 1. 创建会话
+        const newSession = await this._createSession(options);
+        
+        // 2. 如果需要激活(默认为true)
+        const makeActive = options?.makeActive !== false;
+        if (makeActive) {
+          await this._activateSession(newSession.id);
+          
+          // 3. 如果需要设置为当前查看会话(默认为true)
+          const updateCurrent = options?.updateCurrent !== false;
+          if (updateCurrent) {
+            await this._setCurrentSession(newSession.id);
+          }
+        }
+        
+        // 更新会话创建时间
+        this.lastSessionCreationTime = Date.now();
+        
+        return newSession;
+      } finally {
+        // 无论成功失败都解除锁定
+        this.sessionCreationLock = false;
+      }
     } catch (error) {
       logger.error(i18n('background_session_create_failed', '创建会话失败: {0}'), error);
-      throw new Error(i18n('background_session_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error))
-      );
+      throw new Error(i18n('background_session_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
   
   /**
    * 创建并激活新会话
-   * 被NavigationManager调用，在没有活跃会话时创建新会话
-   * @param title 会话标题
    */
   public async createAndActivateSession(
     title: string
   ): Promise<BrowsingSession> {
     try {
-      // 创建新会话
-      const newSession = await this.createSession({
+      // 直接调用统一的创建方法
+      return await this.createSession({
         title: title,
-        makeActive: true
+        makeActive: true,
+        updateCurrent: true
       });
-      
-      // 设置为当前会话和最新会话
-      await this.setCurrentSession(newSession.id);
-      await this.setLatestSession(newSession.id);
-      
-      return newSession;
     } catch (error) {
       logger.error(i18n('session_manager_create_activate_failed', '创建并激活会话失败: {0}'), error);
-      throw new Error(i18n('session_manager_create_activate_failed', '创建并激活会话失败: {0}', error instanceof Error ? error.message : String(error))
-      );
+      throw new Error(i18n('session_manager_create_activate_failed', '创建并激活会话失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -712,12 +690,7 @@ export class SessionManager {
       }
       
       // 更新当前会话ID
-      this.currentSessionId = sessionId;
-      
-      logger.log(i18n('session_manager_set_current', '已设置当前会话: {0}'), sessionId);
-      
-      // 发出事件
-      sessionEvents.emitSessionViewed(sessionId);
+      await this._setCurrentSession(sessionId);
       
       return session;
     } catch (error) {
@@ -755,8 +728,6 @@ export class SessionManager {
   
   /**
    * 设置最新活跃会话
-   * @param sessionId 要设置为最新会话的ID
-   * @returns 设置的会话对象
    */
   public async setLatestSession(
     sessionId: string | null
@@ -770,7 +741,6 @@ export class SessionManager {
         this.latestSessionId = null;
         
         if (oldSessionId) {
-          // 将原最新会话设为非活跃
           await this.deactivateSession(oldSessionId);
         }
         
@@ -794,25 +764,13 @@ export class SessionManager {
         await this.deactivateSession(this.latestSessionId);
       }
       
-      // 更新最新会话ID
-      this.latestSessionId = sessionId;
-      
-      // 更新会话为活跃状态
-      await this.storage.updateSession(sessionId, {
-        isActive: true,
-        lastActivity: Date.now()
-      });
-      
-      logger.log(i18n('session_manager_set_latest', '已设置最新会话: {0}'), sessionId);
-      
-      // 发出事件
-      sessionEvents.emitSessionActivated(sessionId);
+      // 使用内部方法激活会话
+      await this._activateSession(sessionId);
       
       return session;
     } catch (error) {
       logger.error(i18n('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(i18n('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error))
-      );
+      throw new Error(i18n('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -868,18 +826,11 @@ export class SessionManager {
    */
   public async checkDayTransition(): Promise<void> {
     try {
-      // 获取当前活跃的策略
-      const strategy = this.strategyFactory.getActiveStrategy();
-      
       // 如果没有最新会话，直接创建新会话
       if (!this.latestSessionId) {
-        const newSession = await strategy.createSession();
-        this.latestSessionId = newSession.id;
-        
-        // 如果当前没有查看的会话，设置同样的会话为当前会话
-        if (!this.currentSessionId) {
-          this.currentSessionId = newSession.id;
-        }
+        await this.createSession({
+          skipCooldown: true
+        });
         return;
       }
       
@@ -889,6 +840,7 @@ export class SessionManager {
       
       // 检查是否需要创建新会话
       if (latestSession) {
+        const strategy = this.strategyFactory.getActiveStrategy();
         const needNewSession = await strategy.shouldCreateNewSession(
           lastActivityTime,
           Date.now(),
@@ -896,19 +848,15 @@ export class SessionManager {
         );
         
         if (needNewSession) {
-          // 结束当前会话
-          await this.endSession(this.latestSessionId);
+          // 记录当前查看的会话ID
+          const currentWasLatest = (this.currentSessionId === this.latestSessionId);
           
-          // 创建新会话
-          const newSession = await strategy.createSession();
-          
-          // 更新最新会话ID
-          this.latestSessionId = newSession.id;
-          
-          // 如果当前会话是原最新会话，也更新当前会话ID
-          if (this.currentSessionId === latestSession.id) {
-            this.currentSessionId = newSession.id;
-          }
+          // 使用统一创建方法创建新会话
+          await this.createSession({
+            makeActive: true,
+            updateCurrent: currentWasLatest, // 仅当当前查看的就是最新会话时更新
+            skipCooldown: true
+          });
         }
       }
     } catch (error) {
@@ -924,34 +872,11 @@ export class SessionManager {
     previousActivityTime: number = 0
   ): Promise<void> {
     try {
-      // 检查锁定状态，防止重复创建会话
-      const isInCooldown = (currentTime - this.lastSessionCreationTime < this.SESSION_CREATION_COOLDOWN);
-      
       // 如果没有最新会话，创建一个新会话
       if (!this.latestSessionId) {
-        // 即使没有会话，也受冷却期限制，防止连续创建
-        if (this.sessionCreationLock || isInCooldown) {
-          logger.log(i18n('session_creation_blocked_by_cooldown', '会话创建已被阻止（冷却期：{0}秒）'), 
-            Math.round((currentTime - this.lastSessionCreationTime)/1000).toString());
-          return;
-        }
-
-        this.sessionCreationLock = true;
-        try {
-          const strategy = this.strategyFactory.getActiveStrategy();
-          const newSession = await strategy.createSession();
-          this.latestSessionId = newSession.id;
-          
-          // 如果当前没有查看的会话，设置同样的会话为当前会话
-          if (!this.currentSessionId) {
-            this.currentSessionId = newSession.id;
-          }
-          
-          // 更新最后创建时间
-          this.lastSessionCreationTime = Date.now();
-        } finally {
-          this.sessionCreationLock = false;
-        }
+        await this.createSession({
+          skipCooldown: true
+        });
         return;
       }
       
@@ -966,42 +891,20 @@ export class SessionManager {
         );
         
         if (needNewSession) {
-          // 检查锁定和冷却期
-          if (this.sessionCreationLock || isInCooldown) {
-            logger.log(i18n('session_creation_blocked_by_cooldown', '会话创建已被阻止（冷却期：{0}秒）'), 
-              Math.round((currentTime - this.lastSessionCreationTime)/1000).toString());
-            return;
-          }
+          // 记录当前查看的会话ID
+          const currentWasLatest = (this.currentSessionId === this.latestSessionId);
           
-          // 设置锁定
-          this.sessionCreationLock = true;
-          try {
-            // 结束当前会话
-            await this.endSession(this.latestSessionId);
-            
-            // 创建新会话
-            const newSession = await strategy.createSession();
-            
-            // 更新最新会话ID
-            this.latestSessionId = newSession.id;
-            
-            // 更新最后创建时间
-            this.lastSessionCreationTime = Date.now();
-            
-            // 如果当前会话是原最新会话，也更新当前会话ID
-            if (this.currentSessionId === latestSession.id) {
-              this.currentSessionId = newSession.id;
-            }
-          } finally {
-            // 确保无论成功失败都解除锁定
-            this.sessionCreationLock = false;
-          }
-          
-          return; // 创建了新会话后直接返回
+          // 使用统一创建方法创建新会话
+          await this.createSession({
+            makeActive: true,
+            updateCurrent: currentWasLatest, // 仅当当前查看的就是最新会话时更新
+            skipCooldown: true
+          });
+          return;
         }
       }
       
-      // 更新最新会话的最后活动时间
+      // 只更新活动时间
       if (this.latestSessionId) {
         await this.storage.updateSession(this.latestSessionId, { 
           lastActivity: currentTime 
@@ -1152,6 +1055,101 @@ export class SessionManager {
       );
     }
   } 
+
+  /**
+   * 通知NavigationManager最新会话ID已更新
+   */
+  private notifyNavManagerLatestSessionChanged(sessionId: string): void {
+    try {
+      const navManager = getNavigationManager();
+      navManager.updateSessionId(sessionId);
+      logger.log(i18n('session_manager_notified_nav', '已通知导航管理器更新到最新会话: {0}'), sessionId);
+    } catch (error) {
+      logger.error(i18n('session_manager_notify_nav_failed', '通知导航管理器失败: {0}'), error);
+    }
+  }
+
+  /**
+   * 内部方法：创建会话对象
+   * 只负责创建会话对象，不处理激活或设置为当前会话
+   */
+  private async _createSession(
+    options?: SessionCreationOptions
+  ): Promise<BrowsingSession> {
+    // 生成会话ID
+    const sessionId = IdGenerator.generateSessionId();
+
+    // 构建新会话对象
+    const newSession: BrowsingSession = {
+      id: sessionId,
+      title: options?.title || i18n('session_manager_default_session_name', '会话 {0}', new Date().toLocaleString()),
+      description: options?.description || "",
+      startTime: Date.now(),
+      isActive: true,
+      nodeCount: 0,
+      tabCount: 0,
+      lastActivity: Date.now(), // 初始化为创建时间
+      metadata: options?.metadata || {},
+      records: {},
+      edges: {},
+      rootIds: [],
+    };
+
+    // 保存到存储
+    await this.storage.saveSession(newSession);
+    
+    logger.log(i18n('session_manager_created_session', '已创建会话: {0} - {1}'), sessionId, newSession.title);
+    
+    // 发出会话创建事件
+    sessionEvents.emitSessionCreated(sessionId, {
+      title: newSession.title,
+      makeActive: options?.makeActive !== false,
+    });
+
+    return newSession;
+  }
+
+  /**
+   * 内部方法：激活会话
+   * 将会话设置为最新活跃会话(latestSessionId)
+   */
+  private async _activateSession(sessionId: string): Promise<void> {
+    // 如果已有活跃会话，先停用
+    if (this.latestSessionId && this.latestSessionId !== sessionId) {
+      await this.deactivateSession(this.latestSessionId);
+    }
+    
+    // 更新最新会话ID
+    this.latestSessionId = sessionId;
+    
+    // 通知NavigationManager
+    this.notifyNavManagerLatestSessionChanged(sessionId);
+    
+    // 更新会话为活跃状态
+    await this.storage.updateSession(sessionId, {
+      isActive: true,
+      lastActivity: Date.now()
+    });
+    
+    // 发出会话激活事件
+    sessionEvents.emitSessionActivated(sessionId);
+    
+    logger.log(i18n('session_manager_activated', '已激活会话: {0}'), sessionId);
+  }
+
+  /**
+   * 内部方法：设置当前会话
+   * 将会话设置为当前查看会话(currentSessionId)
+   */
+  private async _setCurrentSession(sessionId: string): Promise<void> {
+    // 更新当前会话ID
+    this.currentSessionId = sessionId;
+    
+    // 发出会话查看事件
+    sessionEvents.emitSessionViewed(sessionId);
+    
+    logger.log(i18n('session_manager_set_current', '已设置当前会话: {0}'), sessionId);
+  }
 }
 // 单例模式
 let sessionManagerInstance: SessionManager | null = null;

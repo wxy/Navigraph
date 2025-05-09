@@ -155,6 +155,10 @@ export interface SessionCreationOptions {
    * 会话元数据
    */
   metadata?: Record<string, any>;
+  /**
+   * 是否跳过冷却时间
+   */
+  skipCooldown?: boolean;
 }
 
 /**

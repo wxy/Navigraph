@@ -223,7 +223,17 @@ export class NavigationManager {
       return null;
     }
   }
-
+  /**
+   * 更新当前使用的会话ID
+   * 供SessionManager在latestSessionId变更时调用
+   * @param sessionId 最新会话ID
+   */
+  public updateSessionId(sessionId: string): void {
+    logger.log(i18n('navigation_manager_update_session', '正在更新导航管理器会话ID: {0}'), sessionId);
+    
+    // 调用内部方法更新会话ID并通知所有子组件
+    this.setCurrentSessionId(sessionId);
+  }
   /**
    * 获取会话图数据
    * 返回当前会话的节点和边数据

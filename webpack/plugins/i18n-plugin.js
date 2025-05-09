@@ -355,11 +355,29 @@ class I18nPlugin {
       const content = fs.readFileSync(manifestPath, "utf8");
       const manifestJson = JSON.parse(content);
 
+      // 读取现有的默认语言文件，用于保留翻译
+      const defaultLangPath = path.join(
+        this.options.tempOutputDir,
+        this.options.defaultLang,
+        "messages.json"
+      );
+      
+      let existingMessages = {};
+      if (fs.existsSync(defaultLangPath)) {
+        try {
+          existingMessages = fs.readJsonSync(defaultLangPath);
+          console.log(`读取现有默认语言文件以保留manifest消息翻译`);
+        } catch (error) {
+          console.error(`读取默认语言文件失败:`, error.message);
+        }
+      }
+
       // 递归提取所有__MSG_*__格式的字符串
       const extractedKeys = this.extractMessagesFromObject(
         manifestJson,
         "manifest.json",
-        messages
+        messages,
+        existingMessages // 传入现有翻译
       );
       console.log(`从manifest.json提取了${extractedKeys}个消息ID`);
 
@@ -373,7 +391,7 @@ class I18nPlugin {
   /**
    * 从对象中递归提取__MSG_*__格式的消息ID
    */
-  extractMessagesFromObject(obj, source, messages) {
+  extractMessagesFromObject(obj, source, messages, existingMessages = {}) {
     let count = 0;
 
     if (typeof obj === "string") {
@@ -386,11 +404,20 @@ class I18nPlugin {
         count++;
 
         if (!messages[messageId]) {
-          messages[messageId] = {
-            message: messageId, // 对于manifest.json，没有默认值
-            description: `用于manifest.json中`,
-            _sourceFiles: [source],
-          };
+          // 检查是否存在现有翻译，优先使用现有翻译
+          if (existingMessages[messageId] && existingMessages[messageId].message) {
+            messages[messageId] = {
+              message: existingMessages[messageId].message, // 使用现有翻译
+              description: existingMessages[messageId].description || `用于manifest.json中`,
+              _sourceFiles: [source],
+            };
+          } else {
+            messages[messageId] = {
+              message: messageId, // 对于manifest.json，没有默认值时才使用ID
+              description: `用于manifest.json中`,
+              _sourceFiles: [source],
+            };
+          }
         } else {
           // 已存在该消息ID，添加源文件
           if (!messages[messageId]._sourceFiles) {
@@ -405,7 +432,7 @@ class I18nPlugin {
       // 递归处理对象或数组
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          count += this.extractMessagesFromObject(obj[key], source, messages);
+          count += this.extractMessagesFromObject(obj[key], source, messages, existingMessages);
         }
       }
     }

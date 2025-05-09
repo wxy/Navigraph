@@ -1099,10 +1099,6 @@
     "message": "The session is already the latest session: {0}",
     "description": "会话已是最新会话日志"
   },
-  "session_manager_set_latest": {
-    "message": "The latest session has been set: {0}",
-    "description": "设置最新会话日志"
-  },
   "session_manager_set_latest_failed": {
     "message": "Failed to set latest session: {0}, error: {1}",
     "description": "设置最新会话失败错误"
@@ -1170,10 +1166,6 @@
   "session_manager_not_initialized": {
     "message": "SessionManager instance not initialized",
     "description": "会话管理器未初始化错误"
-  },
-  "session_creation_blocked_by_cooldown": {
-    "message": "Session creation has been blocked (cooldown period: {0} seconds)",
-    "description": "当尝试在冷却期内创建新会话时显示的消息"
   },
   "daily_session_no_active": {
     "message": "There is no active session, a new session should be created",
@@ -4710,5 +4702,40 @@
   "options_help_load_failed": {
     "message": "Failed to load help document",
     "description": "从TS提取: src/options/options.ts"
+  },
+  "navigation_manager_update_session": {
+    "message": "Updating Navigation Manager Session ID: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
+    "_untranslated": false
+  },
+  "session_creation_cooldown": {
+    "message": "Session creation cooldown period in progress, {0} seconds remaining",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_creation_cooldown_error": {
+    "message": "The session was created too frequently. Please wait {0} seconds and try again.",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_creation_locked": {
+    "message": "Session creation is locked, please try again later",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_manager_notified_nav": {
+    "message": "The navigation manager has been notified to update to the latest session: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_manager_notify_nav_failed": {
+    "message": "Failed to notify navigation manager: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_manager_activated": {
+    "message": "Activated sessions: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
   }
 }

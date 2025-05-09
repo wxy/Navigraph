@@ -1099,10 +1099,6 @@
     "message": "La session est déjà la dernière session : {0}",
     "description": "会话已是最新会话日志"
   },
-  "session_manager_set_latest": {
-    "message": "La dernière session a été définie : {0}",
-    "description": "设置最新会话日志"
-  },
   "session_manager_set_latest_failed": {
     "message": "Échec de la définition de la dernière session : {0}, erreur : {1}",
     "description": "设置最新会话失败错误"
@@ -1170,10 +1166,6 @@
   "session_manager_not_initialized": {
     "message": "Instance SessionManager non initialisée",
     "description": "会话管理器未初始化错误"
-  },
-  "session_creation_blocked_by_cooldown": {
-    "message": "La création de session a été bloquée (délai de refroidissement : {0} secondes)",
-    "description": "当尝试在冷却期内创建新会话时显示的消息"
   },
   "daily_session_no_active": {
     "message": "Il n'y a pas de session active, une nouvelle session doit être créée",
@@ -4710,5 +4702,40 @@
   "options_help_load_failed": {
     "message": "Échec du chargement du document d'aide",
     "description": "从TS提取: src/options/options.ts"
+  },
+  "navigation_manager_update_session": {
+    "message": "Mise à jour de l'ID de session du gestionnaire de navigation : {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
+    "_untranslated": false
+  },
+  "session_creation_cooldown": {
+    "message": "Période de refroidissement de création de session en cours, {0} secondes restantes",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_creation_cooldown_error": {
+    "message": "La session a été créée trop fréquemment. Veuillez patienter {0} secondes et réessayer.",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_creation_locked": {
+    "message": "La création de session est verrouillée, veuillez réessayer plus tard",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_manager_notified_nav": {
+    "message": "Le gestionnaire de navigation a été informé de la mise à jour vers la dernière session : {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_manager_notify_nav_failed": {
+    "message": "Échec de la notification du gestionnaire de navigation : {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
+  },
+  "session_manager_activated": {
+    "message": "Sessions activées : {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts",
+    "_untranslated": false
   }
 }
