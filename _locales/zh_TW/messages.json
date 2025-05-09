@@ -4705,37 +4705,30 @@
   },
   "navigation_manager_update_session": {
     "message": "正在更新導航管理器會話ID: {0}",
-    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
   },
   "session_creation_cooldown": {
     "message": "會話建立冷卻期中，剩餘{0}秒",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_cooldown_error": {
     "message": "會話建立過於頻繁，請等待{0}秒後再試",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_locked": {
     "message": "會話建立已鎖定，請稍後再試",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notified_nav": {
     "message": "已通知導航管理員更新至最新會話: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notify_nav_failed": {
     "message": "通知導航管理員失敗: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_activated": {
     "message": "已啟動會話: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   }
 }

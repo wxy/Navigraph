@@ -4705,37 +4705,30 @@
   },
   "navigation_manager_update_session": {
     "message": "Updating Navigation Manager Session ID: {0}",
-    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
   },
   "session_creation_cooldown": {
     "message": "Session creation cooldown period in progress, {0} seconds remaining",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_cooldown_error": {
     "message": "The session was created too frequently. Please wait {0} seconds and try again.",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_locked": {
     "message": "Session creation is locked, please try again later",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notified_nav": {
     "message": "The navigation manager has been notified to update to the latest session: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notify_nav_failed": {
     "message": "Failed to notify navigation manager: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_activated": {
     "message": "Activated sessions: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   }
 }

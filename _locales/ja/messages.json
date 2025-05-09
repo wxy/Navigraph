@@ -4705,37 +4705,30 @@
   },
   "navigation_manager_update_session": {
     "message": "ナビゲーション マネージャー セッション ID を更新しています: {0}",
-    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
   },
   "session_creation_cooldown": {
     "message": "セッション作成のクールダウン期間が進行中です。残り {0} 秒です",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_cooldown_error": {
     "message": "セッションが頻繁に作成されました。 {0} 秒待ってからもう一度お試しください。",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_locked": {
     "message": "セッションの作成はロックされています。しばらくしてからもう一度お試しください。",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notified_nav": {
     "message": "ナビゲーション マネージャーに最新のセッションに更新するように通知されました: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notify_nav_failed": {
     "message": "ナビゲーション マネージャーへの通知に失敗しました: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_activated": {
     "message": "アクティブ化されたセッション: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   }
 }

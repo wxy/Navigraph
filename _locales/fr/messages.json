@@ -4705,37 +4705,30 @@
   },
   "navigation_manager_update_session": {
     "message": "Mise à jour de l'ID de session du gestionnaire de navigation : {0}",
-    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
   },
   "session_creation_cooldown": {
     "message": "Période de refroidissement de création de session en cours, {0} secondes restantes",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_cooldown_error": {
     "message": "La session a été créée trop fréquemment. Veuillez patienter {0} secondes et réessayer.",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_locked": {
     "message": "La création de session est verrouillée, veuillez réessayer plus tard",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notified_nav": {
     "message": "Le gestionnaire de navigation a été informé de la mise à jour vers la dernière session : {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notify_nav_failed": {
     "message": "Échec de la notification du gestionnaire de navigation : {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_activated": {
     "message": "Sessions activées : {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   }
 }

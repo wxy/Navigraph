@@ -4705,37 +4705,30 @@
   },
   "navigation_manager_update_session": {
     "message": "Обновление идентификатора сеанса менеджера навигации: {0}",
-    "description": "从TS提取: src/background/navigation/navigation-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
   },
   "session_creation_cooldown": {
     "message": "Период восстановления сеанса продолжается, осталось {0} секунд",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_cooldown_error": {
     "message": "Сеанс создавался слишком часто. Пожалуйста, подождите {0} секунд и попробуйте еще раз.",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_creation_locked": {
     "message": "Создание сеанса заблокировано, попробуйте еще раз позже",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notified_nav": {
     "message": "Менеджер навигации уведомлен о необходимости обновления до последней сессии: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_notify_nav_failed": {
     "message": "Не удалось уведомить менеджера навигации: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   },
   "session_manager_activated": {
     "message": "Активированные сеансы: {0}",
-    "description": "从TS提取: src/background/session/session-manager.ts",
-    "_untranslated": false
+    "description": "从TS提取: src/background/session/session-manager.ts"
   }
 }
