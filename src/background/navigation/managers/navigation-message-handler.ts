@@ -4,7 +4,8 @@ import { BackgroundMessages, BackgroundResponses } from '../../../types/messages
 import { NodeTracker } from './node-tracker.js';
 import { NavigationEventHandler } from './navigation-event-handler.js';
 import { i18n } from '../../../lib/utils/i18n-utils.js';
-
+import { getNavigationManager } from '../../navigation/navigation-manager.js';
+import { getSessionManager } from '../../session/session-manager.js';
 const logger = new Logger('NavigationMessageHandler');
 
 /**
@@ -287,7 +288,88 @@ export class NavigationMessageHandler {
         return ctx.error(i18n('nav_msg_error_js_navigation', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
       }
     });
+    // 清除所有数据
+    this.messageService.registerHandler('clearAllData', (
+      message: BackgroundMessages.ClearAllDataRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.ClearAllDataResponse) => void
+    ) => {
+      const ctx = this.messageService.createMessageContext(message, sender, sendResponse);
+      logger.log(i18n('navigation_handlers_clear_all_data', '处理清除所有数据请求'));
+      
+      try {
+        const navigationManager = getNavigationManager();
+        const sessionManager = getSessionManager();
+        
+        // 并行执行两个清除操作
+        Promise.all([
+          navigationManager.clearAllData(),     // 清除导航数据
+          sessionManager.clearAllSessions()     // 清除会话数据
+        ])
+        .then(() => {
+          logger.log(i18n('navigation_handlers_clear_success', '成功清除所有数据'));
+          ctx.success();
+        })
+        .catch((error) => {
+          logger.error(i18n('navigation_handlers_clear_failed', '清除数据失败: {0}'), error);
+          ctx.error(i18n('navigation_handlers_clear_error', '清除数据失败: {0}'), 
+                    error instanceof Error ? error.message : String(error));
+        });
+      } catch (error) {
+        logger.error(i18n('navigation_handlers_clear_failed', '清除数据失败: {0}'), error);
+        ctx.error(i18n('navigation_handlers_clear_error', '清除数据失败: {0}'), 
+                  error instanceof Error ? error.message : String(error));
+      }
+      
+      return true; // 需要异步响应
+    });
     
+    // 清除特定时间之前的数据（用于数据保留政策实施）
+    this.messageService.registerHandler('clearDataBeforeTime', (
+      message: BackgroundMessages.ClearDataBeforeTimeRequest,
+      sender: chrome.runtime.MessageSender,
+      sendResponse: (response: BackgroundResponses.ClearDataBeforeTimeResponse) => void
+    ) => {
+      const ctx = this.messageService.createMessageContext(message, sender, sendResponse);
+      logger.log(i18n('navigation_handlers_clear_before_time', '处理清除{0}之前数据的请求'), 
+                new Date(message.timestamp).toLocaleString());
+      
+      try {
+        const navigationManager = getNavigationManager();
+        const sessionManager = getSessionManager();
+        
+        // 使用Promise.all并行执行两个清除操作
+        Promise.all([
+          navigationManager.clearDataBeforeTime(message.timestamp),
+          sessionManager.clearSessionsBeforeTime(message.timestamp)
+        ])
+        .then(([navResults, sessionsCleared]) => {
+          logger.log(i18n('navigation_handlers_clear_before_success', 
+                    '成功清除{0}之前的数据: {1}个节点, {2}条边, {3}个会话'), 
+                  new Date(message.timestamp).toLocaleString(),
+                  navResults.nodes.toString(),
+                  navResults.edges.toString(),
+                  sessionsCleared.toString());
+          
+          ctx.success({
+            nodes: navResults.nodes,
+            edges: navResults.edges,
+            sessions: sessionsCleared
+          });
+        })
+        .catch((error) => {
+          logger.error(i18n('navigation_handlers_clear_before_failed', '清除数据失败: {0}'), error);
+          ctx.error(i18n('navigation_handlers_clear_before_error', '清除数据失败: {0}'), 
+                    error instanceof Error ? error.message : String(error));
+        });
+      } catch (error) {
+        logger.error(i18n('navigation_handlers_clear_before_failed', '清除数据失败: {0}'), error);
+        ctx.error(i18n('navigation_handlers_clear_before_error', '清除数据失败: {0}'), 
+                  error instanceof Error ? error.message : String(error));
+      }
+      
+      return true; // 需要异步响应
+    });
     logger.groupEnd();
   }
 
@@ -303,6 +385,8 @@ export class NavigationMessageHandler {
     this.messageService.unregisterHandler('linkClicked');
     this.messageService.unregisterHandler('formSubmitted');
     this.messageService.unregisterHandler('jsNavigation');
+    this.messageService.unregisterHandler('clearAllData');
+    this.messageService.unregisterHandler('clearDataBeforeTime');
     
     logger.log(i18n('nav_msg_handler_handlers_cleared', '已清理所有导航消息处理程序'));
   }

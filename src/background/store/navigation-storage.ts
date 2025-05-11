@@ -374,6 +374,130 @@ export class NavigationStorage {
       );
     }
   }
+
+  /**
+   * 清除指定时间之前的导航节点数据
+   * @param timestamp 时间戳
+   * @returns 清除的节点数量
+   */
+  public async clearNodesBeforeTime(timestamp: number): Promise<number> {
+    await this.ensureInitialized();
+    
+    try {
+      logger.log(i18n('nav_storage_clearing_nodes_before', '清除{0}之前的所有导航节点...'), new Date(timestamp).toLocaleString());
+      
+      // 查询需要清除的节点
+      const nodesToDelete = await this.queryNodes({
+        endTime: timestamp
+      });
+      
+      // 计数器
+      let deleteCount = 0;
+      
+      // 删除每个节点
+      for (const node of nodesToDelete) {
+        await this.db.delete(this.NODE_STORE, node.id);
+        deleteCount++;
+      }
+      
+      logger.log(i18n('nav_storage_cleared_nodes', '已清除{0}个导航节点'), deleteCount.toString());
+      return deleteCount;
+    } catch (error) {
+      logger.error(i18n('nav_storage_clear_nodes_failed', '清除导航节点失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('background_storage_clear_nodes_failed', '清除导航节点失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  /**
+   * 清除指定时间之前的导航边数据
+   * @param timestamp 时间戳
+   * @returns 清除的边数量
+   */
+  public async clearEdgesBeforeTime(timestamp: number): Promise<number> {
+    await this.ensureInitialized();
+    
+    try {
+      logger.log(i18n('nav_storage_clearing_edges_before', '清除{0}之前的所有导航边...'), new Date(timestamp).toLocaleString());
+      
+      // 查询需要清除的边
+      const edgesToDelete = await this.queryEdges({
+        endTime: timestamp
+      });
+      
+      // 计数器
+      let deleteCount = 0;
+      
+      // 删除每条边
+      for (const edge of edgesToDelete) {
+        await this.db.delete(this.EDGE_STORE, edge.id);
+        deleteCount++;
+      }
+      
+      logger.log(i18n('nav_storage_cleared_edges', '已清除{0}条导航边'), deleteCount.toString());
+      return deleteCount;
+    } catch (error) {
+      logger.error(i18n('nav_storage_clear_edges_failed', '清除导航边失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('background_storage_clear_edges_failed', '清除导航边失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  /**
+   * 清除指定会话的所有导航数据
+   * @param sessionId 会话ID
+   */
+  public async clearSessionData(sessionId: string): Promise<void> {
+    await this.ensureInitialized();
+    
+    try {
+      logger.log(i18n('nav_storage_clearing_session', '正在清除会话 {0} 的导航数据...'), sessionId);
+      
+      // 获取会话的所有节点
+      const nodes = await this.queryNodes({ sessionId });
+      
+      // 删除所有节点
+      for (const node of nodes) {
+        await this.db.delete(this.NODE_STORE, node.id);
+      }
+      
+      // 获取会话的所有边
+      const edges = await this.queryEdges({ sessionId });
+      
+      // 删除所有边
+      for (const edge of edges) {
+        await this.db.delete(this.EDGE_STORE, edge.id);
+      }
+      
+      logger.log(i18n('nav_storage_cleared_session', '已清除会话 {0} 的导航数据: {1}个节点和{2}条边'), 
+                sessionId, nodes.length.toString(), edges.length.toString());
+    } catch (error) {
+      logger.error(i18n('nav_storage_clear_session_failed', '清除会话 {0} 的导航数据失败: {1}'), 
+                  sessionId, error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('background_storage_clear_session_failed', 
+                          '清除会话导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  /**
+   * 清除所有导航数据
+   */
+  public async clearAllData(): Promise<void> {
+    await this.ensureInitialized();
+    
+    try {
+      logger.log(i18n('nav_storage_clearing_all', '正在清除所有导航数据...'));
+      
+      // 清除所有节点
+      await this.db.clear(this.NODE_STORE);
+      
+      // 清除所有边
+      await this.db.clear(this.EDGE_STORE);
+      
+      logger.log(i18n('nav_storage_cleared_all', '已清除所有导航数据'));
+    } catch (error) {
+      logger.error(i18n('nav_storage_clear_failed', '清除导航数据失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('background_storage_clear_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
 }
 
 /**

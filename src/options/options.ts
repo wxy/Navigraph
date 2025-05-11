@@ -3,6 +3,7 @@ import { i18n, I18nError } from '../lib/utils/i18n-utils.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
 import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
+import { sendMessage, sendToBackground } from '../lib/messaging/index.js';
 
 const logger = new Logger('OptionsPage');
 // 获取设置服务
@@ -515,14 +516,32 @@ async function resetSettings(): Promise<void> {
 async function clearAllData(): Promise<void> {
   try {
     if (confirm(i18n('options_confirm_clear_data', '确定要清除所有导航数据吗？此操作无法撤销！'))) {
-      const response = await chrome.runtime.sendMessage({
-        action: 'clearAllData'
-      });
+      // 显示加载状态
+      const loadingOverlay = document.getElementById('loading-overlay');
+      if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+      }
       
-      if (response && response.success) {
-        showNotification(i18n('options_data_cleared', '所有数据已清除'));
-      } else {
-        throw new Error(response?.error || i18n('options_unknown_error', '未知错误'));
+      try {
+        // 使用正确的消息格式
+        const response = await sendToBackground('clearAllData', {
+          timestamp: Date.now()
+        });
+        
+        if (response && response.success) {
+          showNotification(i18n('options_data_cleared', '所有数据已清除'), 'success', 5000);
+        } else {
+          throw new Error(response?.error || i18n('options_unknown_error', '未知错误'));
+        }
+      } catch (error) {
+        logger.error(i18n('options_clear_error', '清除数据时出错'), error);
+        throw error;
+      } finally {
+        // 隐藏加载状态
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+          loadingOverlay.style.display = 'none';
+        }
       }
     }
   } catch (error) {

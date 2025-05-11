@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: NavigraphSettings = {
   // 会话管理
   // 会话设置默认值
   sessionMode: 'daily',   // 默认使用工作日模式
-  idleTimeout: 30,        // 默认30分钟空闲结束会话
+  idleTimeout: 6,        // 默认 6 小时空闲结束会话
   
   // 数据设置
   dataRetention: 30,

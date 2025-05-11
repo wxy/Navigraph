@@ -7,7 +7,7 @@ import {
   NavLink
 } from '../../types/session-types.js';
 import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
-
+import { getSettingsService } from '../../lib/settings/service.js';
 import { getSessionManager } from '../session/session-manager.js';
 
 import { TabStateManager } from './managers/tab-state-manager.js';
@@ -287,7 +287,7 @@ export class NavigationManager {
     this.nodeTracker.reset();
     this.edgeTracker.reset();
     this.pendingNavigationTracker.reset();
-    
+
     // 注意：不重置currentSessionId，因为这可能会在后续的操作中需要
     
     logger.log(i18n('navigation_manager_state_reset', '已重置导航管理器内部状态'));
@@ -422,6 +422,95 @@ export class NavigationManager {
    */
   public async associateOpenTabsWithSession(sessionId: string): Promise<void> {
     return this.nodeTracker.associateOpenTabsWithSession(sessionId);
+  }
+
+  /**
+   * 清除指定时间之前的导航数据
+   * @param timestamp 时间戳
+   * @returns 清除的节点和边数量
+   */
+  public async clearDataBeforeTime(timestamp: number): Promise<{nodes: number, edges: number}> {
+    try {
+      logger.log(i18n('navigation_manager_clearing_before', '清除{0}之前的导航数据...'), new Date(timestamp).toLocaleString());
+      
+      // 清除节点和边
+      const nodeCount = await this.navigationStorage.clearNodesBeforeTime(timestamp);
+      const edgeCount = await this.navigationStorage.clearEdgesBeforeTime(timestamp);
+      
+      // 重置可能失效的内存缓存
+      this.tabStateManager.reset();
+      
+      logger.log(i18n('navigation_manager_cleared_before', '已清除{0}之前的导航数据: {1}个节点, {2}条边'), 
+                new Date(timestamp).toLocaleString(), nodeCount.toString(), edgeCount.toString());
+      
+      return { nodes: nodeCount, edges: edgeCount };
+    } catch (error) {
+      logger.error(i18n('navigation_manager_clear_before_failed', '清除导航数据失败: {0}'), error);
+      throw new Error(i18n('navigation_manager_clear_before_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  /**
+   * 清除所有导航数据
+   * 只清除导航相关数据，不涉及会话数据
+   */
+  public async clearAllData(): Promise<void> {
+    try {
+      logger.log(i18n('navigation_manager_clear_all_start', '开始清除所有导航数据...'));
+      
+      // 清除导航数据
+      await this.navigationStorage.clearAllData();
+      
+      // 重置内存状态
+      this.resetNavigationState();
+      
+      // 重新初始化导航状态
+      await this.initializeSession();
+      
+      logger.log(i18n('navigation_manager_clear_all_complete', '所有导航数据已清除'));
+    } catch (error) {
+      logger.error(i18n('navigation_manager_clear_all_failed', '清除导航数据失败: {0}'), error);
+      throw new Error(i18n('navigation_manager_clear_all_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  /**
+   * 执行数据保留政策
+   * 基于设置中的dataRetention值清除过期数据
+   */
+  public async executeDataRetentionPolicy(): Promise<void> {
+    try {
+      const settingsService = getSettingsService();
+      const settings = settingsService.getSettings();
+      
+      // 如果数据保留设置为0，表示无限期保留数据
+      if (settings.dataRetention === 0) {
+        logger.log(i18n('data_retention_unlimited', '数据保留策略设置为无限期保留'));
+        return;
+      }
+      
+      // 计算保留期限的时间戳
+      const retentionDays = settings.dataRetention;
+      const cutoffTimestamp = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+      
+      logger.log(i18n('data_retention_executing', '执行数据保留政策: 删除{0}天前的数据 ({1}之前)'), 
+                retentionDays.toString(), new Date(cutoffTimestamp).toLocaleString());
+      
+      // 清除导航数据
+      const navResults = await this.clearDataBeforeTime(cutoffTimestamp);
+      
+      // 清除会话数据 - 使用会话管理器的方法而非直接访问存储
+      const sessionManager = getSessionManager();
+      const sessionsCleared = await sessionManager.clearSessionsBeforeTime(cutoffTimestamp);
+      
+      logger.log(i18n('data_retention_completed', 
+                    '数据保留政策执行完成: 已删除{0}个节点, {1}条边, {2}个会话'), 
+                navResults.nodes.toString(), 
+                navResults.edges.toString(),
+                sessionsCleared.toString());
+    } catch (error) {
+      logger.error(i18n('data_retention_failed', '执行数据保留政策失败: {0}'), error);
+    }
   }
 }
 // 单例模式
