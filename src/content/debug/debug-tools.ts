@@ -117,6 +117,10 @@ export class DebugTools {
       default:
         logger.warn(i18n('debug_command_unknown', '未知的调试命令: {0}'), command);
     }
+    // 命令执行后清除存储中的调试命令
+    chrome.storage.local.remove(['navigraph_debug_command', 'navigraph_debug_timestamp'], () => {
+      logger.debug(i18n('debug_command_storage_cleared', '已从存储中清除调试命令'));
+    });
   }
   
   /**

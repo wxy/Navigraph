@@ -1057,6 +1057,76 @@ export class SessionManager {
   } 
 
   /**
+   * 清除所有会话数据
+   */
+  public async clearAllSessions(): Promise<void> {
+    try {
+      logger.log(i18n('session_manager_clearing_all', '正在清除所有会话...'));
+      
+      // 清除存储中的所有会话
+      await this.storage.clearAllSessions();
+      
+      // 重置会话ID
+      this.currentSessionId = null;
+      this.latestSessionId = null;
+      
+      // 创建新的会话
+      await this.createSession({
+        makeActive: true,
+        updateCurrent: true,
+        skipCooldown: true
+      });
+      
+      logger.log(i18n('session_manager_cleared_all', '已清除所有会话'));
+    } catch (error) {
+      logger.error(i18n('session_manager_clear_all_failed', '清除所有会话失败: {0}'), error);
+      throw new Error(i18n('session_manager_clear_all_failed', '清除所有会话失败: {0}', error));
+    }
+  }
+
+  /**
+   * 清除指定时间之前的会话数据
+   * @param timestamp 时间戳
+   * @returns 清除的会话数量
+   */
+  public async clearSessionsBeforeTime(timestamp: number): Promise<number> {
+    try {
+      logger.log(i18n('session_manager_clearing_before', '清除{0}之前的会话...'), new Date(timestamp).toLocaleString());
+      
+      // 调用存储后端清除会话
+      const clearedCount = await this.storage.clearSessionsBeforeTime(timestamp);
+      
+      // 检查当前会话和最新会话是否被清除
+      if (this.currentSessionId || this.latestSessionId) {
+        const currentSession = this.currentSessionId ? await this.storage.getSession(this.currentSessionId) : null;
+        const latestSession = this.latestSessionId ? await this.storage.getSession(this.latestSessionId) : null;
+        
+        // 如果当前会话或最新会话被清除，需要创建新会话
+        if ((this.currentSessionId && !currentSession) || (this.latestSessionId && !latestSession)) {
+          logger.log(i18n('session_manager_active_session_cleared', '活动会话已被清除，创建新会话...'));
+          
+          // 重置会话ID
+          this.currentSessionId = null;
+          this.latestSessionId = null;
+          
+          // 创建新会话
+          await this.createSession({
+            makeActive: true,
+            updateCurrent: true,
+            skipCooldown: true
+          });
+        }
+      }
+      
+      logger.log(i18n('session_manager_cleared_sessions', '已清除{0}个会话'), clearedCount.toString());
+      return clearedCount;
+    } catch (error) {
+      logger.error(i18n('session_manager_clear_before_failed', '清除会话失败: {0}'), error);
+      throw new Error(i18n('session_manager_clear_before_failed', '清除会话失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  /**
    * 通知NavigationManager最新会话ID已更新
    */
   private notifyNavManagerLatestSessionChanged(sessionId: string): void {

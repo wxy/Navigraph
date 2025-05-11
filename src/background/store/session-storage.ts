@@ -555,6 +555,47 @@ export class SessionStorage {
       );
     }
   }
+
+  /**
+   * 清除指定时间之前的会话数据
+   * @param timestamp 时间戳
+   * @returns 清除的会话数量
+   */
+  public async clearSessionsBeforeTime(timestamp: number): Promise<number> {
+    await this.ensureInitialized();
+    
+    try {
+      logger.log(i18n('session_storage_clearing_before', '清除{0}之前的所有会话...'), new Date(timestamp).toLocaleString());
+      
+      // 获取需要删除的会话（结束时间或最后活动时间在指定时间之前）
+      const sessions = await this.getSessions({
+        includeInactive: true
+      });
+      
+      const sessionsToDelete = sessions.filter(session => {
+        // 使用最后活动时间、结束时间或开始时间来判断
+        const lastTime = session.lastActivity || session.endTime || session.startTime;
+        return lastTime < timestamp;
+      });
+      
+      // 删除这些会话
+      let deleteCount = 0;
+      for (const session of sessionsToDelete) {
+        // 不删除活跃会话
+        if (session.isActive) {
+          continue;
+        }
+        await this.deleteSession(session.id);
+        deleteCount++;
+      }
+      
+      logger.log(i18n('session_storage_cleared', '已清除{0}个会话'), deleteCount.toString());
+      return deleteCount;
+    } catch (error) {
+      logger.error(i18n('session_storage_clear_before_failed', '清除会话失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new Error(i18n('session_storage_clear_before_failed_message', '清除会话失败: {0}', error instanceof Error ? error.message : String(error)));
+    }
+  }
 }
 
 /**

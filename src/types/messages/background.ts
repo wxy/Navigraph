@@ -292,6 +292,21 @@ export namespace BackgroundMessages {
   export interface SyncLatestToCurrentRequest extends BaseMessage {
     type: 'syncLatestToCurrent';
   }
+
+  /**
+   * 清除所有数据请求
+   */
+  export interface ClearAllDataRequest extends BaseMessage {
+    // 不需要额外字段
+  }
+
+  /**
+   * 清除指定时间之前的数据请求
+   */
+  export interface ClearDataBeforeTimeRequest extends BaseMessage {
+    /** 时间戳 - 清除此时间点之前的数据 */
+    timestamp: number;
+  }
 }
 
 // 对应的响应类型（省略实现细节）
@@ -508,6 +523,28 @@ export namespace BackgroundResponses {
     success: boolean;
     session: BrowsingSession | null;
   }
+
+  /**
+   * 清除所有数据响应
+   */
+  export interface ClearAllDataResponse extends BaseResponse {
+    // 基本响应即可，不需要额外字段
+  }
+
+  /**
+   * 清除指定时间之前的数据响应
+   */
+  export interface ClearDataBeforeTimeResponse extends BaseResponse {
+    /** 成功时返回的数据 */
+    data?: {
+      /** 已清除的节点数量 */
+      nodes: number;
+      /** 已清除的边数量 */
+      edges: number;
+      /** 已清除的会话数量 */
+      sessions: number;
+    };
+  }
 }
 
 /**
@@ -658,6 +695,16 @@ export interface BackgroundAPI {
     request: BackgroundMessages.SyncLatestToCurrentRequest;
     response: BackgroundResponses.SyncLatestToCurrentResponse;
   };
+
+  clearAllData: {
+    request: BackgroundMessages.ClearAllDataRequest;
+    response: BackgroundResponses.ClearAllDataResponse;
+  };
+  
+  clearDataBeforeTime: {
+    request: BackgroundMessages.ClearDataBeforeTimeRequest;
+    response: BackgroundResponses.ClearDataBeforeTimeResponse;
+  };
 }
 
 // 更新总类型
@@ -689,7 +736,9 @@ export type BackgroundRequest =
   | BackgroundMessages.GetLatestSessionRequest
   | BackgroundMessages.SetLatestSessionRequest
   | BackgroundMessages.SyncCurrentToLatestRequest
-  | BackgroundMessages.SyncLatestToCurrentRequest;
+  | BackgroundMessages.SyncLatestToCurrentRequest
+  | BackgroundMessages.ClearDataBeforeTimeRequest
+  | BackgroundMessages.ClearAllDataRequest;
 
 export type BackgroundResponse =
   | BackgroundResponses.GetSessionsResponse
@@ -719,4 +768,6 @@ export type BackgroundResponse =
   | BackgroundResponses.GetLatestSessionResponse
   | BackgroundResponses.SetLatestSessionResponse
   | BackgroundResponses.SyncCurrentToLatestResponse
-  | BackgroundResponses.SyncLatestToCurrentResponse;
+  | BackgroundResponses.SyncLatestToCurrentResponse
+  | BackgroundResponses.ClearDataBeforeTimeResponse
+  | BackgroundResponses.ClearAllDataResponse;
