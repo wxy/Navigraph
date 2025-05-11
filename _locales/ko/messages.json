@@ -4730,5 +4730,193 @@
   "session_manager_activated": {
     "message": "활성화된 세션: {0}",
     "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "navigation_handlers_clear_all_data": {
+    "message": "모든 데이터 삭제 요청 처리",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_success": {
+    "message": "모든 데이터가 성공적으로 지워졌습니다",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_failed": {
+    "message": "데이터 지우기에 실패했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_error": {
+    "message": "데이터 지우기에 실패했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_time": {
+    "message": "{0} 이전에 데이터를 지우라는 요청을 처리 중입니다.",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_success": {
+    "message": "{0} 이전에 데이터를 성공적으로 지웠습니다: {1}개 노드, {2}개 에지, {3}개 세션",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_failed": {
+    "message": "데이터 지우기에 실패했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_error": {
+    "message": "데이터 지우기에 실패했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_manager_clearing_before": {
+    "message": "{0} 전에 탐색 데이터를 지웁니다.",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_cleared_before": {
+    "message": "{0} 이전에 탐색 데이터가 지워짐: {1}개 노드, {2}개 에지",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_before_failed": {
+    "message": "탐색 데이터를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_start": {
+    "message": "모든 탐색 데이터를 지우기 시작합니다...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_complete": {
+    "message": "모든 내비게이션 데이터가 지워졌습니다",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_failed": {
+    "message": "탐색 데이터를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_unlimited": {
+    "message": "데이터 보존 정책이 무기한 보존으로 설정되어 있습니다.",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_executing": {
+    "message": "데이터 보존 정책 적용: {0}일 이상({1} 이전)의 데이터 삭제",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_completed": {
+    "message": "데이터 보존 정책 적용이 완료되었습니다. {0}개 노드, {1}개 에지, {2}개 세션이 삭제되었습니다.",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_failed": {
+    "message": "데이터 보존 정책을 실행하지 못했습니다: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "session_manager_clearing_all": {
+    "message": "모든 세션을 지우는 중...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_all": {
+    "message": "모든 세션이 삭제되었습니다",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_all_failed": {
+    "message": "모든 세션을 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clearing_before": {
+    "message": "{0} 전 세션을 정리합니다...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_active_session_cleared": {
+    "message": "활성 세션이 지워졌습니다. 새로운 세션을 생성합니다...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_sessions": {
+    "message": "{0} 세션이 삭제되었습니다.",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_before_failed": {
+    "message": "세션을 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "nav_storage_clearing_nodes_before": {
+    "message": "{0} 이전의 모든 탐색 노드를 지웁니다.",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_nodes": {
+    "message": "{0}개의 탐색 노드가 지워졌습니다.",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_nodes_failed": {
+    "message": "탐색 노드를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_nodes_failed": {
+    "message": "탐색 노드를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_edges_before": {
+    "message": "{0} 이전의 모든 탐색 모서리를 지웁니다.",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_edges": {
+    "message": "{0} 탐색 가장자리가 지워졌습니다.",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_edges_failed": {
+    "message": "탐색 가장자리를 지우는 데 실패했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_edges_failed": {
+    "message": "탐색 가장자리를 지우는 데 실패했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_session": {
+    "message": "세션 {0}에 대한 탐색 데이터를 지우는 중입니다...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_session": {
+    "message": "세션 {0}에 대한 탐색 데이터가 지워졌습니다: {1}개 노드와 {2}개 에지",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_session_failed": {
+    "message": "세션 {0}에 대한 탐색 데이터를 지우지 못했습니다: {1}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_session_failed": {
+    "message": "세션 탐색 데이터를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_all": {
+    "message": "모든 탐색 데이터를 지우는 중...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_all": {
+    "message": "모든 내비게이션 데이터가 지워졌습니다",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_failed": {
+    "message": "탐색 데이터를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_failed": {
+    "message": "탐색 데이터를 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "session_storage_clearing_before": {
+    "message": "{0} 이전의 모든 세션을 지우세요...",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_cleared": {
+    "message": "{0} 세션이 삭제되었습니다.",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed": {
+    "message": "세션을 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed_message": {
+    "message": "세션을 지우지 못했습니다: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "debug_command_storage_cleared": {
+    "message": "저장소에서 디버그 명령이 지워짐",
+    "description": "从TS提取: src/content/debug/debug-tools.ts"
+  },
+  "options_clear_data_title": {
+    "message": "데이터 지우기",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

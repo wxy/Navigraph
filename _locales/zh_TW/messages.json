@@ -4730,5 +4730,193 @@
   "session_manager_activated": {
     "message": "已啟動會話: {0}",
     "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "navigation_handlers_clear_all_data": {
+    "message": "處理清除所有資料請求",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_success": {
+    "message": "成功清除所有數據",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_failed": {
+    "message": "清除資料失敗: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_error": {
+    "message": "清除資料失敗: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_time": {
+    "message": "處理清除{0}之前資料的請求",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_success": {
+    "message": "成功清除{0}之前的資料: {1}個節點, {2}條邊, {3}個會話",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_failed": {
+    "message": "清除資料失敗: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_error": {
+    "message": "清除資料失敗: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_manager_clearing_before": {
+    "message": "清除{0}之前的導航資料...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_cleared_before": {
+    "message": "已清除{0}之前的導航資料: {1}個節點, {2}條邊",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_before_failed": {
+    "message": "清除導航資料失敗: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_start": {
+    "message": "開始清除所有導航資料...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_complete": {
+    "message": "所有導航資料已清除",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_failed": {
+    "message": "清除導航資料失敗: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_unlimited": {
+    "message": "資料保留策略設定為無限期保留",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_executing": {
+    "message": "執行資料保留政策: 刪除{0}天前的資料 ({1}之前)",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_completed": {
+    "message": "資料保留政策執行完成: 已刪除{0}個節點, {1}條邊, {2}個會話",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_failed": {
+    "message": "執行資料保留政策失敗: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "session_manager_clearing_all": {
+    "message": "正在清除所有會話...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_all": {
+    "message": "已清除所有會話",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_all_failed": {
+    "message": "清除所有會話失敗: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clearing_before": {
+    "message": "清除{0}之前的會話...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_active_session_cleared": {
+    "message": "活動會話已被清除，建立新會話...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_sessions": {
+    "message": "已清除{0}個會話",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_before_failed": {
+    "message": "清除會話失敗: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "nav_storage_clearing_nodes_before": {
+    "message": "清除{0}之前的所有導航節點...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_nodes": {
+    "message": "已清除{0}個導航節點",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_nodes_failed": {
+    "message": "清除導航節點失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_nodes_failed": {
+    "message": "清除導航節點失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_edges_before": {
+    "message": "清除{0}之前的所有導航邊...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_edges": {
+    "message": "已清除{0}條導航邊",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_edges_failed": {
+    "message": "清除導航邊失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_edges_failed": {
+    "message": "清除導航邊失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_session": {
+    "message": "正在清除會話 {0} 的導航資料...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_session": {
+    "message": "已清除會話 {0} 的導航資料: {1}個節點和{2}條邊",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_session_failed": {
+    "message": "清除會話 {0} 的導航資料失敗: {1}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_session_failed": {
+    "message": "清除會話導航資料失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_all": {
+    "message": "正在清除所有導航資料...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_all": {
+    "message": "已清除所有導航數據",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_failed": {
+    "message": "清除導航資料失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_failed": {
+    "message": "清除導航資料失敗: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "session_storage_clearing_before": {
+    "message": "清除{0}之前的所有會話...",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_cleared": {
+    "message": "已清除{0}個會話",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed": {
+    "message": "清除會話失敗: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed_message": {
+    "message": "清除會話失敗: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "debug_command_storage_cleared": {
+    "message": "已從儲存中清除偵錯命令",
+    "description": "从TS提取: src/content/debug/debug-tools.ts"
+  },
+  "options_clear_data_title": {
+    "message": "清除數據",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

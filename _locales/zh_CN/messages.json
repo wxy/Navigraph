@@ -4730,5 +4730,193 @@
   "session_manager_activated": {
     "message": "已激活会话: {0}",
     "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "navigation_handlers_clear_all_data": {
+    "message": "处理清除所有数据请求",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_success": {
+    "message": "成功清除所有数据",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_failed": {
+    "message": "清除数据失败: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_error": {
+    "message": "清除数据失败: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_time": {
+    "message": "处理清除{0}之前数据的请求",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_success": {
+    "message": "成功清除{0}之前的数据: {1}个节点, {2}条边, {3}个会话",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_failed": {
+    "message": "清除数据失败: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_error": {
+    "message": "清除数据失败: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_manager_clearing_before": {
+    "message": "清除{0}之前的导航数据...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_cleared_before": {
+    "message": "已清除{0}之前的导航数据: {1}个节点, {2}条边",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_before_failed": {
+    "message": "清除导航数据失败: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_start": {
+    "message": "开始清除所有导航数据...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_complete": {
+    "message": "所有导航数据已清除",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_failed": {
+    "message": "清除导航数据失败: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_unlimited": {
+    "message": "数据保留策略设置为无限期保留",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_executing": {
+    "message": "执行数据保留政策: 删除{0}天前的数据 ({1}之前)",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_completed": {
+    "message": "数据保留政策执行完成: 已删除{0}个节点, {1}条边, {2}个会话",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_failed": {
+    "message": "执行数据保留政策失败: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "session_manager_clearing_all": {
+    "message": "正在清除所有会话...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_all": {
+    "message": "已清除所有会话",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_all_failed": {
+    "message": "清除所有会话失败: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clearing_before": {
+    "message": "清除{0}之前的会话...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_active_session_cleared": {
+    "message": "活动会话已被清除，创建新会话...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_sessions": {
+    "message": "已清除{0}个会话",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_before_failed": {
+    "message": "清除会话失败: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "nav_storage_clearing_nodes_before": {
+    "message": "清除{0}之前的所有导航节点...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_nodes": {
+    "message": "已清除{0}个导航节点",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_nodes_failed": {
+    "message": "清除导航节点失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_nodes_failed": {
+    "message": "清除导航节点失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_edges_before": {
+    "message": "清除{0}之前的所有导航边...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_edges": {
+    "message": "已清除{0}条导航边",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_edges_failed": {
+    "message": "清除导航边失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_edges_failed": {
+    "message": "清除导航边失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_session": {
+    "message": "正在清除会话 {0} 的导航数据...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_session": {
+    "message": "已清除会话 {0} 的导航数据: {1}个节点和{2}条边",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_session_failed": {
+    "message": "清除会话 {0} 的导航数据失败: {1}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_session_failed": {
+    "message": "清除会话导航数据失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_all": {
+    "message": "正在清除所有导航数据...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_all": {
+    "message": "已清除所有导航数据",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_failed": {
+    "message": "清除导航数据失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_failed": {
+    "message": "清除导航数据失败: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "session_storage_clearing_before": {
+    "message": "清除{0}之前的所有会话...",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_cleared": {
+    "message": "已清除{0}个会话",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed": {
+    "message": "清除会话失败: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed_message": {
+    "message": "清除会话失败: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "debug_command_storage_cleared": {
+    "message": "已从存储中清除调试命令",
+    "description": "从TS提取: src/content/debug/debug-tools.ts"
+  },
+  "options_clear_data_title": {
+    "message": "清除数据",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

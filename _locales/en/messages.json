@@ -4730,5 +4730,193 @@
   "session_manager_activated": {
     "message": "Activated sessions: {0}",
     "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "navigation_handlers_clear_all_data": {
+    "message": "Handling a Purge All Data Request",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_success": {
+    "message": "All data cleared successfully",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_failed": {
+    "message": "Failed to clear data: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_error": {
+    "message": "Failed to clear data: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_time": {
+    "message": "Processing request to clear data before {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_success": {
+    "message": "Successfully cleared data before {0}: {1} nodes, {2} edges, {3} sessions",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_failed": {
+    "message": "Failed to clear data: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_error": {
+    "message": "Failed to clear data: {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_manager_clearing_before": {
+    "message": "Clear navigation data before {0}...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_cleared_before": {
+    "message": "Cleared navigation data before {0}: {1} nodes, {2} edges",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_before_failed": {
+    "message": "Failed to clear navigation data: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_start": {
+    "message": "Starting clearing all navigation data...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_complete": {
+    "message": "All navigation data cleared",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_failed": {
+    "message": "Failed to clear navigation data: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_unlimited": {
+    "message": "Data retention policy is set to indefinite retention",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_executing": {
+    "message": "Enforce data retention policy: Delete data older than {0} days (before {1})",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_completed": {
+    "message": "Data retention policy enforcement completed: {0} nodes, {1} edges, {2} sessions deleted",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_failed": {
+    "message": "Failed to execute data retention policy: {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "session_manager_clearing_all": {
+    "message": "Clearing all sessions...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_all": {
+    "message": "All sessions cleared",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_all_failed": {
+    "message": "Failed to clear all sessions: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clearing_before": {
+    "message": "Clearing sessions before {0}...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_active_session_cleared": {
+    "message": "Active session has been cleared, creating new session...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_sessions": {
+    "message": "{0} sessions cleared",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_before_failed": {
+    "message": "Failed to clear session: {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "nav_storage_clearing_nodes_before": {
+    "message": "Clear all navigation nodes before {0}...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_nodes": {
+    "message": "{0} navigation nodes have been cleared",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_nodes_failed": {
+    "message": "Failed to clear navigation node: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_nodes_failed": {
+    "message": "Failed to clear navigation node: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_edges_before": {
+    "message": "Clear all navigation edges before {0}...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_edges": {
+    "message": "{0} navigation edges have been cleared",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_edges_failed": {
+    "message": "Failed to clear navigation edge: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_edges_failed": {
+    "message": "Failed to clear navigation edge: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_session": {
+    "message": "Clearing navigation data for session {0}...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_session": {
+    "message": "Cleared navigation data for session {0}: {1} nodes and {2} edges",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_session_failed": {
+    "message": "Failed to clear navigation data for session {0}: {1}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_session_failed": {
+    "message": "Failed to clear session navigation data: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_all": {
+    "message": "Clearing all navigation data...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_all": {
+    "message": "All navigation data cleared",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_failed": {
+    "message": "Failed to clear navigation data: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_failed": {
+    "message": "Failed to clear navigation data: {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "session_storage_clearing_before": {
+    "message": "Clear all sessions before {0}...",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_cleared": {
+    "message": "{0} sessions cleared",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed": {
+    "message": "Failed to clear session: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed_message": {
+    "message": "Failed to clear session: {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "debug_command_storage_cleared": {
+    "message": "Debug commands cleared from storage",
+    "description": "从TS提取: src/content/debug/debug-tools.ts"
+  },
+  "options_clear_data_title": {
+    "message": "Clear Data",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

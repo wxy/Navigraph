@@ -4730,5 +4730,193 @@
   "session_manager_activated": {
     "message": "Sessions activées : {0}",
     "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "navigation_handlers_clear_all_data": {
+    "message": "Gestion d'une demande de purge de toutes les données",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_success": {
+    "message": "Toutes les données ont été effacées avec succès",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_failed": {
+    "message": "Échec de l'effacement des données : {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_error": {
+    "message": "Échec de l'effacement des données : {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_time": {
+    "message": "Traitement de la demande d'effacement des données avant le {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_success": {
+    "message": "Données effacées avec succès avant {0} : {1} nœuds, {2} arêtes, {3} sessions",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_failed": {
+    "message": "Échec de l'effacement des données : {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_handlers_clear_before_error": {
+    "message": "Échec de l'effacement des données : {0}",
+    "description": "从TS提取: src/background/navigation/managers/navigation-message-handler.ts"
+  },
+  "navigation_manager_clearing_before": {
+    "message": "Effacer les données de navigation avant {0}...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_cleared_before": {
+    "message": "Données de navigation effacées avant {0} : {1} nœuds, {2} arêtes",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_before_failed": {
+    "message": "Échec de l'effacement des données de navigation : {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_start": {
+    "message": "Début de la suppression de toutes les données de navigation...",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_complete": {
+    "message": "Toutes les données de navigation effacées",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "navigation_manager_clear_all_failed": {
+    "message": "Échec de l'effacement des données de navigation : {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_unlimited": {
+    "message": "La politique de conservation des données est définie sur une conservation indéfinie",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_executing": {
+    "message": "Appliquer la politique de conservation des données : supprimer les données datant de plus de {0} jours (avant {1})",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_completed": {
+    "message": "Application de la politique de conservation des données terminée : {0} nœuds, {1} arêtes, {2} sessions supprimées",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "data_retention_failed": {
+    "message": "Échec de l'exécution de la politique de conservation des données : {0}",
+    "description": "从TS提取: src/background/navigation/navigation-manager.ts"
+  },
+  "session_manager_clearing_all": {
+    "message": "Effacement de toutes les sessions...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_all": {
+    "message": "Toutes les sessions ont été effacées",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_all_failed": {
+    "message": "Échec de l'effacement de toutes les sessions : {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clearing_before": {
+    "message": "Séances de compensation avant {0}...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_active_session_cleared": {
+    "message": "La session active a été effacée, créant une nouvelle session...",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_cleared_sessions": {
+    "message": "{0} sessions effacées",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "session_manager_clear_before_failed": {
+    "message": "Échec de l'effacement de la session : {0}",
+    "description": "从TS提取: src/background/session/session-manager.ts"
+  },
+  "nav_storage_clearing_nodes_before": {
+    "message": "Effacer tous les nœuds de navigation avant {0}...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_nodes": {
+    "message": "{0} nœuds de navigation ont été effacés",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_nodes_failed": {
+    "message": "Échec de l'effacement du nœud de navigation : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_nodes_failed": {
+    "message": "Échec de l'effacement du nœud de navigation : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_edges_before": {
+    "message": "Effacer tous les bords de navigation avant {0}...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_edges": {
+    "message": "{0} bords de navigation ont été effacés",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_edges_failed": {
+    "message": "Échec de l'effacement du bord de navigation : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_edges_failed": {
+    "message": "Échec de l'effacement du bord de navigation : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_session": {
+    "message": "Effacement des données de navigation pour la session {0}...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_session": {
+    "message": "Données de navigation effacées pour la session {0} : {1} nœuds et {2} arêtes",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_session_failed": {
+    "message": "Échec de l'effacement des données de navigation pour la session {0} : {1}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_session_failed": {
+    "message": "Échec de l'effacement des données de navigation de session : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clearing_all": {
+    "message": "Effacement de toutes les données de navigation...",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_cleared_all": {
+    "message": "Toutes les données de navigation effacées",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_clear_failed": {
+    "message": "Échec de l'effacement des données de navigation : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "background_storage_clear_failed": {
+    "message": "Échec de l'effacement des données de navigation : {0}",
+    "description": "从TS提取: src/background/store/navigation-storage.ts"
+  },
+  "session_storage_clearing_before": {
+    "message": "Effacer toutes les sessions avant {0}...",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_cleared": {
+    "message": "{0} sessions effacées",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed": {
+    "message": "Échec de l'effacement de la session : {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "session_storage_clear_before_failed_message": {
+    "message": "Échec de l'effacement de la session : {0}",
+    "description": "从TS提取: src/background/store/session-storage.ts"
+  },
+  "debug_command_storage_cleared": {
+    "message": "Commandes de débogage effacées du stockage",
+    "description": "从TS提取: src/content/debug/debug-tools.ts"
+  },
+  "options_clear_data_title": {
+    "message": "Effacer les données",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

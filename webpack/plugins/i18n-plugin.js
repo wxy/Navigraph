@@ -18,6 +18,8 @@ class I18nPlugin {
       patterns: ["**/*.ts", "**/*.tsx", "**/*.html", "**/*.htm"],
       // 排除的文件或目录
       exclude: ["node_modules", "dist", "_locales"],
+      // 新增: 在开发模式下是否强制重新处理
+      forceProcessInDevMode: true,
       ...options,
     };
 
@@ -46,6 +48,10 @@ class I18nPlugin {
 
     // 缓存已扫描的消息
     this.cachedMessages = null;
+
+    // 添加定时强制更新功能
+    this.lastForceUpdateTime = Date.now();
+    this.forceUpdateInterval = options.forceUpdateInterval || 60000; // 默认每分钟强制更新一次
   }
 
   // 跟踪文件写入
@@ -78,9 +84,22 @@ class I18nPlugin {
 
     // 在监视模式下更智能地判断是否需要处理
     compiler.hooks.watchRun.tapAsync("I18nPlugin", (compilation, callback) => {
-      // 首次运行时强制处理
+      const now = Date.now();
+
+      // 判断是否需要强制更新
+      const shouldForceUpdate = (now - this.lastForceUpdateTime) >= this.forceUpdateInterval;
+
+      if (shouldForceUpdate) {
+        console.log("\n定时强制更新本地化文件...");
+        this.lastForceUpdateTime = now;
+        this.processSourceFiles();
+        callback();
+        return;
+      }
+
+      // 仅首次运行强制处理
       if (this.isFirstWatchRun) {
-        console.log("\n首次监视模式启动，处理本地化文件...");
+        console.log("\n首次运行，处理本地化文件...");
         this.isFirstWatchRun = false;
         this.processSourceFiles();
         callback();
@@ -104,7 +123,7 @@ class I18nPlugin {
           // 使用glob进行匹配
           const matches = glob.sync(path.join(this.options.srcDir, pattern));
           const absolutePath = path.resolve(file);
-          return matches.some(match => path.resolve(match) === absolutePath);
+          return matches.some((match) => path.resolve(match) === absolutePath);
         });
 
         if (
@@ -208,7 +227,7 @@ class I18nPlugin {
     while ((match = i18nCallsRegex.exec(content)) !== null) {
       const messageId = match[1];
       let defaultMessage = match[2];
-      
+
       // 解析字符串字面量的转义字符，避免双重转义
       try {
         // 使用 JSON.parse 解析转义字符，但需要添加引号
@@ -217,7 +236,7 @@ class I18nPlugin {
         // 如果解析失败，使用原始匹配值
         console.warn(`无法解析消息 "${messageId}" 的转义字符: ${e.message}`);
       }
-      
+
       count++;
 
       if (!messages[messageId]) {
@@ -291,11 +310,12 @@ class I18nPlugin {
         let defaultMessage = elementMatch ? elementMatch[1].trim() : messageId;
 
         // 解析HTML中可能的字符实体
-        defaultMessage = defaultMessage.replace(/&quot;/g, '"')
-                                      .replace(/&apos;/g, "'")
-                                      .replace(/&amp;/g, '&')
-                                      .replace(/&lt;/g, '<')
-                                      .replace(/&gt;/g, '>');
+        defaultMessage = defaultMessage
+          .replace(/&quot;/g, '"')
+          .replace(/&apos;/g, "'")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">");
 
         if (!messages[messageId]) {
           messages[messageId] = {
@@ -361,7 +381,7 @@ class I18nPlugin {
         this.options.defaultLang,
         "messages.json"
       );
-      
+
       let existingMessages = {};
       if (fs.existsSync(defaultLangPath)) {
         try {
@@ -405,10 +425,14 @@ class I18nPlugin {
 
         if (!messages[messageId]) {
           // 检查是否存在现有翻译，优先使用现有翻译
-          if (existingMessages[messageId] && existingMessages[messageId].message) {
+          if (
+            existingMessages[messageId] &&
+            existingMessages[messageId].message
+          ) {
             messages[messageId] = {
               message: existingMessages[messageId].message, // 使用现有翻译
-              description: existingMessages[messageId].description || `用于manifest.json中`,
+              description:
+                existingMessages[messageId].description || `用于manifest.json中`,
               _sourceFiles: [source],
             };
           } else {
@@ -432,7 +456,12 @@ class I18nPlugin {
       // 递归处理对象或数组
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          count += this.extractMessagesFromObject(obj[key], source, messages, existingMessages);
+          count += this.extractMessagesFromObject(
+            obj[key],
+            source,
+            messages,
+            existingMessages
+          );
         }
       }
     }
@@ -542,9 +571,13 @@ class I18nPlugin {
 
       Object.keys(updatedMessages).forEach((existingKey, index) => {
         // 尝试查找相关条目基于源文件的相似度
-        if (extractedMessages[existingKey] && extractedMessages[existingKey]._sourceFiles) {
-          const sourcesForExisting = extractedMessages[existingKey]._sourceFiles;
-          
+        if (
+          extractedMessages[existingKey] &&
+          extractedMessages[existingKey]._sourceFiles
+        ) {
+          const sourcesForExisting =
+            extractedMessages[existingKey]._sourceFiles;
+
           // 计算源文件重叠度
           let overlapScore = 0;
           sourcesForKey.forEach((source) => {
@@ -697,7 +730,8 @@ class I18nPlugin {
               existingMessages[key]._untranslated === false;
 
             // 检查该消息在默认语言中是否被更新
-            const wasUpdatedInDefault = this.updatedMessageIds && this.updatedMessageIds.has(key);
+            const wasUpdatedInDefault =
+              this.updatedMessageIds && this.updatedMessageIds.has(key);
 
             updatedMessages[key] = {
               message: existingMessages[key].message,
@@ -711,13 +745,12 @@ class I18nPlugin {
             if (wasUpdatedInDefault && wasTranslated) {
               updatedMessages[key]._untranslated = true;
               stats.markedUntranslated++;
-            } 
+            }
             // 处理其他情况
             else if (!wasTranslated) {
               updatedMessages[key]._untranslated = true;
               stats.keptUntranslated++;
-            }
-            else {
+            } else {
               stats.kept++;
               translatedCount++;
             }
@@ -748,27 +781,49 @@ class I18nPlugin {
 
         // 计算翻译覆盖率
         const coverage = ((translatedCount / totalCount) * 100).toFixed(2);
-
-        // 打印简化的统计信息
-        console.log(`\n${lang} 语言文件更新报告:`);
-        console.log(`✅ 总消息数: ${stats.total}`);
-        console.log(`✓ 已翻译: ${stats.kept}`);
-        console.log(
-          `⚠️ 未翻译: ${
-            stats.keptUntranslated + stats.newUntranslated + stats.markedUntranslated
-          } (新增: ${stats.newUntranslated}, 已有: ${stats.keptUntranslated}, 需重新翻译: ${stats.markedUntranslated})`
-        );
-        console.log(`🗑️ 删除过时条目: ${stats.removed}`);
-        console.log(`📊 翻译完成率: ${coverage}%`);
-
-        // 翻译提示
-        if (stats.newUntranslated + stats.keptUntranslated + stats.markedUntranslated > 10) {
+        
+        // 检查是否100%完成翻译
+        const isFullyTranslated = parseFloat(coverage) === 100.00 && 
+                                 stats.keptUntranslated === 0 && 
+                                 stats.newUntranslated === 0 && 
+                                 stats.markedUntranslated === 0;
+        
+        // 根据翻译完成情况输出不同的信息
+        if (isFullyTranslated) {
+          // 100%翻译完成时，只显示简单消息
+          console.log(`\n✅ ${lang} 语言文件已100%完成翻译`);
+        } else {
+          // 未100%完成时，显示详细统计信息
+          console.log(`\n${lang} 语言文件更新报告:`);
+          console.log(`✅ 总消息数: ${stats.total}`);
+          console.log(`✓ 已翻译: ${stats.kept}`);
           console.log(
-            `\n⚠️ ${lang}有${
-              stats.newUntranslated + stats.keptUntranslated + stats.markedUntranslated
-            }个未翻译条目，建议尽快完成翻译`
+            `⚠️ 未翻译: ${
+              stats.keptUntranslated +
+              stats.newUntranslated +
+              stats.markedUntranslated
+            } (新增: ${stats.newUntranslated}, 已有: ${stats.keptUntranslated}, 需重新翻译: ${stats.markedUntranslated})`
           );
+          console.log(`🗑️ 删除过时条目: ${stats.removed}`);
+          console.log(`📊 翻译完成率: ${coverage}%`);
+
+          // 翻译提示
+          if (
+            stats.newUntranslated +
+              stats.keptUntranslated +
+              stats.markedUntranslated >
+            10
+          ) {
+            console.log(
+              `\n⚠️ ${lang}有${
+                stats.newUntranslated +
+                stats.keptUntranslated +
+                stats.markedUntranslated
+              }个未翻译条目，建议尽快完成翻译`
+            );
+          }
         }
+        console.log(`\n`); 
       });
     } catch (error) {
       console.error("处理其他语言文件时出错:", error.message);
