@@ -1,5 +1,5 @@
 import { Logger } from '../../lib/utils/logger.js';
-import { i18n } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../utils/i18n.js';
 import { BaseMessage, BaseResponse, MessageHandler, MessageTarget } from '../../types/messages/common.js';
 const logger = new Logger('BaseMessageService');
 
@@ -38,28 +38,28 @@ export abstract class BaseMessageService<T extends MessageTarget> {
   ): boolean {
     // 1. 格式校验
     if (!message || !message.action) {
-      logger.error(i18n('message_missing_action_field', '缺少 action 字段')); // 日志使用消息ID
+      logger.error(_('message_missing_action_field', '缺少 action 字段')); // 日志使用消息ID
       sendResponse({ 
         success: false, 
-        error: i18n('message_missing_action_field', '缺少 action 字段'),
-        requestId: message?.requestId || i18n('unknown', '未指定')
+        error: _('message_missing_action_field', '缺少 action 字段'),
+        requestId: message?.requestId || _('unknown', '未指定')
       });
       return false;
     }
     
     // 2. 接收日志
-    logger.log(i18n('message_received', '收到消息 [{0}] 操作: {1} 请求ID: {2}'),
+    logger.log(_('message_received', '收到消息 [{0}] 操作: {1} 请求ID: {2}'),
       this.serviceTarget,
       message.action,
-      message.requestId || i18n('unknown', '未指定')
+      message.requestId || _('unknown', '未指定')
     );
     
     // 3. 目标过滤
     if (message.target !== this.serviceTarget) {
-      logger.log(i18n('message_skip_wrong_target', '跳过非目标服务消息: 服务={0} 操作={1} 目标={2}'),
+      logger.log(_('message_skip_wrong_target', '跳过非目标服务消息: 服务={0} 操作={1} 目标={2}'),
         this.serviceTarget,
         message.action,
-        message.target || i18n('unknown', '未指定')
+        message.target || _('unknown', '未指定')
       );
       return false;
     }
@@ -67,11 +67,11 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     // 4. 查找处理程序
     const handlers = this.handlers.get(message.action) || [];
     if (handlers.length === 0) {
-      logger.warn(i18n('handler_not_found', '未注册的消息类型: {0}'), message.action);
+      logger.warn(_('handler_not_found', '未注册的消息类型: {0}'), message.action);
       sendResponse({ 
         success: false, 
-        error: i18n('handler_not_found', '未注册的消息类型: {0}', message.action),
-        requestId: message.requestId || i18n('unknown', '未指定')
+        error: _('handler_not_found', '未注册的消息类型: {0}', message.action),
+        requestId: message.requestId || _('unknown', '未指定')
       });
       return false;
     }
@@ -80,11 +80,11 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     try {
       return handlers[0](message, sender, sendResponse);
     } catch (error) {
-      logger.error(i18n('message_handle_error', '处理消息时出错: {0}'), error instanceof Error ? error.message : String(error));
+      logger.error(_('message_handle_error', '处理消息时出错: {0}'), error instanceof Error ? error.message : String(error));
       sendResponse({ 
         success: false, 
-        error: i18n('message_handle_error', '处理消息时出错: {0}', error instanceof Error ? error.message : String(error)),
-        requestId: message.requestId || i18n('unknown', '未指定')
+        error: _('message_handle_error', '处理消息时出错: {0}', error instanceof Error ? error.message : String(error)),
+        requestId: message.requestId || _('unknown', '未指定')
       });
       return false;
     }
@@ -102,7 +102,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     }
     
     this.handlers.get(action)!.push(handler);
-    logger.log(i18n('messaging_handler_registered', '[{0}] 已注册消息处理程序: {1}'), this.serviceTarget, action);
+    logger.log(_('messaging_handler_registered', '[{0}] 已注册消息处理程序: {1}'), this.serviceTarget, action);
   }
   
   /**
@@ -130,7 +130,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
       const index = handlers.indexOf(handler);
       if (index !== -1) {
         handlers.splice(index, 1);
-        logger.log(i18n('messaging_handler_unregistered', '[{0}] 已移除消息处理程序: {1}'), this.serviceTarget, action);
+        logger.log(_('messaging_handler_unregistered', '[{0}] 已移除消息处理程序: {1}'), this.serviceTarget, action);
       }
       
       // 如果没有处理程序了，删除整个条目
@@ -140,7 +140,7 @@ export abstract class BaseMessageService<T extends MessageTarget> {
     } else {
       // 移除所有该类型的处理程序
       this.handlers.delete(action);
-      logger.log(i18n('messaging_all_handlers_unregistered', '[{0}] 已移除所有 {1} 处理程序'), this.serviceTarget, action);
+      logger.log(_('messaging_all_handlers_unregistered', '[{0}] 已移除所有 {1} 处理程序'), this.serviceTarget, action);
     }
   }
   

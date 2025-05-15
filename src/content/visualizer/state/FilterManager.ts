@@ -3,7 +3,7 @@
  * 负责管理筛选器配置和状态，以及应用筛选器逻辑
  */
 import { Logger } from '../../../lib/utils/logger.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 import { 
   FilterConfig, 
   FilterStates, 
@@ -41,14 +41,14 @@ export class FilterManager {
     this.visualizer = visualizer;
     this.dataProcessor = dataProcessor;
     this.uiManager = uiManager;
-    logger.log(i18n('filter_manager_init', '筛选器管理器初始化'));
+    logger.log(_('filter_manager_init', '筛选器管理器初始化'));
   }
   
   /**
    * 初始化筛选器
    */
   initialize(): void {
-    logger.log(i18n('filter_init_start', '初始化筛选器...'));
+    logger.log(_('filter_init_start', '初始化筛选器...'));
     
     // 可以从URL参数或其他来源加载筛选器配置
     this.loadFilterConfigFromUrl();
@@ -56,7 +56,7 @@ export class FilterManager {
     // 更新UI
     this.updateFilterUI();
     
-    logger.log(i18n('filter_init_complete', '筛选器初始化完成'));
+    logger.log(_('filter_init_complete', '筛选器初始化完成'));
   }
   
   /**
@@ -70,7 +70,7 @@ export class FilterManager {
       if (filterParam) {
         const filterValues = JSON.parse(filterParam);
         
-        logger.log(i18n('filter_load_from_url', '从URL加载筛选器配置: {0}'), filterValues);
+        logger.log(_('filter_load_from_url', '从URL加载筛选器配置: {0}'), filterValues);
         
         // 更新筛选器配置
         for (const config of this.filterConfigs) {
@@ -85,7 +85,7 @@ export class FilterManager {
         }
       }
     } catch (error) {
-      logger.warn(i18n('content_filter_url_load_failed', '从URL加载筛选器配置失败'), error);
+      logger.warn(_('content_filter_url_load_failed', '从URL加载筛选器配置失败'), error);
     }
   }
   
@@ -103,7 +103,7 @@ export class FilterManager {
    * @returns 筛选后的节点和边
    */
   applyFilters(allNodes: NavNode[], allEdges: NavLink[]): { nodes: NavNode[], edges: NavLink[] } {
-    logger.log(i18n('filter_applying', '应用筛选器: {0}'), this.filters);
+    logger.log(_('filter_applying', '应用筛选器: {0}'), this.filters);
     
     const result = this.dataProcessor.applyFilters(
       allNodes,
@@ -111,7 +111,7 @@ export class FilterManager {
       this.filters
     );
     
-    logger.log(i18n('filter_result_stats', '筛选后数据：节点 {0}/{1}，边 {2}/{3}'), result.nodes.length, allNodes.length, result.edges.length, allEdges.length);
+    logger.log(_('filter_result_stats', '筛选后数据：节点 {0}/{1}，边 {2}/{3}'), result.nodes.length, allNodes.length, result.edges.length, allEdges.length);
     
     return result;
   }
@@ -122,12 +122,12 @@ export class FilterManager {
    * @param value 新值
    */
   updateFilter(filterId: string, value: boolean): void {
-    logger.log(i18n('filter_update', '更新筛选器: {0} = {1}'), filterId, value);
+    logger.log(_('filter_update', '更新筛选器: {0} = {1}'), filterId, value);
     
     // 查找对应的筛选器配置
     const filter = this.filterConfigs.find(f => f.id === filterId);
     if (!filter) {
-      logger.warn(i18n('content_filter_unknown_id', '未知筛选器ID: {0}'), filterId);
+      logger.warn(_('content_filter_unknown_id', '未知筛选器ID: {0}'), filterId);
       return;
     }
     
@@ -150,7 +150,7 @@ export class FilterManager {
     // 查找对应的筛选器配置用于日志记录
     const config = this.filterConfigs.find((f) => f.id === filterId);
     if (config) {
-      logger.log(i18n('filter_changed', '筛选器 {0} ({1}) 已更改为 {2}'), filterId, config.property, checked);
+      logger.log(_('filter_changed', '筛选器 {0} ({1}) 已更改为 {2}'), filterId, config.property, checked);
     }
     
     // 触发可视化刷新
@@ -161,7 +161,7 @@ export class FilterManager {
    * 重置所有筛选器为默认值
    */
   resetFilters(): void {
-    logger.log(i18n('filter_reset_start', '重置所有筛选器...'));
+    logger.log(_('filter_reset_start', '重置所有筛选器...'));
     
     // 重置为初始配置
     this.filterConfigs = getInitialFilters();
@@ -172,7 +172,7 @@ export class FilterManager {
     // 触发可视化刷新
     this.visualizer.refreshVisualization(undefined, { restoreTransform: true });
     
-    logger.log(i18n('filter_reset_complete', '所有筛选器已重置为默认值'));
+    logger.log(_('filter_reset_complete', '所有筛选器已重置为默认值'));
   }
   
   /**
@@ -197,7 +197,7 @@ export class FilterManager {
    * 清理筛选器资源
    */
   cleanup(): void {
-    logger.log(i18n('filter_cleanup', '清理筛选器资源...'));
+    logger.log(_('filter_cleanup', '清理筛选器资源...'));
     // 目前没有需要清理的资源
   }
 }

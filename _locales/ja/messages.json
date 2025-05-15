@@ -687,10 +687,6 @@
     "message": "ナビゲーション マネージャーの初期化に失敗しました: {0}",
     "description": "导航管理器初始化失败错误"
   },
-  "navigation_manager_init_error": {
-    "message": "ナビゲーション マネージャーの初期化に失敗しました",
-    "description": "导航管理器初始化失败错误消息"
-  },
   "session_handler_context_failed": {
     "message": "メッセージコンテキストの作成に失敗しました",
     "description": "SessionMessageHandler 创建消息上下文失败日志"

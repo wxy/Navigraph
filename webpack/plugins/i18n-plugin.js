@@ -7,26 +7,28 @@ class I18nPlugin {
     // 默认选项
     this.options = {
       // 源代码目录
-      srcDir: "./",
+      srcDir: "../src",
       // 输出目录
-      outputDir: "dist/_locales",
+      outputDir: "../dist/_locales",
       // 临时目录
-      tempOutputDir: "_locales",
+      tempOutputDir: "../src/_locales",
       // 默认语言
       defaultLang: "zh_CN",
       // 源代码文件匹配模式 - 移除JS文件，只保留TS和HTML
       patterns: ["**/*.ts", "**/*.tsx", "**/*.html", "**/*.htm"],
       // 排除的文件或目录
       exclude: ["node_modules", "dist", "_locales"],
-      // 新增: 在开发模式下是否强制重新处理
-      forceProcessInDevMode: true,
       ...options,
     };
+    
+    this.options.srcDir = path.resolve(this.options.srcDir);
+    this.options.outputDir = path.resolve(this.options.outputDir);
+    this.options.tempOutputDir = path.resolve(this.options.tempOutputDir);
 
     // 从 manifest.json 读取默认语言
     if (!options.defaultLang) {
       try {
-        const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+        const manifest = JSON.parse(fs.readFileSync("./manifest.json", "utf8"));
         if (manifest.default_locale) {
           this.options.defaultLang = manifest.default_locale;
         }
@@ -49,9 +51,9 @@ class I18nPlugin {
     // 缓存已扫描的消息
     this.cachedMessages = null;
 
-    // 添加定时强制更新功能
-    this.lastForceUpdateTime = Date.now();
-    this.forceUpdateInterval = options.forceUpdateInterval || 60000; // 默认每分钟强制更新一次
+    // 定时强制更新功能
+    this.lastForceUpdateTime = 0;
+    this.forceUpdateInterval = 60000; // 每60秒强制更新一次
   }
 
   // 跟踪文件写入
@@ -88,7 +90,7 @@ class I18nPlugin {
 
       // 判断是否需要强制更新
       const shouldForceUpdate = (now - this.lastForceUpdateTime) >= this.forceUpdateInterval;
-
+      
       if (shouldForceUpdate) {
         console.log("\n定时强制更新本地化文件...");
         this.lastForceUpdateTime = now;
@@ -97,9 +99,9 @@ class I18nPlugin {
         return;
       }
 
-      // 仅首次运行强制处理
+      // 首次运行时强制处理
       if (this.isFirstWatchRun) {
-        console.log("\n首次运行，处理本地化文件...");
+        console.log("\n首次监视模式启动，处理本地化文件...");
         this.isFirstWatchRun = false;
         this.processSourceFiles();
         callback();
@@ -123,7 +125,7 @@ class I18nPlugin {
           // 使用glob进行匹配
           const matches = glob.sync(path.join(this.options.srcDir, pattern));
           const absolutePath = path.resolve(file);
-          return matches.some((match) => path.resolve(match) === absolutePath);
+          return matches.some(match => path.resolve(match) === absolutePath);
         });
 
         if (
@@ -218,45 +220,88 @@ class I18nPlugin {
   processTypeScriptFile(filePath, messages) {
     const content = fs.readFileSync(filePath, "utf8");
     const relativePath = path.relative(this.options.srcDir, filePath);
-
-    // 匹配 i18n('message_id', '默认消息') 格式
-    const i18nCallsRegex = /i18n\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/g;
-    let match;
     let count = 0;
 
-    while ((match = i18nCallsRegex.exec(content)) !== null) {
-      const messageId = match[1];
-      let defaultMessage = match[2];
+    // 匹配模式1: 标准格式 - i18n('id', '默认消息')
+    const standardRegex = /(i18n|_|_Error)\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]/g;
+    let match;
 
-      // 解析字符串字面量的转义字符，避免双重转义
+    while ((match = standardRegex.exec(content)) !== null) {
+      const funcName = match[1];   // 函数名 (i18n, _, _Error)
+      const messageId = match[2];  // 消息ID
+      let defaultMessage = match[3]; // 默认消息
+      
       try {
-        // 使用 JSON.parse 解析转义字符，但需要添加引号
         defaultMessage = JSON.parse(`"${defaultMessage.replace(/"/g, '\\"')}"`);
       } catch (e) {
-        // 如果解析失败，使用原始匹配值
         console.warn(`无法解析消息 "${messageId}" 的转义字符: ${e.message}`);
       }
-
+      
+      this.addMessage(messages, messageId, defaultMessage, funcName, relativePath);
       count++;
-
-      if (!messages[messageId]) {
-        messages[messageId] = {
-          message: defaultMessage,
-          description: `从TS提取: ${relativePath}`,
-          _sourceFiles: [relativePath],
-        };
-      } else {
-        // 已存在该消息ID，添加源文件
-        if (!messages[messageId]._sourceFiles) {
-          messages[messageId]._sourceFiles = [];
-        }
-        if (!messages[messageId]._sourceFiles.includes(relativePath)) {
-          messages[messageId]._sourceFiles.push(relativePath);
-        }
+    }
+    
+    // 匹配模式2: 简化格式 - 不带默认消息 _('id')
+    const simpleRegex = /(i18n|_|_Error)\(\s*['"]([^'"]+)['"]\s*\)/g;
+    while ((match = simpleRegex.exec(content)) !== null) {
+      // 避免重复匹配已处理的标准格式
+      // 检查前面的字符，确保这不是一个标准格式调用的一部分
+      const preChar = content.substring(match.index - 1, match.index);
+      if (preChar === ',' || preChar === '"' || preChar === "'") {
+        continue;  // 可能是标准格式的一部分，跳过
+      }
+      
+      const funcName = match[1];
+      const messageId = match[2];
+      const defaultMessage = messageId; // 使用ID作为默认消息
+      
+      this.addMessage(messages, messageId, defaultMessage, funcName, relativePath);
+      count++;
+    }
+    
+    // 匹配模式3: 带参数格式 - _('id', '默认消息 $1', param)
+    // 注意：这个正则表达式可能会与模式1有部分重叠，但会捕获更长的字符串
+    const withParamsRegex = /(i18n|_|_Error)\(\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"]\s*,.+?\)/g;
+    while ((match = withParamsRegex.exec(content)) !== null) {
+      const funcName = match[1];
+      const messageId = match[2];
+      let defaultMessage = match[3];
+      
+      try {
+        defaultMessage = JSON.parse(`"${defaultMessage.replace(/"/g, '\\"')}"`);
+      } catch (e) {
+        console.warn(`无法解析带参数消息 "${messageId}" 的转义字符: ${e.message}`);
+      }
+      
+      // 检查这条消息是否已经被前面的正则处理过
+      if (!messages[messageId] || !messages[messageId]._sourceFiles.includes(relativePath)) {
+        this.addMessage(messages, messageId, defaultMessage, funcName, relativePath);
+        count++;
       }
     }
 
     return count;
+  }
+
+  /**
+   * 辅助方法：添加消息到收集对象
+   */
+  addMessage(messages, messageId, defaultMessage, funcName, sourcePath) {
+    if (!messages[messageId]) {
+      messages[messageId] = {
+        message: defaultMessage,
+        description: `从TS提取 (${funcName}): ${sourcePath}`,
+        _sourceFiles: [sourcePath],
+      };
+    } else {
+      // 已存在该消息ID，添加源文件
+      if (!messages[messageId]._sourceFiles) {
+        messages[messageId]._sourceFiles = [];
+      }
+      if (!messages[messageId]._sourceFiles.includes(sourcePath)) {
+        messages[messageId]._sourceFiles.push(sourcePath);
+      }
+    }
   }
 
   /**
@@ -310,12 +355,11 @@ class I18nPlugin {
         let defaultMessage = elementMatch ? elementMatch[1].trim() : messageId;
 
         // 解析HTML中可能的字符实体
-        defaultMessage = defaultMessage
-          .replace(/&quot;/g, '"')
-          .replace(/&apos;/g, "'")
-          .replace(/&amp;/g, "&")
-          .replace(/&lt;/g, "<")
-          .replace(/&gt;/g, ">");
+        defaultMessage = defaultMessage.replace(/&quot;/g, '"')
+                                      .replace(/&apos;/g, "'")
+                                      .replace(/&amp;/g, '&')
+                                      .replace(/&lt;/g, '<')
+                                      .replace(/&gt;/g, '>');
 
         if (!messages[messageId]) {
           messages[messageId] = {
@@ -364,7 +408,7 @@ class I18nPlugin {
    * 处理manifest.json文件
    */
   processManifestFile(messages) {
-    const manifestPath = path.resolve("manifest.json");
+    const manifestPath = path.resolve("./manifest.json");
     if (!fs.existsSync(manifestPath)) {
       console.log("未找到manifest.json文件");
       return;
@@ -381,7 +425,7 @@ class I18nPlugin {
         this.options.defaultLang,
         "messages.json"
       );
-
+      
       let existingMessages = {};
       if (fs.existsSync(defaultLangPath)) {
         try {
@@ -425,14 +469,10 @@ class I18nPlugin {
 
         if (!messages[messageId]) {
           // 检查是否存在现有翻译，优先使用现有翻译
-          if (
-            existingMessages[messageId] &&
-            existingMessages[messageId].message
-          ) {
+          if (existingMessages[messageId] && existingMessages[messageId].message) {
             messages[messageId] = {
               message: existingMessages[messageId].message, // 使用现有翻译
-              description:
-                existingMessages[messageId].description || `用于manifest.json中`,
+              description: existingMessages[messageId].description || `用于manifest.json中`,
               _sourceFiles: [source],
             };
           } else {
@@ -456,12 +496,7 @@ class I18nPlugin {
       // 递归处理对象或数组
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          count += this.extractMessagesFromObject(
-            obj[key],
-            source,
-            messages,
-            existingMessages
-          );
+          count += this.extractMessagesFromObject(obj[key], source, messages, existingMessages);
         }
       }
     }
@@ -571,13 +606,9 @@ class I18nPlugin {
 
       Object.keys(updatedMessages).forEach((existingKey, index) => {
         // 尝试查找相关条目基于源文件的相似度
-        if (
-          extractedMessages[existingKey] &&
-          extractedMessages[existingKey]._sourceFiles
-        ) {
-          const sourcesForExisting =
-            extractedMessages[existingKey]._sourceFiles;
-
+        if (extractedMessages[existingKey] && extractedMessages[existingKey]._sourceFiles) {
+          const sourcesForExisting = extractedMessages[existingKey]._sourceFiles;
+          
           // 计算源文件重叠度
           let overlapScore = 0;
           sourcesForKey.forEach((source) => {
@@ -730,8 +761,7 @@ class I18nPlugin {
               existingMessages[key]._untranslated === false;
 
             // 检查该消息在默认语言中是否被更新
-            const wasUpdatedInDefault =
-              this.updatedMessageIds && this.updatedMessageIds.has(key);
+            const wasUpdatedInDefault = this.updatedMessageIds && this.updatedMessageIds.has(key);
 
             updatedMessages[key] = {
               message: existingMessages[key].message,
@@ -745,12 +775,13 @@ class I18nPlugin {
             if (wasUpdatedInDefault && wasTranslated) {
               updatedMessages[key]._untranslated = true;
               stats.markedUntranslated++;
-            }
+            } 
             // 处理其他情况
             else if (!wasTranslated) {
               updatedMessages[key]._untranslated = true;
               stats.keptUntranslated++;
-            } else {
+            }
+            else {
               stats.kept++;
               translatedCount++;
             }
@@ -799,31 +830,12 @@ class I18nPlugin {
           console.log(`✓ 已翻译: ${stats.kept}`);
           console.log(
             `⚠️ 未翻译: ${
-              stats.keptUntranslated +
-              stats.newUntranslated +
-              stats.markedUntranslated
+              stats.keptUntranslated + stats.newUntranslated + stats.markedUntranslated
             } (新增: ${stats.newUntranslated}, 已有: ${stats.keptUntranslated}, 需重新翻译: ${stats.markedUntranslated})`
           );
           console.log(`🗑️ 删除过时条目: ${stats.removed}`);
           console.log(`📊 翻译完成率: ${coverage}%`);
-
-          // 翻译提示
-          if (
-            stats.newUntranslated +
-              stats.keptUntranslated +
-              stats.markedUntranslated >
-            10
-          ) {
-            console.log(
-              `\n⚠️ ${lang}有${
-                stats.newUntranslated +
-                stats.keptUntranslated +
-                stats.markedUntranslated
-              }个未翻译条目，建议尽快完成翻译`
-            );
-          }
         }
-        console.log(`\n`); 
       });
     } catch (error) {
       console.error("处理其他语言文件时出错:", error.message);

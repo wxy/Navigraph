@@ -6,7 +6,7 @@ import { Logger } from '../../lib/utils/logger.js';
 import { IndexedDBStorage } from './indexed-db.js';
 import { NavigraphDBSchema } from './storage-schema.js';
 import { NavNode, NavLink, NavDataQueryOptions } from '../../types/session-types.js';
-import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('NavigationStorage');
 
@@ -66,10 +66,10 @@ export class NavigationStorage {
       await this.db.initialize();
       
       this.initialized = true;
-      logger.log(i18n('nav_storage_initialized', '导航存储已初始化'));
+      logger.log(_('nav_storage_initialized', '导航存储已初始化'));
     } catch (error) {
-      logger.error(i18n('nav_storage_init_failed', '初始化导航存储失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_init_failed', '初始化存储失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_init_failed', '初始化导航存储失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_init_failed', '初始化存储失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -91,10 +91,10 @@ export class NavigationStorage {
     
     try {
       await this.db.put(this.NODE_STORE, node);
-      logger.log(i18n('nav_storage_node_saved', '节点已保存: {0}'), node.id);
+      logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), node.id);
     } catch (error) {
-      logger.error(i18n('nav_storage_save_node_failed', '保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_save_node_failed', '保存节点失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_save_node_failed', '保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_save_node_failed', '保存节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -139,8 +139,8 @@ export class NavigationStorage {
       
       return nodes;
     } catch (error) {
-      logger.error(i18n('nav_storage_query_nodes_failed', '查询节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_query_nodes_failed', '查询节点失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_query_nodes_failed', '查询节点失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_query_nodes_failed', '查询节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -156,8 +156,8 @@ export class NavigationStorage {
       const node = await this.db.get<NavNode>(this.NODE_STORE, id);
       return node || null;
     } catch (error) {
-      logger.error(i18n('nav_storage_get_node_failed', '获取节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_get_node_failed', '获取节点失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_get_node_failed', '获取节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_get_node_failed', '获取节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -174,7 +174,7 @@ export class NavigationStorage {
       // 先获取现有节点
       const existingNode = await this.getNode(id);
       if (!existingNode) {
-        throw new Error(i18n('background_storage_node_not_found', '节点不存在: {0}', id));
+        throw new _Error('background_storage_node_not_found', '节点不存在: {0}', id);
       }
       
       // 合并更新
@@ -182,13 +182,10 @@ export class NavigationStorage {
       
       // 保存更新后的节点
       await this.db.put(this.NODE_STORE, updatedNode);
-      logger.log(i18n('nav_storage_node_updated', '节点已更新: {0}，会话 {1}'), id, updatedNode.sessionId);
+      logger.log(_('nav_storage_node_updated', '节点已更新: {0}，会话 {1}'), id, updatedNode.sessionId);
     } catch (error) {
-      if (error instanceof I18nError) {
-        throw error; // 重新抛出已经本地化的错误
-      }
-      logger.error(i18n('nav_storage_update_node_failed', '更新节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_update_node_failed', '更新节点失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_update_node_failed', '更新节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_update_node_failed', '更新节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -202,10 +199,10 @@ export class NavigationStorage {
     
     try {
       await this.db.delete(this.NODE_STORE, id);
-      logger.log(i18n('nav_storage_node_deleted', '节点已删除: {0}'), id);
+      logger.log(_('nav_storage_node_deleted', '节点已删除: {0}'), id);
       return true;
     } catch (error) {
-      logger.error(i18n('nav_storage_delete_node_failed', '删除节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
+      logger.error(_('nav_storage_delete_node_failed', '删除节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
       return false;
     }
   }
@@ -219,10 +216,10 @@ export class NavigationStorage {
     
     try {
       await this.db.put(this.EDGE_STORE, edge);
-      logger.log(i18n('nav_storage_edge_saved', '边已保存: {0} ({1} -> {2})'), edge.id, edge.source, edge.target);
+      logger.log(_('nav_storage_edge_saved', '边已保存: {0} ({1} -> {2})'), edge.id, edge.source, edge.target);
     } catch (error) {
-      logger.error(i18n('nav_storage_save_edge_failed', '保存边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_save_edge_failed', '保存边失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_save_edge_failed', '保存边失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_save_edge_failed', '保存边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -267,8 +264,8 @@ export class NavigationStorage {
       
       return edges;
     } catch (error) {
-      logger.error(i18n('nav_storage_query_edges_failed', '查询边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_query_edges_failed', '查询边失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_query_edges_failed', '查询边失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_query_edges_failed', '查询边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -284,8 +281,8 @@ export class NavigationStorage {
       const edge = await this.db.get<NavLink>(this.EDGE_STORE, id);
       return edge || null;
     } catch (error) {
-      logger.error(i18n('nav_storage_get_edge_failed', '获取边失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_get_edge_failed', '获取边失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_get_edge_failed', '获取边失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_get_edge_failed', '获取边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -301,10 +298,10 @@ export class NavigationStorage {
       for (const node of nodes) {
         await this.db.put(this.NODE_STORE, node);
       }
-      logger.log(i18n('nav_storage_nodes_batch_saved', '批量保存了 {0} 个节点'), nodes.length.toString());
+      logger.log(_('nav_storage_nodes_batch_saved', '批量保存了 {0} 个节点'), nodes.length.toString());
     } catch (error) {
-      logger.error(i18n('nav_storage_save_nodes_batch_failed', '批量保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_save_nodes_batch_failed', '批量保存节点失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_save_nodes_batch_failed', '批量保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_save_nodes_batch_failed', '批量保存节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -320,10 +317,10 @@ export class NavigationStorage {
       for (const edge of edges) {
         await this.db.put(this.EDGE_STORE, edge);
       }
-      logger.log(i18n('nav_storage_edges_batch_saved', '批量保存了 {0} 条边'), edges.length.toString());
+      logger.log(_('nav_storage_edges_batch_saved', '批量保存了 {0} 条边'), edges.length.toString());
     } catch (error) {
-      logger.error(i18n('nav_storage_save_edges_batch_failed', '批量保存边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_save_edges_batch_failed', '批量保存边失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_save_edges_batch_failed', '批量保存边失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_save_edges_batch_failed', '批量保存边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -362,15 +359,15 @@ export class NavigationStorage {
         }
       }
       
-      logger.log(i18n('nav_storage_session_graph_fetched', '已获取会话 {0} 的导航图谱: {1} 个节点, {2} 条边'), sessionId, nodes.length.toString(), edges.length.toString());
+      logger.log(_('nav_storage_session_graph_fetched', '已获取会话 {0} 的导航图谱: {1} 个节点, {2} 条边'), sessionId, nodes.length.toString(), edges.length.toString());
       
       return { 
         nodes,
         edges 
       };
     } catch (error) {
-      logger.error(i18n('nav_storage_fetch_session_graph_failed', '获取会话 {0} 的导航图谱失败: {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_fetch_session_graph_failed', '获取会话图谱失败: {0}', error instanceof Error ? error.message : String(error))
+      logger.error(_('nav_storage_fetch_session_graph_failed', '获取会话 {0} 的导航图谱失败: {1}'), sessionId, error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_fetch_session_graph_failed', '获取会话图谱失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -384,7 +381,7 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
-      logger.log(i18n('nav_storage_clearing_nodes_before', '清除{0}之前的所有导航节点...'), new Date(timestamp).toLocaleString());
+      logger.log(_('nav_storage_clearing_nodes_before', '清除{0}之前的所有导航节点...'), new Date(timestamp).toLocaleString());
       
       // 查询需要清除的节点
       const nodesToDelete = await this.queryNodes({
@@ -400,11 +397,11 @@ export class NavigationStorage {
         deleteCount++;
       }
       
-      logger.log(i18n('nav_storage_cleared_nodes', '已清除{0}个导航节点'), deleteCount.toString());
+      logger.log(_('nav_storage_cleared_nodes', '已清除{0}个导航节点'), deleteCount.toString());
       return deleteCount;
     } catch (error) {
-      logger.error(i18n('nav_storage_clear_nodes_failed', '清除导航节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_clear_nodes_failed', '清除导航节点失败: {0}', error instanceof Error ? error.message : String(error)));
+      logger.error(_('nav_storage_clear_nodes_failed', '清除导航节点失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_clear_nodes_failed', '清除导航节点失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -417,7 +414,7 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
-      logger.log(i18n('nav_storage_clearing_edges_before', '清除{0}之前的所有导航边...'), new Date(timestamp).toLocaleString());
+      logger.log(_('nav_storage_clearing_edges_before', '清除{0}之前的所有导航边...'), new Date(timestamp).toLocaleString());
       
       // 查询需要清除的边
       const edgesToDelete = await this.queryEdges({
@@ -433,11 +430,11 @@ export class NavigationStorage {
         deleteCount++;
       }
       
-      logger.log(i18n('nav_storage_cleared_edges', '已清除{0}条导航边'), deleteCount.toString());
+      logger.log(_('nav_storage_cleared_edges', '已清除{0}条导航边'), deleteCount.toString());
       return deleteCount;
     } catch (error) {
-      logger.error(i18n('nav_storage_clear_edges_failed', '清除导航边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_clear_edges_failed', '清除导航边失败: {0}', error instanceof Error ? error.message : String(error)));
+      logger.error(_('nav_storage_clear_edges_failed', '清除导航边失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_clear_edges_failed', '清除导航边失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -449,7 +446,7 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
-      logger.log(i18n('nav_storage_clearing_session', '正在清除会话 {0} 的导航数据...'), sessionId);
+      logger.log(_('nav_storage_clearing_session', '正在清除会话 {0} 的导航数据...'), sessionId);
       
       // 获取会话的所有节点
       const nodes = await this.queryNodes({ sessionId });
@@ -467,12 +464,12 @@ export class NavigationStorage {
         await this.db.delete(this.EDGE_STORE, edge.id);
       }
       
-      logger.log(i18n('nav_storage_cleared_session', '已清除会话 {0} 的导航数据: {1}个节点和{2}条边'), 
+      logger.log(_('nav_storage_cleared_session', '已清除会话 {0} 的导航数据: {1}个节点和{2}条边'), 
                 sessionId, nodes.length.toString(), edges.length.toString());
     } catch (error) {
-      logger.error(i18n('nav_storage_clear_session_failed', '清除会话 {0} 的导航数据失败: {1}'), 
+      logger.error(_('nav_storage_clear_session_failed', '清除会话 {0} 的导航数据失败: {1}'), 
                   sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_clear_session_failed', 
+      throw new Error(_('background_storage_clear_session_failed', 
                           '清除会话导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
@@ -484,7 +481,7 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
-      logger.log(i18n('nav_storage_clearing_all', '正在清除所有导航数据...'));
+      logger.log(_('nav_storage_clearing_all', '正在清除所有导航数据...'));
       
       // 清除所有节点
       await this.db.clear(this.NODE_STORE);
@@ -492,10 +489,10 @@ export class NavigationStorage {
       // 清除所有边
       await this.db.clear(this.EDGE_STORE);
       
-      logger.log(i18n('nav_storage_cleared_all', '已清除所有导航数据'));
+      logger.log(_('nav_storage_cleared_all', '已清除所有导航数据'));
     } catch (error) {
-      logger.error(i18n('nav_storage_clear_failed', '清除导航数据失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(i18n('background_storage_clear_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+      logger.error(_('nav_storage_clear_failed', '清除导航数据失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('background_storage_clear_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 }

@@ -3,7 +3,7 @@
  * 负责管理导航节点和边的数据模型，处理节点间关系，并提供统一的访问接口
  */
 import { Logger } from '../../lib/utils/logger.js';
-import { i18n } from '../../lib/utils/i18n-utils.js'; // 保留i18n导入用于UI文本
+import { _, _Error } from '../../lib/utils/i18n.js'; // 保留i18n导入用于UI文本
 import type { BrowsingSession, NavNode, NavLink } from '../../types/session-types.js';
 import type { NodeMetadata } from '../types/navigation.js';
 import { UrlUtils } from '../../lib/utils/url-utils.js';
@@ -44,21 +44,21 @@ export class NodeManager {
     const hasEdges = session.edges && Object.keys(session.edges).length > 0;
     
     if (!hasRecords && !hasEdges) {
-      logger.log(i18n('session_no_data_skip_processing', '会话不包含节点或边数据，跳过处理'));
+      logger.log(_('session_no_data_skip_processing', '会话不包含节点或边数据，跳过处理'));
       this.resetData();
       return;
     }
     
-    logger.groupCollapsed(i18n('session_data_processing_start', '开始处理会话数据...'));
+    logger.groupCollapsed(_('session_data_processing_start', '开始处理会话数据...'));
     
     try {
       this.processRecordsToNodes(session);
       this.processRelationships();
       this.processEdges(session);
       
-      logger.log(i18n('session_data_processing_complete', '会话数据处理完成，节点: {0}, 边: {1}'), this.nodes.length, this.edges.length);
+      logger.log(_('session_data_processing_complete', '会话数据处理完成，节点: {0}, 边: {1}'), this.nodes.length, this.edges.length);
     } catch (error) {
-      logger.error(i18n('session_data_processing_failed', '处理会话数据失败: {0}'), error);
+      logger.error(_('session_data_processing_failed', '处理会话数据失败: {0}'), error);
       this.resetData();
     }
     logger.groupEnd();
@@ -72,7 +72,7 @@ export class NodeManager {
     const records = session.records || {};
     const recordIds = Object.keys(records);
     
-    logger.log(i18n('processing_records', '处理{0}条记录'), recordIds.length);
+    logger.log(_('processing_records', '处理{0}条记录'), recordIds.length);
     
     // 转换为节点数组
     this.nodes = recordIds.map(id => this.processNavNode(records[id]));
@@ -120,7 +120,7 @@ export class NodeManager {
     const edgeMap = session.edges || {};
     const edgeIds = Object.keys(edgeMap);
     
-    logger.log(i18n('processing_edges', '处理{0}条边'), edgeIds.length);
+    logger.log(_('processing_edges', '处理{0}条边'), edgeIds.length);
     
     // 转换为边数组
     this.edges = edgeIds.map(id => ({
@@ -148,7 +148,7 @@ export class NodeManager {
    * 重建父子关系
    */
   private rebuildParentChildRelationships(): void {
-    logger.log(i18n('rebuild_parent_child_relationships_start', '开始重建父子关系...'));
+    logger.log(_('rebuild_parent_child_relationships_start', '开始重建父子关系...'));
     
     // 创建节点ID映射，便于快速查找
     const nodesById = this.createNodeIdMap();
@@ -162,7 +162,7 @@ export class NodeManager {
     // 重新构建子节点引用
     this.buildChildReferences(nodesById);
     
-    logger.log(i18n('parent_child_relationships_rebuilt', '父子关系重建完成: {0}/{1} 节点有父节点'), assignedCount, this.nodes.length);
+    logger.log(_('parent_child_relationships_rebuilt', '父子关系重建完成: {0}/{1} 节点有父节点'), assignedCount, this.nodes.length);
   }
   
   /**
@@ -226,7 +226,7 @@ export class NodeManager {
       
       // 自循环检测 - 将自引用修正为根节点
       if (node.parentId === node.id) {
-        logger.log(i18n('node_self_reference_fixed', '节点 {0} 是自循环，修正为根节点'), node.id);
+        logger.log(_('node_self_reference_fixed', '节点 {0} 是自循环，修正为根节点'), node.id);
         node.parentId = '';
         return;
       }
@@ -364,7 +364,7 @@ export class NodeManager {
         this.calculateChildDepths(rootNode, 1);
       });
     } catch (error) {
-      logger.error(i18n('content_calculate_node_depth_failed', '计算节点深度失败'), error);
+      logger.error(_('content_calculate_node_depth_failed', '计算节点深度失败'), error);
       this.setDefaultDepths();
     }
   }
@@ -380,7 +380,7 @@ export class NodeManager {
    * 设置默认深度值
    */
   private setDefaultDepths(): void {
-    logger.log(i18n('content_no_root_nodes_found', '没有找到根节点，设置所有节点深度为0'));
+    logger.log(_('content_no_root_nodes_found', '没有找到根节点，设置所有节点深度为0'));
     this.nodes.forEach(node => {
       node.depth = 0;
     });
@@ -424,7 +424,7 @@ export class NodeManager {
         this.nodeMap.set(node.id, node);
       });
     }
-    logger.log(i18n('node_map_built', '已建立{0}个节点的索引'), this.nodeMap.size);
+    logger.log(_('node_map_built', '已建立{0}个节点的索引'), this.nodeMap.size);
   }
   
   /**
@@ -438,7 +438,7 @@ export class NodeManager {
     const newEdges = this.createMissingEdges(existingEdgeMap);
     
     if (newEdges.length > 0) {
-      logger.log(i18n('generated_edges_added', '添加了{0}条生成的边'), newEdges.length);
+      logger.log(_('generated_edges_added', '添加了{0}条生成的边'), newEdges.length);
       this.edges = [...this.edges, ...newEdges];
     }
   }

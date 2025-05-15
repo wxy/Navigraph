@@ -1,5 +1,5 @@
 import { Logger } from "../../../lib/utils/logger.js";
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 import type { Visualizer } from "../../types/navigation.js";
 
 const logger = new Logger("StatusBar");
@@ -23,13 +23,13 @@ export class StatusBar {
     this.statusBarElement = document.querySelector(".windows-status-bar");
 
     if (!this.statusBarElement) {
-      logger.warn(i18n('status_bar_element_not_found', '状态栏元素未找到'));
+      logger.warn(_('status_bar_element_not_found', '状态栏元素未找到'));
       return;
     }
 
     // 不需要修改 HTML 结构，因为元素已经存在
     // 仅需记录初始化成功
-    logger.log(i18n('status_bar_initialized', '状态栏已初始化'));
+    logger.log(_('status_bar_initialized', '状态栏已初始化'));
   }
 
   /**
@@ -39,7 +39,7 @@ export class StatusBar {
     if (!this.statusBarElement) return;
 
     // 在处理前添加更详细的日志，帮助定位问题
-    logger.debug(i18n('status_bar_update_start', '开始更新状态栏'));
+    logger.debug(_('status_bar_update_start', '开始更新状态栏'));
 
     try {
       // 获取当前状态数据 - 使用可视化器的属性
@@ -53,7 +53,7 @@ export class StatusBar {
       const allNodesCount = visualizer.allNodes?.length || 0;
 
       // 打印详细日志以帮助诊断问题
-      logger.debug(i18n('status_bar_data_retrieved', '状态栏数据获取: {0}'), {
+      logger.debug(_('status_bar_data_retrieved', '状态栏数据获取: {0}'), {
         session: currentSession ? "retrieved" : "not_retrieved",
         nodeCount,
         edgeCount,
@@ -64,14 +64,14 @@ export class StatusBar {
       // 更新节点计数
       const nodeCountElement = document.getElementById("status-nodes");
       if (nodeCountElement) {
-        nodeCountElement.textContent = i18n('content_nodes_count', '节点: {0}', nodeCount.toString());
+        nodeCountElement.textContent = _('content_nodes_count', '节点: {0}', nodeCount.toString());
       }
 
       // 更新已过滤节点计数
       const filteredElement = document.getElementById("status-filtered");
       if (filteredElement) {
         const filteredCount = Math.max(0, allNodesCount - nodeCount);
-        filteredElement.textContent = i18n('content_hidden_count', '已隐藏: {0}', filteredCount.toString());
+        filteredElement.textContent = _('content_hidden_count', '已隐藏: {0}', filteredCount.toString());
       }
 
       // 更新会话日期
@@ -81,7 +81,7 @@ export class StatusBar {
         const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1)
           .toString()
           .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
-        dateElement.textContent = i18n('content_session_date_label', '日期: {0}', formattedDate);
+        dateElement.textContent = _('content_session_date_label', '日期: {0}', formattedDate);
       }
 
       // 更新会话时长
@@ -96,17 +96,17 @@ export class StatusBar {
         // 格式化时长
         const durationText = this.formatDuration(durationMs);
         
-        durationElement.textContent = i18n('content_session_duration_label', '时长: {0}', durationText);
+        durationElement.textContent = _('content_session_duration_label', '时长: {0}', durationText);
       }
 
       // 更新视图类型
       const viewElement = document.getElementById("status-view");
       if (viewElement) {
         const viewTypeName = currentView === "tree" ? 
-          i18n('content_view_tree', '树形图') : 
-          i18n('content_view_timeline', '时间线');
+          _('content_view_tree', '树形图') : 
+          _('content_view_timeline', '时间线');
         
-        viewElement.textContent = i18n('content_view_label', '视图: {0}', viewTypeName);
+        viewElement.textContent = _('content_view_label', '视图: {0}', viewTypeName);
       }
       
       // 缩放信息更新
@@ -114,11 +114,11 @@ export class StatusBar {
       if (zoomElement) {
         // 尝试从可视化器获取当前缩放级别
         const zoom = visualizer.currentTransform?.k || 1;
-        zoomElement.textContent = i18n('content_zoom_label', '缩放: {0}%', (100 * zoom).toFixed(0));
+        zoomElement.textContent = _('content_zoom_label', '缩放: {0}%', (100 * zoom).toFixed(0));
       }
-      logger.debug(i18n('status_bar_update_complete', '状态栏更新完成'));
+      logger.debug(_('status_bar_update_complete', '状态栏更新完成'));
     } catch (error) {
-      logger.error(i18n('status_bar_update_failed', '状态栏更新过程中出错: {0}'), error);
+      logger.error(_('status_bar_update_failed', '状态栏更新过程中出错: {0}'), error);
     }
   }
 
@@ -128,7 +128,7 @@ export class StatusBar {
   public handleResize(width: number, height: number): void {
     if (!this.statusBarElement) return;
 
-    logger.log(i18n('status_bar_handle_resize', '状态栏处理大小变化: {0}x{1}'), `${width}`, `${height}`);
+    logger.log(_('status_bar_handle_resize', '状态栏处理大小变化: {0}x{1}'), `${width}`, `${height}`);
 
     // 调整状态栏宽度与容器一致
     this.statusBarElement.style.width = `${width}px`;
@@ -156,7 +156,7 @@ export class StatusBar {
 
   private formatDuration(ms: number): string {
     if (!ms || ms <= 0) {
-      return i18n('content_duration_zero_minutes', '0 分钟');
+      return _('content_duration_zero_minutes', '0 分钟');
     }
     
     const seconds = Math.floor(ms / 1000);
@@ -164,9 +164,9 @@ export class StatusBar {
     const hours = Math.floor(minutes / 60);
     
     if (hours > 0) {
-      return i18n('content_duration_hours', '{0} 小时', String(hours));
+      return _('content_duration_hours', '{0} 小时', String(hours));
     } else {
-      return i18n('content_duration_minutes', '{0} 分钟', String(minutes));
+      return _('content_duration_minutes', '{0} 分钟', String(minutes));
     }
   }
 }

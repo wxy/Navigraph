@@ -4,7 +4,7 @@
  */
 import { Logger } from '../../lib/utils/logger.js';
 import { SessionEvent, SessionEventType } from '../../types/session-types.js';
-import { i18n } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('SessionEventEmitter');
 /**
@@ -32,7 +32,7 @@ export class SessionEventEmitter {
     
     this.listeners.get(eventType)!.add(listener);
     
-    logger.log(i18n('session_event_listener_added', '添加了 {0} 事件的监听器，当前共 {1} 个'), eventType, this.listeners.get(eventType)!.size.toString());
+    logger.log(_('session_event_listener_added', '添加了 {0} 事件的监听器，当前共 {1} 个'), eventType, this.listeners.get(eventType)!.size.toString());
   }
   
   /**
@@ -48,7 +48,7 @@ export class SessionEventEmitter {
     const listeners = this.listeners.get(eventType)!;
     listeners.delete(listener);
     
-    logger.log(i18n('session_event_listener_removed', '移除了 {0} 事件的监听器，剩余 {1} 个'), eventType, listeners.size.toString());
+    logger.log(_('session_event_listener_removed', '移除了 {0} 事件的监听器，剩余 {1} 个'), eventType, listeners.size.toString());
     
     // 如果没有监听器了，删除这个事件类型的集合
     if (listeners.size === 0) {
@@ -76,13 +76,13 @@ export class SessionEventEmitter {
     
     // 同步调用所有监听器
     const listeners = this.listeners.get(eventType)!;
-    logger.log(i18n('session_event_emitted', '触发 {0} 事件，通知 {1} 个监听器'), eventType, listeners.size.toString());
+    logger.log(_('session_event_emitted', '触发 {0} 事件，通知 {1} 个监听器'), eventType, listeners.size.toString());
     
     listeners.forEach(listener => {
       try {
         listener(event);
       } catch (error) {
-        logger.error(i18n('session_event_listener_error', '会话事件监听器执行出错: {0}'), 
+        logger.error(_('session_event_listener_error', '会话事件监听器执行出错: {0}'), 
           error instanceof Error ? error.message : String(error));
       }
     });
@@ -93,7 +93,7 @@ export class SessionEventEmitter {
    */
   public clearAllListeners(): void {
     this.listeners.clear();
-    logger.log(i18n('session_event_all_listeners_cleared', '已清除所有会话事件监听器'));
+    logger.log(_('session_event_all_listeners_cleared', '已清除所有会话事件监听器'));
   }
   
   /**

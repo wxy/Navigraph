@@ -4,7 +4,7 @@ import { sendToBackground } from '../../lib/messaging/sender.js';
 import { createMessageContext } from '../../lib/messaging/handlers.js';
 // 导入现有的类型定义
 import { MessageHandler, BaseMessage, BaseResponse } from '../../types/messages/common.js';
-import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('ContentMessageService');
 
@@ -38,7 +38,7 @@ export class ContentMessageService extends BaseMessageService<"content"> {
   protected initialize(): void {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
-    logger.log(i18n('content_message_service_initialized', '内容脚本消息服务已初始化'));
+    logger.log(_('content_message_service_initialized', '内容脚本消息服务已初始化'));
   }
 
   /**
@@ -52,7 +52,7 @@ export class ContentMessageService extends BaseMessageService<"content"> {
     // 这里应该是调用基类的方法，如果基类提供了的话
     // @ts-ignore - 屏蔽类型检查错误（如有必要）
     super.registerHandler(type, handler);
-    logger.debug(i18n('content_message_handler_registered', '已注册消息处理程序: {0}'), type);
+    logger.debug(_('content_message_handler_registered', '已注册消息处理程序: {0}'), type);
   }
 
   /**
@@ -65,7 +65,7 @@ export class ContentMessageService extends BaseMessageService<"content"> {
     // 这里应该是调用基类的方法，如果基类提供了的话
     // @ts-ignore - 屏蔽类型检查错误（如有必要）
     super.unregisterHandler(type, handler);
-    logger.debug(i18n('content_message_handler_unregistered', '已注销消息处理程序: {0}'), type);
+    logger.debug(_('content_message_handler_unregistered', '已注销消息处理程序: {0}'), type);
   }
 }
 
@@ -81,7 +81,7 @@ export function getContentMessageService(): ContentMessageService {
  */
 export function setupMessageService(): ContentMessageService {
   const instance = getContentMessageService();
-  logger.log(i18n('content_message_service_setup', '内容脚本消息服务已设置'));
+  logger.log(_('content_message_service_setup', '内容脚本消息服务已设置'));
   return instance;
 }
 

@@ -1,6 +1,6 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import { TabState, TabEventType, TabEventListener } from '../types/tab.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 
 const logger = new Logger('TabStateManager');
 
@@ -37,7 +37,7 @@ export class TabStateManager {
    */
   constructor(historyLimit: number = 50) {
     this.historyLimit = historyLimit;
-    logger.log(i18n('tab_state_manager_initialized', '标签页状态管理器初始化完成'));
+    logger.log(_('tab_state_manager_initialized', '标签页状态管理器初始化完成'));
   }
   
   /**
@@ -50,7 +50,7 @@ export class TabStateManager {
     const newState = { ...existingState, ...state };
     this.tabStates.set(tabId, newState);
     
-    logger.log(i18n('tab_state_manager_state_added', '添加标签页 {0} 状态'), tabId.toString());
+    logger.log(_('tab_state_manager_state_added', '添加标签页 {0} 状态'), tabId.toString());
     
     // 触发事件
     this.notifyListeners(tabId, TabEventType.STATE_CHANGED, newState);
@@ -66,7 +66,7 @@ export class TabStateManager {
     if (state) {
       Object.assign(state, updates);
       
-      logger.log(i18n('tab_state_manager_state_changed', '标签页 {0} 状态已更新'), tabId.toString());
+      logger.log(_('tab_state_manager_state_changed', '标签页 {0} 状态已更新'), tabId.toString());
       
       // 触发事件
       this.notifyListeners(tabId, TabEventType.STATE_CHANGED, state);
@@ -95,7 +95,7 @@ export class TabStateManager {
     
     history.push(nodeId);
     
-    logger.log(i18n('tab_state_manager_node_added', '标签页 {0} 添加节点: {1}'), tabId.toString(), nodeId);
+    logger.log(_('tab_state_manager_node_added', '标签页 {0} 添加节点: {1}'), tabId.toString(), nodeId);
 
     // 限制历史记录长度
     if (history.length > this.historyLimit) {
@@ -113,7 +113,7 @@ export class TabStateManager {
   markTabRemoved(tabId: number): void {
     this.removedTabs.add(tabId);
     
-    logger.log(i18n('tab_state_manager_tab_removed', '标签页 {0} 已标记为移除'), tabId.toString());
+    logger.log(_('tab_state_manager_tab_removed', '标签页 {0} 已标记为移除'), tabId.toString());
     
     // 清理相关数据
     this.tabStates.delete(tabId);
@@ -131,7 +131,7 @@ export class TabStateManager {
    */
   setTabActiveTime(tabId: number, time: number): void {
     this.tabActiveTimes.set(tabId, time);
-    logger.log(i18n('tab_state_manager_tab_active_time_set', '设置标签页 {0} 激活时间: {1}'), tabId.toString(), time.toString());
+    logger.log(_('tab_state_manager_tab_active_time_set', '设置标签页 {0} 激活时间: {1}'), tabId.toString(), time.toString());
   }
   
   /**
@@ -154,7 +154,7 @@ export class TabStateManager {
   getTabState(tabId: number): TabState | undefined {
     const state = this.tabStates.get(tabId);
     if (!state) {
-      logger.warn(i18n('tab_state_manager_tab_not_found', '找不到标签页 {0} 的状态'), tabId.toString());
+      logger.warn(_('tab_state_manager_tab_not_found', '找不到标签页 {0} 的状态'), tabId.toString());
     }
     return state;
   }
@@ -175,7 +175,7 @@ export class TabStateManager {
   getTabHistory(tabId: number): string[] {
     const history = this.tabNavigationHistory.get(tabId) || [];
     if (history.length === 0) {
-      logger.debug(i18n('tab_state_manager_no_history', '标签页 {0} 没有导航历史'), tabId.toString());
+      logger.debug(_('tab_state_manager_no_history', '标签页 {0} 没有导航历史'), tabId.toString());
     }
     return history;
   }
@@ -226,7 +226,7 @@ export class TabStateManager {
     this.removedTabs.clear();
     this.tabActiveTimes.clear();
     
-    logger.log(i18n('tab_state_manager_reset', '标签页状态管理器已重置'));
+    logger.log(_('tab_state_manager_reset', '标签页状态管理器已重置'));
   }
   
   /**
@@ -235,7 +235,7 @@ export class TabStateManager {
    */
   addEventListener(listener: TabEventListener): void {
     this.eventListeners.push(listener);
-    logger.log(i18n('tab_state_manager_event_listener_added', '添加了标签页事件监听器'));
+    logger.log(_('tab_state_manager_event_listener_added', '添加了标签页事件监听器'));
   }
   
   /**
@@ -246,7 +246,7 @@ export class TabStateManager {
     const index = this.eventListeners.indexOf(listener);
     if (index !== -1) {
       this.eventListeners.splice(index, 1);
-      logger.log(i18n('tab_state_manager_event_listener_removed', '移除了标签页事件监听器'));
+      logger.log(_('tab_state_manager_event_listener_removed', '移除了标签页事件监听器'));
     }
   }
   
@@ -261,7 +261,7 @@ export class TabStateManager {
       try {
         listener(tabId, eventType, data);
       } catch (error) {
-        logger.error(i18n('tab_state_manager_event_listener_error', '事件监听器错误: {0}'), error instanceof Error ? error.message : String(error));
+        logger.error(_('tab_state_manager_event_listener_error', '事件监听器错误: {0}'), error instanceof Error ? error.message : String(error));
       }
     }
   }

@@ -1,5 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
-import { i18n, I18nError } from '../../../lib/utils/i18n-utils.js'; // 新增 I18nError
+import { _, _Error } from '../../../lib/utils/i18n.js'; // 新增 I18nError
 import type { Visualizer, NavNode, NavLink } from '../../types/navigation.js';
 import { StatusBar } from './StatusBar.js';
 import { NodeDetails } from './NodeDetails.js';
@@ -49,7 +49,7 @@ export class UIManager {
     // 只创建控制面板，不再传入子组件
     this.controlPanel = new ControlPanel(visualizer);
 
-    logger.log(i18n('ui_manager_created', 'UI管理器已创建'));
+    logger.log(_('ui_manager_created', 'UI管理器已创建'));
   }
 
   /**
@@ -61,7 +61,7 @@ export class UIManager {
     container: HTMLElement;
     svg: SVGElement | null;
   } {
-    logger.log(i18n('ui_manager_init', '初始化UI管理器'));
+    logger.log(_('ui_manager_init', '初始化UI管理器'));
 
     // 如果没有提供容器，创建一个
     if (!container) {
@@ -79,7 +79,7 @@ export class UIManager {
     // 初始化各个UI组件
     this.initializeComponents();
 
-    logger.log(i18n('ui_manager_init_complete', 'UI管理器初始化完成'));
+    logger.log(_('ui_manager_init_complete', 'UI管理器初始化完成'));
 
     // 返回容器和SVG元素
     return { container, svg };
@@ -90,14 +90,14 @@ export class UIManager {
    * @returns 可视化容器元素
    */
   private createVisualizationContainer(): HTMLElement {
-    logger.log(i18n('ui_manager_create_container', '创建/查找可视化容器'));
+    logger.log(_('ui_manager_create_container', '创建/查找可视化容器'));
 
     // 首先尝试查找现有容器
     let container = document.getElementById("visualization-container");
 
     // 如果找不到，创建新容器
     if (!container) {
-      logger.warn(i18n('ui_manager_container_not_found', '未找到可视化容器，创建新容器'));
+      logger.warn(_('ui_manager_container_not_found', '未找到可视化容器，创建新容器'));
       container = document.createElement("div");
       container.id = "visualization-container";
       container.className = "visualization-container";
@@ -125,7 +125,7 @@ export class UIManager {
    * @returns 主视图容器元素
    */
   private createMainViewContainer(parentContainer: HTMLElement): HTMLElement {
-    logger.log(i18n('ui_manager_create_main_view', '创建主视图容器'));
+    logger.log(_('ui_manager_create_main_view', '创建主视图容器'));
 
     // 创建主视图容器
     const mainViewContainer = document.createElement("div");
@@ -148,11 +148,11 @@ export class UIManager {
     const targetContainer = container || this.mainViewContainer;
 
     if (!targetContainer) {
-      logger.error(i18n('ui_manager_svg_no_container', '无法创建SVG：目标容器不存在'));
+      logger.error(_('ui_manager_svg_no_container', '无法创建SVG：目标容器不存在'));
       return null;
     }
 
-    logger.log(i18n('ui_manager_create_svg', '创建SVG元素'));
+    logger.log(_('ui_manager_create_svg', '创建SVG元素'));
 
     // 如果容器中已经存在SVG元素，先移除它
     const existingSvg = targetContainer.querySelector("svg");
@@ -182,7 +182,7 @@ export class UIManager {
    * 初始化所有UI组件
    */
   private initializeComponents(): void {
-    logger.groupCollapsed(i18n('ui_manager_init_components', '初始化UI组件'));
+    logger.groupCollapsed(_('ui_manager_init_components', '初始化UI组件'));
     
     // 初始化顶层组件
     this.statusBar.initialize();
@@ -195,7 +195,7 @@ export class UIManager {
       this.controlPanel.initialize(this.containerElement);
       // 不再直接初始化子组件
     } else {
-      logger.warn(i18n('ui_manager_no_container_for_control_panel', '容器元素不存在，控制面板无法初始化'));
+      logger.warn(_('ui_manager_no_container_for_control_panel', '容器元素不存在，控制面板无法初始化'));
     }
 
     logger.groupEnd();
@@ -250,7 +250,7 @@ export class UIManager {
     } else {
       // 降级处理，如果没有详细错误方法
       this.errorNotification.show(`${titleId}: ${messageId}`, 0);
-      logger.error(i18n('ui_manager_detailed_error_fallback', '详细错误: {0} {1}'), `${titleId}: ${messageId}`, stack);
+      logger.error(_('ui_manager_detailed_error_fallback', '详细错误: {0} {1}'), `${titleId}: ${messageId}`, stack);
     }
   }
 
@@ -304,7 +304,7 @@ export class UIManager {
       height = rect.height;
     }
 
-    logger.log(i18n('ui_manager_handle_resize', 'UI管理器处理大小变化: {0}x{1}'), `${width}`, `${height}`);
+    logger.log(_('ui_manager_handle_resize', 'UI管理器处理大小变化: {0}x{1}'), `${width}`, `${height}`);
 
     // 通知各个需要响应大小变化的组件
     if (typeof this.controlPanel.handleResize === "function") {
@@ -331,9 +331,9 @@ export class UIManager {
     // 委托给控制面板组件处理
     if (this.controlPanel && typeof this.controlPanel.hide === "function") {
       this.controlPanel.hide();
-      logger.log(i18n('ui_manager_control_panel_hidden', '已隐藏控制面板'));
+      logger.log(_('ui_manager_control_panel_hidden', '已隐藏控制面板'));
     } else {
-      logger.warn(i18n('ui_manager_cannot_hide_control_panel', '无法隐藏控制面板：组件不可用或没有hide方法'));
+      logger.warn(_('ui_manager_cannot_hide_control_panel', '无法隐藏控制面板：组件不可用或没有hide方法'));
     }
   }
 
@@ -343,9 +343,9 @@ export class UIManager {
   public showControlPanel(): void {
     if (this.controlPanel && typeof this.controlPanel.show === "function") {
       this.controlPanel.show();
-      logger.log(i18n('ui_manager_control_panel_shown', '已显示控制面板'));
+      logger.log(_('ui_manager_control_panel_shown', '已显示控制面板'));
     } else {
-      logger.warn(i18n('ui_manager_cannot_show_control_panel', '无法显示控制面板：组件不可用或没有show方法'));
+      logger.warn(_('ui_manager_cannot_show_control_panel', '无法显示控制面板：组件不可用或没有show方法'));
     }
   }
 
@@ -362,7 +362,7 @@ export class UIManager {
    * @param svg SVG元素
    */
   public onSvgInitialized(svg: any): void {
-    logger.log(i18n('ui_manager_svg_initialized', 'SVG初始化完成通知已接收'));
+    logger.log(_('ui_manager_svg_initialized', 'SVG初始化完成通知已接收'));
     // 可以在这里执行任何需要在SVG初始化后进行的UI操作
   }
 
@@ -414,9 +414,9 @@ export class UIManager {
    * 清理UI资源
    */
   public dispose(): void {
-    logger.log(i18n('ui_manager_dispose_start', '清理UI管理器资源'));
+    logger.log(_('ui_manager_dispose_start', '清理UI管理器资源'));
     
     // 清理各组件资源
-    logger.log(i18n('ui_manager_dispose_complete', 'UI管理器资源已清理'));
+    logger.log(_('ui_manager_dispose_complete', 'UI管理器资源已清理'));
   }
 }

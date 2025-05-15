@@ -1,5 +1,5 @@
 import { Logger } from "../../../lib/utils/logger.js";
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 import type { Visualizer, NavNode } from "../../types/navigation.js";
 
 const logger = new Logger("NodeDetails");
@@ -32,7 +32,7 @@ export class NodeDetails {
     this.detailsContainer = null;
     this.panelVisible = false;
 
-    logger.log(i18n('node_details_initialized', '节点详情面板已初始化'));
+    logger.log(_('node_details_initialized', '节点详情面板已初始化'));
   }
 
   /**
@@ -40,7 +40,7 @@ export class NodeDetails {
    * @param node 要显示的节点
    */
   public show(node: NavNode): void {
-    logger.log(i18n('node_details_showing', '显示节点详情: {0}'), node);
+    logger.log(_('node_details_showing', '显示节点详情: {0}'), node);
 
     // 隐藏之前的面板
     this.hide();
@@ -76,7 +76,7 @@ export class NodeDetails {
 
     // 添加标题
     const title = document.createElement("h3");
-    title.textContent = node.title || i18n('content_unnamed_page', '无标题');
+    title.textContent = node.title || _('content_unnamed_page', '无标题');
     title.className = "node-details-title";
     this.detailsContainer.appendChild(title);
 
@@ -86,31 +86,31 @@ export class NodeDetails {
     table.className = "details-table";
 
     // 添加基本信息
-    if (node.url) this.addTableRow(table, i18n('content_url_label', 'URL'), this.formatUrl(node.url));
+    if (node.url) this.addTableRow(table, _('content_url_label', 'URL'), this.formatUrl(node.url));
     if (node.type)
-      this.addTableRow(table, i18n('content_type_label', '类型'), this.formatNavigationType(node.type));
+      this.addTableRow(table, _('content_type_label', '类型'), this.formatNavigationType(node.type));
     if (node.timestamp)
-      this.addTableRow(table, i18n('content_time_label', '时间'), this.formatTimestamp(node.timestamp));
+      this.addTableRow(table, _('content_time_label', '时间'), this.formatTimestamp(node.timestamp));
     this.addTableRow(
       table, 
-      i18n('content_status_label', '状态'), 
-      node.isClosed ? i18n('content_status_closed', '已关闭') : i18n('content_status_active', '活跃')
+      _('content_status_label', '状态'), 
+      node.isClosed ? _('content_status_closed', '已关闭') : _('content_status_active', '活跃')
     );
     if (this.visualizer.isTrackingPage(node))
-      this.addTableRow(table, i18n('content_tracking_page_label', '跟踪页面'), i18n('content_yes', '是'));
+      this.addTableRow(table, _('content_tracking_page_label', '跟踪页面'), _('content_yes', '是'));
       
     // 添加打开时长信息（如果有）
     if (node.visitDuration) {
-      this.addTableRow(table, i18n('content_duration_label', '时长'), this.formatDuration(node.visitDuration));
+      this.addTableRow(table, _('content_duration_label', '时长'), this.formatDuration(node.visitDuration));
     } else if (!node.isClosed && node.timestamp) {
       // 如果页面还打开着，计算从打开到现在的时间
       const duration = Date.now() - node.timestamp;
-      this.addTableRow(table, i18n('content_duration_label', '时长'), this.formatDuration(duration) + " ..." );
+      this.addTableRow(table, _('content_duration_label', '时长'), this.formatDuration(duration) + " ..." );
     }
     
     // 添加打开次数（如果有）
     if (node.visitCount) {
-      this.addTableRow(table, i18n('content_count_label', '次数'), node.visitCount.toString());
+      this.addTableRow(table, _('content_count_label', '次数'), node.visitCount.toString());
     }
 
     // 添加技术详情(可折叠)
@@ -122,17 +122,17 @@ export class NodeDetails {
     techDetails.className = "technical-details";
 
     const summary = document.createElement("summary");
-    summary.textContent = i18n('content_technical_details', '技术详情');
+    summary.textContent = _('content_technical_details', '技术详情');
     techDetails.appendChild(summary);
 
     const techTable = document.createElement("table");
     techTable.className = "tech-details-table";
 
     // 添加技术详情内容
-    if (node.tabId) this.addTableRow(techTable, i18n('content_tab_id_label', '标签ID'), node.tabId);
-    this.addTableRow(techTable, i18n('content_node_id_label', '节点ID'), node.id);
-    if (node.parentId) this.addTableRow(techTable, i18n('content_parent_id_label', '父节点ID'), node.parentId);
-    if (node.referrer) this.addTableRow(techTable, i18n('content_referrer_label', '引用来源'), node.referrer);
+    if (node.tabId) this.addTableRow(techTable, _('content_tab_id_label', '标签ID'), node.tabId);
+    this.addTableRow(techTable, _('content_node_id_label', '节点ID'), node.id);
+    if (node.parentId) this.addTableRow(techTable, _('content_parent_id_label', '父节点ID'), node.parentId);
+    if (node.referrer) this.addTableRow(techTable, _('content_referrer_label', '引用来源'), node.referrer);
 
     techDetails.appendChild(techTable);
     techDetailsCell.appendChild(techDetails);
@@ -154,7 +154,7 @@ export class NodeDetails {
     // 更新状态
     this.panelVisible = true;
 
-    logger.log(i18n('node_details_shown', '显示节点详情: {0}'), node.id);
+    logger.log(_('node_details_shown', '显示节点详情: {0}'), node.id);
   }
 
   /**
@@ -170,7 +170,7 @@ export class NodeDetails {
       this.panelVisible = false; // 使用正确的变量名
       this.currentNode = null;
 
-      logger.log(i18n('node_details_hidden', '隐藏节点详情面板'));
+      logger.log(_('node_details_hidden', '隐藏节点详情面板'));
     }
   }
 
@@ -195,7 +195,7 @@ export class NodeDetails {
     valueCell.style.maxWidth = "70%"; // 限制宽度防止表格被撑开
   
     // 对于URL，创建可点击链接
-    if (label === i18n('content_url_label', 'URL')) {
+    if (label === _('content_url_label', 'URL')) {
       const link = document.createElement("a");
       link.href = value;
       link.target = "_blank";
@@ -245,15 +245,15 @@ export class NodeDetails {
    */
   private formatNavigationType(type: string): string {
     const typeMap: Record<string, string> = {
-      initial: i18n('content_nav_type_initial', '外部打开'),
-      link_click: i18n('content_nav_type_link_click', '链接点击'),
-      address_bar: i18n('content_nav_type_address_bar', '地址栏输入'),
-      form_submit: i18n('content_nav_type_form_submit', '表单提交'),
-      history_back: i18n('content_nav_type_history_back', '历史后退'),
-      history_forward: i18n('content_nav_type_history_forward', '历史前进'),
-      reload: i18n('content_nav_type_reload', '页面刷新'),
-      javascript: i18n('content_nav_type_javascript', 'JavaScript导航'),
-      redirect: i18n('content_nav_type_redirect', '重定向'),
+      initial: _('content_nav_type_initial', '外部打开'),
+      link_click: _('content_nav_type_link_click', '链接点击'),
+      address_bar: _('content_nav_type_address_bar', '地址栏输入'),
+      form_submit: _('content_nav_type_form_submit', '表单提交'),
+      history_back: _('content_nav_type_history_back', '历史后退'),
+      history_forward: _('content_nav_type_history_forward', '历史前进'),
+      reload: _('content_nav_type_reload', '页面刷新'),
+      javascript: _('content_nav_type_javascript', 'JavaScript导航'),
+      redirect: _('content_nav_type_redirect', '重定向'),
     };
   
     return typeMap[type] || type;
@@ -271,7 +271,7 @@ export class NodeDetails {
    * 格式化时长（毫秒转为人类可读格式）
    */
   private formatDuration(ms: number): string {
-    if (ms < 1000) return `${ms}${i18n('content_unit_millisecond', '毫秒')}`;
+    if (ms < 1000) return `${ms}${_('content_unit_millisecond', '毫秒')}`;
     
     const seconds = Math.floor(ms / 1000) % 60;
     const minutes = Math.floor(ms / (1000 * 60)) % 60;
@@ -281,18 +281,18 @@ export class NodeDetails {
     let result = '';
     
     if (days > 0) {
-      result += days + i18n('content_unit_day', '天');
+      result += days + _('content_unit_day', '天');
     }
     
     if (hours > 0 || days > 0) {
-      result += hours + i18n('content_unit_hour', '小时');
+      result += hours + _('content_unit_hour', '小时');
     }
     
     if (minutes > 0 || hours > 0 || days > 0) {
-      result += minutes + i18n('content_unit_minute', '分钟');
+      result += minutes + _('content_unit_minute', '分钟');
     }
     
-    result += seconds + i18n('content_unit_second', '秒');
+    result += seconds + _('content_unit_second', '秒');
     
     return result;
   }
@@ -316,13 +316,13 @@ export class NodeDetails {
       (targetElement.querySelector(".node-details-titlebar") as HTMLElement);
     if (!handle) {
       // 如果没有找到拖动把手，退出函数
-      logger.warn(i18n('content_drag_handle_missing', '找不到拖动把手，无法使元素可拖拽'));
+      logger.warn(_('content_drag_handle_missing', '找不到拖动把手，无法使元素可拖拽'));
       return;
     }
 
     // 为拖动把手添加明显的视觉样式
     handle.classList.add("draggable-handle");
-    handle.title = i18n('content_drag_panel', '拖动移动此面板'); // 添加工具提示
+    handle.title = _('content_drag_panel', '拖动移动此面板'); // 添加工具提示
 
     let isDragging = false;
     let startX = 0,
@@ -432,7 +432,7 @@ export class NodeDetails {
     this.detailsContainer.style.left = `${left}px`;
     this.detailsContainer.style.top = `${top}px`;
 
-    logger.log(i18n('node_details_initial_position_set', '设置节点详情面板初始位置'));
+    logger.log(_('node_details_initial_position_set', '设置节点详情面板初始位置'));
   }
 
   /**

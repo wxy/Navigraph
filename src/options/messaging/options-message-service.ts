@@ -1,6 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { BaseMessageService } from '../../lib/messaging/base-service.js';
-import { i18n } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('OptionsMessageService');
 /**
@@ -33,7 +33,7 @@ export class OptionsMessageService extends BaseMessageService<'options'> {
   protected initialize(): void {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
-    logger.log(i18n('options_message_service_initialized', '选项页消息服务已初始化'));
+    logger.log(_('options_message_service_initialized', '选项页消息服务已初始化'));
   }
 }
 

@@ -1,5 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js'; // 添加导入i18n
+import { _, _Error } from '../../../lib/utils/i18n.js'; // 添加导入i18n
 import type { Visualizer } from '../../types/navigation.js';
 import { ViewSwitcher } from './ControlPanel/ViewSwitcher.js';
 import { CalendarSessionSelector } from './ControlPanel/CalendarSessionSelector.js';
@@ -37,7 +37,7 @@ export class ControlPanel {
     this.calendarSessionSelector = new CalendarSessionSelector(visualizer);
     this.filterPanel = new FilterPanel(visualizer);
     
-    logger.log(i18n('control_panel_created', '控制面板已创建'));
+    logger.log(_('control_panel_created', '控制面板已创建'));
   }
   
   /**
@@ -49,7 +49,7 @@ export class ControlPanel {
     this.handleElement = document.getElementById('control-panel-handle');
     
     if (!this.controlPanelElement || !this.handleElement) {
-      logger.error(i18n('control_panel_elements_not_found', '控制面板元素未找到'));
+      logger.error(_('control_panel_elements_not_found', '控制面板元素未找到'));
       return;
     }
     
@@ -61,7 +61,7 @@ export class ControlPanel {
     // 初始化控制面板交互行为
     this.initializeControlPanelInteraction(container);
     
-    logger.log(i18n('control_panel_components_initialized', '控制面板及所有子组件已初始化'));
+    logger.log(_('control_panel_components_initialized', '控制面板及所有子组件已初始化'));
   }
   
   /**
@@ -162,7 +162,7 @@ export class ControlPanel {
       this.handleElement.classList.add('panel-visible');
     }
     
-    logger.log(i18n('control_panel_interaction_initialized', '控制面板交互初始化完成'));
+    logger.log(_('control_panel_interaction_initialized', '控制面板交互初始化完成'));
   }
 
   /**
@@ -173,7 +173,7 @@ export class ControlPanel {
     header.className = 'section-header';
     
     const title = document.createElement('h3');
-    title.textContent = i18n('control_panel_session_history', '会话历史');
+    title.textContent = _('control_panel_session_history', '会话历史');
     title.className = 'section-title';
     header.appendChild(title);
     
@@ -246,7 +246,7 @@ export class ControlPanel {
   public updateSessionSelector(sessions: any[], currentSessionId?: string, latestSessionId?: string): void {
     // 如果会话数量较多，使用优化的更新方式
     if (sessions.length > 0) {
-      logger.log(i18n('control_panel_update_session_selector', '控制面板更新会话选择器，共 {0} 个会话'), sessions.length);
+      logger.log(_('control_panel_update_session_selector', '控制面板更新会话选择器，共 {0} 个会话'), sessions.length);
       
       // 使用requestAnimationFrame确保UI渲染优先
       requestAnimationFrame(() => {
