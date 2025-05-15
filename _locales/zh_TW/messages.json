@@ -687,10 +687,6 @@
     "message": "導航管理器初始化失敗: {0}",
     "description": "导航管理器初始化失败错误"
   },
-  "navigation_manager_init_error": {
-    "message": "導航管理器初始化失敗",
-    "description": "导航管理器初始化失败错误消息"
-  },
   "session_handler_context_failed": {
     "message": "建立訊息上下文失敗",
     "description": "SessionMessageHandler 创建消息上下文失败日志"

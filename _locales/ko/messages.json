@@ -687,10 +687,6 @@
     "message": "탐색 관리자 초기화에 실패했습니다: {0}",
     "description": "导航管理器初始化失败错误"
   },
-  "navigation_manager_init_error": {
-    "message": "내비게이션 관리자 초기화에 실패했습니다.",
-    "description": "导航管理器初始化失败错误消息"
-  },
   "session_handler_context_failed": {
     "message": "메시지 컨텍스트를 생성하지 못했습니다.",
     "description": "SessionMessageHandler 创建消息上下文失败日志"
