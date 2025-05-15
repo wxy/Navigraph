@@ -1,6 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { isDev } from '../../lib/environment.js';
-import { _ } from '../../lib/utils/i18n.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('ContextMenus');
 

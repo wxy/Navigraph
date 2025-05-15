@@ -11,7 +11,7 @@
 
   // 集中导入所有需要的模块
   const { Logger } = await import('../lib/utils/logger.js');
-  const { I18nUtils, i18n, I18nError } = await import('../lib/utils/i18n.js');
+  const { _, _Error, i18n } = await import('../lib/utils/i18n.js');
   const { showErrorMessage, showDetailedErrorMessage } = await import('./utils/error-ui-manager.js');
   const { getSettingsService } = await import('../lib/settings/service.js');
   const { setupMessageService } = await import('./messaging/content-message-service.js');
@@ -154,7 +154,7 @@
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initialize);
     } else {
-      await I18nUtils.getInstance().apply();
+      await i18n.apply();
       await initialize();
     }
   } catch (error) {
