@@ -2,7 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { ContentMessageService } from '../content-message-service.js';
 import { ContentMessages, ContentResponses } from '../../../types/messages/content.js';
 import { sendToBackground, isExtensionContextValid } from '../../../lib/messaging/sender.js';
-import { i18n, I18nError } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 
 const logger = new Logger('TrackingHandlers');
 // 存储从后台获取的标准节点ID
@@ -41,19 +41,19 @@ export function registerTrackingHandlers(messageService: ContentMessageService):
         ctx.success({ nodeId: nodeId || null });
       })
       .catch(error => {
-        ctx.error(i18n('tracking_handlers_request_node_id_failed', '请求节点ID失败: {0}'), 
+        ctx.error(_('tracking_handlers_request_node_id_failed', '请求节点ID失败: {0}'), 
           error instanceof Error ? error.message : String(error));
       });
     
     return true; // 异步响应
   });
   
-  logger.log(i18n('tracking_handlers_registered', '跟踪相关消息处理程序已注册'));
+  logger.log(_('tracking_handlers_registered', '跟踪相关消息处理程序已注册'));
   
   // 初始请求节点ID
   setTimeout(() => {
     requestNodeId().catch(err => 
-      logger.error(i18n('tracking_handlers_init_node_id_failed', '初始化节点ID失败: {0}'), 
+      logger.error(_('tracking_handlers_init_node_id_failed', '初始化节点ID失败: {0}'), 
         err instanceof Error ? err.message : String(err)));
   }, 1000);
 }
@@ -64,7 +64,7 @@ export function registerTrackingHandlers(messageService: ContentMessageService):
  */
 async function requestNodeId(): Promise<string | null> {
   if (!isExtensionContextValid()) {
-    logger.warn(i18n('tracking_handlers_invalid_context', '扩展上下文无效，无法请求节点ID'));
+    logger.warn(_('tracking_handlers_invalid_context', '扩展上下文无效，无法请求节点ID'));
     return null;
   }
   
@@ -72,7 +72,7 @@ async function requestNodeId(): Promise<string | null> {
   
   // 限制频率
   if (now - lastRequestTime < 5000) {
-    logger.debug(i18n('tracking_handlers_request_too_frequent', '请求节点ID间隔过短，跳过'));
+    logger.debug(_('tracking_handlers_request_too_frequent', '请求节点ID间隔过短，跳过'));
     // @ts-ignore - 全局变量可能未在类型中声明
     return window.standardNodeId;
   }
@@ -86,7 +86,7 @@ async function requestNodeId(): Promise<string | null> {
   }
   
   try {
-    logger.log(i18n('tracking_handlers_request_tab_id', '请求标签页ID...'));
+    logger.log(_('tracking_handlers_request_tab_id', '请求标签页ID...'));
     
     // 获取标签页ID
     const tabIdResponse = await sendToBackground('getTabId', {});
@@ -108,7 +108,7 @@ async function requestNodeId(): Promise<string | null> {
       }
     }
   } catch (error) {
-    logger.error(i18n('tracking_handlers_get_node_id_failed', '获取节点ID失败: {0}'), 
+    logger.error(_('tracking_handlers_get_node_id_failed', '获取节点ID失败: {0}'), 
       error instanceof Error ? error.message : String(error));
   }
   
@@ -126,7 +126,7 @@ export async function sendLinkClickToBackground(linkInfo: {
   [key: string]: any;
 }): Promise<void> {
   if (!linkInfo) {
-    throw new Error(i18n('tracking_handlers_missing_link_info', '缺少链接信息'));
+    throw new Error(_('tracking_handlers_missing_link_info', '缺少链接信息'));
   }
   
   // 使用存储的节点ID
@@ -146,7 +146,7 @@ export async function sendLinkClickToBackground(linkInfo: {
     }
   });
   
-  logger.log(i18n('tracking_handlers_link_sent', '链接点击已发送到后台: {0}'), linkInfo.targetUrl);
+  logger.log(_('tracking_handlers_link_sent', '链接点击已发送到后台: {0}'), linkInfo.targetUrl);
 }
 
 /**
@@ -159,7 +159,7 @@ export async function sendFormSubmitToBackground(formInfo: {
   formData?: Record<string, string>;
 }): Promise<void> {
   if (!formInfo) {
-    throw new Error(i18n('tracking_handlers_missing_form_info', '缺少表单信息'));
+    throw new Error(_('tracking_handlers_missing_form_info', '缺少表单信息'));
   }
   
   // 使用存储的节点ID
@@ -181,5 +181,5 @@ export async function sendFormSubmitToBackground(formInfo: {
     }
   });
   
-  logger.log(i18n('tracking_handlers_form_sent', '表单提交已发送到后台: {0}'), formInfo.formAction);
+  logger.log(_('tracking_handlers_form_sent', '表单提交已发送到后台: {0}'), formInfo.formAction);
 }

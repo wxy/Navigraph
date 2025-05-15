@@ -3,7 +3,7 @@
  * 负责绘制基于时间的导航历史
  */
 import { Logger } from '../../../lib/utils/logger.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js'; // 确保导入i18n
+import { _, _Error } from '../../../lib/utils/i18n.js'; // 确保导入i18n
 import { 
   NavNode, 
   NavLink, 
@@ -53,7 +53,7 @@ export class TimelineRenderer implements BaseRenderer {
     this.width = width;
     this.height = height;
     
-    logger.log(i18n('timeline_renderer_initialized', '时间线渲染器已初始化'), { width, height });
+    logger.log(_('timeline_renderer_initialized', '时间线渲染器已初始化'), { width, height });
   }
   
   /**
@@ -61,7 +61,7 @@ export class TimelineRenderer implements BaseRenderer {
    */
   render(nodes: NavNode[], edges: NavLink[], options: { restoreTransform?: boolean } = {}): void {
     if (!this.svg || !this.container) {
-      logger.error(i18n('timeline_renderer_no_container', '无法渲染：SVG或容器未初始化'));
+      logger.error(_('timeline_renderer_no_container', '无法渲染：SVG或容器未初始化'));
       return;
     }
     
@@ -84,7 +84,7 @@ export class TimelineRenderer implements BaseRenderer {
     // 清理任何需要释放的资源
     this.svg = null;
     this.container = null;
-    logger.log(i18n('timeline_renderer_cleaned_up', '时间线渲染器已清理'));
+    logger.log(_('timeline_renderer_cleaned_up', '时间线渲染器已清理'));
   }
 }
 
@@ -98,7 +98,7 @@ function renderTimelineLayout(
   height: number, 
   visualizer: Visualizer
 ): void {
-  logger.log(i18n('using_modular_timeline_renderer', '使用模块化时间线渲染器'));
+  logger.log(_('using_modular_timeline_renderer', '使用模块化时间线渲染器'));
   
   try {
     // 获取特定视图类型的状态 - 不再使用临时标志
@@ -111,7 +111,7 @@ function renderTimelineLayout(
     if (savedState && savedState.transform) {
       const { x, y, k } = savedState.transform;
       if (isFinite(x) && isFinite(y) && isFinite(k) && k > 0) {
-        logger.log(i18n('timeline_saved_state_detected', '检测到保存的时间线状态: {0}'), savedState.transform);
+        logger.log(_('timeline_saved_state_detected', '检测到保存的时间线状态: {0}'), savedState.transform);
         shouldRestoreTransform = true;
         transformToRestore = savedState.transform;
       }
@@ -403,7 +403,7 @@ function renderTimelineLayout(
     
     // 设置缩放行为，关键是让时间轴与内容同步缩放和移动
     try {
-      logger.log(i18n('timeline_zoom_setup_start', '为时间线视图设置缩放行为'));
+      logger.log(_('timeline_zoom_setup_start', '为时间线视图设置缩放行为'));
       
       // 获取DOM引用
       const mainGroup = svg.select('.main-group');
@@ -422,7 +422,7 @@ function renderTimelineLayout(
         if (!isFinite(x) || !isFinite(y) || !isFinite(k) ||
             Math.abs(x) > width * 2 || Math.abs(y) > height * 2 || 
             k < 0.01 || k > 100) {
-          logger.warn(i18n('timeline_invalid_transform_detected', '检测到无效变换: {0}，恢复到安全状态'), event.transform);
+          logger.warn(_('timeline_invalid_transform_detected', '检测到无效变换: {0}，恢复到安全状态'), event.transform);
           // 重置到安全变换
           const safeTransform = d3.zoomIdentity.translate(0, 0).scale(0.8);
           if (visualizer.zoom) {
@@ -477,9 +477,9 @@ function renderTimelineLayout(
       svg.call(zoom)
         .style('cursor', 'move'); // 添加鼠标指针样式，表明可拖动
     
-      logger.log(i18n('timeline_zoom_setup_complete', '已设置时间线缩放行为'));
+      logger.log(_('timeline_zoom_setup_complete', '已设置时间线缩放行为'));
     } catch (error) {
-      logger.error(i18n('timeline_zoom_setup_failed', '设置时间线缩放失败: {0}'), error);
+      logger.error(_('timeline_zoom_setup_failed', '设置时间线缩放失败: {0}'), error);
     }    
     // 修改变换恢复/应用逻辑
     setTimeout(() => {
@@ -505,7 +505,7 @@ function renderTimelineLayout(
             .scale(validK);
           
           if (visualizer.zoom) {
-            logger.log(i18n('timeline_restore_transform', '恢复时间线保存的变换状态: {0}'), transformToRestore);
+            logger.log(_('timeline_restore_transform', '恢复时间线保存的变换状态: {0}'), transformToRestore);
             svg.call(visualizer.zoom.transform, transform);
             // 立即触发时间轴更新
             updateTimeAxis(transform, timeAxisGroup, mainGroup, timeRangeInfo, dimensionsInfo);
@@ -555,7 +555,7 @@ function renderTimelineLayout(
           }
         }
       } catch (err) {
-        logger.error(i18n('timeline_apply_transform_failed', '应用变换失败: {0}'), err);
+        logger.error(_('timeline_apply_transform_failed', '应用变换失败: {0}'), err);
       }
     }, 100);
     
@@ -564,7 +564,7 @@ function renderTimelineLayout(
     //visualizer.timeAxisGroup = timeAxisGroup;
     
   } catch (err) {
-    logger.error(i18n('timeline_render_error', '时间线渲染过程中出错: {0}'), err);
+    logger.error(_('timeline_render_error', '时间线渲染过程中出错: {0}'), err);
     
     // 渲染错误信息
     svg.append('text')
@@ -572,7 +572,7 @@ function renderTimelineLayout(
       .attr('y', height / 2)
       .attr('text-anchor', 'middle')
       .attr('fill', 'red')
-      .text(i18n('timeline_render_error_message', '时间线渲染错误: {0}', err && (err as Error).message ? (err as Error).message : i18n('unknown_error', '未知错误')));
+      .text(_('timeline_render_error_message', '时间线渲染错误: {0}', err && (err as Error).message ? (err as Error).message : _('unknown_error', '未知错误')));
     
     // 渲染简单的空白时间线
     renderEmptyTimeline(svg, width, height);
@@ -678,9 +678,9 @@ function updateTimeAxis(
   
   let titleText;
   if (isSameDay) {
-    titleText = i18n('timeline_date_range_same_day', '时间线 - {0} {1} 至 {2}', formatDateOnly(visibleMinDate), formatTimeOnly(visibleMinDate), formatTimeOnly(visibleMaxDate));
+    titleText = _('timeline_date_range_same_day', '时间线 - {0} {1} 至 {2}', formatDateOnly(visibleMinDate), formatTimeOnly(visibleMinDate), formatTimeOnly(visibleMaxDate));
   } else {
-    titleText = i18n('timeline_date_range_different_days', '时间线 - {0} {1} 至 {2} {3}', formatDateOnly(visibleMinDate), formatTimeOnly(visibleMinDate), formatDateOnly(visibleMaxDate), formatTimeOnly(visibleMaxDate));
+    titleText = _('timeline_date_range_different_days', '时间线 - {0} {1} 至 {2} {3}', formatDateOnly(visibleMinDate), formatTimeOnly(visibleMinDate), formatDateOnly(visibleMaxDate), formatTimeOnly(visibleMaxDate));
   }
   
   timeAxisGroup.select('text.time-axis-title')
@@ -792,7 +792,7 @@ function renderEmptyTimeline(svg: any, width: number, height: number = 200): voi
     .attr('y', height / 2)
     .attr('text-anchor', 'middle')
     .attr('fill', '#333')
-    .text(i18n('timeline_no_data', '无时间数据可显示'));
+    .text(_('timeline_no_data', '无时间数据可显示'));
   
   svg.append('text')
     .attr('x', width / 2)
@@ -800,7 +800,7 @@ function renderEmptyTimeline(svg: any, width: number, height: number = 200): voi
     .attr('text-anchor', 'middle')
     .attr('fill', '#FFF')
     .style('font-size', '11px')
-    .text(i18n('timeline_title', '时间线'));
+    .text(_('timeline_title', '时间线'));
 }
 
 function optimizeNodeLayout(nodes: RenderableNode[]): void {

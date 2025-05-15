@@ -1,5 +1,5 @@
 import { Logger } from "../../lib/utils/logger.js";
-import { i18n } from "../../lib/utils/i18n-utils.js";
+import { _, _Error } from "../../lib/utils/i18n.js";
 
 const logger = new Logger("ErrorUIManager");
 
@@ -20,8 +20,8 @@ const ErrorUIManager = {
 
       const errorContainer = document.getElementById("navigraph-error");
       if (!errorContainer) {
-        logger.error(i18n('content_error_container_not_found', '找不到错误UI容器，降级到alert'));
-        this.showNativeAlert(i18n("content_extension_error", "Navigraph 扩展错误:"), formattedMessage);
+        logger.error(_('content_error_container_not_found', '找不到错误UI容器，降级到alert'));
+        this.showNativeAlert(_("content_extension_error", "Navigraph 扩展错误:"), formattedMessage);
         return;
       }
 
@@ -32,7 +32,7 @@ const ErrorUIManager = {
 
       errorContainer.style.display = "block";
     } catch (err) {
-      logger.error(i18n('content_error_ui_display_failed', '显示错误UI失败: {0}'), err);
+      logger.error(_('content_error_ui_display_failed', '显示错误UI失败: {0}'), err);
       alert(message); // 直接显示传入的消息
     }
   },
@@ -91,7 +91,7 @@ const ErrorUIManager = {
       // 显示容器
       errorContainer.style.display = "block";
     } catch (err) {
-      logger.error(i18n('content_detailed_error_ui_failed', '显示详细错误UI失败: {0}'), err);
+      logger.error(_('content_detailed_error_ui_failed', '显示详细错误UI失败: {0}'), err);
       this.showErrorMessage(
         title,
         error instanceof Error ? error.message : String(error)
@@ -127,7 +127,7 @@ const ErrorUIManager = {
         }
       }, duration);
     } catch (err) {
-      logger.error(i18n('content_toast_display_failed', '显示通知消息失败: {0}'), err);
+      logger.error(_('content_toast_display_failed', '显示通知消息失败: {0}'), err);
     }
   },
 

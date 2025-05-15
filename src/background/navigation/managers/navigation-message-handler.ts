@@ -3,7 +3,7 @@ import { BackgroundMessageService } from '../../messaging/bg-message-service.js'
 import { BackgroundMessages, BackgroundResponses } from '../../../types/messages/background.js';
 import { NodeTracker } from './node-tracker.js';
 import { NavigationEventHandler } from './navigation-event-handler.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 import { getNavigationManager } from '../../navigation/navigation-manager.js';
 import { getSessionManager } from '../../session/session-manager.js';
 const logger = new Logger('NavigationMessageHandler');
@@ -31,7 +31,7 @@ export class NavigationMessageHandler {
    * 注册所有消息处理程序
    */
   public registerMessageHandlers(): void {
-    logger.groupCollapsed(i18n('nav_msg_handler_registering', '注册导航相关消息处理程序'));
+    logger.groupCollapsed(_('nav_msg_handler_registering', '注册导航相关消息处理程序'));
     
     // 获取节点ID请求
     this.messageService.registerHandler('getNodeId', (
@@ -53,14 +53,14 @@ export class NavigationMessageHandler {
           });
           
           if (node && node.id) {
-            logger.log(i18n('nav_msg_handler_node_assigned', '为URL分配节点ID: {0} -> {1}'), url, node.id);
+            logger.log(_('nav_msg_handler_node_assigned', '为URL分配节点ID: {0} -> {1}'), url, node.id);
             ctx.success({ nodeId: node.id });
           } else {
-            ctx.error(i18n('nav_msg_error_create_node', '无法创建节点'));
+            ctx.error(_('nav_msg_error_create_node', '无法创建节点'));
           }
         } catch (error) {
-          logger.error(i18n('nav_msg_handler_get_node_id_failed', '处理getNodeId失败: {0}'), error instanceof Error ? error.message : String(error));
-          ctx.error(i18n('nav_msg_error_get_node', '获取节点ID失败: {0}'), error instanceof Error ? error.message : String(error));
+          logger.error(_('nav_msg_handler_get_node_id_failed', '处理getNodeId失败: {0}'), error instanceof Error ? error.message : String(error));
+          ctx.error(_('nav_msg_error_get_node', '获取节点ID失败: {0}'), error instanceof Error ? error.message : String(error));
         }
       };
       
@@ -83,7 +83,7 @@ export class NavigationMessageHandler {
       const url = pageInfo.url || sender.tab?.url || '';
       
       if (!tabId || !url) {
-        return ctx.error(i18n('nav_msg_error_missing_page_info', '缺少必要的页面信息'));
+        return ctx.error(_('nav_msg_error_missing_page_info', '缺少必要的页面信息'));
       }
       
       this.nodeTracker.updatePageMetadata(tabId, {
@@ -94,10 +94,10 @@ export class NavigationMessageHandler {
           if (nodeId) {
             return ctx.success({ nodeId });
           } else {
-            return ctx.error(i18n('nav_msg_error_node_not_found', '未找到此页面的节点ID'));
+            return ctx.error(_('nav_msg_error_node_not_found', '未找到此页面的节点ID'));
           }
         })
-        .catch(error => ctx.error(i18n('nav_msg_error_page_load', '处理页面加载失败: {0}'), error instanceof Error ? error.message : String(error)));
+        .catch(error => ctx.error(_('nav_msg_error_page_load', '处理页面加载失败: {0}'), error instanceof Error ? error.message : String(error)));
         
       return true; // 异步响应
     });
@@ -121,12 +121,12 @@ export class NavigationMessageHandler {
             const url = sender.tab?.url;
             
             if (!tabId || !url) {
-              return ctx.error(i18n('nav_msg_error_tab_info', '无法确定标签页信息'));
+              return ctx.error(_('nav_msg_error_tab_info', '无法确定标签页信息'));
             }
             
             const result = await this.nodeTracker.getNodeIdForTab(tabId, url);
             if (!result) {
-              return ctx.error(i18n('nav_msg_error_node_id_not_found', '未找到节点ID'));
+              return ctx.error(_('nav_msg_error_node_id_not_found', '未找到节点ID'));
             }
             nodeId = result;
           }
@@ -139,7 +139,7 @@ export class NavigationMessageHandler {
           );
           return ctx.success();
         } catch (error) {
-          return ctx.error(i18n('nav_msg_error_update_title', '更新页面标题失败: {0}'), error instanceof Error ? error.message : String(error));
+          return ctx.error(_('nav_msg_error_update_title', '更新页面标题失败: {0}'), error instanceof Error ? error.message : String(error));
         }
       };
       
@@ -165,12 +165,12 @@ export class NavigationMessageHandler {
             const url = sender.tab?.url;
             
             if (!tabId || !url) {
-              return ctx.error(i18n('nav_msg_error_tab_info', '无法确定标签页信息'));
+              return ctx.error(_('nav_msg_error_tab_info', '无法确定标签页信息'));
             }
             
             const result = await this.nodeTracker.getNodeIdForTab(tabId, url);
             if (!result) {
-              return ctx.error(i18n('nav_msg_error_node_id_not_found', '未找到节点ID'));
+              return ctx.error(_('nav_msg_error_node_id_not_found', '未找到节点ID'));
             }
             nodeId = result;
           }
@@ -183,7 +183,7 @@ export class NavigationMessageHandler {
           );
           return ctx.success();
         } catch (error) {
-          return ctx.error(i18n('nav_msg_error_update_favicon', '更新页面图标失败: {0}'), error instanceof Error ? error.message : String(error));
+          return ctx.error(_('nav_msg_error_update_favicon', '更新页面图标失败: {0}'), error instanceof Error ? error.message : String(error));
         }
       };
       
@@ -228,12 +228,12 @@ export class NavigationMessageHandler {
           
           ctx.success();
         } catch (error) {
-          logger.error(i18n('nav_msg_handler_link_click_failed', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
-          ctx.error(i18n('nav_msg_error_link_click', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
+          logger.error(_('nav_msg_handler_link_click_failed', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
+          ctx.error(_('nav_msg_error_link_click', '处理链接点击失败: {0}'), error instanceof Error ? error.message : String(error));
         }
         return false;
       } else {
-        ctx.error(i18n('nav_msg_error_missing_link_info', '缺少链接信息'));
+        ctx.error(_('nav_msg_error_missing_link_info', '缺少链接信息'));
         return false;
       }
     });
@@ -248,12 +248,12 @@ export class NavigationMessageHandler {
       
       const tabId = sender.tab?.id;
       if (!tabId) {
-        ctx.error(i18n('nav_msg_error_tab_id', '无法确定标签页ID'));
+        ctx.error(_('nav_msg_error_tab_id', '无法确定标签页ID'));
         return false; // 同步响应
       }
       
       if (!message.formInfo) {
-        ctx.error(i18n('nav_msg_error_missing_form_info', '缺少表单信息'));
+        ctx.error(_('nav_msg_error_missing_form_info', '缺少表单信息'));
         return false; // 同步响应
       }
       
@@ -261,8 +261,8 @@ export class NavigationMessageHandler {
         this.navigationEventHandler.handleFormSubmitted(tabId, message.formInfo);
         ctx.success();
       } catch (error) {
-        logger.error(i18n('nav_msg_handler_form_submit_failed', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
-        ctx.error(i18n('nav_msg_error_form_submit', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
+        logger.error(_('nav_msg_handler_form_submit_failed', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
+        ctx.error(_('nav_msg_error_form_submit', '处理表单提交失败: {0}'), error instanceof Error ? error.message : String(error));
       }
       return false; // 同步响应
     });
@@ -277,15 +277,15 @@ export class NavigationMessageHandler {
       
       const tabId = sender.tab?.id;
       if (!tabId) {
-        return ctx.error(i18n('nav_msg_error_tab_id', '无法确定标签页ID'));
+        return ctx.error(_('nav_msg_error_tab_id', '无法确定标签页ID'));
       }
       
       try {
         this.navigationEventHandler.handleJsNavigation(tabId, message);
         return ctx.success();
       } catch (error) {
-        logger.error(i18n('nav_msg_handler_js_nav_failed', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
-        return ctx.error(i18n('nav_msg_error_js_navigation', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
+        logger.error(_('nav_msg_handler_js_nav_failed', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
+        return ctx.error(_('nav_msg_error_js_navigation', '处理JS导航失败: {0}'), error instanceof Error ? error.message : String(error));
       }
     });
     // 清除所有数据
@@ -295,7 +295,7 @@ export class NavigationMessageHandler {
       sendResponse: (response: BackgroundResponses.ClearAllDataResponse) => void
     ) => {
       const ctx = this.messageService.createMessageContext(message, sender, sendResponse);
-      logger.log(i18n('navigation_handlers_clear_all_data', '处理清除所有数据请求'));
+      logger.log(_('navigation_handlers_clear_all_data', '处理清除所有数据请求'));
       
       try {
         const navigationManager = getNavigationManager();
@@ -307,17 +307,17 @@ export class NavigationMessageHandler {
           sessionManager.clearAllSessions()     // 清除会话数据
         ])
         .then(() => {
-          logger.log(i18n('navigation_handlers_clear_success', '成功清除所有数据'));
+          logger.log(_('navigation_handlers_clear_success', '成功清除所有数据'));
           ctx.success();
         })
         .catch((error) => {
-          logger.error(i18n('navigation_handlers_clear_failed', '清除数据失败: {0}'), error);
-          ctx.error(i18n('navigation_handlers_clear_error', '清除数据失败: {0}'), 
+          logger.error(_('navigation_handlers_clear_failed', '清除数据失败: {0}'), error);
+          ctx.error(_('navigation_handlers_clear_error', '清除数据失败: {0}'), 
                     error instanceof Error ? error.message : String(error));
         });
       } catch (error) {
-        logger.error(i18n('navigation_handlers_clear_failed', '清除数据失败: {0}'), error);
-        ctx.error(i18n('navigation_handlers_clear_error', '清除数据失败: {0}'), 
+        logger.error(_('navigation_handlers_clear_failed', '清除数据失败: {0}'), error);
+        ctx.error(_('navigation_handlers_clear_error', '清除数据失败: {0}'), 
                   error instanceof Error ? error.message : String(error));
       }
       
@@ -331,7 +331,7 @@ export class NavigationMessageHandler {
       sendResponse: (response: BackgroundResponses.ClearDataBeforeTimeResponse) => void
     ) => {
       const ctx = this.messageService.createMessageContext(message, sender, sendResponse);
-      logger.log(i18n('navigation_handlers_clear_before_time', '处理清除{0}之前数据的请求'), 
+      logger.log(_('navigation_handlers_clear_before_time', '处理清除{0}之前数据的请求'), 
                 new Date(message.timestamp).toLocaleString());
       
       try {
@@ -344,7 +344,7 @@ export class NavigationMessageHandler {
           sessionManager.clearSessionsBeforeTime(message.timestamp)
         ])
         .then(([navResults, sessionsCleared]) => {
-          logger.log(i18n('navigation_handlers_clear_before_success', 
+          logger.log(_('navigation_handlers_clear_before_success', 
                     '成功清除{0}之前的数据: {1}个节点, {2}条边, {3}个会话'), 
                   new Date(message.timestamp).toLocaleString(),
                   navResults.nodes.toString(),
@@ -358,13 +358,13 @@ export class NavigationMessageHandler {
           });
         })
         .catch((error) => {
-          logger.error(i18n('navigation_handlers_clear_before_failed', '清除数据失败: {0}'), error);
-          ctx.error(i18n('navigation_handlers_clear_before_error', '清除数据失败: {0}'), 
+          logger.error(_('navigation_handlers_clear_before_failed', '清除数据失败: {0}'), error);
+          ctx.error(_('navigation_handlers_clear_before_error', '清除数据失败: {0}'), 
                     error instanceof Error ? error.message : String(error));
         });
       } catch (error) {
-        logger.error(i18n('navigation_handlers_clear_before_failed', '清除数据失败: {0}'), error);
-        ctx.error(i18n('navigation_handlers_clear_before_error', '清除数据失败: {0}'), 
+        logger.error(_('navigation_handlers_clear_before_failed', '清除数据失败: {0}'), error);
+        ctx.error(_('navigation_handlers_clear_before_error', '清除数据失败: {0}'), 
                   error instanceof Error ? error.message : String(error));
       }
       
@@ -388,6 +388,6 @@ export class NavigationMessageHandler {
     this.messageService.unregisterHandler('clearAllData');
     this.messageService.unregisterHandler('clearDataBeforeTime');
     
-    logger.log(i18n('nav_msg_handler_handlers_cleared', '已清理所有导航消息处理程序'));
+    logger.log(_('nav_msg_handler_handlers_cleared', '已清理所有导航消息处理程序'));
   }
 }

@@ -1,6 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { sendToBackground } from '../../lib/messaging/sender.js';
-import { i18n } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('SettingsHandlers');
 
@@ -10,7 +10,7 @@ const logger = new Logger('SettingsHandlers');
  * @returns 保存操作的Promise
  */
 export function saveSettings(settings: any): Promise<any> {
-  logger.log(i18n('settings_handlers_save_settings', '保存设置: {0}'), settings);
+  logger.log(_('settings_handlers_save_settings', '保存设置: {0}'), settings);
   return sendToBackground('saveSettings', { settings });
 }
 

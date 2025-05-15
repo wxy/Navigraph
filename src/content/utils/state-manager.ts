@@ -7,7 +7,7 @@ const d3 = window.d3;
 import { Logger } from '../../lib/utils/logger.js';
 // 扩展 Visualizer 类型，增加模块中使用的属性
 import { Visualizer } from '../types/navigation.js';
-import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('StateManager');
 // 状态类型定义
@@ -43,9 +43,9 @@ export function saveViewState(tabId: string, state: ViewState): void {
     
     // 保存所有视图状态
     localStorage.setItem(key, JSON.stringify(allStates));
-    logger.log(i18n('state_manager_view_state_saved', '已保存{0}视图状态'), viewType);
+    logger.log(_('state_manager_view_state_saved', '已保存{0}视图状态'), viewType);
   } catch (err) {
-    logger.warn(i18n('state_manager_save_state_failed', '保存视图状态失败: {0}'), err instanceof Error ? err.message : String(err));
+    logger.warn(_('state_manager_save_state_failed', '保存视图状态失败: {0}'), err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -60,7 +60,7 @@ export function getViewState(tabId: string, viewType: string = 'tree'): ViewStat
     }
     return null;
   } catch (err) {
-    logger.warn(i18n('state_manager_get_state_failed', '获取{0}视图状态失败: {1}'), viewType, err instanceof Error ? err.message : String(err));
+    logger.warn(_('state_manager_get_state_failed', '获取{0}视图状态失败: {1}'), viewType, err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -78,7 +78,7 @@ export function getAllViewStates(tabId: string): Record<string, ViewState> | nul
     }
     return null;
   } catch (err) {
-    logger.warn(i18n('state_manager_get_all_states_failed', '获取所有视图状态失败: {0}'), err instanceof Error ? err.message : String(err));
+    logger.warn(_('state_manager_get_all_states_failed', '获取所有视图状态失败: {0}'), err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -89,7 +89,7 @@ export function clearViewState(tabId: string): void {
     const key = `nav_view_state_${tabId}`;
     localStorage.removeItem(key);
   } catch (err) {
-    logger.warn(i18n('state_manager_clear_state_failed', '清除视图状态失败: {0}'), err instanceof Error ? err.message : String(err));
+    logger.warn(_('state_manager_clear_state_failed', '清除视图状态失败: {0}'), err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -104,7 +104,7 @@ export function setupZoomHandling(
   height: number
 ): any {
   if (!visualizer || !svg || !container) {
-    logger.warn(i18n('state_manager_zoom_setup_missing_params', '设置缩放处理失败：缺少必要参数'));
+    logger.warn(_('state_manager_zoom_setup_missing_params', '设置缩放处理失败：缺少必要参数'));
     return null;
   }
   
@@ -125,7 +125,7 @@ export function setupZoomHandling(
     const savedState = getViewState(tabId, visualizer.currentView || 'tree');
     
     if (savedState && savedState.transform) {
-      logger.log(i18n('state_manager_saved_transform_detected', '检测到保存的变换状态'));
+      logger.log(_('state_manager_saved_transform_detected', '检测到保存的变换状态'));
       
       // 改为使用简单的本地标记，不依赖visualizer属性
       const isRestoringTransform = true;
@@ -160,7 +160,7 @@ export function setupZoomHandling(
               timeAxisGroup.attr('transform', `translate(${event.transform.x}, 0) scale(${event.transform.k}, 1)`);
             }
           } catch (timelineError) {
-            logger.warn(i18n('state_manager_timeline_sync_error', '同步时间线视图出错: {0}'), timelineError instanceof Error ? timelineError.message : String(timelineError));
+            logger.warn(_('state_manager_timeline_sync_error', '同步时间线视图出错: {0}'), timelineError instanceof Error ? timelineError.message : String(timelineError));
           }
         }
         
@@ -173,11 +173,11 @@ export function setupZoomHandling(
         // 更新当前变换信息
         visualizer.currentTransform = event.transform;
       } catch (zoomError) {
-        logger.error(i18n('state_manager_zoom_event_error', '处理缩放事件出错: {0}'), zoomError instanceof Error ? zoomError.message : String(zoomError));
+        logger.error(_('state_manager_zoom_event_error', '处理缩放事件出错: {0}'), zoomError instanceof Error ? zoomError.message : String(zoomError));
       }
     }
   } catch (err) {
-    logger.error(i18n('state_manager_zoom_setup_failed', '设置缩放处理失败: {0}'), err instanceof Error ? err.message : String(err));
+    logger.error(_('state_manager_zoom_setup_failed', '设置缩放处理失败: {0}'), err instanceof Error ? err.message : String(err));
     return null;
   }
 }
@@ -192,14 +192,14 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     const { x, y, k } = transform;
     const d3Transform = d3.zoomIdentity.translate(x, y).scale(k);
     
-    logger.log(i18n('state_manager_apply_transform', '应用保存的变换状态'), transform);
+    logger.log(_('state_manager_apply_transform', '应用保存的变换状态'), transform);
     visualizer.svg.call(visualizer.zoom.transform, d3Transform);
     
     // 更新状态栏
     updateStatusBar(visualizer);
     
   } catch (err) {
-    logger.error(i18n('state_manager_apply_transform_failed', '应用变换状态失败：{0}'), err);
+    logger.error(_('state_manager_apply_transform_failed', '应用变换状态失败：{0}'), err);
   }
 }
 
@@ -255,10 +255,10 @@ function handleDynamicFiltering(transform: any, visualizer: Visualizer): void {
       // 容器是DOM节点
       handleDOMFiltering(container, zoomLevel, transform, visualizer);
     } else {
-      logger.warn(i18n('state_manager_container_type_not_supported', '容器类型不支持动态过滤'));
+      logger.warn(_('state_manager_container_type_not_supported', '容器类型不支持动态过滤'));
     }
   } catch (err) {
-    logger.warn(i18n('state_manager_dynamic_filtering_error', '处理动态过滤时出错：{0}'), err);
+    logger.warn(_('state_manager_dynamic_filtering_error', '处理动态过滤时出错：{0}'), err);
   }
 }
 
@@ -334,7 +334,7 @@ function handleDOMFiltering(
       hideFilteringIndicator(visualizer);
     }
   } catch (err) {
-    logger.warn(i18n('state_manager_dom_filtering_failed', 'DOM过滤操作失败：{0}'), err);
+    logger.warn(_('state_manager_dom_filtering_failed', 'DOM过滤操作失败：{0}'), err);
   }
 }
 
@@ -343,25 +343,25 @@ function handleDOMFiltering(
  * @param visualizer 可视化器实例
  */
 export function initStatusBar(visualizer: Visualizer): void {
-  logger.log(i18n('state_manager_statusbar_init', '初始化状态栏...'));
+  logger.log(_('state_manager_statusbar_init', '初始化状态栏...'));
   
   // 获取状态栏元素
   const statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
   
   if (!statusBar) {
-    logger.log(i18n('state_manager_statusbar_create_new', '创建新的状态栏元素'));
+    logger.log(_('state_manager_statusbar_create_new', '创建新的状态栏元素'));
     const newStatusBar = document.createElement('div');
     newStatusBar.className = 'windows-status-bar';
     
     // 添加HTML结构
     newStatusBar.innerHTML = `
-      <div class="status-cell" id="status-date">${i18n('state_manager_statusbar_no_date', '会话日期: --')}</div>
-      <div class="status-cell" id="status-duration">${i18n('state_manager_statusbar_duration', '时长: {0}', '0')}</div>
-      <div class="status-cell" id="status-nodes">${i18n('state_manager_statusbar_nodes', "节点: {0}", '0')}</div>
-      <div class="status-cell" id="status-filtered">${i18n('state_manager_statusbar_filtered', "已过滤: {0}", '0')}</div>
-      <div class="status-cell" id="status-view">${visualizer.currentView === 'tree' ? i18n('state_manager_view_tree', '树形图') : i18n('state_manager_view_timeline', '时间线')}</div>
-      <div class="status-cell" id="status-zoom">${i18n('state_manager_statusbar_zoom', "缩放: {0}%", '100')}</div>
-      <div class="status-cell status-cell-stretch" id="status-message">${i18n('state_manager_statusbar_ready', '就绪')}</div>
+      <div class="status-cell" id="status-date">${_('state_manager_statusbar_no_date', '会话日期: --')}</div>
+      <div class="status-cell" id="status-duration">${_('state_manager_statusbar_duration', '时长: {0}', '0')}</div>
+      <div class="status-cell" id="status-nodes">${_('state_manager_statusbar_nodes', "节点: {0}", '0')}</div>
+      <div class="status-cell" id="status-filtered">${_('state_manager_statusbar_filtered', "已过滤: {0}", '0')}</div>
+      <div class="status-cell" id="status-view">${visualizer.currentView === 'tree' ? _('state_manager_view_tree', '树形图') : _('state_manager_view_timeline', '时间线')}</div>
+      <div class="status-cell" id="status-zoom">${_('state_manager_statusbar_zoom', "缩放: {0}%", '100')}</div>
+      <div class="status-cell status-cell-stretch" id="status-message">${_('state_manager_statusbar_ready', '就绪')}</div>
     `;
     
     // 添加基本样式
@@ -385,7 +385,7 @@ export function initStatusBar(visualizer: Visualizer): void {
   // 设置初始状态
   updateStatusBar(visualizer);
   
-  logger.log(i18n('state_manager_statusbar_init_complete', '状态栏初始化完成'));
+  logger.log(_('state_manager_statusbar_init_complete', '状态栏初始化完成'));
 }
 
 /**
@@ -410,7 +410,7 @@ export function updateStatusElements(visualizer: Visualizer, status: Record<stri
  */
 export function updateStatusBar(visualizer: Visualizer): void {
   if (!visualizer.statusBar) {
-    logger.warn(i18n('state_manager_statusbar_not_found', '状态栏元素未找到'));
+    logger.warn(_('state_manager_statusbar_not_found', '状态栏元素未找到'));
     return;
   }
   
@@ -425,7 +425,7 @@ export function updateStatusBar(visualizer: Visualizer): void {
     else if (visualizer.svg) {
       transform = d3.zoomTransform(visualizer.svg.node());
     } else {
-      logger.warn(i18n('state_manager_transform_not_available', '无法获取当前变换状态'));
+      logger.warn(_('state_manager_transform_not_available', '无法获取当前变换状态'));
       return;
     }
     
@@ -441,20 +441,20 @@ export function updateStatusBar(visualizer: Visualizer): void {
     
     // 更新状态信息
     const viewTypeName = visualizer.currentView === 'tree' ? 
-      i18n('state_manager_view_tree', '树形图') : i18n('state_manager_view_timeline', '时间线');
+      _('state_manager_view_tree', '树形图') : _('state_manager_view_timeline', '时间线');
     
     // 准备状态信息
     const status: Record<string, string> = {
-      'status-nodes': i18n('state_manager_statusbar_nodes', "节点: {0}", nodeCount.toString()),
-      'status-view': i18n('state_manager_statusbar_view', '视图: {0}', viewTypeName),
-      'status-zoom': i18n('state_manager_statusbar_zoom',"缩放: {0}%", zoom.toString())
+      'status-nodes': _('state_manager_statusbar_nodes', "节点: {0}", nodeCount.toString()),
+      'status-view': _('state_manager_statusbar_view', '视图: {0}', viewTypeName),
+      'status-zoom': _('state_manager_statusbar_zoom',"缩放: {0}%", zoom.toString())
     };
     
     // 如果有过滤节点，显示过滤信息
     if (visibleNodeCount < nodeCount) {
-      status['status-filtered'] = i18n('state_manager_statusbar_filtered', "已过滤: {0}", (nodeCount - visibleNodeCount).toString());
+      status['status-filtered'] = _('state_manager_statusbar_filtered', "已过滤: {0}", (nodeCount - visibleNodeCount).toString());
     } else {
-      status['status-filtered'] = i18n('state_manager_statusbar_filtered', "已过滤: {0}", '0');
+      status['status-filtered'] = _('state_manager_statusbar_filtered', "已过滤: {0}", '0');
     }
     
     // 如果当前会话存在，显示会话信息
@@ -467,18 +467,18 @@ export function updateStatusBar(visualizer: Visualizer): void {
       const minutes = Math.floor(durationMinutes % 60);
       const formattedDuration = `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
       
-      status['status-date'] = i18n('state_manager_statusbar_date', '会话日期: {0}', startDate.toLocaleDateString());
-      status['status-duration'] = i18n('state_manager_statusbar_duration', "时长: {0}", formattedDuration);
+      status['status-date'] = _('state_manager_statusbar_date', '会话日期: {0}', startDate.toLocaleDateString());
+      status['status-duration'] = _('state_manager_statusbar_duration', "时长: {0}", formattedDuration);
     }
     
     // 添加消息
-    status['status-message'] = i18n('state_manager_statusbar_message', '{0}视图 | 缩放: {1}%', viewTypeName, zoom.toString());
+    status['status-message'] = _('state_manager_statusbar_message', '{0}视图 | 缩放: {1}%', viewTypeName, zoom.toString());
     
     // 更新状态栏
     updateStatusElements(visualizer, status);
     
   } catch (err) {
-    logger.warn(i18n('state_manager_statusbar_update_failed', '更新状态栏失败'), err);
+    logger.warn(_('state_manager_statusbar_update_failed', '更新状态栏失败'), err);
   }
 }
 
@@ -500,12 +500,12 @@ export function showFilteringIndicator(visualizer: Visualizer, hiddenCount: numb
     }
     
     // 更新提示文本
-    indicator.textContent = i18n('state_manager_filter_nodes_message', '{0} 个节点已过滤（放大查看更多）', hiddenCount.toString());
+    indicator.textContent = _('state_manager_filter_nodes_message', '{0} 个节点已过滤（放大查看更多）', hiddenCount.toString());
     
     // 显示指示器
     indicator.style.display = 'block';
   } catch (err) {
-    logger.warn(i18n('state_manager_show_indicator_failed', '显示过滤指示器失败: {0}'), err instanceof Error ? err.message : String(err));
+    logger.warn(_('state_manager_show_indicator_failed', '显示过滤指示器失败: {0}'), err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -523,7 +523,7 @@ export function hideFilteringIndicator(visualizer: Visualizer): void {
       indicator.style.display = 'none';
     }
   } catch (err) {
-    logger.warn(i18n('state_manager_hide_indicator_failed', '隐藏过滤指示器失败：{0}'), err);
+    logger.warn(_('state_manager_hide_indicator_failed', '隐藏过滤指示器失败：{0}'), err);
   }
 }
 
@@ -570,7 +570,7 @@ export function switchViewType(visualizer: Visualizer, viewType: string): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    logger.error(i18n('state_manager_switch_view_failed', '切换视图类型失败：{0}'), err);
+    logger.error(_('state_manager_switch_view_failed', '切换视图类型失败：{0}'), err);
   }
 }
 
@@ -600,9 +600,9 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       if (container) {
         // 更新visualizer的container引用
         visualizer.container = container;
-        logger.log(i18n('state_manager_container_found', '已找到并设置可视化容器: {0}'), container.id);
+        logger.log(_('state_manager_container_found', '已找到并设置可视化容器: {0}'), container.id);
       } else {
-        logger.error(i18n('state_manager_container_not_found', '找不到可视化容器元素'));
+        logger.error(_('state_manager_container_not_found', '找不到可视化容器元素'));
         return;
       }
     }
@@ -617,27 +617,27 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       
       // 添加视图切换按钮
       const treeBtn = document.createElement('button');
-      treeBtn.textContent = i18n('state_manager_button_tree', '树形图');
+      treeBtn.textContent = _('state_manager_button_tree', '树形图');
       treeBtn.setAttribute('data-view', 'tree');
       treeBtn.onclick = () => switchViewType(visualizer, 'tree');
       toolbar.appendChild(treeBtn);
       
       const timelineBtn = document.createElement('button');
-      timelineBtn.textContent = i18n('state_manager_button_timeline', '时间线');
+      timelineBtn.textContent = _('state_manager_button_timeline', '时间线');
       timelineBtn.setAttribute('data-view', 'timeline');
       timelineBtn.onclick = () => switchViewType(visualizer, 'timeline');
       toolbar.appendChild(timelineBtn);
       
       // 添加其他工具按钮...
       const resetBtn = document.createElement('button');
-      resetBtn.textContent = i18n('state_manager_button_reset', '重置视图');
+      resetBtn.textContent = _('state_manager_button_reset', '重置视图');
       resetBtn.classList.add('reset-btn');
       resetBtn.onclick = () => resetView(visualizer);
       toolbar.appendChild(resetBtn);
       
       // 添加显示全部按钮
       const showAllBtn = document.createElement('button');
-      showAllBtn.textContent = i18n('state_manager_button_show_all', '显示全部');
+      showAllBtn.textContent = _('state_manager_button_show_all', '显示全部');
       showAllBtn.classList.add('show-all-btn');
       showAllBtn.onclick = () => showAllNodes(visualizer);
       toolbar.appendChild(showAllBtn);
@@ -663,7 +663,7 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       }
     }
   } catch (err) {
-    logger.error(i18n('state_manager_toolbar_init_failed', '初始化视图工具栏失败: {0}'), err instanceof Error ? err.message : String(err));
+    logger.error(_('state_manager_toolbar_init_failed', '初始化视图工具栏失败: {0}'), err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -689,7 +689,7 @@ function resetView(visualizer: Visualizer): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    logger.error(i18n('state_manager_reset_view_failed', '重置视图失败：{0}'), err);
+    logger.error(_('state_manager_reset_view_failed', '重置视图失败：{0}'), err);
   }
 }
 
@@ -714,7 +714,7 @@ function showAllNodes(visualizer: Visualizer): void {
     // 更新状态栏
     updateStatusBar(visualizer);
   } catch (err) {
-    logger.error(i18n('state_manager_show_all_nodes_failed', '显示所有节点失败：{0}'), err);
+    logger.error(_('state_manager_show_all_nodes_failed', '显示所有节点失败：{0}'), err);
   }
 }
 
@@ -745,7 +745,7 @@ function getNodeImportance(node: Element): number {
     const childCount = node.querySelectorAll('.node').length;
     score += Math.min(childCount * 5, 25); // 最多加25分
   } catch (err) {
-    logger.warn(i18n('state_manager_node_importance_error', '计算节点重要性时出错：{0}'), err);
+    logger.warn(_('state_manager_node_importance_error', '计算节点重要性时出错：{0}'), err);
   }
   
   return score;
@@ -814,7 +814,7 @@ function getConnectedNodes(edge: Element, container: Element): Element[] {
     
     // 4. 如果仍无法获取ID，则放弃并返回空数组
     if (!sourceId || !targetId) {
-      logger.debug(i18n('state_manager_edge_data_extraction_failed', '无法从边数据中提取源和目标ID：{0}'), edge);
+      logger.debug(_('state_manager_edge_data_extraction_failed', '无法从边数据中提取源和目标ID：{0}'), edge);
       return [];
     }
     
@@ -850,7 +850,7 @@ function getConnectedNodes(edge: Element, container: Element): Element[] {
     // 返回找到的节点，过滤掉null值
     return [sourceNode, targetNode].filter((node): node is Element => node !== null);
   } catch (err) {
-    logger.warn(i18n('state_manager_get_connected_nodes_error', '获取连接节点时出错：{0}'), err);
+    logger.warn(_('state_manager_get_connected_nodes_error', '获取连接节点时出错：{0}'), err);
     return [];
   }
 }

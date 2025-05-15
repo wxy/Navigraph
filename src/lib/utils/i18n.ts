@@ -1,5 +1,5 @@
 /**
- * Navigraph 本地化工具类
+ * 本地化工具类
  * 支持强制指定本地化，和两种使用方式：
  * 1. 静态 HTML 本地化 (data-i18n 属性)
  * 2. 动态获取本地化字符串 (i18n 函数)
@@ -7,8 +7,8 @@
 
 // 为避免与 logger 循环依赖，直接使用 console 打印
 
-export class I18nUtils {
-  private static instance: I18nUtils;
+export class I18n {
+  private static instance: I18n;
   private loadedMessages: Record<string, {message: string, description?: string}> = {};
   private forcedLocale: string | null = null;
   private hasInitialized: boolean = false;
@@ -16,11 +16,60 @@ export class I18nUtils {
   /**
    * 获取单例实例
    */
-  public static getInstance(): I18nUtils {
-    if (!I18nUtils.instance) {
-      I18nUtils.instance = new I18nUtils();
+  public static getInstance(): I18n {
+    if (!I18n.instance) {
+      I18n.instance = new I18n();
     }
-    return I18nUtils.instance;
+    return I18n.instance;
+  }
+
+  /**
+   * 初始化国际化系统
+   * 适用于所有环境，包括无DOM环境（如后台脚本）
+   * 只加载消息，不应用到DOM
+   */
+  public async init(): Promise<void> {
+    // 如果已经初始化过，不再重复执行
+    if (this.hasInitialized) {
+      console.debug('[i18n-utils] I18n already initialized, skipping');
+      return;
+    }
+    
+    // 标记为已初始化
+    this.hasInitialized = true;
+    
+    try {
+      // 从 Chrome API 获取首选语言
+      if (typeof chrome !== 'undefined' && chrome.i18n) {
+        // Chrome扩展环境中的国际化已由浏览器处理
+        console.debug('[i18n-utils] Using Chrome API for localization');
+        return;
+      }
+      
+      // 非扩展环境、测试环境或强制本地化场景
+      // 可以从配置或存储获取首选语言
+      this.forcedLocale = 'en';
+      
+      // 加载消息文件
+      if (typeof fetch !== 'undefined') {
+        try {
+          const response = await fetch(`../_locales/${this.forcedLocale}/messages.json`);
+          
+          if (!response.ok) {
+            throw new Error(`Unable to load language file: ${response.status}`);
+          }
+          
+          this.loadedMessages = await response.json();
+          console.log(`[i18n-utils] Loaded ${Object.keys(this.loadedMessages).length} localization messages`);
+        } catch (error) {
+          console.error('[i18n-utils] Failed to load localization file:', error);
+          this.forcedLocale = null;
+        }
+      }
+    } catch (error) {
+      console.error('[i18n-utils] Initialization error:', error);
+      // 即使出错也维持已初始化状态，避免重复尝试
+    }
   }
 
   /**
@@ -31,7 +80,7 @@ export class I18nUtils {
   public async apply(): Promise<void> {
     // 如果已经初始化过，不再重复执行
     if (this.hasInitialized) {
-      console.debug('[i18n-utils] I18nUtils already initialized, skipping');
+      console.debug('[i18n-utils] I18n already initialized, skipping');
       return;
     }
     
@@ -87,6 +136,48 @@ export class I18nUtils {
     
     // 后备值
     return defaultValue || messageId;
+  }
+
+  /**
+   * 格式化消息，处理参数替换
+   * @param messageId 消息ID
+   * @param defaultMessage 默认消息字符串
+   * @param args 替换参数
+   * @returns 格式化后的消息
+   */
+  public formatMessage(messageId: string, defaultMessage: string, ...args: any[]): string {
+    // 获取基本消息字符串
+    const message = this.getMessage(messageId, defaultMessage);
+    
+    // 处理替换参数
+    let replacementArgs: any[] = [];
+    
+    // 如果有参数
+    if (args.length > 0) {
+      // 检查第一个参数是否为数组
+      if (args.length === 1 && Array.isArray(args[0])) {
+        // 如果是数组，使用数组内容作为替换参数
+        replacementArgs = args[0];
+      } else {
+        // 否则使用所有参数作为替换参数
+        replacementArgs = args;
+      }
+    }
+    
+    // 如果没有替换参数，直接返回消息
+    if (replacementArgs.length === 0) {
+      return message;
+    }
+    
+    // 替换所有 {0}, {1}, {2} 等占位符
+    let result = message;
+    for (let i = 0; i < replacementArgs.length; i++) {
+      // 确保参数是字符串
+      const argString = String(replacementArgs[i] ?? '');
+      result = result.replace(new RegExp('\\{' + i + '\\}', 'g'), argString);
+    }
+    
+    return result;
   }
 
   /**
@@ -156,17 +247,19 @@ export class I18nUtils {
  */
 export class I18nError extends Error {
   public readonly messageId: string;
-  public readonly technical?: string; // 更明确的名称
+  public readonly technical?: string;
   
   /**
-   * 构造函数
-   * @param messageId 错误消息ID (必须以'content_'开头的本地化ID)
-   * @param technical 技术细节，不会被本地化 (可选)
-   * @param defaultMessage 当消息ID无法解析时的默认消息 (可选)
+   * 创建一个已本地化的错误对象
+   * 所有可能暴露给用户的错误都应使用此类
+   * 
+   * @param messageId 消息ID，用于本地化
+   * @param defaultMessage 默认消息，当本地化失败时使用
+   * @param technical 技术细节，仅用于日志记录，不会显示给用户
    */
-  constructor(messageId: string, technical?: string, defaultMessage?: string) {
-    // 使用本地化的消息作为错误消息，如果解析失败则使用默认消息
-    super(I18nUtils.getInstance().getMessage(messageId, defaultMessage));
+  constructor(messageId: string, defaultMessage: string = messageId, technical?: string) {
+    // 使用本地化的消息作为错误消息
+    super(I18n.getInstance().getMessage(messageId, defaultMessage));
     
     this.messageId = messageId;
     this.technical = technical;
@@ -191,64 +284,32 @@ export class I18nError extends Error {
   }
 }
 
+// 保持原有 i18n 对象，但优化实现
+export const i18n = {
+  init: async () => await I18n.getInstance().init(),
+  apply: async () => await I18n.getInstance().apply(),
+  getMessage: (messageId: string, defaultMessage?: string) => 
+    I18n.getInstance().getMessage(messageId, defaultMessage),
+  translate: (messageId: string, defaultMessage: string, ...args: any[]): string => 
+    I18n.getInstance().formatMessage(messageId, defaultMessage, ...args)
+};
+
 /**
- * 获取本地化字符串并支持参数替换
+ * 本地化函数 (更简洁的调用方式)
  * @param messageId 消息ID
  * @param defaultMessage 默认消息字符串，当无法找到messageId对应的消息时使用
- * @param args 用于替换消息中的{0}, {1}等占位符的参数，可以是数组或多个单独参数
+ * @param args 用于替换消息中的{0}, {1}等占位符的参数
  * @returns 本地化后的字符串
  */
-export function i18n(messageId: string, defaultMessage: string, ...args: any[]): string {
-  // 获取基本消息字符串，如果找不到则使用默认消息
-  const message = I18nUtils.getInstance().getMessage(messageId, defaultMessage);
-  
-  // 处理替换参数
-  let replacementArgs: any[] = [];
-  
-  // 如果有参数
-  if (args.length > 0) {
-    // 检查第一个参数是否为数组
-    if (args.length === 1 && Array.isArray(args[0])) {
-      // 如果是数组，使用数组内容作为替换参数
-      replacementArgs = args[0];
-    } else {
-      // 否则使用所有参数作为替换参数
-      replacementArgs = args;
-    }
-  }
-  
-  // 如果没有替换参数，直接返回消息
-  if (replacementArgs.length === 0) {
-    return message;
-  }
-  
-  // 替换所有 {0}, {1}, {2} 等占位符
-  let result = message;
-  for (let i = 0; i < replacementArgs.length; i++) {
-    // 确保参数是字符串
-    const argString = String(replacementArgs[i] ?? '');
-    result = result.replace(new RegExp('\\{' + i + '\\}', 'g'), argString);
-  }
-  
-  return result;
+export function _(messageId: string, defaultMessage: string, ...args: any[]): string {
+  // 简化为直接调用实例方法
+  return I18n.getInstance().formatMessage(messageId, defaultMessage, ...args);
 }
 
-/**
- * 创建本地化错误
- * @param messageId 错误消息ID
- * @param technical 技术细节 (不会被本地化)
- * @param defaultMessage 当消息ID无法解析时的默认消息
- */
-export function i18nError(
-  messageId: string, 
-  technical?: string, 
-  defaultMessage?: string
-): I18nError {
-  return new I18nError(messageId, technical, defaultMessage);
-}
+export const _Error = (messageId: string, defaultMessage?: string, technical?: string) => 
+  new I18nError(messageId, defaultMessage, technical);
 
-// 自动初始化处理
+// 自动初始化处理 - 保持不变
 if (typeof document !== 'undefined') {
-  // 使用新的合并方法
-  I18nUtils.getInstance().apply();
+  I18n.getInstance().apply();
 }

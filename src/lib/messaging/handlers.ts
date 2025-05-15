@@ -1,6 +1,6 @@
 import { Logger } from '../../lib/utils/logger.js';
 import { BaseResponse } from '../../types/messages/common.js';
-import { i18n } from '../../lib/utils/i18n-utils.js';    // 新增
+import { _, _Error } from '../utils/i18n.js';    // 新增
 
 const logger = new Logger('MessageHandlers');
 /**
@@ -74,7 +74,7 @@ export function createMessageContext<TRequest, TResponse extends BaseResponse>(
           formattedMessage = formattedMessage.replace(placeholder, stringParams[i]);
         }
       }
-      logger.error(i18n('handler_response_error', '处理响应失败: {0}'), formattedMessage);  // 日志也本地化
+      logger.error(_('handler_response_error', '处理响应失败: {0}'), formattedMessage);  // 日志也本地化
       sendResponse({
         success: false,
         requestId: message.requestId,

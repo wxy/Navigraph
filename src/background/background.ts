@@ -2,7 +2,7 @@
  * 主要的后台脚本，负责初始化和协调各个组件
  */
 import { Logger } from '../lib/utils/logger.js';
-import { i18n, I18nError } from '../lib/utils/i18n-utils.js';
+import { _, _Error } from '../lib/utils/i18n.js';
 import { NavigationManager, setNavigationManager } from './navigation/navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
@@ -19,7 +19,7 @@ const logger = new Logger('Background');
 
 export function getMessageService() {
   if (!messageService) {
-    throw new Error(i18n('background_message_service_not_initialized', 'MessageService 尚未初始化'));
+    throw new Error(_('background_message_service_not_initialized', 'MessageService 尚未初始化'));
   }
   return messageService;
 }
@@ -29,28 +29,28 @@ export function getMessageService() {
  */
 async function initialize(): Promise<void> {
   try {
-    logger.log(i18n('background_startup_begin', 'Navigraph 后台脚本启动'));
-    logger.log(i18n('background_init_start', '初始化后台服务...'));
+    logger.log(_('background_startup_begin', 'Navigraph 后台脚本启动'));
+    logger.log(_('background_init_start', '初始化后台服务...'));
     
     // 1. 首先创建消息服务实例
-    logger.log(i18n('background_message_service_init_start', '初始化消息服务...'));
+    logger.log(_('background_message_service_init_start', '初始化消息服务...'));
     messageService = getBackgroundMessageService();    
     // 2. 注册基础消息处理程序（tab和settings相关）
-    logger.log(i18n('background_register_base_handlers_start', '注册基础消息处理程序...'));
+    logger.log(_('background_register_base_handlers_start', '注册基础消息处理程序...'));
     registerAllBackgroundHandlers();
     
     // 3. 然后创建设置服务
-    logger.log(i18n('background_settings_service_init_start', '初始化设置服务...'));
+    logger.log(_('background_settings_service_init_start', '初始化设置服务...'));
     settingsService = getSettingsService();
     await settingsService.initialize();
         
     // 4. 会话管理器
-    logger.log(i18n('background_session_manager_init_start', '初始化会话管理器...'));
+    logger.log(_('background_session_manager_init_start', '初始化会话管理器...'));
     sessionManager = new SessionManager();
     setSessionManager(sessionManager);
 
     // 5. 导航管理器
-    logger.log(i18n('background_nav_manager_init_start', '初始化导航管理器...'));
+    logger.log(_('background_nav_manager_init_start', '初始化导航管理器...'));
     navigationManager = new NavigationManager(messageService);    
     setNavigationManager(navigationManager);
 
@@ -59,16 +59,16 @@ async function initialize(): Promise<void> {
     await navigationManager.initialize();
 
     // 6. 注册会话管理器消息处理程序
-    logger.log(i18n('background_register_session_handlers_start', '注册会话管理器消息处理程序...'));
+    logger.log(_('background_register_session_handlers_start', '注册会话管理器消息处理程序...'));
     sessionManager.registerMessageHandlers(messageService);
     
     // 7. 设置事件监听器和上下文菜单
     setupEventListeners();
     setupContextMenus();
 
-    logger.log(i18n('background_init_complete', '导航图谱后台初始化成功'));
+    logger.log(_('background_init_complete', '导航图谱后台初始化成功'));
   } catch (error) {
-    logger.error(i18n('background_init_failed', '导航图谱后台初始化失败'), error);
+    logger.error(_('background_init_failed', '导航图谱后台初始化失败'), error);
   }
 }
 

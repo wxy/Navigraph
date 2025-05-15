@@ -5,7 +5,7 @@ import {
   BackgroundMessages,
   BackgroundResponses,
 } from "../../../types/messages/background.js";
-import { i18n } from "../../../lib/utils/i18n-utils.js";
+import { _, _Error } from "../../../lib/utils/i18n.js";
 
 const logger = new Logger("SessionMessageHandler");
 
@@ -23,7 +23,7 @@ export class SessionMessageHandler {
    * 注册所有会话相关消息处理程序
    */
   public registerHandlers(messageService: BackgroundMessageService): void {
-    logger.groupCollapsed(i18n('session_handler_registering', '注册会话相关消息处理程序'));
+    logger.groupCollapsed(_('session_handler_registering', '注册会话相关消息处理程序'));
 
     // 只包含原始实现中存在的处理程序
     this.registerGetSessionsHandler(messageService);
@@ -61,7 +61,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
@@ -85,10 +85,10 @@ export class SessionMessageHandler {
           })
           .catch((error) => {
             logger.error(
-              i18n('session_handler_get_sessions_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error))
+              _('session_handler_get_sessions_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error))
             );
             ctx.error(
-              i18n('session_handler_get_sessions_failed_message', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error)
+              _('session_handler_get_sessions_failed_message', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error)
               )
             );
           });
@@ -119,12 +119,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n('session_handler_id_empty', '会话ID不能为空'));
+          ctx.error(_('session_handler_id_empty', '会话ID不能为空'));
           return false;
         }
 
@@ -132,15 +132,15 @@ export class SessionMessageHandler {
           .getSessionDetails(message.sessionId)
           .then((session) => {
             if (!session) {
-              ctx.error(i18n('session_handler_session_not_found', '找不到会话: {0}'), message.sessionId);
+              ctx.error(_('session_handler_session_not_found', '找不到会话: {0}'), message.sessionId);
               return;
             }
 
             ctx.success({ session });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_get_details_failed', '获取会话 {0} 详情失败: {1}'), message.sessionId, error);
-            ctx.error(i18n('session_handler_get_details_failed_message', '获取会话详情失败: {0}'),
+            logger.error(_('session_handler_get_details_failed', '获取会话 {0} 详情失败: {1}'), message.sessionId, error);
+            ctx.error(_('session_handler_get_details_failed_message', '获取会话详情失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -171,7 +171,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
@@ -186,8 +186,8 @@ export class SessionMessageHandler {
             ctx.success({ session, sessionId: session.id });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_get_current_failed', '获取当前会话失败: {0}'), error);
-            ctx.error(i18n('session_handler_get_current_failed_message', '获取当前会话失败: {0}'),
+            logger.error(_('session_handler_get_current_failed', '获取当前会话失败: {0}'), error);
+            ctx.error(_('session_handler_get_current_failed_message', '获取当前会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -218,7 +218,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
@@ -233,8 +233,8 @@ export class SessionMessageHandler {
             ctx.success({ session, sessionId: session.id });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_get_latest_failed', '获取最新会话失败: {0}'), error);
-            ctx.error(i18n('session_handler_get_latest_failed_message', '获取最新会话失败: {0}'),
+            logger.error(_('session_handler_get_latest_failed', '获取最新会话失败: {0}'), error);
+            ctx.error(_('session_handler_get_latest_failed_message', '获取最新会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -243,7 +243,7 @@ export class SessionMessageHandler {
       }
     );
 
-    logger.log(i18n('session_handler_latest_registered', '已注册获取最新活跃会话处理程序'));
+    logger.log(_('session_handler_latest_registered', '已注册获取最新活跃会话处理程序'));
   }
   /**
    * 注册创建会话处理程序
@@ -266,7 +266,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
@@ -277,8 +277,8 @@ export class SessionMessageHandler {
             ctx.success({ session });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_create_failed', '创建会话失败: {0}'), error);
-            ctx.error(i18n('session_handler_create_failed_message', '创建会话失败: {0}'),
+            logger.error(_('session_handler_create_failed', '创建会话失败: {0}'), error);
+            ctx.error(_('session_handler_create_failed_message', '创建会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -309,17 +309,17 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n('session_handler_id_empty', '会话ID不能为空'));
+          ctx.error(_('session_handler_id_empty', '会话ID不能为空'));
           return false;
         }
 
         if (!message.updates) {
-          ctx.error(i18n('session_handler_update_data_empty', '更新数据不能为空'));
+          ctx.error(_('session_handler_update_data_empty', '更新数据不能为空'));
           return false;
         }
 
@@ -329,8 +329,8 @@ export class SessionMessageHandler {
             ctx.success({ session });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_update_failed', '更新会话 {0} 失败: {1}'), message.sessionId, error);
-            ctx.error(i18n('session_handler_update_failed_message', '更新会话失败: {0}'),
+            logger.error(_('session_handler_update_failed', '更新会话 {0} 失败: {1}'), message.sessionId, error);
+            ctx.error(_('session_handler_update_failed_message', '更新会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -361,17 +361,17 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n('session_handler_id_empty', '会话ID不能为空'));
+          ctx.error(_('session_handler_id_empty', '会话ID不能为空'));
           return false;
         }
 
         if (!message.confirm) {
-          ctx.error(i18n('session_handler_confirm_delete_required', '需要确认删除操作'));
+          ctx.error(_('session_handler_confirm_delete_required', '需要确认删除操作'));
           return false;
         }
 
@@ -381,8 +381,8 @@ export class SessionMessageHandler {
             ctx.success({ sessionId: message.sessionId });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_delete_failed', '删除会话 {0} 失败: {1}'), message.sessionId, error);
-            ctx.error(i18n('session_handler_delete_failed_message', '删除会话失败: {0}'),
+            logger.error(_('session_handler_delete_failed', '删除会话 {0} 失败: {1}'), message.sessionId, error);
+            ctx.error(_('session_handler_delete_failed_message', '删除会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -411,12 +411,12 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
         if (!message.sessionId) {
-          ctx.error(i18n('session_handler_id_empty', '会话ID不能为空'));
+          ctx.error(_('session_handler_id_empty', '会话ID不能为空'));
           return false;
         }
 
@@ -426,8 +426,8 @@ export class SessionMessageHandler {
             ctx.success({ sessionId: message.sessionId, session });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_end_failed', '结束会话 {0} 失败: {1}'), message.sessionId, error);
-            ctx.error(i18n('session_handler_end_failed_message', '结束会话失败: {0}'),
+            logger.error(_('session_handler_end_failed', '结束会话 {0} 失败: {1}'), message.sessionId, error);
+            ctx.error(_('session_handler_end_failed_message', '结束会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -458,7 +458,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
@@ -478,12 +478,12 @@ export class SessionMessageHandler {
             if (session) {
               ctx.success({ sessionId: message.sessionId, session });
             } else {
-              ctx.error(i18n('session_handler_session_not_found', '找不到会话: {0}'), message.sessionId);
+              ctx.error(_('session_handler_session_not_found', '找不到会话: {0}'), message.sessionId);
             }
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_set_current_failed', '设置当前会话失败: {0}'), error);
-            ctx.error(i18n('session_handler_set_current_failed_message', '设置当前会话失败: {0}'),
+            logger.error(_('session_handler_set_current_failed', '设置当前会话失败: {0}'), error);
+            ctx.error(_('session_handler_set_current_failed_message', '设置当前会话失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });
@@ -514,7 +514,7 @@ export class SessionMessageHandler {
           sendResponse
         );
         if (!ctx) {
-          logger.error(i18n('session_handler_context_failed', '创建消息上下文失败'));
+          logger.error(_('session_handler_context_failed', '创建消息上下文失败'));
           return false;
         }
 
@@ -524,8 +524,8 @@ export class SessionMessageHandler {
             ctx.success({ statistics });
           })
           .catch((error) => {
-            logger.error(i18n('session_handler_get_stats_failed', '获取会话统计信息失败: {0}'), error);
-            ctx.error(i18n('session_handler_get_stats_failed_message', '获取会话统计信息失败: {0}'),
+            logger.error(_('session_handler_get_stats_failed', '获取会话统计信息失败: {0}'), error);
+            ctx.error(_('session_handler_get_stats_failed_message', '获取会话统计信息失败: {0}'),
               error instanceof Error ? error.message : String(error)
             );
           });

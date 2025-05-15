@@ -6,7 +6,7 @@ import {
   NavNode,
   NavLink
 } from '../../types/session-types.js';
-import { i18n, I18nError } from '../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../lib/utils/i18n.js';
 import { getSettingsService } from '../../lib/settings/service.js';
 import { getSessionManager } from '../session/session-manager.js';
 
@@ -111,7 +111,7 @@ export class NavigationManager {
    */
   public async initialize(): Promise<void> {
     try {
-      logger.log(i18n('navigation_manager_init_start', '初始化导航管理器...'));
+      logger.log(_('navigation_manager_init_start', '初始化导航管理器...'));
       
       // 初始化存储
       await this.initializeStorage();
@@ -125,10 +125,10 @@ export class NavigationManager {
       // 注册事件和消息处理程序
       this.registerHandlers();
       
-      logger.log(i18n('navigation_manager_init_complete', '导航管理器初始化完成'));
+      logger.log(_('navigation_manager_init_complete', '导航管理器初始化完成'));
     } catch (error) {
-      logger.error(i18n('navigation_manager_init_failed', '导航管理器初始化失败: {0}'), error);
-      throw new Error(i18n('navigation_manager_init_error', '导航管理器初始化失败', error instanceof Error ? error.message : String(error))
+      logger.error(_('navigation_manager_init_failed', '导航管理器初始化失败: {0}'), error);
+      throw new Error(_('navigation_manager_init_error', '导航管理器初始化失败', error instanceof Error ? error.message : String(error))
       );
     }
   }
@@ -152,22 +152,22 @@ export class NavigationManager {
       
       if (currentSessionId) {
         this.setCurrentSessionId(currentSessionId);
-        logger.log(i18n('navigation_manager_session_id_retrieved', '已从会话管理器获取当前会话ID: {0}'), currentSessionId);
+        logger.log(_('navigation_manager_session_id_retrieved', '已从会话管理器获取当前会话ID: {0}'), currentSessionId);
       } else {
         // 如果没有当前会话，则请求会话管理器创建一个新会话
-        logger.log(i18n('navigation_manager_create_session_start', '未找到活跃会话，请求会话管理器创建新会话...'));
+        logger.log(_('navigation_manager_create_session_start', '未找到活跃会话，请求会话管理器创建新会话...'));
         const newSession = await sessionManager.createAndActivateSession(
-          i18n('background_default_session_name', '会话 {0}', new Date().toLocaleString())
+          _('background_default_session_name', '会话 {0}', new Date().toLocaleString())
         );
         if (newSession) {
           this.setCurrentSessionId(newSession.id);
         } else {
-          logger.error(i18n('background_create_session_failed', '无法创建新会话'));
+          logger.error(_('background_create_session_failed', '无法创建新会话'));
           this.setCurrentSessionId('');
         }
       }
     } catch (error) {
-      logger.error(i18n('background_get_create_session_failed', '获取或创建会话失败'), error);
+      logger.error(_('background_get_create_session_failed', '获取或创建会话失败'), error);
       this.setCurrentSessionId('');
     }
   }
@@ -185,11 +185,11 @@ export class NavigationManager {
    */
   private registerHandlers(): void {
     // 注册消息处理程序
-    logger.log(i18n('navigation_manager_register_message_handlers_start', '注册导航相关消息处理程序...'));
+    logger.log(_('navigation_manager_register_message_handlers_start', '注册导航相关消息处理程序...'));
     this.navigationMessageHandler.registerMessageHandlers();
 
     // 设置事件监听器
-    logger.log(i18n('navigation_manager_setup_event_listeners_start', '设置导航相关事件监听器...'));
+    logger.log(_('navigation_manager_setup_event_listeners_start', '设置导航相关事件监听器...'));
     this.navigationEventHandler.setupEventListeners();
   }
 
@@ -207,7 +207,7 @@ export class NavigationManager {
     this.edgeTracker.setSessionId(sessionId);
     this.navigationEventHandler.setCurrentSessionId(sessionId);
     
-    logger.log(i18n('navigation_manager_session_changed', '已切换到会话: {0}'), sessionId);
+    logger.log(_('navigation_manager_session_changed', '已切换到会话: {0}'), sessionId);
   }
 
   /**
@@ -219,7 +219,7 @@ export class NavigationManager {
       const sessionManager = getSessionManager();
       return await sessionManager.getCurrentSession();
     } catch (error) {
-      logger.error(i18n('background_get_current_session_failed', '从会话管理器获取当前会话失败'), error);
+      logger.error(_('background_get_current_session_failed', '从会话管理器获取当前会话失败'), error);
       return null;
     }
   }
@@ -229,7 +229,7 @@ export class NavigationManager {
    * @param sessionId 最新会话ID
    */
   public updateSessionId(sessionId: string): void {
-    logger.log(i18n('navigation_manager_update_session', '正在更新导航管理器会话ID: {0}'), sessionId);
+    logger.log(_('navigation_manager_update_session', '正在更新导航管理器会话ID: {0}'), sessionId);
     
     // 调用内部方法更新会话ID并通知所有子组件
     this.setCurrentSessionId(sessionId);
@@ -252,7 +252,7 @@ export class NavigationManager {
       
       return { nodes, edges };
     } catch (error) {
-      logger.error(i18n('background_storage_fetch_session_graph_failed', '获取会话 {0} 的导航图谱失败', sessionId), error);
+      logger.error(_('background_storage_fetch_session_graph_failed', '获取会话 {0} 的导航图谱失败', sessionId), error);
       return { nodes: [], edges: [] };
     }
   }
@@ -274,7 +274,7 @@ export class NavigationManager {
     // 重置内部状态
     this.resetNavigationState();
     
-    logger.log(i18n('navigation_manager_resources_cleaned', '导航管理器资源已清理'));
+    logger.log(_('navigation_manager_resources_cleaned', '导航管理器资源已清理'));
   }
 
   /**
@@ -290,7 +290,7 @@ export class NavigationManager {
 
     // 注意：不重置currentSessionId，因为这可能会在后续的操作中需要
     
-    logger.log(i18n('navigation_manager_state_reset', '已重置导航管理器内部状态'));
+    logger.log(_('navigation_manager_state_reset', '已重置导航管理器内部状态'));
   }
 
   //-------------------------------------------------------------------------
@@ -304,7 +304,7 @@ export class NavigationManager {
     try {
       await this.nodeTracker.cleanupCache();
     } catch (error) {
-      logger.error(i18n('background_cleanup_pending_updates_failed', '清理待更新列表失败'), error);
+      logger.error(_('background_cleanup_pending_updates_failed', '清理待更新列表失败'), error);
     }
   }
 
@@ -338,7 +338,7 @@ export class NavigationManager {
       
       return nodes.length;
     } catch (error) {
-      logger.error(i18n('background_get_node_count_failed', '获取记录数量失败'), error);
+      logger.error(_('background_get_node_count_failed', '获取记录数量失败'), error);
       return 0;
     }
   }
@@ -375,7 +375,7 @@ export class NavigationManager {
 
       return records;
     } catch (error) {
-      logger.error(i18n('background_get_tab_history_failed', '获取标签页 {0} 的历史记录失败', tabId.toString()), error);
+      logger.error(_('background_get_tab_history_failed', '获取标签页 {0} 的历史记录失败', tabId.toString()), error);
       return [];
     }
   }
@@ -431,7 +431,7 @@ export class NavigationManager {
    */
   public async clearDataBeforeTime(timestamp: number): Promise<{nodes: number, edges: number}> {
     try {
-      logger.log(i18n('navigation_manager_clearing_before', '清除{0}之前的导航数据...'), new Date(timestamp).toLocaleString());
+      logger.log(_('navigation_manager_clearing_before', '清除{0}之前的导航数据...'), new Date(timestamp).toLocaleString());
       
       // 清除节点和边
       const nodeCount = await this.navigationStorage.clearNodesBeforeTime(timestamp);
@@ -440,13 +440,13 @@ export class NavigationManager {
       // 重置可能失效的内存缓存
       this.tabStateManager.reset();
       
-      logger.log(i18n('navigation_manager_cleared_before', '已清除{0}之前的导航数据: {1}个节点, {2}条边'), 
+      logger.log(_('navigation_manager_cleared_before', '已清除{0}之前的导航数据: {1}个节点, {2}条边'), 
                 new Date(timestamp).toLocaleString(), nodeCount.toString(), edgeCount.toString());
       
       return { nodes: nodeCount, edges: edgeCount };
     } catch (error) {
-      logger.error(i18n('navigation_manager_clear_before_failed', '清除导航数据失败: {0}'), error);
-      throw new Error(i18n('navigation_manager_clear_before_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+      logger.error(_('navigation_manager_clear_before_failed', '清除导航数据失败: {0}'), error);
+      throw new Error(_('navigation_manager_clear_before_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -456,7 +456,7 @@ export class NavigationManager {
    */
   public async clearAllData(): Promise<void> {
     try {
-      logger.log(i18n('navigation_manager_clear_all_start', '开始清除所有导航数据...'));
+      logger.log(_('navigation_manager_clear_all_start', '开始清除所有导航数据...'));
       
       // 清除导航数据
       await this.navigationStorage.clearAllData();
@@ -467,10 +467,10 @@ export class NavigationManager {
       // 重新初始化导航状态
       await this.initializeSession();
       
-      logger.log(i18n('navigation_manager_clear_all_complete', '所有导航数据已清除'));
+      logger.log(_('navigation_manager_clear_all_complete', '所有导航数据已清除'));
     } catch (error) {
-      logger.error(i18n('navigation_manager_clear_all_failed', '清除导航数据失败: {0}'), error);
-      throw new Error(i18n('navigation_manager_clear_all_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+      logger.error(_('navigation_manager_clear_all_failed', '清除导航数据失败: {0}'), error);
+      throw new Error(_('navigation_manager_clear_all_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -485,7 +485,7 @@ export class NavigationManager {
       
       // 如果数据保留设置为0，表示无限期保留数据
       if (settings.dataRetention === 0) {
-        logger.log(i18n('data_retention_unlimited', '数据保留策略设置为无限期保留'));
+        logger.log(_('data_retention_unlimited', '数据保留策略设置为无限期保留'));
         return;
       }
       
@@ -493,7 +493,7 @@ export class NavigationManager {
       const retentionDays = settings.dataRetention;
       const cutoffTimestamp = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
       
-      logger.log(i18n('data_retention_executing', '执行数据保留政策: 删除{0}天前的数据 ({1}之前)'), 
+      logger.log(_('data_retention_executing', '执行数据保留政策: 删除{0}天前的数据 ({1}之前)'), 
                 retentionDays.toString(), new Date(cutoffTimestamp).toLocaleString());
       
       // 清除导航数据
@@ -503,13 +503,13 @@ export class NavigationManager {
       const sessionManager = getSessionManager();
       const sessionsCleared = await sessionManager.clearSessionsBeforeTime(cutoffTimestamp);
       
-      logger.log(i18n('data_retention_completed', 
+      logger.log(_('data_retention_completed', 
                     '数据保留政策执行完成: 已删除{0}个节点, {1}条边, {2}个会话'), 
                 navResults.nodes.toString(), 
                 navResults.edges.toString(),
                 sessionsCleared.toString());
     } catch (error) {
-      logger.error(i18n('data_retention_failed', '执行数据保留政策失败: {0}'), error);
+      logger.error(_('data_retention_failed', '执行数据保留政策失败: {0}'), error);
     }
   }
 }
@@ -518,7 +518,7 @@ let navigationManagerInstance: NavigationManager | null = null;
 
 export function getNavigationManager(): NavigationManager {
   if (!navigationManagerInstance) {
-    throw new Error(i18n('background_instance_not_initialized', 'NavigationManager实例未初始化'));
+    throw new Error(_('background_instance_not_initialized', 'NavigationManager实例未初始化'));
   }
   return navigationManagerInstance;
 }

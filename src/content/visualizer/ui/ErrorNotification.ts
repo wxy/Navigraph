@@ -1,5 +1,5 @@
 import { Logger } from '../../../lib/utils/logger.js';
-import { i18n } from '../../../lib/utils/i18n-utils.js';
+import { _, _Error } from '../../../lib/utils/i18n.js';
 
 const logger = new Logger('ErrorNotification');
 
@@ -22,10 +22,10 @@ export class ErrorNotification {
     this.toastElement = document.getElementById('navigraph-toast');
 
     if (!this.simpleErrorElement || !this.detailedErrorElement || !this.toastElement) {
-      logger.error(i18n('content_error_ui_missing', '找不到必要的错误UI元素'));
+      logger.error(_('content_error_ui_missing', '找不到必要的错误UI元素'));
     }
 
-    logger.log(i18n('error_notification_initialized', '错误通知组件已初始化'));
+    logger.log(_('error_notification_initialized', '错误通知组件已初始化'));
   }
 
   /**
@@ -38,7 +38,7 @@ export class ErrorNotification {
       this.initialize();
     }
 
-    logger.error(i18n('content_error_occurred', '发生错误: {0}', message));
+    logger.error(_('content_error_occurred', '发生错误: {0}', message));
 
     if (this.simpleErrorElement) {
       // 设置错误消息
@@ -50,13 +50,13 @@ export class ErrorNotification {
       // 本地化关闭按钮
       const closeButton = this.simpleErrorElement.querySelector('.close-button');
       if (closeButton) {
-        closeButton.setAttribute('title', i18n('content_close', '关闭'));
+        closeButton.setAttribute('title', _('content_close', '关闭'));
       }
 
       // 本地化刷新按钮（如果存在）
       const refreshButton = this.simpleErrorElement.querySelector('.refresh-button');
       if (refreshButton) {
-        refreshButton.textContent = i18n('content_refresh', '刷新');
+        refreshButton.textContent = _('content_refresh', '刷新');
       }
 
       // 显示元素
@@ -110,7 +110,7 @@ export class ErrorNotification {
       // 设置错误标题
       const titleElement = this.detailedErrorElement.querySelector('.error-title');
       if (titleElement) {
-        titleElement.textContent = title || i18n('content_error_default_title', '错误');
+        titleElement.textContent = title || _('content_error_default_title', '错误');
       }
 
       // 设置错误消息
@@ -128,7 +128,7 @@ export class ErrorNotification {
       // 本地化关闭按钮
       const closeButton = this.detailedErrorElement.querySelector('.close-button');
       if (closeButton) {
-        closeButton.setAttribute('title', i18n('content_close', '关闭'));
+        closeButton.setAttribute('title', _('content_close', '关闭'));
       }
 
       // 显示元素
@@ -155,7 +155,7 @@ export class ErrorNotification {
       this.initialize();
     }
 
-    logger.log(i18n('notification_message', '通知: {0}'), message);
+    logger.log(_('notification_message', '通知: {0}'), message);
 
     if (this.toastElement) {
       // 清除之前的自动隐藏计时器
