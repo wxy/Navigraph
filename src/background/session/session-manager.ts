@@ -101,7 +101,7 @@ export class SessionManager {
       logger.log(_('session_manager_init_complete', '会话管理器初始化完成'));
     } catch (error) {
       logger.error(_('session_manager_init_failed', '会话管理器初始化失败: {0}'), error);
-      throw new Error(_('session_manager_init_failed', '会话管理器初始化失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_manager_init_failed', '会话管理器初始化失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -227,7 +227,7 @@ export class SessionManager {
       }, true);
     } catch (error) {
       logger.error(_('session_manager_load_active_failed', '加载活跃会话失败: {0}'), error);
-      throw new Error(_('session_manager_load_active_failed', '加载活跃会话失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('session_manager_load_active_failed', '加载活跃会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -242,7 +242,7 @@ export class SessionManager {
       return sessions;
     } catch (error) {
       logger.error(_('session_manager_get_list_failed', '获取会话列表失败: {0}'), error);
-      throw new Error(_('session_manager_get_list_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_manager_get_list_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -267,7 +267,7 @@ export class SessionManager {
       return this.enrichSessionWithNavigationData(session);
     } catch (error) {
       logger.error(_('session_manager_get_session_failed', '获取会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(_('session_manager_get_session_failed', '获取会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_manager_get_session_failed', '获取会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -374,12 +374,12 @@ export class SessionManager {
       if (isInCooldown && !options?.skipCooldown) {
         const remainingTime = Math.ceil((this.SESSION_CREATION_COOLDOWN - (now - this.lastSessionCreationTime)) / 1000);
         logger.warn(_('session_creation_cooldown', '会话创建冷却期中，剩余{0}秒'), remainingTime);
-        throw new Error(_('session_creation_cooldown_error', '会话创建过于频繁，请等待{0}秒后再试', remainingTime.toString()));
+        throw new _Error('session_creation_cooldown_error', '会话创建过于频繁，请等待{0}秒后再试', remainingTime.toString());
       }
       
       // 检查锁定状态
       if (this.sessionCreationLock) {
-        throw new Error(_('session_creation_locked', '会话创建已锁定，请稍后再试'));
+        throw new _Error('session_creation_locked', '会话创建已锁定，请稍后再试');
       }
       
       // 设置锁定
@@ -411,7 +411,7 @@ export class SessionManager {
       }
     } catch (error) {
       logger.error(_('background_session_create_failed', '创建会话失败: {0}'), error);
-      throw new Error(_('background_session_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('background_session_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -430,7 +430,7 @@ export class SessionManager {
       });
     } catch (error) {
       logger.error(_('session_manager_create_activate_failed', '创建并激活会话失败: {0}'), error);
-      throw new Error(_('session_manager_create_activate_failed', '创建并激活会话失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('session_manager_create_activate_failed', '创建并激活会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -447,7 +447,7 @@ export class SessionManager {
       // 验证会话是否存在
       const existingSession = await this.storage.getSession(sessionId);
       if (!existingSession) {
-        throw new Error(_('session_does_not_exist', '会话 {0} 不存在', sessionId));
+        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
       
       // 更新会话
@@ -456,7 +456,7 @@ export class SessionManager {
       // 获取更新后的会话
       const updatedSession = await this.storage.getSession(sessionId);
       if (!updatedSession) {
-        throw new Error(_('session_not_found_after_update', '更新会话后无法检索到会话'));
+        throw new _Error('session_not_found_after_update', '更新会话后无法检索到会话');
       }
       
       // 发布会话更新事件
@@ -467,7 +467,7 @@ export class SessionManager {
       return updatedSession;
     } catch (error) {
       logger.error(_('session_manager_update_failed', '更新会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(_('session_manager_update_failed', '更新会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_manager_update_failed', '更新会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -499,7 +499,7 @@ export class SessionManager {
       // 更新存储，不触发事件
       await this.storage.saveSession(session);
     } catch (error) {
-      logger.error(_('update_node_count_session_failed', '更新会话 {0} 节点计数失败: {1}'), sessionId, error);
+      logger.error(_('update_node_count_session_failed', '更新会话 {0} 节点计数失败: {1}'), sessionId, error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -530,7 +530,7 @@ export class SessionManager {
       // 更新存储，不触发事件
       await this.storage.saveSession(session);
     } catch (error) {
-      logger.error(_('update_tab_count_session_failed', '更新会话 {0} 标签页计数失败: {1}'), sessionId, error);
+      logger.error(_('update_tab_count_session_failed', '更新会话 {0} 标签页计数失败: {1}'), sessionId, error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -559,7 +559,7 @@ export class SessionManager {
       
       logger.log(_('session_manager_deactivated', '会话已停用: {0}'), sessionId);
     } catch (error) {
-      logger.error(_('session_manager_deactivate_failed', '停用会话失败: {0}, 错误: {1}'), sessionId, error);
+      logger.error(_('session_manager_deactivate_failed', '停用会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -573,7 +573,7 @@ export class SessionManager {
       // 验证会话是否存在
       const existingSession = await this.storage.getSession(sessionId);
       if (!existingSession) {
-        throw new Error(_('session_does_not_exist', '会话 {0} 不存在', sessionId));
+        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
       
       // 如果会话已经结束，直接返回
@@ -590,7 +590,7 @@ export class SessionManager {
       // 获取更新后的会话
       const updatedSession = await this.storage.getSession(sessionId);
       if (!updatedSession) {
-        throw new Error(_('session_not_found_after_end', '结束会话后无法检索到会话'));
+        throw new _Error('session_not_found_after_end', '结束会话后无法检索到会话');
       }
       
       // 如果这是最新会话，清除引用
@@ -606,8 +606,7 @@ export class SessionManager {
       return updatedSession;
     } catch (error) {
       logger.error(_('session_manager_end_failed', '结束会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(_('session_manager_end_failed', '结束会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error))
-      );
+      throw new _Error('session_manager_end_failed', '结束会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -622,7 +621,7 @@ export class SessionManager {
       // 验证会话是否存在
       const existingSession = await this.storage.getSession(sessionId);
       if (!existingSession) {
-        throw new Error(_('session_does_not_exist', '会话 {0} 不存在', sessionId));
+        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
       
       // 删除会话
@@ -643,8 +642,8 @@ export class SessionManager {
       
       return true;
     } catch (error) {
-      logger.error(_('session_manager_delete_failed', '删除会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(_('session_manager_delete_failed', '删除会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error))
+      logger.error(_('session_manager_delete_failed', '删除会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
+      throw new _Error('session_manager_delete_failed', '删除会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -686,7 +685,7 @@ export class SessionManager {
       // 检查会话是否存在
       const session = await this.getSessionDetails(sessionId);
       if (!session) {
-        throw new Error(_('session_does_not_exist', '会话 {0} 不存在', sessionId));
+        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
       
       // 更新当前会话ID
@@ -694,12 +693,11 @@ export class SessionManager {
       
       return session;
     } catch (error) {
-      logger.error(_('session_manager_set_current_failed', '设置当前会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(_('session_manager_set_current_failed', '设置当前会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error))
-      );
+      logger.error(_('session_manager_set_current_failed', '设置当前会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
+      throw new _Error('session_manager_set_current_failed', '设置当前会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error));
     }
   }
-  
+
   /**
    * 获取当前会话ID
    */
@@ -720,9 +718,8 @@ export class SessionManager {
     try {
       return await this.getSessionDetails(this.latestSessionId);
     } catch (error) {
-      logger.error(_('latest_session_load_failed', '加载最新会话失败: {0}'), error);
-      throw new Error(_('latest_session_load_failed_message', '获取最新会话失败: {0}', error instanceof Error ? error.message : String(error))
-      );
+      logger.error(_('latest_session_load_failed', '加载最新会话失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw new _Error('latest_session_load_failed_message', '获取最新会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -756,7 +753,7 @@ export class SessionManager {
       // 检查会话是否存在
       const session = await this.getSessionDetails(sessionId);
       if (!session) {
-        throw new Error(_('session_does_not_exist', '会话 {0} 不存在', sessionId));
+        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
       
       // 将当前最新会话设为非活跃
@@ -770,7 +767,7 @@ export class SessionManager {
       return session;
     } catch (error) {
       logger.error(_('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}'), sessionId, error);
-      throw new Error(_('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -796,7 +793,7 @@ export class SessionManager {
       return await this.setLatestSession(this.currentSessionId);
     } catch (error) {
       logger.error(_('sync_current_to_latest_failed', '同步当前会话到最新会话失败: {0}'), error);
-      throw new Error(_('sync_current_to_latest_failed_message', '同步当前会话到最新会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('sync_current_to_latest_failed_message', '同步当前会话到最新会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -816,7 +813,7 @@ export class SessionManager {
       return await this.setCurrentSession(this.latestSessionId);
     } catch (error) {
       logger.error(_('sync_latest_to_current_failed', '同步最新会话到当前会话失败: {0}'), error);
-      throw new Error(_('sync_latest_to_current_failed_message', '同步最新会话到当前会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('sync_latest_to_current_failed_message', '同步最新会话到当前会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -968,7 +965,7 @@ export class SessionManager {
       // 获取指定会话
       const session = await this.getSessionDetails(sessionId);
       if (!session) {
-        throw new Error(_('session_does_not_exist', '会话 {0} 不存在', sessionId));
+        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
   
       // 计算基本统计信息
@@ -1051,7 +1048,7 @@ export class SessionManager {
       };
     } catch (error) {
       logger.error(_('session_statistics_failed', '获取会话 {0} 统计信息失败: {1}'), sessionId, error);
-      throw new Error(_('session_statistics_failed_message', '获取会话统计信息失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_statistics_failed_message', '获取会话统计信息失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   } 
@@ -1080,7 +1077,7 @@ export class SessionManager {
       logger.log(_('session_manager_cleared_all', '已清除所有会话'));
     } catch (error) {
       logger.error(_('session_manager_clear_all_failed', '清除所有会话失败: {0}'), error);
-      throw new Error(_('session_manager_clear_all_failed', '清除所有会话失败: {0}', error));
+      throw new _Error('session_manager_clear_all_failed', '清除所有会话失败: {0}', error);
     }
   }
 
@@ -1122,7 +1119,7 @@ export class SessionManager {
       return clearedCount;
     } catch (error) {
       logger.error(_('session_manager_clear_before_failed', '清除会话失败: {0}'), error);
-      throw new Error(_('session_manager_clear_before_failed', '清除会话失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('session_manager_clear_before_failed', '清除会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -1229,7 +1226,7 @@ let sessionManagerInstance: SessionManager | null = null;
  */
 export function getSessionManager(): SessionManager {
   if (!sessionManagerInstance) {
-    throw new Error(_('session_manager_not_initialized', 'SessionManager实例未初始化'));
+    throw new _Error('session_manager_not_initialized', 'SessionManager实例未初始化');
   }
   return sessionManagerInstance;
 }

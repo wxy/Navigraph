@@ -366,7 +366,7 @@ export class RenderingManager {
     try {
       // 确保有效的SVG元素
       if (!svgElement) {
-        throw new Error(_('svg_element_empty', 'SVG元素为空'));
+        throw new _Error('svg_element_empty', 'SVG元素为空');
       }
       
       // 将原生SVG元素转换为D3选择集

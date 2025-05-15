@@ -69,7 +69,7 @@ export class SessionStorage {
       logger.log(_('session_storage_init_complete', '会话存储初始化完成'));
     } catch (error) {
       logger.error(_('session_storage_init_failed', '会话存储初始化失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_init_failed', '会话存储初始化失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_init_failed', '会话存储初始化失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -94,7 +94,7 @@ export class SessionStorage {
       await this.db.put(this.STORE_NAME, session);
     } catch (error) {
       logger.error(_('session_storage_save_failed', '保存会话失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_save_failed', '保存会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_save_failed', '保存会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -112,7 +112,7 @@ export class SessionStorage {
       return session || null;
     } catch (error) {
       logger.error(_('session_storage_get_failed', '获取会话失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_get_failed', '获取会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_get_failed', '获取会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -197,7 +197,7 @@ export class SessionStorage {
       return sessions;
     } catch (error) {
       logger.error(_('session_storage_get_list_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_get_list_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_get_list_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -223,7 +223,7 @@ export class SessionStorage {
       return true;
     } catch (error) {
       logger.error(_('session_storage_delete_failed', '删除会话失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_delete_failed', '删除会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_delete_failed', '删除会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -239,7 +239,7 @@ export class SessionStorage {
       logger.log(_('session_storage_cleared_all', '已清除所有会话数据'));
     } catch (error) {
       logger.error(_('session_storage_clear_failed', '清除会话数据失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_clear_failed', '清除会话数据失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_clear_failed', '清除会话数据失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -263,7 +263,7 @@ export class SessionStorage {
       return await this.db.count(this.STORE_NAME);
     } catch (error) {
       logger.error(_('session_storage_count_failed', '获取会话数量失败: {0}', error instanceof Error ? error.message : String(error)), error);
-      throw new Error(_('session_storage_count_failed', '获取会话数量失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_count_failed', '获取会话数量失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -311,7 +311,7 @@ export class SessionStorage {
       logger.log(_('session_storage_stats_updated', '已更新会话统计信息: {0}'), sessionId);
     } catch (error) {
       logger.error(_('session_storage_update_stats_failed', '更新会话统计信息失败: {0}, {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_update_stats_failed', '更新会话统计信息失败: {0}, {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_update_stats_failed', '更新会话统计信息失败: {0}, {1}',sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -336,7 +336,7 @@ export class SessionStorage {
       return null;
     } catch (error) {
       logger.error(_('session_storage_get_current_failed', '获取当前会话失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_get_current_failed', '获取当前会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_get_current_failed', '获取当前会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -390,7 +390,7 @@ export class SessionStorage {
       return newSession;
     } catch (error) {
       logger.error(_('session_storage_create_failed', '创建会话失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -412,7 +412,7 @@ export class SessionStorage {
       }
     } catch (error) {
       logger.error(_('session_storage_deactivate_all_failed', '将会话设置为非活跃状态失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_deactivate_all_failed', '将会话设置为非活跃状态失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_deactivate_all_failed', '将会话设置为非活跃状态失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -442,7 +442,7 @@ export class SessionStorage {
       return session;
     } catch (error) {
       logger.error(_('session_storage_end_failed', '结束会话失败: {0}, {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_end_failed', '结束会话失败: {0}, {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_end_failed', '结束会话失败: {0}, {1}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -475,7 +475,7 @@ export class SessionStorage {
       return session;
     } catch (error) {
       logger.error(_('session_storage_activate_failed', '激活会话失败: {0}, {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_activate_failed', '激活会话失败: {0}, {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_activate_failed', '激活会话失败: {0}, {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -491,7 +491,7 @@ export class SessionStorage {
       // 获取会话
       const session = await this.getSession(sessionId);
       if (!session) {
-        throw new Error(_('session_storage_session_not_found', '会话不存在: {0}', sessionId));
+        throw new _Error('session_storage_session_not_found', '会话不存在: {0}', sessionId);
       }
       
       // 清空会话中的记录和边映射
@@ -508,11 +508,8 @@ export class SessionStorage {
       
       logger.log(_('session_storage_data_cleared', '已清除会话数据: {0}'), sessionId);
     } catch (error) {
-      if (error instanceof I18nError) {
-        throw error; // 重新抛出已经本地化的错误
-      }
       logger.error(_('session_storage_clear_data_failed', '清除会话数据失败: {0}, {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_clear_data_failed', '清除会话数据失败: {0}, {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_clear_data_failed', '清除会话数据失败: {0}, {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -529,7 +526,7 @@ export class SessionStorage {
       // 获取会话
       const session = await this.getSession(sessionId);
       if (!session) {
-        throw new Error(_('session_storage_session_not_found', '会话不存在: {0}', sessionId));
+        throw new _Error('session_storage_session_not_found', '会话不存在: {0}', sessionId);
       }
       
       // 应用更新
@@ -547,11 +544,8 @@ export class SessionStorage {
       logger.log(_('session_storage_updated', '已更新会话: {0}'), sessionId);
       return session;
     } catch (error) {
-      if (error instanceof I18nError) {
-        throw error; // 重新抛出已经本地化的错误
-      }
       logger.error(_('session_storage_update_failed', '更新会话失败: {0}, {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_update_failed', '更新会话失败: {0}, {1}', error instanceof Error ? error.message : String(error))
+      throw new _Error('session_storage_update_failed', '更新会话失败: {0}, {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -593,7 +587,7 @@ export class SessionStorage {
       return deleteCount;
     } catch (error) {
       logger.error(_('session_storage_clear_before_failed', '清除会话失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('session_storage_clear_before_failed_message', '清除会话失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('session_storage_clear_before_failed_message', '清除会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 }

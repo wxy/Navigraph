@@ -245,42 +245,31 @@ export class I18n {
 /**
  * 本地化错误类
  */
-export class I18nError extends Error {
+export class _Error extends Error {
   public readonly messageId: string;
-  public readonly technical?: string;
-  
+
   /**
    * 创建一个已本地化的错误对象
    * 所有可能暴露给用户的错误都应使用此类
    * 
    * @param messageId 消息ID，用于本地化
    * @param defaultMessage 默认消息，当本地化失败时使用
-   * @param technical 技术细节，仅用于日志记录，不会显示给用户
+   * @param args 替换参数，用于格式化消息
    */
-  constructor(messageId: string, defaultMessage: string = messageId, technical?: string) {
-    // 使用本地化的消息作为错误消息
-    super(I18n.getInstance().getMessage(messageId, defaultMessage));
-    
+  constructor(messageId: string, defaultMessage: string = messageId, ...args: any[]) {
+    // 使用本地化的消息作为错误消息，并格式化替换参数
+    const formattedMessage = I18n.getInstance().formatMessage(messageId, defaultMessage, ...args);
+    super(formattedMessage);
+
     this.messageId = messageId;
-    this.technical = technical;
-    
+
     // 修复原型链
-    Object.setPrototypeOf(this, I18nError.prototype);
-    
+    Object.setPrototypeOf(this, _Error.prototype);
+
     // 保留原始堆栈
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, I18nError);
+      Error.captureStackTrace(this, _Error);
     }
-  }
-  
-  /**
-   * 获取完整错误信息
-   */
-  getFullMessage(): string {
-    if (this.technical) {
-      return `${this.message} (${this.technical})`;
-    }
-    return this.message;
   }
 }
 
@@ -305,9 +294,6 @@ export function _(messageId: string, defaultMessage: string, ...args: any[]): st
   // 简化为直接调用实例方法
   return I18n.getInstance().formatMessage(messageId, defaultMessage, ...args);
 }
-
-export const _Error = (messageId: string, defaultMessage?: string, technical?: string) => 
-  new I18nError(messageId, defaultMessage, technical);
 
 // 自动初始化处理 - 保持不变
 if (typeof document !== 'undefined') {

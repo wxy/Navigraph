@@ -1,5 +1,5 @@
 import { Logger } from '../../lib/utils/logger.js';
-import { I18nError, i18n } from '../utils/i18n.js';  // 引入 I18nError
+import { _, _Error } from '../utils/i18n.js';  // 引入 I18nError
 import {
   MessageTarget,
   BaseMessage,
@@ -56,7 +56,7 @@ export function sendMessage<T extends MessageTarget, A extends string>(
           });
         } else {
           // 使用 I18nError 并本地化日志
-          const err = new Error(_('message_missing_tab_id', '发送到内容脚本时必须指定 tabId'));
+          const err = new _Error('message_missing_tab_id', '发送到内容脚本时必须指定 tabId');
           logger.error(_('message_missing_tab_id', '发送到内容脚本时必须指定 tabId'));
           reject(err);
         }
@@ -71,9 +71,9 @@ export function sendMessage<T extends MessageTarget, A extends string>(
       if (!retryInfo || retryInfo.isLastAttempt) {
         logger.error(_('message_send_error', '发送消息异常: {0}'), error instanceof Error ? error.message : String(error));
       } 
-      const msg = error instanceof I18nError
+      const msg = error instanceof _Error
         ? error
-        : new Error(_('message_send_error', '发送消息异常: {0}', error instanceof Error ? error.message : String(error)));
+        : new _Error('message_send_error', '发送消息异常: {0}', error instanceof Error ? error.message : String(error));
       reject(msg);
     }
   });
@@ -94,12 +94,12 @@ function handleResponse<T extends BaseResponse>(
     if (!suppressErrors) {
       logger.error(_('message_runtime_error', '运行时错误: {0}'), chrome.runtime.lastError.message);
     }
-    reject(new Error(_('message_runtime_error', '运行时错误: {0}', chrome.runtime.lastError.message)));
+    reject(new _Error('message_runtime_error', '运行时错误: {0}', chrome.runtime.lastError.message));
     return;
   }
 
   if (!response) {
-    const err = new Error(_('message_no_response', '没有收到响应'));
+    const err = new _Error('message_no_response', '没有收到响应');
     if (!suppressErrors) {
       logger.error(_('message_no_response', '没有收到响应'));
     }
@@ -108,7 +108,7 @@ function handleResponse<T extends BaseResponse>(
   }
 
   if (!response.success) {
-    const err = new Error(_('message_response_error', '收到错误响应: {0}', response.error));
+    const err = new _Error('message_response_error', '收到错误响应: {0}', response.error);
     if (!suppressErrors) {
       logger.error(_('message_response_error', '收到错误响应: {0}'), response.error);
     }
@@ -263,9 +263,9 @@ export function sendMessageWithRetry<T extends MessageTarget, A extends string>(
       // 最终失败时记录一条整体错误
       logger.error(_('message_send_final_failed', '在第 {1} 次尝试后发送消息失败: {0}'), action, maxRetries + 1);
       reject(
-        lastError instanceof I18nError
+        lastError instanceof _Error
           ? lastError
-          : new Error(_('message_send_final_failed', '在第 {1} 次尝试后发送消息失败: {0}', [action, `${maxRetries + 1}`]))
+          : new _Error('message_send_final_failed', '在第 {1} 次尝试后发送消息失败: {0}', [action, `${maxRetries + 1}`])
       );
     }
   });

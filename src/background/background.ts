@@ -19,7 +19,7 @@ const logger = new Logger('Background');
 
 export function getMessageService() {
   if (!messageService) {
-    throw new Error(_('background_message_service_not_initialized', 'MessageService 尚未初始化'));
+    throw new _Error('background_message_service_not_initialized', 'MessageService 尚未初始化');
   }
   return messageService;
 }

@@ -128,7 +128,7 @@ export class NavigationManager {
       logger.log(_('navigation_manager_init_complete', '导航管理器初始化完成'));
     } catch (error) {
       logger.error(_('navigation_manager_init_failed', '导航管理器初始化失败: {0}'), error);
-      throw new Error(_('navigation_manager_init_error', '导航管理器初始化失败', error instanceof Error ? error.message : String(error))
+      throw new _Error('navigation_manager_init_failed', '导航管理器初始化失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -446,7 +446,7 @@ export class NavigationManager {
       return { nodes: nodeCount, edges: edgeCount };
     } catch (error) {
       logger.error(_('navigation_manager_clear_before_failed', '清除导航数据失败: {0}'), error);
-      throw new Error(_('navigation_manager_clear_before_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('navigation_manager_clear_before_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -470,7 +470,7 @@ export class NavigationManager {
       logger.log(_('navigation_manager_clear_all_complete', '所有导航数据已清除'));
     } catch (error) {
       logger.error(_('navigation_manager_clear_all_failed', '清除导航数据失败: {0}'), error);
-      throw new Error(_('navigation_manager_clear_all_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('navigation_manager_clear_all_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -518,7 +518,7 @@ let navigationManagerInstance: NavigationManager | null = null;
 
 export function getNavigationManager(): NavigationManager {
   if (!navigationManagerInstance) {
-    throw new Error(_('background_instance_not_initialized', 'NavigationManager实例未初始化'));
+    throw new _Error('background_instance_not_initialized', 'NavigationManager实例未初始化');
   }
   return navigationManagerInstance;
 }

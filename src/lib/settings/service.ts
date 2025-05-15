@@ -96,7 +96,7 @@ export class SettingsService {
       }
     } catch (error) {
       logger.error(_('settings_storage_load_failed', '从存储加载设置失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('settings_storage_load_failed', '从存储加载设置失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('settings_storage_load_failed', '从存储加载设置失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -112,7 +112,7 @@ export class SettingsService {
       this.updateCache(settings);
     } catch (error) {
       logger.error(_('settings_storage_save_failed', '保存设置到存储失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('settings_storage_save_failed', '保存设置到存储失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('settings_storage_save_failed', '保存设置到存储失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -198,7 +198,7 @@ export class SettingsService {
       // 不再广播设置变更，改为显示用户提示
     } catch (error) {
       logger.error(_('settings_update_failed', '更新设置失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('settings_update_failed', '更新设置失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('settings_update_failed', '更新设置失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -216,7 +216,7 @@ export class SettingsService {
       // 不再广播设置变更，改为显示用户提示
     } catch (error) {
       logger.error(_('settings_reset_failed', '重置设置失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('settings_reset_failed', '重置设置失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('settings_reset_failed', '重置设置失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
   

@@ -91,7 +91,7 @@ export class IndexedDBStorage {
         request.onerror = (event) => {
           const error = (event.target as IDBRequest).error;
           logger.error(_('background_db_open_failed', '打开数据库失败: {0}'), error);
-          reject(new Error(_('background_db_open_failed', '打开数据库失败: {0}', error?.message || _('background_unknown_error', '发生未知错误'))
+          reject(new _Error('background_db_open_failed', '打开数据库失败: {0}', error?.message || _('background_unknown_error', '发生未知错误')
           ));
         };
         
@@ -117,12 +117,12 @@ export class IndexedDBStorage {
         request.onerror = (event) => {
           const error = request.error;
           logger.error(_('background_db_open_failed', '打开数据库失败: {0}'), error);
-          reject(new Error(_('background_db_open_failed', '打开数据库失败: {0}', error?.message || _('background_unknown_error', '发生未知错误'))
+          reject(new _Error('background_db_open_failed', '打开数据库失败: {0}', error?.message || _('background_unknown_error', '发生未知错误')
           ));
         };
       } catch (error) {
         logger.error(_('background_db_init_failed', '数据库初始化失败: {0}'), error);
-        reject(new Error(_('background_db_init_failed', '数据库初始化失败: {0}', error instanceof Error ? error.message : _('background_unknown_error', '发生未知错误'))
+        reject(new _Error('background_db_init_failed', '数据库初始化失败: {0}', error instanceof Error ? error.message : _('background_unknown_error', '发生未知错误')
         ));
       }
     });
@@ -239,11 +239,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_add_failed', '向存储 {0} 添加数据失败', storeName)));
+          reject(new _Error('background_db_add_failed', '向存储 {0} 添加数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -269,11 +269,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_put_failed', '更新存储 {0} 中的数据失败', storeName)));
+          reject(new _Error('background_db_put_failed', '更新存储 {0} 中的数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -299,11 +299,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_get_failed', '从存储 {0} 获取数据失败', storeName)));
+          reject(new _Error('background_db_get_failed', '从存储 {0} 获取数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -328,11 +328,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_get_all_failed', '获取存储 {0} 的所有数据失败', storeName)));
+          reject(new _Error('background_db_get_all_failed', '获取存储 {0} 的所有数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -357,7 +357,7 @@ export class IndexedDBStorage {
         const { transaction, store } = await this.startTransaction(storeName);
         
         if (!store.indexNames.contains(indexName)) {
-          reject(new Error(_('background_db_index_not_found', '存储 {0} 中未找到指定的索引 {1}', storeName, indexName)));
+          reject(new _Error('background_db_index_not_found', '存储 {0} 中未找到指定的索引 {1}', storeName, indexName));
           return;
         }
         
@@ -369,11 +369,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_get_by_index_failed', '通过索引获取存储 {0} 的数据失败', storeName)));
+          reject(new _Error('background_db_get_by_index_failed', '通过索引获取存储 {0} 的数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -398,11 +398,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_delete_failed', '从存储 {0} 删除数据失败', storeName)));
+          reject(new _Error('background_db_delete_failed', '从存储 {0} 删除数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -426,11 +426,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_clear_failed', '清空存储 {0} 失败', storeName)));
+          reject(new _Error('background_db_clear_failed', '清空存储 {0} 失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -464,11 +464,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_for_each_failed', '遍历存储 {0} 的数据失败', storeName)));
+          reject(new _Error('background_db_for_each_failed', '遍历存储 {0} 的数据失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -520,11 +520,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_count_failed', '获取存储 {0} 的记录数量失败', storeName)));
+          reject(new _Error('background_db_count_failed', '获取存储 {0} 的记录数量失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);
@@ -550,11 +550,11 @@ export class IndexedDBStorage {
         };
         
         request.onerror = () => {
-          reject(new Error(_('background_db_exists_failed', '检查数据在存储 {0} 中是否存在时失败', storeName)));
+          reject(new _Error('background_db_exists_failed', '检查数据在存储 {0} 中是否存在时失败', storeName));
         };
         
         transaction.onerror = (event) => {
-          reject(new Error(_('background_db_transaction_error', '数据库事务错误: {0}', String(event))));
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
         reject(error);

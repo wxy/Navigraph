@@ -126,7 +126,7 @@ export async function sendLinkClickToBackground(linkInfo: {
   [key: string]: any;
 }): Promise<void> {
   if (!linkInfo) {
-    throw new Error(_('tracking_handlers_missing_link_info', '缺少链接信息'));
+    throw new _Error('tracking_handlers_missing_link_info', '缺少链接信息');
   }
   
   // 使用存储的节点ID
@@ -159,7 +159,7 @@ export async function sendFormSubmitToBackground(formInfo: {
   formData?: Record<string, string>;
 }): Promise<void> {
   if (!formInfo) {
-    throw new Error(_('tracking_handlers_missing_form_info', '缺少表单信息'));
+    throw new _Error('tracking_handlers_missing_form_info', '缺少表单信息');
   }
   
   // 使用存储的节点ID

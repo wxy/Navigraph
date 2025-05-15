@@ -40,7 +40,7 @@
       } catch (error) {
         // 配置管理器初始化失败
         logger.error(_('content_config_init_failed', '配置管理初始化失败'), error);
-        throw new Error(_('content_config_load_failed', '配置加载失败: {0}', error instanceof Error ? error.message : String(error))
+        throw new _Error('content_config_load_failed', '配置加载失败: {0}', error instanceof Error ? error.message : String(error)
         );
       }
 
@@ -53,7 +53,7 @@
         logger.log(_('content_message_service_initialized', '消息服务初始化完成'));
       } catch (error) {
         logger.error(_('content_message_service_init_failed', '消息服务初始化失败: {0}'), error);
-        throw new Error(_('content_message_service_init_failed', '消息服务初始化失败: {0}', error instanceof Error ? error.message : String(error))
+        throw new _Error('content_message_service_init_failed', '消息服务初始化失败: {0}', error instanceof Error ? error.message : String(error)
         );
       }
 
@@ -76,7 +76,7 @@
       } catch (error) {
         logger.error(_('content_visualizer_init_failed', '导航可视化器初始化失败: {0}'), error);
         showDetailedErrorMessage('content_visualizer_init_failed', error);
-        throw new Error(_('content_visualizer_init_failed', '导航可视化器初始化失败: {0}', error instanceof Error ? error.message : String(error))
+        throw new _Error('content_visualizer_init_failed', '导航可视化器初始化失败: {0}', error instanceof Error ? error.message : String(error)
         );
       }
 

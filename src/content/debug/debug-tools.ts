@@ -282,7 +282,7 @@ export class DebugTools {
         });
         
         if (!response.success) {
-          throw new Error(_('debug_clear_data_unknown_error', '清除数据时发生未知错误: {0}', response.error));
+          throw new _Error('debug_clear_data_unknown_error', '清除数据时发生未知错误: {0}', response.error);
         }
       } catch (error) {
         logger.error(_('debug_clear_data_send_failed', '发送清除数据消息失败: {0}'), error);

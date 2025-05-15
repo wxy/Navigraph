@@ -210,7 +210,7 @@ export class NavigationVisualizer implements Visualizer {
       // 使用渲染管理器配置SVG
       this.renderingManager.setupSvg(svg);
     } else {
-      throw new Error(_('content_svg_create_failed', '无法创建SVG元素'));
+      throw new _Error('content_svg_create_failed', '无法创建SVG元素');
     }
   }
 
@@ -377,7 +377,7 @@ export class NavigationVisualizer implements Visualizer {
         // 使用渲染管理器配置SVG
         this.renderingManager.setupSvg(svg);
       } else {
-        throw new Error(_('content_svg_missing', 'SVG元素不存在'));
+        throw new _Error('content_svg_missing', 'SVG元素不存在');
       }
 
       // 使用渲染管理器重新渲染

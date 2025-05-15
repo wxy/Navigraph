@@ -120,7 +120,7 @@ export class NavigationMessageHandler {
           logger.debug(_('nav_message_handler_get_node_request', '收到获取节点ID请求: {0}'), JSON.stringify({url: pageUrl}));
           
           if (!pageUrl) {
-            throw new Error(_('nav_message_handler_empty_url', 'URL为空'));
+            throw new _Error('nav_message_handler_empty_url', 'URL为空');
           }
           
           // 获取或创建节点ID
@@ -206,7 +206,7 @@ export class NavigationMessageHandler {
           logger.debug(_('nav_message_handler_title_updated', '收到页面标题更新: {0}'), JSON.stringify({ nodeId, title }));
           
           if (!nodeId || !title) {
-            throw new Error(_('nav_message_handler_empty_node_title', '节点ID或标题为空'));
+            throw new _Error('nav_message_handler_empty_node_title', '节点ID或标题为空');
           }
           
           // 委托给可视化器更新标题
@@ -249,7 +249,7 @@ export class NavigationMessageHandler {
             JSON.stringify({ nodeId, faviconUrl: favicon }));
           
           if (!nodeId || !favicon) {
-            throw new Error(_('nav_message_handler_empty_node_favicon', '节点ID或favicon为空'));
+            throw new _Error('nav_message_handler_empty_node_favicon', '节点ID或favicon为空');
           }
           
           // 委托给可视化器更新favicon

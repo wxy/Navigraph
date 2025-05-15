@@ -69,7 +69,7 @@ export class NavigationStorage {
       logger.log(_('nav_storage_initialized', '导航存储已初始化'));
     } catch (error) {
       logger.error(_('nav_storage_init_failed', '初始化导航存储失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_init_failed', '初始化存储失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_init_failed', '初始化存储失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -94,7 +94,7 @@ export class NavigationStorage {
       logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), node.id);
     } catch (error) {
       logger.error(_('nav_storage_save_node_failed', '保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_save_node_failed', '保存节点失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_save_node_failed', '保存节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -140,7 +140,7 @@ export class NavigationStorage {
       return nodes;
     } catch (error) {
       logger.error(_('nav_storage_query_nodes_failed', '查询节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_query_nodes_failed', '查询节点失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_query_nodes_failed', '查询节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -157,7 +157,7 @@ export class NavigationStorage {
       return node || null;
     } catch (error) {
       logger.error(_('nav_storage_get_node_failed', '获取节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_get_node_failed', '获取节点失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_get_node_failed', '获取节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -174,7 +174,7 @@ export class NavigationStorage {
       // 先获取现有节点
       const existingNode = await this.getNode(id);
       if (!existingNode) {
-        throw new Error(_('background_storage_node_not_found', '节点不存在: {0}', id));
+        throw new _Error('background_storage_node_not_found', '节点不存在: {0}', id);
       }
       
       // 合并更新
@@ -184,11 +184,8 @@ export class NavigationStorage {
       await this.db.put(this.NODE_STORE, updatedNode);
       logger.log(_('nav_storage_node_updated', '节点已更新: {0}，会话 {1}'), id, updatedNode.sessionId);
     } catch (error) {
-      if (error instanceof I18nError) {
-        throw error; // 重新抛出已经本地化的错误
-      }
       logger.error(_('nav_storage_update_node_failed', '更新节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_update_node_failed', '更新节点失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_update_node_failed', '更新节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -222,7 +219,7 @@ export class NavigationStorage {
       logger.log(_('nav_storage_edge_saved', '边已保存: {0} ({1} -> {2})'), edge.id, edge.source, edge.target);
     } catch (error) {
       logger.error(_('nav_storage_save_edge_failed', '保存边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_save_edge_failed', '保存边失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_save_edge_failed', '保存边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -268,7 +265,7 @@ export class NavigationStorage {
       return edges;
     } catch (error) {
       logger.error(_('nav_storage_query_edges_failed', '查询边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_query_edges_failed', '查询边失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_query_edges_failed', '查询边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -285,7 +282,7 @@ export class NavigationStorage {
       return edge || null;
     } catch (error) {
       logger.error(_('nav_storage_get_edge_failed', '获取边失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_get_edge_failed', '获取边失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_get_edge_failed', '获取边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -304,7 +301,7 @@ export class NavigationStorage {
       logger.log(_('nav_storage_nodes_batch_saved', '批量保存了 {0} 个节点'), nodes.length.toString());
     } catch (error) {
       logger.error(_('nav_storage_save_nodes_batch_failed', '批量保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_save_nodes_batch_failed', '批量保存节点失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_save_nodes_batch_failed', '批量保存节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -323,7 +320,7 @@ export class NavigationStorage {
       logger.log(_('nav_storage_edges_batch_saved', '批量保存了 {0} 条边'), edges.length.toString());
     } catch (error) {
       logger.error(_('nav_storage_save_edges_batch_failed', '批量保存边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_save_edges_batch_failed', '批量保存边失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_save_edges_batch_failed', '批量保存边失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -370,7 +367,7 @@ export class NavigationStorage {
       };
     } catch (error) {
       logger.error(_('nav_storage_fetch_session_graph_failed', '获取会话 {0} 的导航图谱失败: {1}'), sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_fetch_session_graph_failed', '获取会话图谱失败: {0}', error instanceof Error ? error.message : String(error))
+      throw new _Error('background_storage_fetch_session_graph_failed', '获取会话图谱失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -404,7 +401,7 @@ export class NavigationStorage {
       return deleteCount;
     } catch (error) {
       logger.error(_('nav_storage_clear_nodes_failed', '清除导航节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_clear_nodes_failed', '清除导航节点失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('background_storage_clear_nodes_failed', '清除导航节点失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -437,7 +434,7 @@ export class NavigationStorage {
       return deleteCount;
     } catch (error) {
       logger.error(_('nav_storage_clear_edges_failed', '清除导航边失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_clear_edges_failed', '清除导航边失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('background_storage_clear_edges_failed', '清除导航边失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -495,7 +492,7 @@ export class NavigationStorage {
       logger.log(_('nav_storage_cleared_all', '已清除所有导航数据'));
     } catch (error) {
       logger.error(_('nav_storage_clear_failed', '清除导航数据失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_clear_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
+      throw new _Error('background_storage_clear_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
 }
