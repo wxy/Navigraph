@@ -85,23 +85,223 @@ function renderWaterfallLayout(
     // 创建主组
     const mainGroup = svg.append('g').attr('class', 'waterfall-main-group');
     
-    // Phase 2: 实现真正的瀑布布局
-    const layoutData = calculateWaterfallLayout(nodes, edges, width, height);
-    
-    // 渲染时间轴
-    renderTimeAxis(mainGroup, layoutData, width, height);
-    
-    // 渲染URL节点
-    renderUrlNodes(mainGroup, layoutData, visualizer);
-    
-    // 渲染URL连接线
-    renderUrlConnections(mainGroup, layoutData);
+    // Phase 2.2: 支持动态观察区域的瀑布布局
+    renderDynamicWaterfallLayout(mainGroup, nodes, edges, width, height, visualizer);
     
     logger.log(_('waterfall_layout_complete', '瀑布布局渲染完成'));
   } catch (error) {
     logger.error(_('waterfall_layout_error', '瀑布布局渲染失败: {0}'), error);
     throw new _Error('waterfall_layout_render_failed', '瀑布布局渲染失败', error);
   }
+}
+
+// Phase 2.2: 全局观察区域控制器
+let globalFocusController: WaterfallFocusController | null = null;
+
+/**
+ * Phase 2.2: 支持动态观察区域的瀑布布局渲染
+ */
+function renderDynamicWaterfallLayout(
+  mainGroup: any,
+  nodes: NavNode[],
+  edges: NavLink[],
+  width: number,
+  height: number,
+  visualizer: Visualizer
+): void {
+  // 初始布局计算
+  let layoutData = calculateWaterfallLayout(nodes, edges, width, height);
+  
+  // 创建观察区域控制器
+  const timeRange = Math.max(...nodes.map(n => n.timestamp)) - Math.min(...nodes.map(n => n.timestamp));
+  const focusConfig: FocusAreaController = {
+    center: Math.max(...nodes.map(n => n.timestamp)) - (timeRange * 0.1),
+    width: timeRange * 0.6,
+    minTime: Math.min(...nodes.map(n => n.timestamp)),
+    maxTime: Math.max(...nodes.map(n => n.timestamp)),
+    containerWidth: width - 200, // 减去左右边距
+    onUpdate: (newCenter: number) => {
+      // 重新计算布局
+      layoutData = recalculateLayout(nodes, edges, width, height, newCenter, focusConfig.width);
+      // 重新渲染节点
+      updateNodeRendering(mainGroup, layoutData, visualizer);
+    }
+  };
+  
+  globalFocusController = new WaterfallFocusController(focusConfig);
+  
+  // 初始渲染
+  renderTimeAxis(mainGroup, layoutData, width, height);
+  renderUrlNodes(mainGroup, layoutData, visualizer);
+  renderUrlConnections(mainGroup, layoutData);
+  
+  // Phase 2.2: 在时间轴上添加观察区域控制器
+  const axisGroup = mainGroup.select('.waterfall-time-axis');
+  if (axisGroup && !axisGroup.empty()) {
+    globalFocusController.renderFocusIndicator(axisGroup);
+  }
+}
+
+/**
+ * Phase 2.2: 重新计算布局（使用新的观察中心）
+ */
+function recalculateLayout(
+  nodes: NavNode[],
+  edges: NavLink[],
+  width: number,
+  height: number,
+  newFocusCenter: number,
+  focusWidth: number
+): WaterfallLayoutData {
+  // 复制原有的布局计算逻辑，但使用新的观察中心
+  const sortedNodes = [...nodes].sort((a, b) => b.timestamp - a.timestamp);
+  
+  if (sortedNodes.length === 0) {
+    return {
+      timeSlots: [],
+      urlNodes: [],
+      timeAxisData: {
+        startX: 100,
+        endX: width - 100,
+        y: height - 100,
+        timeSlots: []
+      }
+    };
+  }
+  
+  // 重新计算观察区域和渲染级别
+  const config = {
+    leftMargin: 100,
+    rightMargin: 100,
+    topMargin: 80,
+    bottomMargin: 120,
+    timeSlotWidth: 160,
+    nodeHeight: 40,
+    nodeSpacing: 15,
+    maxNodesPerColumn: 6
+  };
+  
+  // 计算时间范围
+  const maxTime = Math.max(...sortedNodes.map(n => n.timestamp));
+  const minTime = Math.min(...sortedNodes.map(n => n.timestamp));
+  const fiveMinutes = 5 * 60 * 1000;
+  const alignedMaxTime = Math.ceil(maxTime / fiveMinutes) * fiveMinutes;
+  const alignedMinTime = Math.floor(minTime / fiveMinutes) * fiveMinutes;
+  const timeRange = alignedMaxTime - alignedMinTime;
+  const availableWidth = width - config.leftMargin - config.rightMargin;
+  const maxSlots = Math.floor(availableWidth / config.timeSlotWidth);
+  const timeBasedSlots = Math.ceil(timeRange / fiveMinutes);
+  const numSlots = Math.min(maxSlots, Math.max(timeBasedSlots, 4));
+  const slotInterval = fiveMinutes;
+  
+  // 使用新的观察中心
+  const focusCenter = newFocusCenter;
+  
+  const timeSlots: TimeSlotData[] = [];
+  const urlNodes: UrlNodeData[] = [];
+  
+  // 创建时间槽
+  for (let i = 0; i < numSlots; i++) {
+    const slotTime = alignedMaxTime - (i * slotInterval);
+    const x = config.leftMargin + (i * config.timeSlotWidth);
+    if (x > width - config.rightMargin) break;
+    
+    timeSlots.push({
+      timestamp: slotTime,
+      x: x,
+      urls: []
+    });
+  }
+  
+  // 重新分配节点并计算渲染级别
+  let globalNodeIndex = 0;
+  timeSlots.forEach(timeSlot => {
+    const slotNodes = sortedNodes.filter(node => 
+      node.timestamp <= timeSlot.timestamp && 
+      node.timestamp > timeSlot.timestamp - slotInterval
+    );
+    
+    slotNodes.forEach((node, nodeIndex) => {
+      if (globalNodeIndex >= config.maxNodesPerColumn * timeSlots.length) return;
+      
+      const y = config.topMargin + (nodeIndex * (config.nodeHeight + config.nodeSpacing));
+      if (y > height - config.bottomMargin) return;
+      
+      const domain = node.url ? new URL(node.url).hostname : 'unknown';
+      const tabId = node.tabId || 0;
+      const isFirstInTab = !urlNodes.some(existing => 
+        existing.tabId === tabId && existing.timestamp < node.timestamp
+      );
+      const title = node.title || node.url || _('unnamed_node', '未命名节点');
+      
+      // Phase 2.2: 使用新的观察中心计算渲染级别
+      const distanceFromFocus = Math.abs(node.timestamp - focusCenter);
+      const normalizedDistance = Math.min(distanceFromFocus / (focusWidth / 2), 1);
+      
+      let renderLevel: 'full' | 'short' | 'icon' | 'bar' = 'full';
+      if (normalizedDistance > 0.7) {
+        renderLevel = 'bar';
+      } else if (normalizedDistance > 0.5) {
+        renderLevel = 'icon';
+      } else if (normalizedDistance > 0.3) {
+        renderLevel = 'short';
+      }
+      
+      const urlData: UrlNodeData = {
+        id: node.id,
+        url: node.url || '',
+        title: title,
+        x: timeSlot.x,
+        y: y,
+        tabId: tabId,
+        timestamp: node.timestamp,
+        isFirstInTab: isFirstInTab,
+        domain: domain,
+        node: node,
+        renderLevel: renderLevel,
+        distanceFromFocus: normalizedDistance
+      };
+      
+      timeSlot.urls.push(urlData);
+      urlNodes.push(urlData);
+      globalNodeIndex++;
+    });
+  });
+  
+  // 时间轴数据
+  const timeAxisData: TimeAxisData = {
+    startX: 0,
+    endX: width,
+    y: height - 40,
+    timeSlots: timeSlots.map(slot => ({
+      x: slot.x,
+      timestamp: slot.timestamp,
+      label: new Date(slot.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    }))
+  };
+  
+  return {
+    timeSlots: timeSlots,
+    urlNodes: urlNodes,
+    timeAxisData: timeAxisData
+  };
+}
+
+/**
+ * Phase 2.2: 更新节点渲染（不重新创建时间轴）
+ */
+function updateNodeRendering(
+  mainGroup: any,
+  layoutData: WaterfallLayoutData,
+  visualizer: Visualizer
+): void {
+  // 移除现有的节点和连接线
+  mainGroup.select('.waterfall-url-nodes').remove();
+  mainGroup.select('.waterfall-url-connections').remove();
+  
+  // 重新渲染节点和连接线
+  renderUrlNodes(mainGroup, layoutData, visualizer);
+  renderUrlConnections(mainGroup, layoutData);
 }
 
 // 数据接口定义
@@ -135,6 +335,16 @@ interface TimeAxisData {
     timestamp: number;
     label: string;
   }[];
+}
+
+// Phase 2.2: 观察区域控制器接口
+interface FocusAreaController {
+  center: number;        // 观察中心时间戳
+  width: number;         // 观察区域宽度（毫秒）
+  minTime: number;       // 最小时间
+  maxTime: number;       // 最大时间
+  containerWidth: number; // 容器宽度
+  onUpdate: (newCenter: number) => void; // 更新回调
 }
 
 interface WaterfallLayoutData {
@@ -698,4 +908,168 @@ function renderFallbackIcon(node: any, urlNode: UrlNodeData, x: number, y: numbe
     .style('font-weight', 'bold')
     .style('fill', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
     .text(fallbackText);
+}
+
+// Phase 2.2: 观察区域控制器类
+class WaterfallFocusController {
+  private config: FocusAreaController;
+  private isDragging: boolean = false;
+  private dragStartX: number = 0;
+  private initialCenter: number = 0;
+  
+  constructor(config: FocusAreaController) {
+    this.config = config;
+  }
+  
+  /**
+   * 在时间轴上渲染观察区域控制器
+   */
+  renderFocusIndicator(axisGroup: any): void {
+    const indicatorGroup = axisGroup.append('g')
+      .attr('class', 'focus-area-indicator');
+    
+    // 计算观察区域在时间轴上的位置
+    const focusAreaRect = this.calculateFocusAreaRect();
+    
+    // 绘制观察区域背景
+    indicatorGroup.append('rect')
+      .attr('class', 'focus-area-background')
+      .attr('x', focusAreaRect.x)
+      .attr('y', this.config.containerWidth > 800 ? -25 : -20) // 根据容器大小调整
+      .attr('width', focusAreaRect.width)
+      .attr('height', this.config.containerWidth > 800 ? 50 : 40)
+      .style('fill', 'rgba(66, 133, 244, 0.1)')
+      .style('stroke', '#4285f4')
+      .style('stroke-width', 2)
+      .style('stroke-dasharray', '5,5');
+    
+    // 绘制观察中心指示器
+    const centerIndicator = indicatorGroup.append('g')
+      .attr('class', 'focus-center-indicator')
+      .style('cursor', 'grab');
+    
+    // 中心线
+    centerIndicator.append('line')
+      .attr('x1', focusAreaRect.centerX)
+      .attr('y1', -30)
+      .attr('x2', focusAreaRect.centerX)
+      .attr('y2', 30)
+      .style('stroke', '#1a73e8')
+      .style('stroke-width', 3);
+    
+    // 中心圆点（拖拽手柄）
+    centerIndicator.append('circle')
+      .attr('cx', focusAreaRect.centerX)
+      .attr('cy', 0)
+      .attr('r', 8)
+      .style('fill', '#4285f4')
+      .style('stroke', '#ffffff')
+      .style('stroke-width', 2);
+    
+    // 添加交互事件
+    this.addInteractionEvents(centerIndicator, axisGroup);
+  }
+  
+  /**
+   * 计算观察区域在时间轴上的位置
+   */
+  private calculateFocusAreaRect(): {x: number, width: number, centerX: number} {
+    const timeRange = this.config.maxTime - this.config.minTime;
+    const pixelPerMs = this.config.containerWidth / timeRange;
+    
+    const centerOffset = (this.config.center - this.config.minTime) * pixelPerMs;
+    const areaWidth = this.config.width * pixelPerMs;
+    
+    return {
+      x: centerOffset - areaWidth / 2,
+      width: areaWidth,
+      centerX: centerOffset
+    };
+  }
+  
+  /**
+   * 添加拖拽和点击交互事件
+   */
+  private addInteractionEvents(centerIndicator: any, axisGroup: any): void {
+    const self = this;
+    
+    // 拖拽开始
+    centerIndicator.on('mousedown', function(this: SVGElement, event: MouseEvent) {
+      self.isDragging = true;
+      self.dragStartX = event.clientX;
+      self.initialCenter = self.config.center;
+      
+      // 更改光标样式
+      d3.select(this).style('cursor', 'grabbing');
+      
+      // 阻止默认行为
+      event.preventDefault();
+    });
+    
+    // 全局鼠标移动事件
+    d3.select(window).on('mousemove.focus-drag', function(event: MouseEvent) {
+      if (!self.isDragging) return;
+      
+      const deltaX = event.clientX - self.dragStartX;
+      const timeRange = self.config.maxTime - self.config.minTime;
+      const deltaTime = (deltaX / self.config.containerWidth) * timeRange;
+      
+      const newCenter = Math.max(
+        self.config.minTime + self.config.width / 2,
+        Math.min(
+          self.config.maxTime - self.config.width / 2,
+          self.initialCenter + deltaTime
+        )
+      );
+      
+      // 更新观察中心
+      self.updateFocusCenter(newCenter);
+    });
+    
+    // 拖拽结束
+    d3.select(window).on('mouseup.focus-drag', function() {
+      if (self.isDragging) {
+        self.isDragging = false;
+        centerIndicator.style('cursor', 'grab');
+      }
+    });
+    
+    // 点击时间轴跳转
+    axisGroup.on('click', function(this: SVGElement, event: MouseEvent) {
+      if (self.isDragging) return; // 忽略拖拽时的点击
+      
+      const rect = this.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const timeRange = self.config.maxTime - self.config.minTime;
+      const clickTime = self.config.minTime + (clickX / self.config.containerWidth) * timeRange;
+      
+      const newCenter = Math.max(
+        self.config.minTime + self.config.width / 2,
+        Math.min(
+          self.config.maxTime - self.config.width / 2,
+          clickTime
+        )
+      );
+      
+      self.updateFocusCenter(newCenter);
+    });
+  }
+  
+  /**
+   * 更新观察中心位置
+   */
+  updateFocusCenter(newCenter: number): void {
+    this.config.center = newCenter;
+    this.config.onUpdate(newCenter);
+  }
+  
+  /**
+   * 获取当前观察区域配置
+   */
+  getFocusConfig(): {center: number, width: number} {
+    return {
+      center: this.config.center,
+      width: this.config.width
+    };
+  }
 }
