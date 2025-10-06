@@ -4997,13 +4997,38 @@
     "description": "从HTML提取: src/content/index.html",
     "_untranslated": true
   },
-  "waterfall_layout_calculation_start": {
-    "message": "开始计算瀑布布局: {0} 个节点",
+  "waterfall_view_title": {
+    "message": "🌊 瀑布视图",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
     "_untranslated": true
   },
-  "waterfall_layout_calculation_complete": {
-    "message": "瀑布布局计算完成，时间槽: {0}，URL节点: {1}",
+  "waterfall_view_description": {
+    "message": "从右到左的时间流瀑布式导航视图",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_data_info": {
+    "message": "当前数据：{0} 个节点，{1} 条连接",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_beta": {
+    "message": "Beta 版本 - 功能开发中",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_sample_tab1": {
+    "message": "标签页1",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_sample_tab2": {
+    "message": "标签页2",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_sample_tab3": {
+    "message": "标签页3",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
     "_untranslated": true
   }

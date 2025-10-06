@@ -116,6 +116,8 @@ interface UrlNodeData {
   isFirstInTab: boolean;
   domain: string;
   node: NavNode; // 保存原始节点数据
+  renderLevel?: 'full' | 'short' | 'icon' | 'bar'; // 节点渲染级别
+  distanceFromFocus?: number; // 距离观察中心的距离比例 0-1
 }
 
 interface TimeSlotData {
@@ -198,6 +200,10 @@ function calculateWaterfallLayout(nodes: NavNode[], edges: NavLink[], width: num
   const numSlots = Math.min(maxSlots, Math.max(timeBasedSlots, 4)); // 至少4个槽，最多受宽度限制
   const slotInterval = fiveMinutes; // 固定5分钟间隔
   
+  // Phase 2.1: 定义观察区域配置
+  const focusCenter = alignedMaxTime - (timeRange * 0.25); // 观察中心在右侧25%位置
+  const focusWidth = timeRange * 0.5; // 观察区域覆盖50%的时间范围
+  
   const timeSlots: TimeSlotData[] = [];
   const urlNodes: UrlNodeData[] = [];
   
@@ -243,6 +249,20 @@ function calculateWaterfallLayout(nodes: NavNode[], edges: NavLink[], width: num
       // 使用与其他视图相同的标题处理逻辑
       const title = node.title || node.url || _('unnamed_node', '未命名节点');
       
+      // Phase 2.1: 计算节点渲染级别
+      const distanceFromFocus = Math.abs(node.timestamp - focusCenter);
+      const normalizedDistance = Math.min(distanceFromFocus / (focusWidth / 2), 1);
+      
+      // 根据距离确定渲染级别
+      let renderLevel: 'full' | 'short' | 'icon' | 'bar' = 'full';
+      if (normalizedDistance > 0.8) {
+        renderLevel = 'bar';
+      } else if (normalizedDistance > 0.6) {
+        renderLevel = 'icon';
+      } else if (normalizedDistance > 0.4) {
+        renderLevel = 'short';
+      }
+      
       const urlData: UrlNodeData = {
         id: node.id,
         url: node.url || '',
@@ -253,7 +273,9 @@ function calculateWaterfallLayout(nodes: NavNode[], edges: NavLink[], width: num
         timestamp: node.timestamp,
         isFirstInTab: isFirstInTab,
         domain: domain,
-        node: node // 保存原始节点数据
+        node: node, // 保存原始节点数据
+        renderLevel: renderLevel,
+        distanceFromFocus: normalizedDistance
       };
       
       timeSlot.urls.push(urlData);
@@ -418,88 +440,33 @@ function renderUrlNodes(mainGroup: any, layoutData: WaterfallLayoutData, visuali
   
   layoutData.urlNodes.forEach(urlNode => {
     const node = nodeGroup.append('g')
-      .attr('class', `url-node ${urlNode.isFirstInTab ? 'first-in-tab' : 'continuation'}`)
+      .attr('class', `url-node ${urlNode.isFirstInTab ? 'first-in-tab' : 'continuation'} render-${urlNode.renderLevel || 'full'}`)
       .attr('transform', `translate(${urlNode.x}, ${urlNode.y})`);
     
-    // URL节点背景 - 增加宽度并在条带中居中
-    node.append('rect')
-      .attr('width', 130)    // 增加宽度从100到130（条带宽度160px，留30px空隙，节点居中）
-      .attr('height', 35)    // 保持高度35
-      .attr('rx', 6)         // 保持圆角6
-      .attr('x', 15)         // 向右偏移15px使节点在条带中居中（130px节点在160px条带中居中需要偏移(160-130)/2=15px）
-      .style('fill', urlNode.isFirstInTab ? '#4285f4' : '#e8f0fe')
-      .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#4285f4')
-      .style('stroke-width', 1);
-    
-    // 域名图标/标识 - 调整位置以适应居中的节点
-    node.append('circle')
-      .attr('cx', 27)        // 调整x位置（12 + 15 = 27，适应节点x偏移）
-      .attr('cy', 17.5)      // 保持y位置
-      .attr('r', 8)          // 保持半径8
-      .style('fill', urlNode.isFirstInTab ? '#ffffff' : '#4285f4')
-      .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
-      .style('stroke-width', 1);
-    
-    // 优先显示 favicon，如果没有则显示域名首字母或标签页ID
-    if (urlNode.node.favicon) {
-      // 添加 favicon 图标 - 调整位置以适应居中的节点
-      node.append('image')
-        .attr('xlink:href', urlNode.node.favicon)
-        .attr('x', 21)         // 调整x位置（6 + 15 = 21，适应节点x偏移）
-        .attr('y', 11.5)       // 保持y位置
-        .attr('width', 12)     // 保持尺寸
-        .attr('height', 12)    // 保持尺寸
-        .style('clip-path', 'circle(6px at 6px 6px)')
-        .on('error', function(this: SVGImageElement) {
-          // 图像加载失败时显示域名首字母
-          d3.select(this).remove();
-          const fallbackText = urlNode.isFirstInTab && urlNode.domain !== 'unknown' 
-            ? urlNode.domain.charAt(0).toUpperCase() 
-            : (urlNode.tabId === 0 ? 'M' : `${urlNode.tabId}`);
-          
-          node.append('text')
-            .attr('x', 27)      // 调整x位置（12 + 15 = 27，适应节点x偏移）
-            .attr('y', 21)      // 保持y位置
-            .attr('text-anchor', 'middle')
-            .style('font-size', '10px')  // 保持字体大小
-            .style('font-weight', 'bold')
-            .style('fill', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
-            .text(fallbackText);
-        });
-    } else {
-      // 没有 favicon 时显示域名首字母或标签页标识 - 调整位置以适应居中的节点
-      const displayText = urlNode.isFirstInTab && urlNode.domain !== 'unknown' 
-        ? urlNode.domain.charAt(0).toUpperCase() 
-        : (urlNode.tabId === 0 ? 'M' : `${urlNode.tabId}`);
-      
-      node.append('text')
-        .attr('x', 27)          // 调整x位置（12 + 15 = 27，适应节点x偏移）
-        .attr('y', 21)          // 保持y位置
-        .attr('text-anchor', 'middle')
-        .style('font-size', '10px')  // 保持字体大小
-        .style('font-weight', 'bold')
-        .style('fill', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
-        .text(displayText);
+    // Phase 2.1: 根据渲染级别选择不同的渲染方式
+    const renderLevel = urlNode.renderLevel || 'full';
+    switch (renderLevel) {
+      case 'full':
+        renderFullNode(node, urlNode);
+        break;
+      case 'short':
+        renderShortNode(node, urlNode);
+        break;
+      case 'icon':
+        renderIconNode(node, urlNode);
+        break;
+      case 'bar':
+        renderBarNode(node, urlNode);
+        break;
+      default:
+        renderFullNode(node, urlNode);
+        break;
     }
     
-    // 页面标题文本 - 调整位置以适应居中的节点和增大的节点宽度
-    const titleText = urlNode.title.length > 16 ? urlNode.title.substring(0, 16) + '...' : urlNode.title;
-    node.append('text')
-      .attr('x', 43)          // 调整x位置（28 + 15 = 43，适应节点x偏移）
-      .attr('y', 21)          // 保持y位置
-      .style('font-size', '12px')  // 保持字体12px
-      .style('fill', urlNode.isFirstInTab ? 'white' : '#1a73e8')
-      .text(titleText);
-    
-    // 鼠标悬停显示完整信息
-    node.append('title')
-      .text(`${urlNode.title}\n${urlNode.url}\n${new Date(urlNode.timestamp).toLocaleString()}\n标签页: ${urlNode.tabId}`);
-    
-    // 点击事件
+    // 添加点击事件处理
     node.style('cursor', 'pointer')
-      .on('click', function() {
-        // 显示节点详情 - 传递原始节点数据
-        if (visualizer && typeof visualizer.showNodeDetails === 'function') {
+      .on('click', () => {
+        if (visualizer && visualizer.showNodeDetails) {
           visualizer.showNodeDetails(urlNode.node);
         }
       });
@@ -507,7 +474,7 @@ function renderUrlNodes(mainGroup: any, layoutData: WaterfallLayoutData, visuali
 }
 
 /**
- * 渲染URL连接线
+ * 渲染URL之间的连接线
  */
 function renderUrlConnections(mainGroup: any, layoutData: WaterfallLayoutData): void {
   const connectionGroup = mainGroup.append('g').attr('class', 'waterfall-url-connections');
@@ -542,4 +509,172 @@ function renderUrlConnections(mainGroup: any, layoutData: WaterfallLayoutData): 
         .attr('class', 'url-connection');
     }
   });
+}
+
+// Phase 2.1: 不同级别的节点渲染函数
+
+/**
+ * 渲染完整节点（观察区域内）
+ */
+function renderFullNode(node: any, urlNode: UrlNodeData): void {
+  // 完整尺寸的节点背景
+  node.append('rect')
+    .attr('width', 130)
+    .attr('height', 35)
+    .attr('rx', 6)
+    .attr('x', 15)
+    .style('fill', urlNode.isFirstInTab ? '#4285f4' : '#e8f0fe')
+    .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#4285f4')
+    .style('stroke-width', 1);
+  
+  // 域名图标/标识
+  node.append('circle')
+    .attr('cx', 27)
+    .attr('cy', 17.5)
+    .attr('r', 8)
+    .style('fill', urlNode.isFirstInTab ? '#ffffff' : '#4285f4')
+    .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
+    .style('stroke-width', 1);
+  
+  // 优先显示 favicon
+  if (urlNode.node.favicon) {
+    renderFavicon(node, urlNode, 21, 11.5, 12, 12);
+  } else {
+    renderFallbackIcon(node, urlNode, 27, 21);
+  }
+  
+  // 完整标题文本
+  const titleText = urlNode.title.length > 16 ? urlNode.title.substring(0, 16) + '...' : urlNode.title;
+  node.append('text')
+    .attr('x', 43)
+    .attr('y', 21)
+    .style('font-size', '12px')
+    .style('fill', urlNode.isFirstInTab ? 'white' : '#1a73e8')
+    .text(titleText);
+  
+  // 悬停信息
+  node.append('title')
+    .text(`${urlNode.title}\n${urlNode.url}\nTab: ${urlNode.tabId}\nTime: ${new Date(urlNode.timestamp).toLocaleString('zh-CN')}`);
+}
+
+/**
+ * 渲染短标题节点
+ */
+function renderShortNode(node: any, urlNode: UrlNodeData): void {
+  // 较小的节点背景
+  node.append('rect')
+    .attr('width', 100)
+    .attr('height', 30)
+    .attr('rx', 5)
+    .attr('x', 30)
+    .style('fill', urlNode.isFirstInTab ? '#4285f4' : '#e8f0fe')
+    .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#4285f4')
+    .style('stroke-width', 1);
+  
+  // 较小的图标
+  node.append('circle')
+    .attr('cx', 40)
+    .attr('cy', 15)
+    .attr('r', 6)
+    .style('fill', urlNode.isFirstInTab ? '#ffffff' : '#4285f4')
+    .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
+    .style('stroke-width', 1);
+  
+  // Favicon 或后备图标
+  if (urlNode.node.favicon) {
+    renderFavicon(node, urlNode, 36, 11, 8, 8);
+  } else {
+    renderFallbackIcon(node, urlNode, 40, 18, '8px');
+  }
+  
+  // 短标题
+  const shortTitle = urlNode.title.length > 8 ? urlNode.title.substring(0, 8) + '...' : urlNode.title;
+  node.append('text')
+    .attr('x', 52)
+    .attr('y', 18)
+    .style('font-size', '10px')
+    .style('fill', urlNode.isFirstInTab ? 'white' : '#1a73e8')
+    .text(shortTitle);
+  
+  // 悬停信息
+  node.append('title')
+    .text(`${urlNode.title}\n${urlNode.url}`);
+}
+
+/**
+ * 渲染仅图标节点
+ */
+function renderIconNode(node: any, urlNode: UrlNodeData): void {
+  // 圆形图标背景
+  node.append('circle')
+    .attr('cx', 80)
+    .attr('cy', 17.5)
+    .attr('r', 12)
+    .style('fill', urlNode.isFirstInTab ? '#4285f4' : '#e8f0fe')
+    .style('stroke', urlNode.isFirstInTab ? '#1a73e8' : '#4285f4')
+    .style('stroke-width', 1);
+  
+  // Favicon 或后备图标
+  if (urlNode.node.favicon) {
+    renderFavicon(node, urlNode, 76, 13.5, 8, 8);
+  } else {
+    renderFallbackIcon(node, urlNode, 80, 21, '8px');
+  }
+  
+  // 悬停信息
+  node.append('title')
+    .text(`${urlNode.title}\n${urlNode.url}`);
+}
+
+/**
+ * 渲染竖条节点
+ */
+function renderBarNode(node: any, urlNode: UrlNodeData): void {
+  // 竖条
+  node.append('rect')
+    .attr('width', 4)
+    .attr('height', 35)
+    .attr('x', 78)
+    .attr('y', 0)
+    .style('fill', urlNode.isFirstInTab ? '#4285f4' : '#dee2e6')
+    .style('opacity', 0.8);
+  
+  // 悬停信息
+  node.append('title')
+    .text(`${urlNode.title}\n${urlNode.url}`);
+}
+
+/**
+ * 渲染 Favicon 图标
+ */
+function renderFavicon(node: any, urlNode: UrlNodeData, x: number, y: number, width: number, height: number): void {
+  node.append('image')
+    .attr('xlink:href', urlNode.node.favicon)
+    .attr('x', x)
+    .attr('y', y)
+    .attr('width', width)
+    .attr('height', height)
+    .style('clip-path', `circle(${width/2}px at ${width/2}px ${height/2}px)`)
+    .on('error', function(this: SVGImageElement) {
+      d3.select(this).remove();
+      renderFallbackIcon(node, urlNode, x + width/2, y + height - 2);
+    });
+}
+
+/**
+ * 渲染后备图标文字
+ */
+function renderFallbackIcon(node: any, urlNode: UrlNodeData, x: number, y: number, fontSize: string = '10px'): void {
+  const fallbackText = urlNode.isFirstInTab && urlNode.domain !== 'unknown' 
+    ? urlNode.domain.charAt(0).toUpperCase() 
+    : (urlNode.tabId === 0 ? 'M' : `${urlNode.tabId}`);
+  
+  node.append('text')
+    .attr('x', x)
+    .attr('y', y)
+    .attr('text-anchor', 'middle')
+    .style('font-size', fontSize)
+    .style('font-weight', 'bold')
+    .style('fill', urlNode.isFirstInTab ? '#1a73e8' : '#ffffff')
+    .text(fallbackText);
 }
