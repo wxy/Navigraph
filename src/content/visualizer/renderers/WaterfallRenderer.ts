@@ -200,9 +200,9 @@ function calculateWaterfallLayout(nodes: NavNode[], edges: NavLink[], width: num
   const numSlots = Math.min(maxSlots, Math.max(timeBasedSlots, 4)); // 至少4个槽，最多受宽度限制
   const slotInterval = fiveMinutes; // 固定5分钟间隔
   
-  // Phase 2.1: 定义观察区域配置
-  const focusCenter = alignedMaxTime - (timeRange * 0.25); // 观察中心在右侧25%位置
-  const focusWidth = timeRange * 0.5; // 观察区域覆盖50%的时间范围
+  // Phase 2.1: 定义观察区域配置 - 修正观察中心位置
+  const focusCenter = alignedMaxTime - (timeRange * 0.1); // 观察中心在距离最新时间10%的位置，更靠近最新时间
+  const focusWidth = timeRange * 0.6; // 观察区域覆盖60%的时间范围，确保最新节点在观察区域内
   
   const timeSlots: TimeSlotData[] = [];
   const urlNodes: UrlNodeData[] = [];
@@ -253,13 +253,13 @@ function calculateWaterfallLayout(nodes: NavNode[], edges: NavLink[], width: num
       const distanceFromFocus = Math.abs(node.timestamp - focusCenter);
       const normalizedDistance = Math.min(distanceFromFocus / (focusWidth / 2), 1);
       
-      // 根据距离确定渲染级别
+      // 根据距离确定渲染级别 - 调整阈值确保最新节点显示完整
       let renderLevel: 'full' | 'short' | 'icon' | 'bar' = 'full';
-      if (normalizedDistance > 0.8) {
+      if (normalizedDistance > 0.7) {
         renderLevel = 'bar';
-      } else if (normalizedDistance > 0.6) {
+      } else if (normalizedDistance > 0.5) {
         renderLevel = 'icon';
-      } else if (normalizedDistance > 0.4) {
+      } else if (normalizedDistance > 0.3) {
         renderLevel = 'short';
       }
       
@@ -496,19 +496,40 @@ function renderUrlConnections(mainGroup: any, layoutData: WaterfallLayoutData): 
       const fromUrl = sortedUrls[i];
       const toUrl = sortedUrls[i + 1];
       
-      // 绘制连接线 - 调整位置以适应居中的节点（130px宽度，+15px偏移）
+      // Phase 2.1: 绘制连接线 - 根据节点渲染级别计算连接点位置
+      const fromCenter = getNodeCenter(fromUrl);
+      const toCenter = getNodeCenter(toUrl);
+      
       connectionGroup.append('line')
-        .attr('x1', fromUrl.x + 80)   // 节点中心：130px宽度/2 + 15px偏移 = 65 + 15 = 80px
-        .attr('y1', fromUrl.y + 17.5) // 保持起点y位置到节点中心
-        .attr('x2', toUrl.x + 80)     // 节点中心：130px宽度/2 + 15px偏移 = 65 + 15 = 80px
-        .attr('y2', toUrl.y + 17.5)   // 保持终点y位置到节点中心
+        .attr('x1', fromUrl.x + fromCenter.x)
+        .attr('y1', fromUrl.y + fromCenter.y)
+        .attr('x2', toUrl.x + toCenter.x)
+        .attr('y2', toUrl.y + toCenter.y)
         .style('stroke', '#36a2eb')
-        .style('stroke-width', 2)     // 保持线宽2px
-        .style('stroke-dasharray', '4,4') // 保持虚线样式
-        .style('opacity', 0.8)        // 保持不透明度
+        .style('stroke-width', 2)
+        .style('stroke-dasharray', '4,4')
+        .style('opacity', 0.8)
         .attr('class', 'url-connection');
     }
   });
+}
+
+// Phase 2.1: 辅助函数 - 根据渲染级别计算节点中心位置
+function getNodeCenter(urlNode: UrlNodeData): { x: number; y: number } {
+  const renderLevel = urlNode.renderLevel || 'full';
+  
+  switch (renderLevel) {
+    case 'full':
+      return { x: 80, y: 17.5 }; // 130px宽，15px偏移，中心在80px
+    case 'short':
+      return { x: 80, y: 15 };   // 100px宽，30px偏移，中心在80px
+    case 'icon':
+      return { x: 80, y: 17.5 }; // 圆形图标中心在80px
+    case 'bar':
+      return { x: 80, y: 17.5 }; // 竖条中心在80px
+    default:
+      return { x: 80, y: 17.5 };
+  }
 }
 
 // Phase 2.1: 不同级别的节点渲染函数
