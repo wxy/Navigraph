@@ -12,7 +12,7 @@ import { _, _Error } from '../../lib/utils/i18n.js';
 const logger = new Logger('StateManager');
 // 状态类型定义
 export interface ViewState {
-  viewType: string;  // 'tree' | 'timeline'
+  viewType: string;  // 'tree' | 'timeline' | 'waterfall'
   transform?: {
     x: number;
     y: number;
@@ -649,8 +649,9 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
     // 恢复上次使用的视图类型
     const savedState = getViewState(visualizer.tabId || '', visualizer.currentView || 'tree');
     if (savedState && savedState.viewType) {
+      const viewType = savedState.viewType as "tree" | "timeline" | "waterfall";
       if (typeof visualizer.switchView === 'function') {
-        visualizer.switchView(savedState.viewType);
+        visualizer.switchView(viewType);
       } else {
         switchViewType(visualizer, savedState.viewType);
       }

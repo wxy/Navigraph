@@ -6,7 +6,7 @@ export type Theme = 'light' | 'dark' | 'system';
 /**
  * 视图类型
  */
-export type ViewType = 'tree' | 'timeline';
+export type ViewType = 'tree' | 'timeline' | 'waterfall';
 
 /**
  * 会话模式

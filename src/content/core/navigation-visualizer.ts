@@ -363,7 +363,7 @@ export class NavigationVisualizer implements Visualizer {
   /**
    * 切换视图 - 修改使用渲染管理器
    */
-  switchView(view: "tree" | "timeline"): void {
+  switchView(view: "tree" | "timeline" | "waterfall"): void {
     // 使用视图状态管理器切换视图
     this.viewStateManager.switchView(view);
 

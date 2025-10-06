@@ -407,6 +407,99 @@ body.loading-session #visualization-container::before {
   border-right: 2px solid #34a853;
 }
 
+/* ========== 视图切换相关样式 ========== */
+/* 视图模式切换 */
+.view-mode {
+  display: flex;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.view-mode button {
+  background: var(--toolbar-button, none);
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  color: var(--toolbar-button-text, #333);
+}
+
+.view-mode button:hover {
+  background-color: var(--toolbar-button-hover, #f0f0f0);
+}
+
+.view-mode button.active {
+  background-color: var(--btn-primary, #4285f4);
+  color: white;
+}
+.view-mode button:hover:not(.active) {
+  background-color: var(--color-bg-hover);
+}
+
+/* Beta 标识样式 */
+.beta-badge {
+  background: #e74c3c;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 5px;
+  font-weight: normal;
+}
+
+/* 瀑布视图按钮特殊样式 */
+.view-mode button#waterfall-view {
+  position: relative;
+  overflow: hidden;
+}
+
+.view-mode button#waterfall-view:not(.active) {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.view-mode button#waterfall-view.active {
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+}
+
+/* ========== 瀑布视图 SVG 样式 ========== */
+.waterfall-main-group {
+  /* 瀑布视图主容器样式 */
+  cursor: default;
+}
+
+.waterfall-background {
+  /* 背景样式 */
+  pointer-events: none;
+}
+
+.waterfall-title {
+  /* 标题样式 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.waterfall-subtitle {
+  /* 副标题样式 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.waterfall-data-info {
+  /* 数据信息样式 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.waterfall-beta {
+  /* Beta 标识样式 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.waterfall-decoration {
+  /* 装饰元素样式 */
+  pointer-events: none;
+}
+
 /* 视图模式切换 */
 .view-mode {
   display: flex;

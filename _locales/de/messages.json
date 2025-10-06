@@ -2465,11 +2465,13 @@
   },
   "content_tree_view": {
     "message": "Baumansicht",
-    "description": "树形图视图按钮文本"
+    "description": "树形图视图按钮文本",
+    "_untranslated": true
   },
   "content_timeline_view": {
     "message": "Zeitleiste",
-    "description": "时间线视图按钮文本"
+    "description": "时间线视图按钮文本",
+    "_untranslated": true
   },
   "state_manager_view_state_saved": {
     "message": "{0} Ansichtsstatus gespeichert",
@@ -4914,5 +4916,120 @@
   "options_clear_data_title": {
     "message": "Daten löschen",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "waterfall_renderer_created": {
+    "message": "瀑布视图渲染器已创建",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_renderer_initialized": {
+    "message": "瀑布视图渲染器已初始化，尺寸: {0}x{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_renderer_cannot_render": {
+    "message": "瀑布渲染器无法渲染：SVG或容器未初始化",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_renderer_render_start": {
+    "message": "开始渲染瀑布视图，节点数: {0}，边数: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_renderer_render_error": {
+    "message": "瀑布视图渲染失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_renderer_cleaned_up": {
+    "message": "瀑布视图渲染器已清理",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_layout_start": {
+    "message": "开始渲染瀑布布局",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_title": {
+    "message": "🌊 瀑布视图",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_description": {
+    "message": "从右到左的时间流瀑布式导航视图",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_data_info": {
+    "message": "当前数据：{0} 个节点，{1} 条连接",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_beta": {
+    "message": "Beta 版本 - 功能开发中",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_timeline_now": {
+    "message": "现在",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_timeline_past": {
+    "message": "过去",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_sample_tab1": {
+    "message": "标签页1",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_sample_tab2": {
+    "message": "标签页2",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_sample_tab3": {
+    "message": "标签页3",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_layout_complete": {
+    "message": "瀑布布局渲染完成",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_layout_error": {
+    "message": "瀑布布局渲染失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_layout_render_failed": {
+    "message": "瀑布布局渲染失败",
+    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "已保存瀑布视图缩放状态: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": true
+  },
+  "view_already_waterfall": {
+    "message": "已经是瀑布视图，无需切换",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": true
+  },
+  "view_switching_to_waterfall": {
+    "message": "切换到瀑布视图",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": true
+  },
+  "content_waterfall_view": {
+    "message": "🌊 瀑布视图",
+    "description": "从HTML提取: src/content/index.html",
+    "_untranslated": true
   }
 }

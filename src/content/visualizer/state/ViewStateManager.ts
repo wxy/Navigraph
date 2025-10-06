@@ -24,6 +24,7 @@ export class ViewStateManager {
   // 各视图的缩放状态
   private _treeZoom: any = null;      // 树形视图的缩放状态
   private _timelineZoom: any = null;  // 时间线视图的缩放状态
+  private _waterfallZoom: any = null; // 瀑布视图的缩放状态
   
   private onZoomChangeCallback?: () => void;
 
@@ -123,7 +124,7 @@ export class ViewStateManager {
   /**
    * 切换视图
    */
-  switchView(view: "tree" | "timeline"): void {
+  switchView(view: "tree" | "timeline" | "waterfall"): void {
     if (this._currentView === view) return;
 
     const previousView = this._currentView;
@@ -166,6 +167,9 @@ export class ViewStateManager {
       } else if (this._currentView === 'timeline') {
         this._timelineZoom = this._currentTransform;
         logger.debug(_('timeline_view_zoom_state_saved', '已保存时间线视图缩放状态: {0}'), this._timelineZoom);
+      } else if (this._currentView === 'waterfall') {
+        this._waterfallZoom = this._currentTransform;
+        logger.debug(_('waterfall_view_zoom_state_saved', '已保存瀑布视图缩放状态: {0}'), this._waterfallZoom);
       }
     }
   }
@@ -175,7 +179,14 @@ export class ViewStateManager {
    */
   restoreViewState(): boolean {
     // 获取当前视图类型对应的缩放状态
-    const savedTransform = this._currentView === 'tree' ? this._treeZoom : this._timelineZoom;
+    let savedTransform: any = null;
+    if (this._currentView === 'tree') {
+      savedTransform = this._treeZoom;
+    } else if (this._currentView === 'timeline') {
+      savedTransform = this._timelineZoom;
+    } else if (this._currentView === 'waterfall') {
+      savedTransform = this._waterfallZoom;
+    }
     
     if (savedTransform && this._zoom) {
       logger.log(_('view_zoom_state_restoring', '恢复{0}视图的缩放状态'), this._currentView);

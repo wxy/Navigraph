@@ -107,7 +107,7 @@ export interface Visualizer {
   // 常用方法
   refreshVisualization(): void;
   showNodeDetails(data: any): void;
-  switchView(viewName: string): void;
+  switchView(viewName: "tree" | "timeline" | "waterfall"): void;
   updateStatusBar(): void;
   isTrackingPage(node: NavNode): boolean;
 
