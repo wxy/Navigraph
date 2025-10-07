@@ -1,6 +1,7 @@
 const { merge } = require('webpack-merge');
 const common = require('./webpack.common.js');
 const EnvironmentPlugin = require('./plugins/environment-plugin');
+const CompilationTimePlugin = require('./plugins/compilation-time-plugin');
 
 module.exports = merge(common, {
   mode: 'development',
@@ -26,5 +27,10 @@ module.exports = merge(common, {
   },
   plugins: [
     new EnvironmentPlugin({ isDev: true }),
+    // 添加编译时间显示插件
+    new CompilationTimePlugin({
+      verbose: true, // 显示详细信息
+      timeFormat: 'zh-CN' // 使用中文时间格式
+    }),
   ],
 });

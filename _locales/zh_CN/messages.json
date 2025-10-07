@@ -4986,5 +4986,17 @@
   "waterfall_layout_calculation_complete": {
     "message": "瀑布布局计算完成，时间槽: {0}，URL节点: {1}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_focus_center_changed": {
+    "message": "观察中心已更改为: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_non_uniform_timeline_rendered": {
+    "message": "非均匀时间轴已渲染",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_dynamic_layout_complete": {
+    "message": "动态瀑布布局渲染完成",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }
