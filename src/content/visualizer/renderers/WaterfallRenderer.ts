@@ -23,6 +23,7 @@ interface TimeSegment {
   displayMode: 'full' | 'short' | 'icon' | 'bar';
   allocatedWidth: number;
   startX: number;
+  originalIndex: number;  // 🎯 添加原始索引，用于保持明暗条纹一致性
 }
 
 interface LayoutResult {
@@ -67,6 +68,10 @@ export class WaterfallRenderer implements BaseRenderer {
   private container: HTMLElement | null = null;
   private width: number = 0;
   private height: number = 0;
+  
+  // 存储原始数据，用于拖动时重新计算布局
+  private allSegments: TimeSegment[] = [];
+  private renderOptions: any = null;
 
   initialize(svg: any, container: HTMLElement, width: number, height: number): void {
     this.svg = svg;
@@ -176,6 +181,7 @@ export class WaterfallRenderer implements BaseRenderer {
     let currentTime = maxTime;
     let safetyCounter = 0; // 防止无限循环
     const MAX_ITERATIONS = 1000;
+    let segmentIndex = 0; // 🎯 原始索引计数器
     
     while (currentTime > minTime && safetyCounter < MAX_ITERATIONS) {
       safetyCounter++;
@@ -195,7 +201,8 @@ export class WaterfallRenderer implements BaseRenderer {
         nodes: segmentNodes,
         displayMode: 'full', // 初始都设为full，后面会调整
         allocatedWidth: 0,
-        startX: 0
+        startX: 0,
+        originalIndex: segmentIndex++ // 🎯 记录原始索引
       });
 
       // 移动到下一个段
@@ -208,14 +215,24 @@ export class WaterfallRenderer implements BaseRenderer {
 
     console.log('创建了', segments.length, '个时间段');
 
-    // 3. 计算布局分配
-    return this.allocateSegmentLayout(segments, containerWidth);
+    // 保存所有段用于后续拖动
+    this.allSegments = segments;
+
+    // 3. 计算布局分配（默认观察窗口在最前面）
+    return this.allocateSegmentLayout(segments, containerWidth, 0);
   }
 
   /**
    * 分配段的布局空间
+   * @param segments 所有时间段
+   * @param containerWidth 容器宽度
+   * @param observationStartIndex 观察窗口起始段索引（默认0）
    */
-  private allocateSegmentLayout(segments: TimeSegment[], containerWidth: number): LayoutResult {
+  private allocateSegmentLayout(
+    segments: TimeSegment[], 
+    containerWidth: number, 
+    observationStartIndex: number = 0
+  ): LayoutResult {
     const availableWidth = containerWidth - 100; // 留出边距
     const startX = 50;
 
@@ -262,17 +279,46 @@ export class WaterfallRenderer implements BaseRenderer {
       // 计算正常显示能容纳多少个段
       const maxNormalSegments = Math.floor(normalDisplayWidth / this.NODE_WIDTHS.full);
       
-      normalSegments = segments.slice(0, maxNormalSegments);
-      compressedSegments = segments.slice(maxNormalSegments);
+      // 🎯 根据observationStartIndex确定哪些段是正常显示
+      // 确保不会超出范围
+      const safeStartIndex = Math.max(0, Math.min(observationStartIndex, segments.length - maxNormalSegments));
+      const endIndex = safeStartIndex + maxNormalSegments;
+      
+      // 分为三部分：前压缩段、正常段、后压缩段
+      const beforeSegments = segments.slice(0, safeStartIndex);
+      normalSegments = segments.slice(safeStartIndex, endIndex);
+      const afterSegments = segments.slice(endIndex);
+      compressedSegments = [...beforeSegments, ...afterSegments];
 
       console.log('⚠️ 需要压缩:', {
         正常显示区域: normalDisplayWidth,
         压缩区域: maxCompressedWidth,
+        观察窗口起始索引: safeStartIndex,
+        前压缩段数: beforeSegments.length,
         正常显示段数: normalSegments.length,
-        压缩段数: compressedSegments.length
+        后压缩段数: afterSegments.length
       });
 
-      // 为正常显示段分配空间
+      // 🎨 先渲染前面的压缩段
+      if (beforeSegments.length > 0) {
+        const beforeCompressedWidth = beforeSegments.length > 0 
+          ? (maxCompressedWidth * beforeSegments.length / compressedSegments.length) 
+          : 0;
+        const beforeSegmentWidth = beforeCompressedWidth / beforeSegments.length;
+        
+        let displayMode: 'short' | 'icon' | 'bar' = 'short';
+        if (beforeSegmentWidth < this.NODE_WIDTHS.short) displayMode = 'icon';
+        if (beforeSegmentWidth < this.NODE_WIDTHS.icon) displayMode = 'bar';
+
+        beforeSegments.forEach(segment => {
+          segment.displayMode = displayMode;
+          segment.allocatedWidth = beforeSegmentWidth;
+          segment.startX = currentX;
+          currentX += beforeSegmentWidth;
+        });
+      }
+
+      // 🎨 渲染正常显示段
       const normalSegmentWidth = normalSegments.length > 0 ? normalDisplayWidth / normalSegments.length : 0;
 
       normalSegments.forEach(segment => {
@@ -282,24 +328,22 @@ export class WaterfallRenderer implements BaseRenderer {
         currentX += normalSegmentWidth;
       });
 
-      // 为压缩段分配空间和显示模式
-      if (compressedSegments.length > 0) {
-        const compressedSegmentWidth = maxCompressedWidth / compressedSegments.length;
+      // 🎨 渲染后面的压缩段
+      if (afterSegments.length > 0) {
+        const afterCompressedWidth = afterSegments.length > 0 
+          ? (maxCompressedWidth * afterSegments.length / compressedSegments.length) 
+          : 0;
+        const afterSegmentWidth = afterCompressedWidth / afterSegments.length;
         
-        // 根据分配到的宽度决定显示模式
         let displayMode: 'short' | 'icon' | 'bar' = 'short';
-        if (compressedSegmentWidth < this.NODE_WIDTHS.short) {
-          displayMode = 'icon';
-        }
-        if (compressedSegmentWidth < this.NODE_WIDTHS.icon) {
-          displayMode = 'bar';
-        }
+        if (afterSegmentWidth < this.NODE_WIDTHS.short) displayMode = 'icon';
+        if (afterSegmentWidth < this.NODE_WIDTHS.icon) displayMode = 'bar';
 
-        compressedSegments.forEach(segment => {
+        afterSegments.forEach(segment => {
           segment.displayMode = displayMode;
-          segment.allocatedWidth = compressedSegmentWidth;
+          segment.allocatedWidth = afterSegmentWidth;
           segment.startX = currentX;
-          currentX += compressedSegmentWidth;
+          currentX += afterSegmentWidth;
         });
       }
     }
@@ -347,16 +391,19 @@ export class WaterfallRenderer implements BaseRenderer {
     const stripTop = 40; // 条带顶部位置
     const stripHeight = this.height - 120; // 条带高度（留出底部空间）
     
-    layout.segments.forEach((segment, index) => {
+    layout.segments.forEach((segment) => {
+      // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
+      const isEven = segment.originalIndex % 2 === 0;
+      
       // 竖向条带背景
       backgroundGroup.append('rect')
         .attr('x', segment.startX)
         .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
         .attr('height', stripHeight)
-        .attr('fill', index % 2 === 0 ? '#f0f2f5' : '#ffffff')  // 交替灰白
+        .attr('fill', isEven ? '#f0f2f5' : '#ffffff')  // 基于原始索引交替灰白
         .attr('opacity', 0.8)
-        .attr('class', `time-strip time-strip-${index}`)
+        .attr('class', `time-strip time-strip-${segment.originalIndex}`)
         .attr('data-time', new Date(segment.endTime).toISOString());
 
       // 🎯 时间标签在条带顶部
@@ -668,7 +715,7 @@ export class WaterfallRenderer implements BaseRenderer {
     const radius = windowHeight / 2;
 
     // 可拖动的观察窗口
-    group.append('rect')
+    const observationRect = group.append('rect')
       .attr('class', 'observation-border')
       .attr('x', windowStartX)
       .attr('y', windowY)
@@ -682,7 +729,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .style('cursor', 'grab');
 
     // 标签显示"观察窗口"
-    group.append('text')
+    const observationText = group.append('text')
       .attr('x', windowStartX + windowWidth / 2)
       .attr('y', windowY + windowHeight / 2 + 5)
       .attr('text-anchor', 'middle')
@@ -697,6 +744,113 @@ export class WaterfallRenderer implements BaseRenderer {
       width: windowWidth,
       segments: layout.normalDisplaySegments
     };
+
+    // 🎯 添加拖动功能
+    this.setupObservationWindowDrag(observationRect, observationText, layout);
+  }
+
+  /**
+   * 设置观察窗口拖动功能
+   */
+  private setupObservationWindowDrag(rect: any, text: any, layout: LayoutResult): void {
+    const self = this;
+    let isDragging = false;
+    let startX = 0;
+    let currentObservationStartIndex = 0;
+
+    // 计算当前观察窗口起始段索引
+    if (layout.normalDisplaySegments.length > 0) {
+      const firstNormalSegment = layout.normalDisplaySegments[0];
+      currentObservationStartIndex = this.allSegments.findIndex(s => s === firstNormalSegment);
+    }
+
+    // 🎯 计算最大可拖动的起始索引（确保最后几个段也能被观察）
+    const maxObservationStartIndex = Math.max(0, this.allSegments.length - layout.normalDisplaySegments.length);
+
+    const drag = d3.drag()
+      .on('start', function(event: any) {
+        isDragging = true;
+        startX = event.x;
+        rect.style('cursor', 'grabbing');
+        console.log('🖱️ 开始拖动观察窗口');
+      })
+      .on('drag', function(event: any) {
+        const dx = event.x - startX;
+        const currentX = parseFloat(rect.attr('x'));
+        const newX = currentX + dx;
+        
+        // 🎯 限制拖动范围：从第一个段的起始位置到最后能完整显示观察窗口的位置
+        // 计算对应最大索引的段的起始X位置
+        const firstSegment = self.allSegments[0];
+        const lastValidSegment = self.allSegments[maxObservationStartIndex];
+        
+        const minX = firstSegment ? firstSegment.startX : layout.timeAxisData.startX;
+        const maxX = lastValidSegment ? lastValidSegment.startX : layout.timeAxisData.startX;
+        
+        const clampedX = Math.max(minX, Math.min(maxX, newX));
+        
+        rect.attr('x', clampedX);
+        text.attr('x', clampedX + parseFloat(rect.attr('width')) / 2);
+        
+        startX = event.x;
+      })
+      .on('end', function(event: any) {
+        isDragging = false;
+        rect.style('cursor', 'grab');
+        
+        // 🎯 根据最终位置计算新的观察窗口起始索引
+        const finalX = parseFloat(rect.attr('x'));
+        const newStartIndex = self.calculateObservationStartIndex(finalX, layout);
+        
+        console.log('🖱️ 拖动结束，重新计算布局:', {
+          原索引: currentObservationStartIndex,
+          新索引: newStartIndex,
+          最大索引: maxObservationStartIndex
+        });
+        
+        if (newStartIndex !== currentObservationStartIndex) {
+          currentObservationStartIndex = newStartIndex;
+          // 重新布局和渲染
+          self.reRenderWithObservationWindow(newStartIndex);
+        }
+      });
+
+    rect.call(drag);
+  }
+
+  /**
+   * 根据X坐标计算观察窗口应该从哪个段开始
+   */
+  private calculateObservationStartIndex(x: number, layout: LayoutResult): number {
+    // 找到X坐标对应的段
+    for (let i = 0; i < this.allSegments.length; i++) {
+      const segment = this.allSegments[i];
+      if (segment.startX <= x && x < segment.startX + segment.allocatedWidth) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * 根据新的观察窗口位置重新渲染
+   */
+  private reRenderWithObservationWindow(observationStartIndex: number): void {
+    console.log('🔄 根据新观察窗口位置重新渲染，起始索引:', observationStartIndex);
+    
+    // 重新计算布局
+    const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
+    this.currentLayout = newLayout;
+
+    // 清空并重新渲染
+    this.svg.selectAll('*').remove();
+    const mainGroup = this.createSVGGroups(this.svg);
+
+    // 渲染各个部分
+    this.renderTimeAxis(mainGroup.timeAxisGroup, newLayout);
+    this.renderSegmentNodes(mainGroup.nodesGroup, newLayout);
+    this.renderConnections(mainGroup.connectionsGroup, newLayout);
+    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout);
   }
 
   /**
