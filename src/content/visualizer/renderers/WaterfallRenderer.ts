@@ -72,6 +72,7 @@ export class WaterfallRenderer implements BaseRenderer {
   // 存储原始数据，用于拖动时重新计算布局
   private allSegments: TimeSegment[] = [];
   private renderOptions: any = null;
+  private lastDragSnapped: boolean = false; // 记录拖动时是否吸附
 
   initialize(svg: any, container: HTMLElement, width: number, height: number): void {
     this.svg = svg;
@@ -258,7 +259,8 @@ export class WaterfallRenderer implements BaseRenderer {
 
     if (!needCompression) {
       // ✅ 不需要压缩：所有段都以full模式显示
-      const segmentWidth = availableWidth / segments.length;
+      // 🎯 固定条带宽度为 NODE_WIDTHS.full，右侧留白
+      const segmentWidth = this.NODE_WIDTHS.full;
       
       segments.forEach(segment => {
         segment.displayMode = 'full';
@@ -270,7 +272,7 @@ export class WaterfallRenderer implements BaseRenderer {
       normalSegments = segments;
       compressedSegments = [];
       
-      console.log('✅ 无需压缩，所有段以全节点模式显示');
+      console.log('✅ 无需压缩，所有段以固定全节点宽度显示，右侧留白');
     } else {
       // ⚠️ 需要压缩：应用70/30原则
       const maxCompressedWidth = availableWidth * this.MAX_COMPRESSED_RATIO;
@@ -381,21 +383,24 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染时间轴（与节点布局完全一致）+ V2样式：明暗条带
    */
   private renderTimeAxis(group: any, layout: LayoutResult): void {
-    console.log('🕐 渲染时间轴（带明暗条带）');
+    console.log('🕐 渲染时间轴（带明暗条带和横线）');
 
-    // 🎨 V2样式：创建时间轴的子分组结构
+    // 🎨 创建分组结构
     const backgroundGroup = group.append('g').attr('class', 'time-axis-backgrounds');
+    const axisLineGroup = group.append('g').attr('class', 'time-axis-line');
     const labelGroup = group.append('g').attr('class', 'time-axis-labels');
 
-    // 🎨 V2样式：添加明暗条带背景 - 每个段对应一个竖向条带
-    const stripTop = 40; // 条带顶部位置
-    const stripHeight = this.height - 120; // 条带高度（留出底部空间）
+    // � 时间轴横线位置
+    const timeAxisY = 80; // 时间轴横线的Y坐标（降低避免与顶部图标重叠）
+    const stripTop = 0; // 条带从顶部开始
+    const stripHeight = this.height; // 条带高度（覆盖整个高度）
     
+    // 🎨 添加明暗条带背景 - 从顶部延伸到底部
     layout.segments.forEach((segment) => {
       // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
       const isEven = segment.originalIndex % 2 === 0;
       
-      // 竖向条带背景
+      // 竖向条带背景 - 覆盖整个高度
       backgroundGroup.append('rect')
         .attr('x', segment.startX)
         .attr('y', stripTop)
@@ -405,18 +410,54 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('opacity', 0.8)
         .attr('class', `time-strip time-strip-${segment.originalIndex}`)
         .attr('data-time', new Date(segment.endTime).toISOString());
+    });
 
-      // 🎯 时间标签在条带顶部
+    // 🎯 绘制时间轴横线（带箭头）- 使用所有条带确保完整
+    const allSegments = this.allSegments.length > 0 ? this.allSegments : layout.segments;
+    const firstSegment = allSegments[0];
+    const lastSegment = allSegments[allSegments.length - 1];
+    const lineStartX = firstSegment.startX;
+    const lineEndX = lastSegment.startX + lastSegment.allocatedWidth;
+    
+    // 主时间轴线
+    axisLineGroup.append('line')
+      .attr('x1', lineStartX)
+      .attr('y1', timeAxisY)
+      .attr('x2', lineEndX)
+      .attr('y2', timeAxisY)
+      .attr('stroke', '#666')
+      .attr('stroke-width', 2)
+      .attr('class', 'time-axis-main-line');
+    
+    // 右侧箭头
+    const arrowSize = 8;
+    axisLineGroup.append('polygon')
+      .attr('points', `${lineEndX},${timeAxisY} ${lineEndX - arrowSize},${timeAxisY - arrowSize/2} ${lineEndX - arrowSize},${timeAxisY + arrowSize/2}`)
+      .attr('fill', '#666')
+      .attr('class', 'time-axis-arrow');
+
+    // 🎯 时间标签在横线上方
+    layout.segments.forEach((segment) => {
       if (segment.displayMode === 'full' || segment.displayMode === 'short') {
         const timeLabel = new Date(segment.endTime).toLocaleTimeString('zh-CN', {
           hour: '2-digit',
           minute: '2-digit'
         });
 
+        // 刻度线（向下）
+        labelGroup.append('line')
+          .attr('x1', segment.startX + segment.allocatedWidth / 2)
+          .attr('y1', timeAxisY)
+          .attr('x2', segment.startX + segment.allocatedWidth / 2)
+          .attr('y2', timeAxisY + 5)
+          .attr('stroke', '#999')
+          .attr('stroke-width', 1);
+
+        // 时间标签在横线上方
         labelGroup.append('text')
-          .attr('x', segment.startX + segment.allocatedWidth / 2) // 条带中央
-          .attr('y', stripTop + 20) // 条带顶部下方20px
-          .attr('text-anchor', 'middle') // 居中对齐
+          .attr('x', segment.startX + segment.allocatedWidth / 2)
+          .attr('y', timeAxisY - 8) // 横线上方
+          .attr('text-anchor', 'middle')
           .attr('font-size', '11px')
           .attr('font-weight', 'bold')
           .attr('fill', '#666')
@@ -461,15 +502,15 @@ export class WaterfallRenderer implements BaseRenderer {
     const width = this.NODE_WIDTHS[segment.displayMode];
     const height = this.NODE_HEIGHTS[segment.displayMode];
     
-    // 🎯 瀑布布局：节点在条带内从顶部开始纵向堆叠
+    // 🎯 瀑布布局：节点在条带内从时间轴下方开始纵向堆叠
     // X坐标：条带起始位置 + 居中偏移
     const centerOffset = (segment.allocatedWidth - width) / 2;
     const nodeX = segment.startX + Math.max(0, centerOffset);
     
-    // Y坐标：从条带顶部（时间标签下方）开始，纵向堆叠
-    const stripTop = 40; // 条带顶部
-    const labelHeight = 35; // 时间标签占用的高度
-    const nodeY = stripTop + labelHeight + (index * (height + 8)); // 每个节点间隔8px
+    // Y坐标：从时间轴下方开始，纵向堆叠
+    const timeAxisY = 80; // 时间轴横线的Y坐标（与renderTimeAxis保持一致）
+    const startGap = 15; // 时间轴下方的起始间隔
+    const nodeY = timeAxisY + startGap + (index * (height + 8)); // 每个节点间隔8px
 
     const nodeGroup = group.append('g')
       .attr('class', 'navigation-node')
@@ -645,46 +686,49 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   /**
-   * 渲染观察窗口滑块 - V2胶囊形状样式 + V3逻辑
+   * 渲染观察窗口滑块 - 在时间轴横线上滑动
    */
   private renderObservationWindowSlider(group: any, layout: LayoutResult): void {
     console.log('🎚️ 渲染观察窗口滑块');
+
+    const timeAxisY = 80; // 时间轴横线的Y坐标（与renderTimeAxis保持一致）
+    const sliderHeight = 16; // 滑块高度（更扁平，适合在线上）
+    const sliderY = timeAxisY - sliderHeight / 2; // 居中在时间轴线上
 
     // 🎯 关键逻辑：判断是否有压缩段
     const hasCompression = layout.compressedSegments.length > 0;
     
     if (!hasCompression) {
-      // ✅ 无压缩情况：观察窗口覆盖整个时间轴，且不可拖动
-      console.log('✅ 无压缩，观察窗口覆盖整个时间轴');
+      // ✅ 无压缩情况：观察窗口覆盖所有条带的实际宽度
+      console.log('✅ 无压缩，观察窗口覆盖所有条带实际宽度');
       
-      const windowStartX = layout.timeAxisData.startX;
-      const windowEndX = layout.timeAxisData.endX;
+      const firstSegment = layout.segments[0];
+      const lastSegment = layout.segments[layout.segments.length - 1];
+      const windowStartX = firstSegment.startX;
+      const windowEndX = lastSegment.startX + lastSegment.allocatedWidth;
       const windowWidth = windowEndX - windowStartX;
-      const windowY = 5;
-      const windowHeight = 28;
-      const radius = windowHeight / 2;
 
-      // 观察窗口覆盖整个时间轴，使用更淡的颜色表示全覆盖状态
+      // 观察窗口滑块 - 虚线边框表示全覆盖
       group.append('rect')
-        .attr('class', 'observation-border-full')
+        .attr('class', 'observation-slider-full')
         .attr('x', windowStartX)
-        .attr('y', windowY)
+        .attr('y', sliderY)
         .attr('width', windowWidth)
-        .attr('height', windowHeight)
-        .attr('rx', radius)
-        .attr('ry', radius)
-        .attr('fill', 'rgba(0, 123, 255, 0.05)') // 更淡的填充
+        .attr('height', sliderHeight)
+        .attr('rx', sliderHeight / 2)
+        .attr('ry', sliderHeight / 2)
+        .attr('fill', 'rgba(0, 123, 255, 0.1)')
         .attr('stroke', '#007bff')
         .attr('stroke-width', 1.5)
-        .attr('stroke-dasharray', '5,5') // 虚线边框
-        .style('cursor', 'default'); // 不可拖动
+        .attr('stroke-dasharray', '4,4')
+        .style('cursor', 'default');
 
-      // 标签显示"全部可见"
+      // 标签
       group.append('text')
         .attr('x', windowStartX + windowWidth / 2)
-        .attr('y', windowY + windowHeight / 2 + 5)
+        .attr('y', sliderY + sliderHeight / 2 + 4)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '11px')
+        .attr('font-size', '10px')
         .attr('fill', '#007bff')
         .attr('font-weight', 'bold')
         .text('全部可见');
@@ -693,14 +737,14 @@ export class WaterfallRenderer implements BaseRenderer {
         centerSegmentIndex: 0,
         startX: windowStartX,
         width: windowWidth,
-        segments: layout.segments // 所有段都可见
+        segments: layout.segments
       };
       
       return;
     }
 
     // ⚠️ 有压缩情况：观察窗口只覆盖正常显示区域，可拖动
-    console.log('⚠️ 有压缩，观察窗口覆盖正常显示区域');
+    console.log('⚠️ 有压缩，观察窗口在时间轴上滑动');
     
     if (layout.normalDisplaySegments.length === 0) {
       return;
@@ -710,30 +754,27 @@ export class WaterfallRenderer implements BaseRenderer {
     const windowEndX = layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].startX + 
                       layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].allocatedWidth;
     const windowWidth = windowEndX - windowStartX;
-    const windowY = 5;
-    const windowHeight = 28;
-    const radius = windowHeight / 2;
 
-    // 可拖动的观察窗口
+    // 可拖动的观察窗口滑块 - 在时间轴上
     const observationRect = group.append('rect')
-      .attr('class', 'observation-border')
+      .attr('class', 'observation-slider')
       .attr('x', windowStartX)
-      .attr('y', windowY)
+      .attr('y', sliderY)
       .attr('width', windowWidth)
-      .attr('height', windowHeight)
-      .attr('rx', radius)
-      .attr('ry', radius)
-      .attr('fill', 'rgba(0, 123, 255, 0.1)') // 正常填充
+      .attr('height', sliderHeight)
+      .attr('rx', sliderHeight / 2)
+      .attr('ry', sliderHeight / 2)
+      .attr('fill', 'rgba(0, 123, 255, 0.2)')
       .attr('stroke', '#007bff')
       .attr('stroke-width', 2)
       .style('cursor', 'grab');
 
-    // 标签显示"观察窗口"
+    // 标签
     const observationText = group.append('text')
       .attr('x', windowStartX + windowWidth / 2)
-      .attr('y', windowY + windowHeight / 2 + 5)
+      .attr('y', sliderY + sliderHeight / 2 + 4)
       .attr('text-anchor', 'middle')
-      .attr('font-size', '11px')
+      .attr('font-size', '10px')
       .attr('fill', '#007bff')
       .attr('font-weight', 'bold')
       .text('观察窗口');
@@ -780,38 +821,208 @@ export class WaterfallRenderer implements BaseRenderer {
         const newX = currentX + dx;
         
         // 🎯 限制拖动范围：从第一个段的起始位置到最后能完整显示观察窗口的位置
-        // 计算对应最大索引的段的起始X位置
         const firstSegment = self.allSegments[0];
         const lastValidSegment = self.allSegments[maxObservationStartIndex];
         
         const minX = firstSegment ? firstSegment.startX : layout.timeAxisData.startX;
-        const maxX = lastValidSegment ? lastValidSegment.startX : layout.timeAxisData.startX;
+        const observationWindowWidth = parseFloat(rect.attr('width'));
         
-        const clampedX = Math.max(minX, Math.min(maxX, newX));
+        // 🧲✨ 统一的双向吸附逻辑
+        const snapThreshold = 8;
+        let targetX = newX;
+        let snappedToLeft = false;   // 左边界是否吸附
+        let snappedToRight = false;  // 右边界是否吸附
+        let leftSnapX = newX;
+        let rightSnapX = newX;
+        let leftDistance = Infinity;
+        let rightDistance = Infinity;
+        
+        // 🎯 检测左边界吸附（窗口左边 vs 所有条带左边）
+        const windowLeftEdge = newX;
+        for (let i = 0; i < self.allSegments.length; i++) {
+          const segment = self.allSegments[i];
+          if (segment) {
+            const segmentLeftEdge = segment.startX;
+            const distance = Math.abs(windowLeftEdge - segmentLeftEdge);
+            
+            if (distance < snapThreshold && distance < leftDistance) {
+              leftSnapX = segmentLeftEdge;
+              leftDistance = distance;
+              snappedToLeft = true;
+            }
+          }
+        }
+        
+        // 🎯 检测右边界吸附（窗口右边 vs 所有条带右边）
+        const windowRightEdge = newX + observationWindowWidth;
+        for (let i = 0; i < self.allSegments.length; i++) {
+          const segment = self.allSegments[i];
+          if (segment) {
+            const segmentRightEdge = segment.startX + segment.allocatedWidth;
+            const distance = Math.abs(windowRightEdge - segmentRightEdge);
+            
+            if (distance < snapThreshold && distance < rightDistance) {
+              rightSnapX = segmentRightEdge - observationWindowWidth;
+              rightDistance = distance;
+              snappedToRight = true;
+            }
+          }
+        }
+        
+        // 🎯 决定最终使用哪个吸附（防止抖动的关键逻辑）
+        if (snappedToLeft && snappedToRight) {
+          // 🎯✨ 同时触发两个吸附：只选择距离最近的那个，完全忽略另一个
+          // 这样可以避免两个吸附逻辑互相干扰造成抖动
+          if (leftDistance < rightDistance) {
+            // 左边界更近，只吸附左边界
+            targetX = leftSnapX;
+            self.lastDragSnapped = true;
+            console.log('🧲 双向吸附触发，选择左边界 (距离:', leftDistance.toFixed(2), 'px)');
+          } else if (rightDistance < leftDistance) {
+            // 右边界更近，只吸附右边界
+            targetX = rightSnapX;
+            self.lastDragSnapped = true;
+            console.log('🧲 双向吸附触发，选择右边界 (距离:', rightDistance.toFixed(2), 'px)');
+          } else {
+            // 距离相等（极少情况），默认优先左边界
+            targetX = leftSnapX;
+            self.lastDragSnapped = true;
+            console.log('🧲 双向吸附触发，距离相等，默认选择左边界');
+          }
+        } else if (snappedToLeft) {
+          // 只有左边界吸附
+          targetX = leftSnapX;
+          self.lastDragSnapped = true;
+        } else if (snappedToRight) {
+          // 只有右边界吸附
+          targetX = rightSnapX;
+          self.lastDragSnapped = true;
+        } else {
+          // 没有吸附
+          self.lastDragSnapped = false;
+        }
+        
+        // 🎯 应用边界限制
+        let maxX = lastValidSegment ? lastValidSegment.startX : layout.timeAxisData.startX;
+        
+        // 如果吸附位置超出了原本的边界，扩展边界以允许吸附
+        if (self.lastDragSnapped && targetX > maxX) {
+          maxX = targetX;
+        }
+        
+        const clampedX = Math.max(minX, Math.min(maxX, targetX));
+        
+        // 视觉反馈
+        if (self.lastDragSnapped) {
+          rect.style('cursor', 'grabbing').attr('stroke-width', 3);
+        } else {
+          rect.attr('stroke-width', 2);
+        }
         
         rect.attr('x', clampedX);
-        text.attr('x', clampedX + parseFloat(rect.attr('width')) / 2);
+        text.attr('x', clampedX + observationWindowWidth / 2);
         
         startX = event.x;
       })
       .on('end', function(event: any) {
         isDragging = false;
-        rect.style('cursor', 'grab');
+        rect.style('cursor', 'grab')
+            .attr('stroke-width', 2); // 恢复正常边框
         
         // 🎯 根据最终位置计算新的观察窗口起始索引
         const finalX = parseFloat(rect.attr('x'));
-        const newStartIndex = self.calculateObservationStartIndex(finalX, layout);
+        const observationWindowWidth = parseFloat(rect.attr('width'));
+        
+        // 🎯✨ 全新的索引计算逻辑
+        // 核心问题：我们不能用旧布局的视觉位置来计算，因为条带宽度是变化的
+        // 
+        // 新思路：
+        // 1. 观察窗口的宽度是固定的（observationWindowWidth）
+        // 2. 计算观察窗口能容纳多少个全尺寸条带
+        // 3. 计算观察窗口在整个时间轴上的相对位置（百分比）
+        // 4. 根据相对位置确定应该从哪个原始条带开始展开
+        
+        const windowLeftEdge = finalX;
+        const windowRightEdge = finalX + observationWindowWidth;
+        
+        // 🎯 方法：计算窗口左边界相对于整个时间轴的位置比例
+        // 获取时间轴的总范围
+        const timeAxisStart = self.allSegments[0].startX;
+        const lastSegment = self.allSegments[self.allSegments.length - 1];
+        const timeAxisEnd = lastSegment.startX + lastSegment.allocatedWidth;
+        const totalWidth = timeAxisEnd - timeAxisStart;
+        
+        // 窗口左边界在时间轴上的相对位置（0-1之间）
+        const relativePosition = (windowLeftEdge - timeAxisStart) / totalWidth;
+        
+        // 根据相对位置计算应该从哪个原始条带开始
+        // 使用四舍五入确保准确性
+        const totalSegments = self.allSegments.length;
+        let newStartIndex = Math.round(relativePosition * totalSegments);
+        
+        // 边界检查
+        newStartIndex = Math.max(0, Math.min(newStartIndex, totalSegments - 1));
+        
+        console.log('🎯 拖动结束，计算新索引:', {
+          观察窗口X: finalX,
+          观察窗口宽度: observationWindowWidth,
+          窗口左边界: windowLeftEdge,
+          窗口右边界: windowRightEdge,
+          时间轴起点: timeAxisStart,
+          时间轴终点: timeAxisEnd,
+          时间轴总宽度: totalWidth,
+          相对位置: (relativePosition * 100).toFixed(2) + '%',
+          总条带数: totalSegments,
+          计算出的新索引: newStartIndex,
+          是否吸附: self.lastDragSnapped
+        });
+        
+        // 🎯✨ 如果发生了吸附，不需要微调动画（已经在正确位置）
+        // 如果没有吸附，执行微调动画让窗口对齐到段的左边界
+        let needsAnimation = false;
+        if (!self.lastDragSnapped) {
+          const targetSegment = self.allSegments[newStartIndex];
+          if (targetSegment) {
+            const targetX = targetSegment.startX;
+            const currentX = parseFloat(rect.attr('x'));
+            
+            // 如果位置不完全精确，添加微调动画
+            if (Math.abs(currentX - targetX) > 0.5) {
+              needsAnimation = true;
+              rect.transition()
+                .duration(150)
+                .ease(d3.easeQuadOut)
+                .attr('x', targetX);
+              
+              text.transition()
+                .duration(150)
+                .ease(d3.easeQuadOut)
+                .attr('x', targetX + parseFloat(rect.attr('width')) / 2);
+            }
+          }
+        }
         
         console.log('🖱️ 拖动结束，重新计算布局:', {
           原索引: currentObservationStartIndex,
           新索引: newStartIndex,
-          最大索引: maxObservationStartIndex
+          最大索引: maxObservationStartIndex,
+          需要动画: needsAnimation,
+          发生吸附: self.lastDragSnapped
         });
         
         if (newStartIndex !== currentObservationStartIndex) {
           currentObservationStartIndex = newStartIndex;
-          // 重新布局和渲染
-          self.reRenderWithObservationWindow(newStartIndex);
+          
+          // 🎯✨ 如果发生了吸附，立即重新布局；否则等待微调动画完成
+          if (self.lastDragSnapped || !needsAnimation) {
+            // 吸附情况：立即重新渲染
+            self.reRenderWithObservationWindow(newStartIndex);
+          } else {
+            // 非吸附情况：延迟重新布局，等待微调动画完成
+            setTimeout(() => {
+              self.reRenderWithObservationWindow(newStartIndex);
+            }, 200);
+          }
         }
       });
 
