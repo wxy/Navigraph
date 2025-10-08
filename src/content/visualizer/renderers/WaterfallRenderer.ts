@@ -20,7 +20,7 @@ interface TimeSegment {
   startTime: number;
   endTime: number;
   nodes: NavNode[];
-  displayMode: 'full' | 'short' | 'icon' | 'bar';
+  displayMode: 'full' | 'short' | 'icon' | 'dot';
   allocatedWidth: number;
   startX: number;
   originalIndex: number;  // 🎯 添加原始索引，用于保持明暗条纹一致性
@@ -50,18 +50,19 @@ export class WaterfallRenderer implements BaseRenderer {
   private readonly SEGMENT_DURATION = 5 * 60 * 1000; // 5分钟
   private readonly MAX_COMPRESSED_RATIO = 0.3; // 最大压缩区域占比30%
   private readonly NODE_WIDTHS = {
-    full: 150,
-    short: 120,
-    icon: 20,
-    bar: 4
+    full: 150,   // 全节点：图标 + 标题
+    short: 120,  // 短节点：标题
+    icon: 20,    // 图标节点：完整图标
+    dot: 8       // 圆点节点：小圆点（最小压缩级别）
   };
   private readonly NODE_HEIGHTS = {
     full: 40,
     short: 25,
     icon: 20,
-    bar: 12
+    dot: 8
   };
 
+  private visualizer: Visualizer;
   private currentLayout: LayoutResult | null = null;
   private observationWindow: ObservationWindow | null = null;
   private svg: any;
@@ -73,6 +74,10 @@ export class WaterfallRenderer implements BaseRenderer {
   private allSegments: TimeSegment[] = [];
   private renderOptions: any = null;
   private lastDragSnapped: boolean = false; // 记录拖动时是否吸附
+
+  constructor(visualizer: Visualizer) {
+    this.visualizer = visualizer;
+  }
 
   initialize(svg: any, container: HTMLElement, width: number, height: number): void {
     this.svg = svg;
@@ -308,9 +313,10 @@ export class WaterfallRenderer implements BaseRenderer {
           : 0;
         const beforeSegmentWidth = beforeCompressedWidth / beforeSegments.length;
         
-        let displayMode: 'short' | 'icon' | 'bar' = 'short';
+        // 🎯 压缩级别：short → icon → dot（最小）
+        let displayMode: 'short' | 'icon' | 'dot' = 'short';
         if (beforeSegmentWidth < this.NODE_WIDTHS.short) displayMode = 'icon';
-        if (beforeSegmentWidth < this.NODE_WIDTHS.icon) displayMode = 'bar';
+        if (beforeSegmentWidth < this.NODE_WIDTHS.icon) displayMode = 'dot';
 
         beforeSegments.forEach(segment => {
           segment.displayMode = displayMode;
@@ -337,9 +343,10 @@ export class WaterfallRenderer implements BaseRenderer {
           : 0;
         const afterSegmentWidth = afterCompressedWidth / afterSegments.length;
         
-        let displayMode: 'short' | 'icon' | 'bar' = 'short';
+        // 🎯 压缩级别：short → icon → dot（最小）
+        let displayMode: 'short' | 'icon' | 'dot' = 'short';
         if (afterSegmentWidth < this.NODE_WIDTHS.short) displayMode = 'icon';
-        if (afterSegmentWidth < this.NODE_WIDTHS.icon) displayMode = 'bar';
+        if (afterSegmentWidth < this.NODE_WIDTHS.icon) displayMode = 'dot';
 
         afterSegments.forEach(segment => {
           segment.displayMode = displayMode;
@@ -502,15 +509,30 @@ export class WaterfallRenderer implements BaseRenderer {
     const width = this.NODE_WIDTHS[segment.displayMode];
     const height = this.NODE_HEIGHTS[segment.displayMode];
     
-    // 🎯 瀑布布局：节点在条带内从时间轴下方开始纵向堆叠
-    // X坐标：条带起始位置 + 居中偏移
-    const centerOffset = (segment.allocatedWidth - width) / 2;
-    const nodeX = segment.startX + Math.max(0, centerOffset);
-    
-    // Y坐标：从时间轴下方开始，纵向堆叠
-    const timeAxisY = 80; // 时间轴横线的Y坐标（与renderTimeAxis保持一致）
+    const timeAxisY = 80; // 时间轴横线的Y坐标
     const startGap = 15; // 时间轴下方的起始间隔
-    const nodeY = timeAxisY + startGap + (index * (height + 8)); // 每个节点间隔8px
+    
+    let nodeX: number;
+    let nodeY: number;
+    
+    // 🎯 根据显示模式决定布局方式
+    if (segment.displayMode === 'full' || segment.displayMode === 'short') {
+      // 全节点和短节点：纵向堆叠
+      const centerOffset = (segment.allocatedWidth - width) / 2;
+      nodeX = segment.startX + Math.max(0, centerOffset);
+      nodeY = timeAxisY + startGap + (index * (height + 8)); // 纵向，间隔8px
+    } else {
+      // 图标节点和圆点节点：横向排列+换行
+      const itemsPerRow = Math.floor(segment.allocatedWidth / (width + 2)); // 每行能放多少个，间隔2px
+      const row = Math.floor(index / Math.max(1, itemsPerRow)); // 第几行
+      const col = index % Math.max(1, itemsPerRow); // 第几列
+      
+      const horizontalGap = 2; // 横向间隔
+      const verticalGap = 2; // 纵向间隔
+      
+      nodeX = segment.startX + (col * (width + horizontalGap));
+      nodeY = timeAxisY + startGap + (row * (height + verticalGap));
+    }
 
     const nodeGroup = group.append('g')
       .attr('class', 'navigation-node')
@@ -523,13 +545,13 @@ export class WaterfallRenderer implements BaseRenderer {
       this.renderShortNode(nodeGroup, node, width, height);
     } else if (segment.displayMode === 'icon') {
       this.renderIconNode(nodeGroup, node, width, height);
-    } else if (segment.displayMode === 'bar') {
-      this.renderBarNode(nodeGroup, node, width, height);
+    } else if (segment.displayMode === 'dot') {
+      this.renderDotNode(nodeGroup, node, width, height);
     }
   }
 
   /**
-   * 渲染完整节点 - V2样式：显示标题和URL
+   * 渲染完整节点 - V2样式：图标 + 标题
    */
   private renderFullNode(group: any, node: NavNode, width: number, height: number): void {
     // 背景矩形
@@ -538,26 +560,65 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', height)
       .attr('rx', 3)
       .attr('fill', '#f0f0f0')
-      .attr('stroke', '#ddd');
+      .attr('stroke', '#ddd')
+      .style('cursor', 'pointer');
 
-    // 标题文本
+    // 🎯 图标（favicon）
+    const iconSize = 16;
+    const iconX = 6;
+    const iconY = (height - iconSize) / 2;
+    
+    if (node.favicon) {
+      group.append('image')
+        .attr('x', iconX)
+        .attr('y', iconY)
+        .attr('width', iconSize)
+        .attr('height', iconSize)
+        .attr('href', node.favicon)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .style('pointer-events', 'none')
+        .on('error', function(this: SVGImageElement) {
+          // 如果图标加载失败，显示默认圆形
+          d3.select(this).remove();
+          group.append('circle')
+            .attr('cx', iconX + iconSize / 2)
+            .attr('cy', iconY + iconSize / 2)
+            .attr('r', iconSize / 2)
+            .attr('fill', '#ccc')
+            .attr('stroke', '#999')
+            .attr('stroke-width', 1)
+            .style('pointer-events', 'none');
+        });
+    } else {
+      // 默认图标（圆形占位符）
+      group.append('circle')
+        .attr('cx', iconX + iconSize / 2)
+        .attr('cy', iconY + iconSize / 2)
+        .attr('r', iconSize / 2)
+        .attr('fill', '#ccc')
+        .attr('stroke', '#999')
+        .attr('stroke-width', 1)
+        .style('pointer-events', 'none');
+    }
+
+    // 🎯 标题文本（图标右侧）
     const title = node.title || this.getNodeLabel(node);
+    const textX = iconX + iconSize + 4; // 图标 + 间隔
+    const textWidth = width - textX - 6; // 剩余宽度
+    
     group.append('text')
-      .attr('x', 6)
-      .attr('y', 15)
+      .attr('x', textX)
+      .attr('y', height / 2 + 4)
       .attr('font-size', '11px')
       .attr('fill', '#333')
-      .text(this.truncateText(title, 20));
-
-    // URL文本
-    if (node.url) {
-      group.append('text')
-        .attr('x', 6)
-        .attr('y', 30)
-        .attr('font-size', '9px')
-        .attr('fill', '#666')
-        .text(this.truncateUrl(node.url));
-    }
+      .text(this.truncateText(title, Math.floor(textWidth / 6))) // 大约6px每个字符
+      .style('pointer-events', 'none');
+    
+    // 🎯 添加点击事件
+    group.style('cursor', 'pointer')
+      .on('click', () => {
+        this.visualizer.showNodeDetails(node);
+      });
   }
 
   /**
@@ -581,7 +642,7 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   /**
-   * 渲染简短节点 - V2样式
+   * 渲染简短节点 - V2样式：只显示标题
    */
   private renderShortNode(group: any, node: NavNode, width: number, height: number): void {
     group.append('rect')
@@ -589,38 +650,85 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', height)
       .attr('rx', 2)
       .attr('fill', '#e8e8e8')
-      .attr('stroke', '#ccc');
+      .attr('stroke', '#ccc')
+      .style('cursor', 'pointer');
 
     const label = node.title || this.getNodeLabel(node);
+    const maxChars = Math.floor(width / 5.5); // 大约5.5px每个字符
+    
     group.append('text')
-      .attr('x', 4)
-      .attr('y', height / 2 + 4)
+      .attr('x', width / 2)
+      .attr('y', height / 2 + 3)
       .attr('font-size', '9px')
       .attr('fill', '#555')
-      .text(this.truncateText(label, 15));
+      .attr('text-anchor', 'middle')
+      .text(this.truncateText(label, maxChars))
+      .style('pointer-events', 'none');
+    
+    // 🎯 添加点击事件
+    group.style('cursor', 'pointer')
+      .on('click', () => {
+        this.visualizer.showNodeDetails(node);
+      });
   }
 
   /**
-   * 渲染图标节点 - V2样式
+   * 渲染图标节点 - V2样式：显示favicon，横向排列+换行
    */
   private renderIconNode(group: any, node: NavNode, width: number, height: number): void {
+    const iconSize = Math.min(width, height) - 2;
+    
+    if (node.favicon) {
+      group.append('image')
+        .attr('x', (width - iconSize) / 2)
+        .attr('y', (height - iconSize) / 2)
+        .attr('width', iconSize)
+        .attr('height', iconSize)
+        .attr('href', node.favicon)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .style('pointer-events', 'none')
+        .on('error', function(this: SVGImageElement) {
+          // 如果图标加载失败，显示默认圆形
+          d3.select(this).remove();
+          group.append('circle')
+            .attr('cx', width / 2)
+            .attr('cy', height / 2)
+            .attr('r', iconSize / 2)
+            .attr('fill', '#d0d0d0')
+            .attr('stroke', '#aaa')
+            .attr('stroke-width', 0.5)
+            .style('pointer-events', 'none');
+        });
+    } else {
+      // 默认圆形图标
+      group.append('circle')
+        .attr('cx', width / 2)
+        .attr('cy', height / 2)
+        .attr('r', iconSize / 2)
+        .attr('fill', '#d0d0d0')
+        .attr('stroke', '#aaa')
+        .attr('stroke-width', 0.5)
+        .style('pointer-events', 'none');
+    }
+    
+    // 🎯 添加点击事件
+    group.style('cursor', 'pointer')
+      .on('click', () => {
+        this.visualizer.showNodeDetails(node);
+      });
+  }
+
+  /**
+   * 渲染圆点节点 - 压缩的小圆点
+   */
+  private renderDotNode(group: any, node: NavNode, width: number, height: number): void {
+    const radius = Math.min(width, height) / 2;
+    
     group.append('circle')
       .attr('cx', width / 2)
       .attr('cy', height / 2)
-      .attr('r', Math.min(width, height) / 2 - 1)
-      .attr('fill', '#d0d0d0')
-      .attr('stroke', '#aaa')
-      .attr('stroke-width', 0.5);
-  }
-
-  /**
-   * 渲染条形节点 - V2样式
-   */
-  private renderBarNode(group: any, node: NavNode, width: number, height: number): void {
-    group.append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('fill', '#c0c0c0')
+      .attr('r', radius)
+      .attr('fill', '#999')
       .attr('stroke', 'none');
   }
 
