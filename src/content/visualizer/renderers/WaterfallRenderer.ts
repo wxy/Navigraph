@@ -101,7 +101,7 @@ export class WaterfallRenderer implements BaseRenderer {
     }
 
     // 🛡️ 安全检查：验证时间戳有效性
-    const validNodes = nodes.filter(node => {
+    let validNodes = nodes.filter(node => {
       if (!node.timestamp || typeof node.timestamp !== 'number' || isNaN(node.timestamp)) {
         console.warn('⚠️ 发现无效时间戳的节点，已过滤:', node);
         return false;
@@ -109,8 +109,17 @@ export class WaterfallRenderer implements BaseRenderer {
       return true;
     });
 
+    // 🎯 应用筛选器：处理已关闭节点的显示
+    // 如果没有传入过滤器选项，默认不显示已关闭的节点
+    const showClosed = options?.filters?.closed !== false; // 默认为false（不显示）
+    if (!showClosed) {
+      const beforeFilter = validNodes.length;
+      validNodes = validNodes.filter(node => !node.isClosed);
+      console.log(`🎯 筛选已关闭节点: ${beforeFilter} -> ${validNodes.length}`);
+    }
+
     if (validNodes.length === 0) {
-      logger.warn('所有节点的时间戳都无效');
+      logger.warn('筛选后没有可显示的节点');
       return;
     }
 
@@ -144,14 +153,22 @@ export class WaterfallRenderer implements BaseRenderer {
   private calculateSegmentLayout(nodes: NavNode[], containerWidth: number): LayoutResult {
     console.log('📊 开始计算时间分段布局, 容器宽度:', containerWidth);
 
-    // 1. 找到时间范围
+    // 1. 找到时间范围并对齐到5分钟边界
     const times = nodes.map(node => node.timestamp).sort((a, b) => b - a); // 最新的在前
-    const maxTime = times[0];
-    const minTime = times[times.length - 1];
+    const maxTimeRaw = times[0];
+    const minTimeRaw = times[times.length - 1];
     
-    console.log('时间范围:', {
-      最新: new Date(maxTime).toLocaleTimeString(),
-      最旧: new Date(minTime).toLocaleTimeString()
+    // 🎯 对齐到5分钟整数边界
+    // 将maxTime向上对齐到下一个5分钟边界
+    // 将minTime向下对齐到上一个5分钟边界
+    const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
+    const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
+    
+    console.log('时间范围对齐:', {
+      原始最新: new Date(maxTimeRaw).toLocaleTimeString(),
+      对齐最新: new Date(maxTime).toLocaleTimeString(),
+      原始最旧: new Date(minTimeRaw).toLocaleTimeString(),
+      对齐最旧: new Date(minTime).toLocaleTimeString()
     });
 
     // 2. 创建时间分段（从最新时间开始，按5分钟分段）
@@ -163,31 +180,26 @@ export class WaterfallRenderer implements BaseRenderer {
     while (currentTime > minTime && safetyCounter < MAX_ITERATIONS) {
       safetyCounter++;
       
-      const segmentStart = currentTime;
-      const segmentEnd = Math.max(currentTime - this.SEGMENT_DURATION, minTime);
+      const segmentEnd = currentTime;
+      const segmentStart = currentTime - this.SEGMENT_DURATION;
       
       // 找到此段内的节点
       const segmentNodes = nodes.filter(node => 
-        node.timestamp <= segmentStart && node.timestamp > segmentEnd
+        node.timestamp < segmentEnd && node.timestamp >= segmentStart
       );
 
-      if (segmentNodes.length > 0) {
-        segments.push({
-          startTime: segmentEnd,
-          endTime: segmentStart,
-          nodes: segmentNodes,
-          displayMode: 'full', // 初始都设为full，后面会调整
-          allocatedWidth: 0,
-          startX: 0
-        });
-      }
+      // 即使没有节点也创建段（保持时间轴连续）
+      segments.push({
+        startTime: segmentStart,
+        endTime: segmentEnd,
+        nodes: segmentNodes,
+        displayMode: 'full', // 初始都设为full，后面会调整
+        allocatedWidth: 0,
+        startX: 0
+      });
 
-      // 确保currentTime减小，避免无限循环
-      currentTime = segmentEnd;
-      if (currentTime === segmentStart) {
-        // 如果没有变化，强制退出
-        break;
-      }
+      // 移动到下一个段
+      currentTime = segmentStart;
     }
     
     if (safetyCounter >= MAX_ITERATIONS) {
@@ -205,56 +217,91 @@ export class WaterfallRenderer implements BaseRenderer {
    */
   private allocateSegmentLayout(segments: TimeSegment[], containerWidth: number): LayoutResult {
     const availableWidth = containerWidth - 100; // 留出边距
-    const maxCompressedWidth = availableWidth * this.MAX_COMPRESSED_RATIO;
-    const normalDisplayWidth = availableWidth - maxCompressedWidth;
+    const startX = 50;
 
     console.log('布局分配:', {
-      总可用宽度: availableWidth,
-      正常显示区域: normalDisplayWidth,
-      最大压缩区域: maxCompressedWidth
+      总段数: segments.length,
+      总可用宽度: availableWidth
     });
 
-    // 计算正常显示能容纳多少个段
-    const maxNormalSegments = Math.floor(normalDisplayWidth / this.NODE_WIDTHS.full);
-    
-    let normalSegments = segments.slice(0, maxNormalSegments);
-    let compressedSegments = segments.slice(maxNormalSegments);
+    // 🎯 关键逻辑：判断是否需要压缩
+    // 计算如果所有段都以full模式显示需要的总宽度
+    const fullModeRequiredWidth = segments.length * this.NODE_WIDTHS.full;
+    const needCompression = fullModeRequiredWidth > availableWidth;
 
-    console.log('段分配:', {
-      正常显示段数: normalSegments.length,
-      压缩段数: compressedSegments.length
+    console.log('压缩判断:', {
+      全节点所需宽度: fullModeRequiredWidth,
+      可用宽度: availableWidth,
+      需要压缩: needCompression
     });
 
-    // 为正常显示段分配空间
-    const normalSegmentWidth = normalSegments.length > 0 ? normalDisplayWidth / normalSegments.length : 0;
-    let currentX = 50; // 起始位置
+    let normalSegments: TimeSegment[] = [];
+    let compressedSegments: TimeSegment[] = [];
+    let currentX = startX;
 
-    normalSegments.forEach(segment => {
-      segment.displayMode = 'full';
-      segment.allocatedWidth = normalSegmentWidth;
-      segment.startX = currentX;
-      currentX += normalSegmentWidth;
-    });
-
-    // 为压缩段分配空间和显示模式
-    if (compressedSegments.length > 0) {
-      const compressedSegmentWidth = maxCompressedWidth / compressedSegments.length;
+    if (!needCompression) {
+      // ✅ 不需要压缩：所有段都以full模式显示
+      const segmentWidth = availableWidth / segments.length;
       
-      // 根据分配到的宽度决定显示模式
-      let displayMode: 'short' | 'icon' | 'bar' = 'short';
-      if (compressedSegmentWidth < this.NODE_WIDTHS.short) {
-        displayMode = 'icon';
-      }
-      if (compressedSegmentWidth < this.NODE_WIDTHS.icon) {
-        displayMode = 'bar';
-      }
-
-      compressedSegments.forEach(segment => {
-        segment.displayMode = displayMode;
-        segment.allocatedWidth = compressedSegmentWidth;
+      segments.forEach(segment => {
+        segment.displayMode = 'full';
+        segment.allocatedWidth = segmentWidth;
         segment.startX = currentX;
-        currentX += compressedSegmentWidth;
+        currentX += segmentWidth;
       });
+      
+      normalSegments = segments;
+      compressedSegments = [];
+      
+      console.log('✅ 无需压缩，所有段以全节点模式显示');
+    } else {
+      // ⚠️ 需要压缩：应用70/30原则
+      const maxCompressedWidth = availableWidth * this.MAX_COMPRESSED_RATIO;
+      const normalDisplayWidth = availableWidth - maxCompressedWidth;
+
+      // 计算正常显示能容纳多少个段
+      const maxNormalSegments = Math.floor(normalDisplayWidth / this.NODE_WIDTHS.full);
+      
+      normalSegments = segments.slice(0, maxNormalSegments);
+      compressedSegments = segments.slice(maxNormalSegments);
+
+      console.log('⚠️ 需要压缩:', {
+        正常显示区域: normalDisplayWidth,
+        压缩区域: maxCompressedWidth,
+        正常显示段数: normalSegments.length,
+        压缩段数: compressedSegments.length
+      });
+
+      // 为正常显示段分配空间
+      const normalSegmentWidth = normalSegments.length > 0 ? normalDisplayWidth / normalSegments.length : 0;
+
+      normalSegments.forEach(segment => {
+        segment.displayMode = 'full';
+        segment.allocatedWidth = normalSegmentWidth;
+        segment.startX = currentX;
+        currentX += normalSegmentWidth;
+      });
+
+      // 为压缩段分配空间和显示模式
+      if (compressedSegments.length > 0) {
+        const compressedSegmentWidth = maxCompressedWidth / compressedSegments.length;
+        
+        // 根据分配到的宽度决定显示模式
+        let displayMode: 'short' | 'icon' | 'bar' = 'short';
+        if (compressedSegmentWidth < this.NODE_WIDTHS.short) {
+          displayMode = 'icon';
+        }
+        if (compressedSegmentWidth < this.NODE_WIDTHS.icon) {
+          displayMode = 'bar';
+        }
+
+        compressedSegments.forEach(segment => {
+          segment.displayMode = displayMode;
+          segment.allocatedWidth = compressedSegmentWidth;
+          segment.startX = currentX;
+          currentX += compressedSegmentWidth;
+        });
+      }
     }
 
     // 创建时间轴数据（与节点布局完全一致）
@@ -294,57 +341,25 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // 🎨 V2样式：创建时间轴的子分组结构
     const backgroundGroup = group.append('g').attr('class', 'time-axis-backgrounds');
-    const scaleGroup = group.append('g').attr('class', 'time-axis-scales');
     const labelGroup = group.append('g').attr('class', 'time-axis-labels');
 
-    // 🎨 V2样式：添加明暗条带背景 - 每个段对应一个条带
-    const stripHeight = this.height - 100; // 从顶部到时间轴上方的高度
+    // 🎨 V2样式：添加明暗条带背景 - 每个段对应一个竖向条带
+    const stripTop = 40; // 条带顶部位置
+    const stripHeight = this.height - 120; // 条带高度（留出底部空间）
     
     layout.segments.forEach((segment, index) => {
+      // 竖向条带背景
       backgroundGroup.append('rect')
         .attr('x', segment.startX)
-        .attr('y', 60)  // 从导航栏下方开始
+        .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
         .attr('height', stripHeight)
         .attr('fill', index % 2 === 0 ? '#f0f2f5' : '#ffffff')  // 交替灰白
         .attr('opacity', 0.8)
         .attr('class', `time-strip time-strip-${index}`)
         .attr('data-time', new Date(segment.endTime).toISOString());
-    });
 
-    // 🎨 V2样式：绘制时间轴背景
-    backgroundGroup.append('rect')
-      .attr('class', 'waterfall-time-axis-background')
-      .attr('x', 0)
-      .attr('y', layout.timeAxisData.y - 20)
-      .attr('width', this.width)
-      .attr('height', 50)
-      .attr('fill', '#f8f9fa')  // 浅灰色背景
-      .attr('stroke', '#dee2e6')
-      .attr('stroke-width', 1);
-
-    // 绘制主轴线
-    scaleGroup.append('line')
-      .attr('x1', layout.timeAxisData.startX)
-      .attr('x2', layout.timeAxisData.endX)
-      .attr('y1', layout.timeAxisData.y)
-      .attr('y2', layout.timeAxisData.y)
-      .attr('stroke', '#e0e0e0')
-      .attr('stroke-width', 1);
-
-    // 为每个段添加时间刻度
-    layout.segments.forEach(segment => {
-      const centerX = segment.startX + segment.allocatedWidth / 2;
-      
-      // 刻度线
-      scaleGroup.append('line')
-        .attr('x1', centerX)
-        .attr('x2', centerX)
-        .attr('y1', layout.timeAxisData.y - 5)
-        .attr('y2', layout.timeAxisData.y + 5)
-        .attr('stroke', '#ccc');
-
-      // 时间标签（根据显示模式调整）
+      // 🎯 时间标签在条带顶部
       if (segment.displayMode === 'full' || segment.displayMode === 'short') {
         const timeLabel = new Date(segment.endTime).toLocaleTimeString('zh-CN', {
           hour: '2-digit',
@@ -352,10 +367,11 @@ export class WaterfallRenderer implements BaseRenderer {
         });
 
         labelGroup.append('text')
-          .attr('x', centerX)
-          .attr('y', layout.timeAxisData.y + 20)
-          .attr('text-anchor', 'middle')
-          .attr('font-size', '12px')
+          .attr('x', segment.startX + segment.allocatedWidth / 2) // 条带中央
+          .attr('y', stripTop + 20) // 条带顶部下方20px
+          .attr('text-anchor', 'middle') // 居中对齐
+          .attr('font-size', '11px')
+          .attr('font-weight', 'bold')
           .attr('fill', '#666')
           .text(timeLabel);
       }
@@ -398,9 +414,15 @@ export class WaterfallRenderer implements BaseRenderer {
     const width = this.NODE_WIDTHS[segment.displayMode];
     const height = this.NODE_HEIGHTS[segment.displayMode];
     
-    // 在段内的位置分配
-    const nodeX = segment.startX + (index * width);
-    const nodeY = 150 + (index * (height + 5)); // 垂直堆叠
+    // 🎯 瀑布布局：节点在条带内从顶部开始纵向堆叠
+    // X坐标：条带起始位置 + 居中偏移
+    const centerOffset = (segment.allocatedWidth - width) / 2;
+    const nodeX = segment.startX + Math.max(0, centerOffset);
+    
+    // Y坐标：从条带顶部（时间标签下方）开始，纵向堆叠
+    const stripTop = 40; // 条带顶部
+    const labelHeight = 35; // 时间标签占用的高度
+    const nodeY = stripTop + labelHeight + (index * (height + 8)); // 每个节点间隔8px
 
     const nodeGroup = group.append('g')
       .attr('class', 'navigation-node')
@@ -581,21 +603,71 @@ export class WaterfallRenderer implements BaseRenderer {
   private renderObservationWindowSlider(group: any, layout: LayoutResult): void {
     console.log('🎚️ 渲染观察窗口滑块');
 
+    // 🎯 关键逻辑：判断是否有压缩段
+    const hasCompression = layout.compressedSegments.length > 0;
+    
+    if (!hasCompression) {
+      // ✅ 无压缩情况：观察窗口覆盖整个时间轴，且不可拖动
+      console.log('✅ 无压缩，观察窗口覆盖整个时间轴');
+      
+      const windowStartX = layout.timeAxisData.startX;
+      const windowEndX = layout.timeAxisData.endX;
+      const windowWidth = windowEndX - windowStartX;
+      const windowY = 5;
+      const windowHeight = 28;
+      const radius = windowHeight / 2;
+
+      // 观察窗口覆盖整个时间轴，使用更淡的颜色表示全覆盖状态
+      group.append('rect')
+        .attr('class', 'observation-border-full')
+        .attr('x', windowStartX)
+        .attr('y', windowY)
+        .attr('width', windowWidth)
+        .attr('height', windowHeight)
+        .attr('rx', radius)
+        .attr('ry', radius)
+        .attr('fill', 'rgba(0, 123, 255, 0.05)') // 更淡的填充
+        .attr('stroke', '#007bff')
+        .attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '5,5') // 虚线边框
+        .style('cursor', 'default'); // 不可拖动
+
+      // 标签显示"全部可见"
+      group.append('text')
+        .attr('x', windowStartX + windowWidth / 2)
+        .attr('y', windowY + windowHeight / 2 + 5)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#007bff')
+        .attr('font-weight', 'bold')
+        .text('全部可见');
+
+      this.observationWindow = {
+        centerSegmentIndex: 0,
+        startX: windowStartX,
+        width: windowWidth,
+        segments: layout.segments // 所有段都可见
+      };
+      
+      return;
+    }
+
+    // ⚠️ 有压缩情况：观察窗口只覆盖正常显示区域，可拖动
+    console.log('⚠️ 有压缩，观察窗口覆盖正常显示区域');
+    
     if (layout.normalDisplaySegments.length === 0) {
       return;
     }
 
-    // 观察窗口覆盖正常显示区域
     const windowStartX = layout.normalDisplaySegments[0].startX;
     const windowEndX = layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].startX + 
                       layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].allocatedWidth;
     const windowWidth = windowEndX - windowStartX;
-
-    const windowY = layout.timeAxisData.y - 35;
-    const windowHeight = 24;
+    const windowY = 5;
+    const windowHeight = 28;
     const radius = windowHeight / 2;
 
-    // V2样式胶囊形状边框
+    // 可拖动的观察窗口
     group.append('rect')
       .attr('class', 'observation-border')
       .attr('x', windowStartX)
@@ -604,15 +676,15 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', windowHeight)
       .attr('rx', radius)
       .attr('ry', radius)
-      .attr('fill', 'rgba(0, 123, 255, 0.1)') // 淡蓝色填充
+      .attr('fill', 'rgba(0, 123, 255, 0.1)') // 正常填充
       .attr('stroke', '#007bff')
       .attr('stroke-width', 2)
       .style('cursor', 'grab');
 
-    // 添加观察窗口标签
+    // 标签显示"观察窗口"
     group.append('text')
       .attr('x', windowStartX + windowWidth / 2)
-      .attr('y', windowY + windowHeight / 2 + 4)
+      .attr('y', windowY + windowHeight / 2 + 5)
       .attr('text-anchor', 'middle')
       .attr('font-size', '11px')
       .attr('fill', '#007bff')
