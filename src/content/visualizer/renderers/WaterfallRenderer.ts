@@ -74,6 +74,10 @@ export class WaterfallRenderer implements BaseRenderer {
   private allSegments: TimeSegment[] = [];
   private renderOptions: any = null;
   private lastDragSnapped: boolean = false; // 记录拖动时是否吸附
+  private observationStartIndex: number = 0; // 当前观察窗口起始索引
+  private strips: any[] = []; // 存储所有条带的D3选择器，用于拖动时更新
+  private currentNormalSegmentIndices: Set<number> = new Set(); // 当前在观察窗口内的条带索引
+  private prevWindowCenter: number | undefined; // 🎯 记录上一次观察窗口中心位置，用于检测移动方向
 
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -160,72 +164,76 @@ export class WaterfallRenderer implements BaseRenderer {
 
   /**
    * 计算时间分段和布局分配
+   * @param nodes 节点数组（首次调用时使用）
+   * @param containerWidth 容器宽度
+   * @param observationStartIndex 观察窗口起始索引（可选）
    */
-  private calculateSegmentLayout(nodes: NavNode[], containerWidth: number): LayoutResult {
-    console.log('📊 开始计算时间分段布局, 容器宽度:', containerWidth);
-
-    // 1. 找到时间范围并对齐到5分钟边界
-    const times = nodes.map(node => node.timestamp).sort((a, b) => b - a); // 最新的在前
-    const maxTimeRaw = times[0];
-    const minTimeRaw = times[times.length - 1];
+  private calculateSegmentLayout(
+    nodes: NavNode[] | TimeSegment[], 
+    containerWidth: number, 
+    observationStartIndex?: number
+  ): LayoutResult {
+    // 🎯 判断是首次调用还是重新布局
+    let segments: TimeSegment[];
     
-    // 🎯 对齐到5分钟整数边界
-    // 将maxTime向上对齐到下一个5分钟边界
-    // 将minTime向下对齐到上一个5分钟边界
-    const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
-    const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
-    
-    console.log('时间范围对齐:', {
-      原始最新: new Date(maxTimeRaw).toLocaleTimeString(),
-      对齐最新: new Date(maxTime).toLocaleTimeString(),
-      原始最旧: new Date(minTimeRaw).toLocaleTimeString(),
-      对齐最旧: new Date(minTime).toLocaleTimeString()
-    });
-
-    // 2. 创建时间分段（从最新时间开始，按5分钟分段）
-    const segments: TimeSegment[] = [];
-    let currentTime = maxTime;
-    let safetyCounter = 0; // 防止无限循环
-    const MAX_ITERATIONS = 1000;
-    let segmentIndex = 0; // 🎯 原始索引计数器
-    
-    while (currentTime > minTime && safetyCounter < MAX_ITERATIONS) {
-      safetyCounter++;
+    if (Array.isArray(nodes) && nodes.length > 0 && 'timestamp' in nodes[0]) {
+      // 首次调用：nodes是NavNode数组，需要创建时间段
+      const navNodes = nodes as NavNode[];
       
-      const segmentEnd = currentTime;
-      const segmentStart = currentTime - this.SEGMENT_DURATION;
+      // 1. 找到时间范围并对齐到5分钟边界
+      const times = navNodes.map(node => node.timestamp).sort((a, b) => b - a); // 最新的在前
+      const maxTimeRaw = times[0];
+      const minTimeRaw = times[times.length - 1];
       
-      // 找到此段内的节点
-      const segmentNodes = nodes.filter(node => 
-        node.timestamp < segmentEnd && node.timestamp >= segmentStart
-      );
+      // 🎯 对齐到5分钟整数边界
+      const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
+      const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
 
-      // 即使没有节点也创建段（保持时间轴连续）
-      segments.push({
-        startTime: segmentStart,
-        endTime: segmentEnd,
-        nodes: segmentNodes,
-        displayMode: 'full', // 初始都设为full，后面会调整
-        allocatedWidth: 0,
-        startX: 0,
-        originalIndex: segmentIndex++ // 🎯 记录原始索引
-      });
+      // 2. 创建时间分段
+      segments = [];
+      let currentTime = maxTime;
+      let safetyCounter = 0;
+      const MAX_ITERATIONS = 1000;
+      let segmentIndex = 0;
+      
+      while (currentTime > minTime && safetyCounter < MAX_ITERATIONS) {
+        safetyCounter++;
+        
+        const segmentEnd = currentTime;
+        const segmentStart = currentTime - this.SEGMENT_DURATION;
+        
+        const segmentNodes = navNodes.filter(node => 
+          node.timestamp < segmentEnd && node.timestamp >= segmentStart
+        );
 
-      // 移动到下一个段
-      currentTime = segmentStart;
+        segments.push({
+          startTime: segmentStart,
+          endTime: segmentEnd,
+          nodes: segmentNodes,
+          displayMode: 'full',
+          allocatedWidth: 0,
+          startX: 0,
+          originalIndex: segmentIndex++
+        });
+
+        currentTime = segmentStart;
+      }
+      
+      if (safetyCounter >= MAX_ITERATIONS) {
+        console.error('⚠️ 时间分段循环达到最大迭代次数，强制终止');
+      }
+
+      console.log('创建了', segments.length, '个时间段');
+
+      // 保存所有段用于后续拖动
+      this.allSegments = segments;
+    } else {
+      // 重新布局：使用已有的segments
+      segments = this.allSegments;
     }
-    
-    if (safetyCounter >= MAX_ITERATIONS) {
-      console.error('⚠️ 时间分段循环达到最大迭代次数，强制终止');
-    }
 
-    console.log('创建了', segments.length, '个时间段');
-
-    // 保存所有段用于后续拖动
-    this.allSegments = segments;
-
-    // 3. 计算布局分配（默认观察窗口在最前面）
-    return this.allocateSegmentLayout(segments, containerWidth, 0);
+    // 3. 计算布局分配
+    return this.allocateSegmentLayout(segments, containerWidth, observationStartIndex || 0);
   }
 
   /**
@@ -242,21 +250,10 @@ export class WaterfallRenderer implements BaseRenderer {
     const availableWidth = containerWidth - 100; // 留出边距
     const startX = 50;
 
-    console.log('布局分配:', {
-      总段数: segments.length,
-      总可用宽度: availableWidth
-    });
-
     // 🎯 关键逻辑：判断是否需要压缩
     // 计算如果所有段都以full模式显示需要的总宽度
     const fullModeRequiredWidth = segments.length * this.NODE_WIDTHS.full;
     const needCompression = fullModeRequiredWidth > availableWidth;
-
-    console.log('压缩判断:', {
-      全节点所需宽度: fullModeRequiredWidth,
-      可用宽度: availableWidth,
-      需要压缩: needCompression
-    });
 
     let normalSegments: TimeSegment[] = [];
     let compressedSegments: TimeSegment[] = [];
@@ -296,15 +293,6 @@ export class WaterfallRenderer implements BaseRenderer {
       normalSegments = segments.slice(safeStartIndex, endIndex);
       const afterSegments = segments.slice(endIndex);
       compressedSegments = [...beforeSegments, ...afterSegments];
-
-      console.log('⚠️ 需要压缩:', {
-        正常显示区域: normalDisplayWidth,
-        压缩区域: maxCompressedWidth,
-        观察窗口起始索引: safeStartIndex,
-        前压缩段数: beforeSegments.length,
-        正常显示段数: normalSegments.length,
-        后压缩段数: afterSegments.length
-      });
 
       // 🎨 先渲染前面的压缩段
       if (beforeSegments.length > 0) {
@@ -402,21 +390,37 @@ export class WaterfallRenderer implements BaseRenderer {
     const stripTop = 0; // 条带从顶部开始
     const stripHeight = this.height; // 条带高度（覆盖整个高度）
     
-    // 🎨 添加明暗条带背景 - 从顶部延伸到底部
+    // � 清空并重建strips数组
+    this.strips = [];
+    
+    // �🎨 添加明暗条带背景 - 从顶部延伸到底部
     layout.segments.forEach((segment) => {
       // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
       const isEven = segment.originalIndex % 2 === 0;
       
+      // 创建条带分组（包含背景和节点）
+      const stripGroup = backgroundGroup.append('g')
+        .attr('class', `time-strip time-strip-${segment.originalIndex}`)
+        .attr('data-time', new Date(segment.endTime).toISOString())
+        .attr('data-segment-index', segment.originalIndex);
+      
       // 竖向条带背景 - 覆盖整个高度
-      backgroundGroup.append('rect')
+      stripGroup.append('rect')
+        .attr('class', 'strip-background')
         .attr('x', segment.startX)
         .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
         .attr('height', stripHeight)
         .attr('fill', isEven ? '#f0f2f5' : '#ffffff')  // 基于原始索引交替灰白
-        .attr('opacity', 0.8)
-        .attr('class', `time-strip time-strip-${segment.originalIndex}`)
-        .attr('data-time', new Date(segment.endTime).toISOString());
+        .attr('opacity', 0.8);
+      
+      // 添加节点分组（暂时为空，稍后渲染）
+      const nodeGroup = stripGroup.append('g')
+        .attr('class', 'node-group')
+        .attr('transform', `translate(0, 0)`);
+      
+      // 保存到strips数组
+      this.strips.push(stripGroup);
     });
 
     // 🎯 绘制时间轴横线（带箭头）- 使用所有条带确保完整
@@ -443,34 +447,44 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('fill', '#666')
       .attr('class', 'time-axis-arrow');
 
-    // 🎯 时间标签在横线上方
-    layout.segments.forEach((segment) => {
-      if (segment.displayMode === 'full' || segment.displayMode === 'short') {
-        const timeLabel = new Date(segment.endTime).toLocaleTimeString('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-
-        // 刻度线（向下）
-        labelGroup.append('line')
-          .attr('x1', segment.startX + segment.allocatedWidth / 2)
-          .attr('y1', timeAxisY)
-          .attr('x2', segment.startX + segment.allocatedWidth / 2)
-          .attr('y2', timeAxisY + 5)
-          .attr('stroke', '#999')
-          .attr('stroke-width', 1);
-
-        // 时间标签在横线上方
-        labelGroup.append('text')
-          .attr('x', segment.startX + segment.allocatedWidth / 2)
-          .attr('y', timeAxisY - 8) // 横线上方
-          .attr('text-anchor', 'middle')
-          .attr('font-size', '11px')
-          .attr('font-weight', 'bold')
-          .attr('fill', '#666')
-          .text(timeLabel);
+    // 🎯 时间标签归属于条带，添加到条带分组中
+    this.strips.forEach((strip, i) => {
+      const segment = layout.segments[i];
+      if (segment && (segment.displayMode === 'full' || segment.displayMode === 'short')) {
+        this.addTimeLabelToStrip(strip, segment, timeAxisY);
       }
     });
+  }
+
+  /**
+   * 🎯 添加时间标签到条带（时间标签归属于条带）
+   */
+  private addTimeLabelToStrip(strip: any, segment: TimeSegment, timeAxisY: number = 80): void {
+    const timeLabel = new Date(segment.endTime).toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // 刻度线（向下）
+    strip.append('line')
+      .attr('class', 'time-tick')
+      .attr('x1', segment.startX + segment.allocatedWidth / 2)
+      .attr('y1', timeAxisY)
+      .attr('x2', segment.startX + segment.allocatedWidth / 2)
+      .attr('y2', timeAxisY + 5)
+      .attr('stroke', '#999')
+      .attr('stroke-width', 1);
+
+    // 时间标签在横线上方
+    strip.append('text')
+      .attr('class', 'time-label')
+      .attr('x', segment.startX + segment.allocatedWidth / 2)
+      .attr('y', timeAxisY - 8) // 横线上方
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '11px')
+      .attr('font-weight', 'bold')
+      .attr('fill', '#666')
+      .text(timeLabel);
   }
 
   /**
@@ -488,13 +502,21 @@ export class WaterfallRenderer implements BaseRenderer {
         return;
       }
 
-      const segmentGroup = group.append('g').attr('class', `segment-${segment.displayMode}`);
+      // 🎯 使用strips数组中对应的条带分组
+      const strip = this.strips[segIndex];
+      if (!strip) {
+        console.warn(`⚠️ 找不到段 ${segIndex} 的条带分组`);
+        return;
+      }
+      
+      // 获取节点分组
+      const nodeGroup = strip.select('.node-group');
       
       segment.nodes.forEach((node, index) => {
         if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
           return;
         }
-        this.renderSingleNode(segmentGroup, node, segment, index);
+        this.renderSingleNode(nodeGroup, node, segment, index);
         totalNodesRendered++;
       });
     });
@@ -921,7 +943,6 @@ export class WaterfallRenderer implements BaseRenderer {
         isDragging = true;
         startX = event.x;
         rect.style('cursor', 'grabbing');
-        console.log('🖱️ 开始拖动观察窗口');
       })
       .on('drag', function(event: any) {
         const dx = event.x - startX;
@@ -985,17 +1006,14 @@ export class WaterfallRenderer implements BaseRenderer {
             // 左边界更近，只吸附左边界
             targetX = leftSnapX;
             self.lastDragSnapped = true;
-            console.log('🧲 双向吸附触发，选择左边界 (距离:', leftDistance.toFixed(2), 'px)');
           } else if (rightDistance < leftDistance) {
             // 右边界更近，只吸附右边界
             targetX = rightSnapX;
             self.lastDragSnapped = true;
-            console.log('🧲 双向吸附触发，选择右边界 (距离:', rightDistance.toFixed(2), 'px)');
           } else {
             // 距离相等（极少情况），默认优先左边界
             targetX = leftSnapX;
             self.lastDragSnapped = true;
-            console.log('🧲 双向吸附触发，距离相等，默认选择左边界');
           }
         } else if (snappedToLeft) {
           // 只有左边界吸附
@@ -1030,6 +1048,9 @@ export class WaterfallRenderer implements BaseRenderer {
         rect.attr('x', clampedX);
         text.attr('x', clampedX + observationWindowWidth / 2);
         
+        // 🎯✨ 拖动过程中实时更新条带布局（基于视觉位置）
+        self.updateSegmentLayoutDuringDrag(clampedX, observationWindowWidth);
+        
         startX = event.x;
       })
       .on('end', function(event: any) {
@@ -1037,100 +1058,43 @@ export class WaterfallRenderer implements BaseRenderer {
         rect.style('cursor', 'grab')
             .attr('stroke-width', 2); // 恢复正常边框
         
-        // 🎯 根据最终位置计算新的观察窗口起始索引
+        // 🎯 根据最终位置计算新的观察窗口起始索引（基于覆盖比例）
         const finalX = parseFloat(rect.attr('x'));
         const observationWindowWidth = parseFloat(rect.attr('width'));
-        
-        // 🎯✨ 全新的索引计算逻辑
-        // 核心问题：我们不能用旧布局的视觉位置来计算，因为条带宽度是变化的
-        // 
-        // 新思路：
-        // 1. 观察窗口的宽度是固定的（observationWindowWidth）
-        // 2. 计算观察窗口能容纳多少个全尺寸条带
-        // 3. 计算观察窗口在整个时间轴上的相对位置（百分比）
-        // 4. 根据相对位置确定应该从哪个原始条带开始展开
-        
         const windowLeftEdge = finalX;
         const windowRightEdge = finalX + observationWindowWidth;
         
-        // 🎯 方法：计算窗口左边界相对于整个时间轴的位置比例
-        // 获取时间轴的总范围
-        const timeAxisStart = self.allSegments[0].startX;
-        const lastSegment = self.allSegments[self.allSegments.length - 1];
-        const timeAxisEnd = lastSegment.startX + lastSegment.allocatedWidth;
-        const totalWidth = timeAxisEnd - timeAxisStart;
-        
-        // 窗口左边界在时间轴上的相对位置（0-1之间）
-        const relativePosition = (windowLeftEdge - timeAxisStart) / totalWidth;
-        
-        // 根据相对位置计算应该从哪个原始条带开始
-        // 使用四舍五入确保准确性
-        const totalSegments = self.allSegments.length;
-        let newStartIndex = Math.round(relativePosition * totalSegments);
-        
-        // 边界检查
-        newStartIndex = Math.max(0, Math.min(newStartIndex, totalSegments - 1));
-        
-        console.log('🎯 拖动结束，计算新索引:', {
-          观察窗口X: finalX,
-          观察窗口宽度: observationWindowWidth,
-          窗口左边界: windowLeftEdge,
-          窗口右边界: windowRightEdge,
-          时间轴起点: timeAxisStart,
-          时间轴终点: timeAxisEnd,
-          时间轴总宽度: totalWidth,
-          相对位置: (relativePosition * 100).toFixed(2) + '%',
-          总条带数: totalSegments,
-          计算出的新索引: newStartIndex,
-          是否吸附: self.lastDragSnapped
-        });
-        
-        // 🎯✨ 如果发生了吸附，不需要微调动画（已经在正确位置）
-        // 如果没有吸附，执行微调动画让窗口对齐到段的左边界
-        let needsAnimation = false;
-        if (!self.lastDragSnapped) {
-          const targetSegment = self.allSegments[newStartIndex];
-          if (targetSegment) {
-            const targetX = targetSegment.startX;
-            const currentX = parseFloat(rect.attr('x'));
-            
-            // 如果位置不完全精确，添加微调动画
-            if (Math.abs(currentX - targetX) > 0.5) {
-              needsAnimation = true;
-              rect.transition()
-                .duration(150)
-                .ease(d3.easeQuadOut)
-                .attr('x', targetX);
-              
-              text.transition()
-                .duration(150)
-                .ease(d3.easeQuadOut)
-                .attr('x', targetX + parseFloat(rect.attr('width')) / 2);
-            }
-          }
-        }
-        
-        console.log('🖱️ 拖动结束，重新计算布局:', {
-          原索引: currentObservationStartIndex,
-          新索引: newStartIndex,
-          最大索引: maxObservationStartIndex,
-          需要动画: needsAnimation,
-          发生吸附: self.lastDragSnapped
-        });
-        
-        if (newStartIndex !== currentObservationStartIndex) {
-          currentObservationStartIndex = newStartIndex;
+        // 计算每个条带的覆盖比例
+        const stripCoverages = self.allSegments.map((segment, i) => {
+          const stripLeft = segment.startX;
+          const stripRight = segment.startX + segment.allocatedWidth;
+          const stripWidth = segment.allocatedWidth;
           
-          // 🎯✨ 如果发生了吸附，立即重新布局；否则等待微调动画完成
-          if (self.lastDragSnapped || !needsAnimation) {
-            // 吸附情况：立即重新渲染
-            self.reRenderWithObservationWindow(newStartIndex);
-          } else {
-            // 非吸附情况：延迟重新布局，等待微调动画完成
-            setTimeout(() => {
-              self.reRenderWithObservationWindow(newStartIndex);
-            }, 200);
-          }
+          const overlapLeft = Math.max(windowLeftEdge, stripLeft);
+          const overlapRight = Math.min(windowRightEdge, stripRight);
+          const overlapWidth = Math.max(0, overlapRight - overlapLeft);
+          const coverageRatio = stripWidth > 0 ? overlapWidth / stripWidth : 0;
+          
+          return { index: i, coverageRatio, overlapWidth };
+        });
+        
+        // 找出覆盖比例最高的条带
+        const bestMatch = stripCoverages
+          .filter(s => s.coverageRatio > 0)
+          .sort((a, b) => {
+            if (Math.abs(a.coverageRatio - b.coverageRatio) > 0.01) {
+              return b.coverageRatio - a.coverageRatio;
+            }
+            return b.overlapWidth - a.overlapWidth;
+          })[0];
+        
+        const newStartIndex = bestMatch ? bestMatch.index : 0;
+        
+        console.log('🖱️ 拖动结束，最佳匹配条带:', newStartIndex, '覆盖比例:', (bestMatch?.coverageRatio * 100).toFixed(1) + '%');
+        
+        // 🎯✨ 拖动结束后完整重新渲染（确保所有节点显示正确）
+        if (newStartIndex !== self.observationStartIndex) {
+          self.reRenderWithObservationWindow(newStartIndex);
         }
       });
 
@@ -1157,6 +1121,9 @@ export class WaterfallRenderer implements BaseRenderer {
   private reRenderWithObservationWindow(observationStartIndex: number): void {
     console.log('🔄 根据新观察窗口位置重新渲染，起始索引:', observationStartIndex);
     
+    // 🎯 更新当前观察窗口起始索引
+    this.observationStartIndex = observationStartIndex;
+    
     // 重新计算布局
     const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
     this.currentLayout = newLayout;
@@ -1170,6 +1137,238 @@ export class WaterfallRenderer implements BaseRenderer {
     this.renderSegmentNodes(mainGroup.nodesGroup, newLayout);
     this.renderConnections(mainGroup.connectionsGroup, newLayout);
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout);
+  }
+
+  /**
+   * 🎯 拖动时更新条带布局（按覆盖比例排序）
+   */
+  private updateSegmentLayoutDuringDrag(observationWindowX: number, observationWindowWidth: number): void {
+    if (!this.currentLayout) return;
+    
+    const timeAxisY = 80;
+    const windowLeftEdge = observationWindowX;
+    const windowRightEdge = observationWindowX + observationWindowWidth;
+    
+    // 🎯 使用初始布局中的正常显示段数（固定值）
+    const maxNormalSegments = this.currentLayout.normalDisplaySegments.length;
+    
+    // 1. 计算每个条带的覆盖情况
+    const stripCoverages = this.allSegments.map((segment, i) => {
+      const stripLeft = segment.startX;
+      const stripRight = segment.startX + segment.allocatedWidth;
+      const stripWidth = segment.allocatedWidth;
+      
+      // 计算重叠区域
+      const overlapLeft = Math.max(windowLeftEdge, stripLeft);
+      const overlapRight = Math.min(windowRightEdge, stripRight);
+      const overlapWidth = Math.max(0, overlapRight - overlapLeft);
+      
+      // 条带自身的覆盖比例
+      const selfCoverageRatio = stripWidth > 0 ? overlapWidth / stripWidth : 0;
+      
+      return { 
+        index: i, 
+        overlapWidth,
+        selfCoverageRatio
+      };
+    });
+    
+    // 2. 🎯 固定展开maxNormalSegments个条带，按自身覆盖比例排序
+    const sortedStrips = stripCoverages.sort((a, b) => b.selfCoverageRatio - a.selfCoverageRatio);
+    
+    // 取前maxNormalSegments个（固定数量）
+    const selectedStrips = sortedStrips.slice(0, maxNormalSegments);
+    
+    // 3. 创建展开条带的集合
+    const newExpanded = new Set<number>();
+    selectedStrips.forEach(s => newExpanded.add(s.index));
+    
+    // 4. 应用更新
+    if (newExpanded.size > 0) {
+      const startIndex = Math.min(...Array.from(newExpanded));
+      this.applySegmentUpdates(newExpanded, startIndex, timeAxisY);
+    }
+  }
+
+  /**
+   * 🎯 应用条带更新（提取为独立方法以减少重复代码）
+   */
+  private applySegmentUpdates(
+    normalSegmentIndices: Set<number>, 
+    startIndex: number,
+    timeAxisY: number
+  ): void {
+    // 记录上一次的展开状态
+    const oldNormalIndices = this.currentNormalSegmentIndices || new Set();
+    this.currentNormalSegmentIndices = normalSegmentIndices;
+    
+    // 重新计算布局
+    const layout = this.calculateSegmentLayout(this.allSegments, this.width, startIndex);
+    
+    // 更新每个条带
+    this.strips.forEach((strip, i) => {
+      const segment = this.allSegments[i];
+      const layoutSegment = layout.segments[i];
+      
+      if (!segment || !layoutSegment) return;
+      
+      const width = layoutSegment.allocatedWidth;
+      const startX = layoutSegment.startX;
+      
+      // 更新条带背景宽度和位置
+      strip.select('.strip-background')
+        .attr('x', startX)
+        .attr('width', width);
+      
+      // 更新时间标签
+      const timeLabel = strip.select('.time-label');
+      const timeTick = strip.select('.time-tick');
+      
+      const isInWindow = normalSegmentIndices.has(i);
+      const wasInWindow = oldNormalIndices.has(i);
+      const isFullyExpanded = layoutSegment.displayMode === 'full' || layoutSegment.displayMode === 'short';
+      
+      if (isInWindow && isFullyExpanded) {
+        if (timeLabel.empty()) {
+          this.addTimeLabelToStrip(strip, layoutSegment, timeAxisY);
+        } else {
+          const centerX = startX + width / 2;
+          timeLabel.attr('x', centerX);
+          timeTick.attr('x1', centerX).attr('x2', centerX);
+        }
+      } else {
+        timeLabel.remove();
+        timeTick.remove();
+      }
+      
+      // 判断节点显示策略
+      const isLeaving = wasInWindow && !isInWindow;
+      if (isLeaving) {
+        this.renderSegmentNodesAsDots(segment, strip, layoutSegment);
+      }
+    });
+  }
+
+  /**
+   * 判断条带是否正在改变状态（新进入或即将离开观察窗口）
+   */
+  private isSegmentChangingState(index: number, newStartIndex: number, windowSize: number): boolean {
+    const oldStartIndex = this.observationStartIndex;
+    
+    // 新进入观察窗口的条带
+    const justEntered = index >= newStartIndex && 
+                       index < newStartIndex + windowSize &&
+                       (index < oldStartIndex || index >= oldStartIndex + windowSize);
+    
+    // 即将离开观察窗口的条带
+    const justLeft = (index < newStartIndex || index >= newStartIndex + windowSize) &&
+                     index >= oldStartIndex && 
+                     index < oldStartIndex + windowSize;
+    
+    return justEntered || justLeft;
+  }
+
+  /**
+   * 🎯 判断条带是否正在进入观察窗口
+   */
+  private isSegmentEntering(index: number, newStartIndex: number, windowSize: number): boolean {
+    const oldStartIndex = this.observationStartIndex;
+    
+    return index >= newStartIndex && 
+           index < newStartIndex + windowSize &&
+           (index < oldStartIndex || index >= oldStartIndex + windowSize);
+  }
+
+  /**
+   * 🎯 判断条带是否正在离开观察窗口
+   */
+  private isSegmentLeaving(index: number, newStartIndex: number, windowSize: number): boolean {
+    const oldStartIndex = this.observationStartIndex;
+    
+    return (index < newStartIndex || index >= newStartIndex + windowSize) &&
+           index >= oldStartIndex && 
+           index < oldStartIndex + windowSize;
+  }
+
+  /**
+   * 判断条带是否在观察窗口内
+   */
+  private isInObservationWindow(index: number, startIndex: number, windowSize: number): boolean {
+    return index >= startIndex && index < startIndex + windowSize;
+  }
+
+  /**
+   * 将条带的节点快速渲染为dot模式（最轻量）
+   */
+  private renderSegmentNodesAsDots(
+    segment: TimeSegment, 
+    strip: any, 
+    layoutSegment: TimeSegment
+  ): void {
+    const nodeGroup = strip.select('.node-group');
+    nodeGroup.selectAll('.navigation-node').remove();
+    
+    const timeAxisY = 80;
+    const startGap = 15;
+    const dotSize = 8;
+    const horizontalGap = 2;
+    const verticalGap = 2;
+    
+    // 🎯 横向排列dot节点（简单布局）
+    const itemsPerRow = Math.floor(layoutSegment.allocatedWidth / (dotSize + horizontalGap));
+    
+    segment.nodes.forEach((node, index) => {
+      const row = Math.floor(index / Math.max(1, itemsPerRow));
+      const col = index % Math.max(1, itemsPerRow);
+      
+      const nodeX = layoutSegment.startX + (col * (dotSize + horizontalGap));
+      const nodeY = timeAxisY + startGap + (row * (dotSize + verticalGap));
+      
+      const dotGroup = nodeGroup.append('g')
+        .attr('class', 'navigation-node')
+        .attr('transform', `translate(${nodeX}, ${nodeY})`);
+      
+      dotGroup.append('circle')
+        .attr('cx', dotSize / 2)
+        .attr('cy', dotSize / 2)
+        .attr('r', dotSize / 2)
+        .attr('fill', '#999')
+        .attr('stroke', 'none');
+    });
+  }
+
+  /**
+   * 将条带的节点渲染为展开模式（full或short）
+   */
+  private renderSegmentNodesExpanded(
+    segment: TimeSegment, 
+    strip: any, 
+    layoutSegment: TimeSegment
+  ): void {
+    const nodeGroup = strip.select('.node-group');
+    nodeGroup.selectAll('.navigation-node').remove();
+    
+    // 🎯 使用标准的节点渲染方法
+    segment.nodes.forEach((node, index) => {
+      this.renderSingleNode(nodeGroup, node, layoutSegment, index);
+    });
+  }
+
+  /**
+   * 将条带的节点渲染为压缩模式（icon或dot）
+   */
+  private renderSegmentNodesCompressed(
+    segment: TimeSegment, 
+    strip: any, 
+    layoutSegment: TimeSegment
+  ): void {
+    const nodeGroup = strip.select('.node-group');
+    nodeGroup.selectAll('.navigation-node').remove();
+    
+    // 🎯 使用标准的节点渲染方法（根据displayMode自动选择压缩级别）
+    segment.nodes.forEach((node, index) => {
+      this.renderSingleNode(nodeGroup, node, layoutSegment, index);
+    });
   }
 
   /**
