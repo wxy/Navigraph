@@ -78,6 +78,7 @@ export class WaterfallRenderer implements BaseRenderer {
   private strips: any[] = []; // 存储所有条带的D3选择器，用于拖动时更新
   private currentNormalSegmentIndices: Set<number> = new Set(); // 当前在观察窗口内的条带索引
   private prevWindowCenter: number | undefined; // 🎯 记录上一次观察窗口中心位置，用于检测移动方向
+  private wheelScrollTimeout: number | null = null; // 滚轮滚动防抖定时器
 
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -143,8 +144,17 @@ export class WaterfallRenderer implements BaseRenderer {
 
     console.log(`✅ 使用 ${validNodes.length} 个有效节点进行渲染`);
 
-    // 1. 计算时间分段和布局
-    const layout = this.calculateSegmentLayout(validNodes, this.width);
+    // 🔄 恢复观察窗口位置（如果有保存的位置且要求恢复变换）
+    const savedObservationIndex = this.visualizer.waterfallObservationIndex || 0;
+    const useRestoredPosition = options?.restoreTransform && savedObservationIndex > 0;
+    
+    if (useRestoredPosition) {
+      console.log(`🔄 恢复观察窗口位置，起始索引: ${savedObservationIndex}`);
+      this.observationStartIndex = savedObservationIndex;
+    }
+
+    // 1. 计算时间分段和布局（使用保存的观察窗口位置）
+    const layout = this.calculateSegmentLayout(validNodes, this.width, this.observationStartIndex);
     this.currentLayout = layout;
 
     // 2. 创建SVG分组
@@ -156,7 +166,10 @@ export class WaterfallRenderer implements BaseRenderer {
     this.renderConnections(mainGroup.connectionsGroup, layout);
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout);
     
-    // 4. 存储选项供后续使用
+    // 4. 设置滚轮事件来滚动观察窗口
+    this.setupWheelScroll();
+    
+    // 5. 存储选项供后续使用
     this.renderOptions = options;
   }
 
@@ -1108,16 +1121,6 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('stroke-dasharray', '4,4')
         .style('cursor', 'default');
 
-      // 标签
-      group.append('text')
-        .attr('x', windowStartX + windowWidth / 2)
-        .attr('y', sliderY + sliderHeight / 2 + 4)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', '10px')
-        .attr('fill', '#007bff')
-        .attr('font-weight', 'bold')
-        .text('全部可见');
-
       this.observationWindow = {
         centerSegmentIndex: 0,
         startX: windowStartX,
@@ -1389,7 +1392,7 @@ export class WaterfallRenderer implements BaseRenderer {
         
         console.log('🖱️ 拖动结束，最佳匹配条带:', newStartIndex, '覆盖比例:', (bestMatch?.coverageRatio * 100).toFixed(1) + '%');
         
-        // 🎯✨ 拖动结束后完整重新渲染（确保所有节点显示正确）
+        // 🎯 拖动结束后完全重新渲染（确保节点正确显示）
         if (newStartIndex !== self.observationStartIndex) {
           self.reRenderWithObservationWindow(newStartIndex);
         }
@@ -1421,6 +1424,11 @@ export class WaterfallRenderer implements BaseRenderer {
     // 🎯 更新当前观察窗口起始索引
     this.observationStartIndex = observationStartIndex;
     
+    // 💾 保存观察窗口索引到 visualizer
+    if (this.visualizer.waterfallObservationIndex !== undefined) {
+      this.visualizer.waterfallObservationIndex = observationStartIndex;
+    }
+    
     // 重新计算布局
     const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
     this.currentLayout = newLayout;
@@ -1438,6 +1446,9 @@ export class WaterfallRenderer implements BaseRenderer {
     this.renderSegmentNodes(mainGroup.nodesGroup, newLayout);
     this.renderConnections(mainGroup.connectionsGroup, newLayout);
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout);
+    
+    // 重新设置滚轮事件
+    this.setupWheelScroll();
   }
 
   /**
@@ -1545,10 +1556,30 @@ export class WaterfallRenderer implements BaseRenderer {
         timeTick.remove();
       }
       
-      // 判断节点显示策略
-      const isLeaving = wasInWindow && !isInWindow;
-      if (isLeaving) {
+      // 🎯 关键修复：判断节点显示策略的变化
+      const isEntering = isInWindow && !wasInWindow;  // 进入观察窗口
+      const isLeaving = wasInWindow && !isInWindow;   // 离开观察窗口
+      
+      if (isEntering) {
+        // 🎯 进入观察窗口：展开节点显示
+        console.log(`✨ 条带 ${i} 进入观察窗口，展开节点`);
+        if (isFullyExpanded) {
+          this.renderSegmentNodesExpanded(segment, strip, layoutSegment);
+        } else {
+          // 即使不是完全展开，也需要更新为压缩模式（icon）
+          this.renderSegmentNodesCompressed(segment, strip, layoutSegment);
+        }
+      } else if (isLeaving) {
+        // 🎯 离开观察窗口：压缩为圆点
+        console.log(`💨 条带 ${i} 离开观察窗口，压缩节点`);
         this.renderSegmentNodesAsDots(segment, strip, layoutSegment);
+      } else if (isInWindow) {
+        // 🎯 保持在观察窗口内：根据当前模式更新节点
+        if (isFullyExpanded) {
+          this.renderSegmentNodesExpanded(segment, strip, layoutSegment);
+        } else {
+          this.renderSegmentNodesCompressed(segment, strip, layoutSegment);
+        }
       }
     });
   }
@@ -1723,6 +1754,110 @@ export class WaterfallRenderer implements BaseRenderer {
       return url.pathname.split('/').pop() || url.hostname;
     } catch {
       return node.url.substring(0, 20);
+    }
+  }
+
+  /**
+   * 设置滚轮事件来滚动观察窗口
+   */
+  private setupWheelScroll(): void {
+    if (!this.svg || !this.currentLayout) {
+      console.warn('⚠️ 无法设置滚轮事件：SVG或布局不存在');
+      return;
+    }
+    
+    const self = this;
+    const layout = this.currentLayout;
+    
+    // 移除之前的滚轮事件监听器（如果有）
+    this.svg.on('wheel', null);
+    
+    // 添加新的滚轮事件监听器
+    this.svg.on('wheel', function(this: any, event: any) {
+      // D3 v7 会将原生事件作为参数传递
+      const wheelEvent = event as WheelEvent;
+      wheelEvent.preventDefault();
+      wheelEvent.stopPropagation();
+      
+      if (!self.currentLayout || !self.allSegments || self.allSegments.length === 0) {
+        console.warn('⚠️ 无法滚动：布局或段数据不存在');
+        return;
+      }
+      
+      // 计算滚动方向和步长
+      const delta = wheelEvent.deltaY;
+      const step = delta > 0 ? 1 : -1;
+      
+      // 计算新的观察窗口起始索引
+      const maxStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
+      const newStartIndex = Math.max(0, Math.min(maxStartIndex, self.observationStartIndex + step));
+      
+      // 如果索引没有变化，不需要更新
+      if (newStartIndex === self.observationStartIndex) {
+        console.log('⚠️ 观察窗口已到达边界，无法继续滚动');
+        return;
+      }
+      
+      console.log(`🖱️ 滚轮滚动观察窗口: ${self.observationStartIndex} -> ${newStartIndex}`);
+      
+      // 🎯 滚动过程中：只更新视觉效果（条带宽度和观察窗口位置）
+      self.updateObservationWindowVisuals(newStartIndex);
+      
+      // 🎯 使用防抖：滚动停止后才完全重新渲染
+      if (self.wheelScrollTimeout) {
+        clearTimeout(self.wheelScrollTimeout);
+      }
+      
+      self.wheelScrollTimeout = window.setTimeout(() => {
+        console.log('⏱️ 滚轮停止，完全重新渲染');
+        self.reRenderWithObservationWindow(newStartIndex);
+        self.wheelScrollTimeout = null;
+      }, 200); // 200ms 后认为滚动已停止
+    });
+    
+    console.log('✅ 滚轮滚动观察窗口已设置，当前段数:', this.allSegments.length);
+  }
+
+  /**
+   * 🎯 更新观察窗口视觉效果（滚动过程中的快速更新）
+   * 只更新条带宽度和观察窗口滑块位置，不重新渲染节点
+   */
+  private updateObservationWindowVisuals(newStartIndex: number): void {
+    // 更新当前索引（用于下次对比）
+    this.observationStartIndex = newStartIndex;
+    
+    // 💾 保存观察窗口索引到 visualizer
+    if (this.visualizer.waterfallObservationIndex !== undefined) {
+      this.visualizer.waterfallObservationIndex = newStartIndex;
+    }
+    
+    if (!this.currentLayout) return;
+    
+    const maxNormalSegments = this.currentLayout.normalDisplaySegments.length;
+    
+    // 🎯 计算新的观察窗口位置和宽度
+    const endIndex = Math.min(newStartIndex + maxNormalSegments - 1, this.allSegments.length - 1);
+    const startSegment = this.allSegments[newStartIndex];
+    const endSegment = this.allSegments[endIndex];
+    
+    if (!startSegment || !endSegment) return;
+    
+    const observationWindowX = startSegment.startX;
+    const observationWindowWidth = (endSegment.startX + endSegment.allocatedWidth) - startSegment.startX;
+    
+    // 🎯 先使用拖动时的更新逻辑（更新条带宽度和时间标签）
+    this.updateSegmentLayoutDuringDrag(observationWindowX, observationWindowWidth);
+    
+    // 🎯 再更新观察窗口滑块位置（确保在条带更新后）
+    const windowRect = this.svg.select('.observation-slider');
+    if (!windowRect.empty()) {
+      windowRect
+        .attr('x', observationWindowX)
+        .attr('width', observationWindowWidth);
+      
+      console.log(`✅ 观察窗口滑块已更新: x=${observationWindowX.toFixed(0)}, width=${observationWindowWidth.toFixed(0)}`);
+    } else {
+      console.warn('⚠️ 未找到观察窗口滑块 .observation-slider');
     }
   }
 

@@ -137,6 +137,15 @@ export class NavigationVisualizer implements Visualizer {
   set currentTransform(value: any) {
     this.viewStateManager.currentTransform = value;
   }
+  
+  // 暴露瀑布视图的观察窗口索引
+  get waterfallObservationIndex(): number {
+    return this.viewStateManager.waterfallObservationIndex;
+  }
+  
+  set waterfallObservationIndex(value: number) {
+    this.viewStateManager.waterfallObservationIndex = value;
+  }
 
   /**
    * 初始化导航可视化
@@ -364,8 +373,14 @@ export class NavigationVisualizer implements Visualizer {
    * 切换视图 - 修改使用渲染管理器
    */
   switchView(view: "tree" | "timeline" | "waterfall"): void {
+    // 过滤掉 timeline（已删除）
+    if (view === "timeline") {
+      logger.warn(_('timeline_view_removed', 'Timeline 视图已被移除'));
+      return;
+    }
+    
     // 使用视图状态管理器切换视图
-    this.viewStateManager.switchView(view);
+    this.viewStateManager.switchView(view as "tree" | "waterfall");
 
     // 更新按钮状态
     this.updateViewButtonsState();

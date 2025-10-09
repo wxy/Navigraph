@@ -12,8 +12,8 @@ export class ViewStateManager {
   // 依赖对象
   private visualizer: Visualizer;
   
-  // 视图类型
-  private _currentView: string = 'tree';
+  // 视图类型 - 默认为瀑布视图
+  private _currentView: string = 'waterfall';
   
   // D3相关
   private _svg: any = null;
@@ -23,8 +23,10 @@ export class ViewStateManager {
   
   // 各视图的缩放状态
   private _treeZoom: any = null;      // 树形视图的缩放状态
-  private _timelineZoom: any = null;  // 时间线视图的缩放状态
-  private _waterfallZoom: any = null; // 瀑布视图的缩放状态
+  private _waterfallZoom: any = null; // 瀑布视图的缩放状态（已废弃，保留兼容性）
+  
+  // 瀑布视图的观察窗口位置
+  private _waterfallObservationIndex: number = 0; // 瀑布视图的观察窗口起始索引
   
   private onZoomChangeCallback?: () => void;
 
@@ -82,11 +84,30 @@ export class ViewStateManager {
   }
   
   /**
+   * 获取/设置瀑布视图的观察窗口索引
+   */
+  get waterfallObservationIndex(): number {
+    return this._waterfallObservationIndex;
+  }
+  
+  set waterfallObservationIndex(value: number) {
+    this._waterfallObservationIndex = value;
+    logger.debug(_('waterfall_observation_index_updated', '瀑布视图观察窗口索引已更新: {0}'), value);
+  }
+  
+  /**
    * 设置基本缩放功能
+   * 注意：瀑布视图不需要缩放功能，会跳过
    */
   setupBasicZoom(): void {
     if (!this._svg) {
       logger.warn(_('content_zoom_setup_failed_no_svg', '无法设置缩放：SVG不存在'));
+      return;
+    }
+
+    // 瀑布视图不需要缩放功能
+    if (this._currentView === 'waterfall') {
+      logger.debug(_('waterfall_skip_zoom_setup', '瀑布视图跳过缩放设置'));
       return;
     }
 
@@ -124,7 +145,7 @@ export class ViewStateManager {
   /**
    * 切换视图
    */
-  switchView(view: "tree" | "timeline" | "waterfall"): void {
+  switchView(view: "tree" | "waterfall"): void {
     if (this._currentView === view) return;
 
     const previousView = this._currentView;
@@ -160,40 +181,25 @@ export class ViewStateManager {
    * 保存当前视图状态
    */
   saveCurrentViewState(): void {
-    if (this._currentTransform) {
-      if (this._currentView === 'tree') {
-        this._treeZoom = this._currentTransform;
-        logger.debug(_('tree_view_zoom_state_saved', '已保存树形视图缩放状态: {0}'), this._treeZoom);
-      } else if (this._currentView === 'timeline') {
-        this._timelineZoom = this._currentTransform;
-        logger.debug(_('timeline_view_zoom_state_saved', '已保存时间线视图缩放状态: {0}'), this._timelineZoom);
-      } else if (this._currentView === 'waterfall') {
-        this._waterfallZoom = this._currentTransform;
-        logger.debug(_('waterfall_view_zoom_state_saved', '已保存瀑布视图缩放状态: {0}'), this._waterfallZoom);
-      }
+    if (this._currentView === 'tree' && this._currentTransform) {
+      this._treeZoom = this._currentTransform;
+      logger.debug(_('tree_view_zoom_state_saved', '已保存树形视图缩放状态: {0}'), this._treeZoom);
     }
+    // 瀑布视图不需要保存缩放状态，观察窗口索引由渲染器管理
   }
   
   /**
    * 恢复特定视图的变换状态
    */
   restoreViewState(): boolean {
-    // 获取当前视图类型对应的缩放状态
-    let savedTransform: any = null;
-    if (this._currentView === 'tree') {
-      savedTransform = this._treeZoom;
-    } else if (this._currentView === 'timeline') {
-      savedTransform = this._timelineZoom;
-    } else if (this._currentView === 'waterfall') {
-      savedTransform = this._waterfallZoom;
-    }
-    
-    if (savedTransform && this._zoom) {
+    // 只有树形视图需要恢复缩放状态
+    if (this._currentView === 'tree' && this._treeZoom && this._zoom) {
       logger.log(_('view_zoom_state_restoring', '恢复{0}视图的缩放状态'), this._currentView);
-      this.applyTransform(savedTransform);
+      this.applyTransform(this._treeZoom);
       return true;
     }
     
+    // 瀑布视图不需要恢复缩放状态
     return false;
   }
   

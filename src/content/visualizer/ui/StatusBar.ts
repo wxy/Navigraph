@@ -104,7 +104,7 @@ export class StatusBar {
       if (viewElement) {
         const viewTypeName = currentView === "tree" ? 
           _('content_view_tree', '树形图') : 
-          _('content_view_timeline', '时间线');
+          _('content_view_waterfall', '瀑布图');
         
         viewElement.textContent = _('content_view_label', '视图: {0}', viewTypeName);
       }
@@ -112,9 +112,15 @@ export class StatusBar {
       // 缩放信息更新
       const zoomElement = document.getElementById("status-zoom");
       if (zoomElement) {
-        // 尝试从可视化器获取当前缩放级别
-        const zoom = visualizer.currentTransform?.k || 1;
-        zoomElement.textContent = _('content_zoom_label', '缩放: {0}%', (100 * zoom).toFixed(0));
+        if (currentView === "tree") {
+          // 树形视图显示缩放比例
+          const zoom = visualizer.currentTransform?.k || 1;
+          zoomElement.textContent = _('content_zoom_label', '缩放: {0}%', (100 * zoom).toFixed(0));
+        } else {
+          // 瀑布视图显示 N/A
+          zoomElement.textContent = _('content_zoom_na', '缩放: N/A');
+        }
+        zoomElement.style.display = "";
       }
       logger.debug(_('status_bar_update_complete', '状态栏更新完成'));
     } catch (error) {
