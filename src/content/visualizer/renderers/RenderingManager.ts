@@ -22,6 +22,9 @@ export class RenderingManager {
   private width: number = 0;
   private height: number = 0;
   
+  // 当前渲染器引用
+  private currentRenderer: any = null;
+  
   /**
    * 构造函数
    */
@@ -44,6 +47,13 @@ export class RenderingManager {
     this.updateContainerSize();
     
     logger.log(_('rendering_manager_init_complete', '渲染管理器初始化完成'));
+  }
+  
+  /**
+   * 获取当前渲染器
+   */
+  getCurrentRenderer(): any {
+    return this.currentRenderer;
   }
   
   /**
@@ -167,9 +177,12 @@ export class RenderingManager {
       } else {
         // 使用渲染器工厂创建相应的渲染器
         const renderer = RendererFactory.createRenderer(
-          this.viewStateManager.currentView as 'tree' | 'timeline',
+          this.viewStateManager.currentView as 'tree' | 'waterfall',
           this.visualizer
         );
+        
+        // 保存当前渲染器引用
+        this.currentRenderer = renderer;
         
         // 初始化渲染器
         renderer.initialize(

@@ -90,6 +90,9 @@ export interface Visualizer {
   svg?: any;
   zoom?: any;
   container?: HTMLElement | any;
+  
+  // 瀑布视图相关
+  waterfallObservationIndex?: number;
 
   // 会话相关
   currentSession?: SessionDetails

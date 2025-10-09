@@ -2468,11 +2468,6 @@
     "description": "树形图视图按钮文本",
     "_untranslated": true
   },
-  "content_timeline_view": {
-    "message": "時間軸",
-    "description": "时间线视图按钮文本",
-    "_untranslated": true
-  },
   "state_manager_view_state_saved": {
     "message": "已儲存{0}視圖狀態",
     "description": "保存视图状态时的日志消息，{0}为视图类型"
@@ -2739,7 +2734,8 @@
   },
   "renderer_factory_unknown_type": {
     "message": "未知視圖類型: {0}，使用預設樹形渲染器",
-    "description": "警告消息 - 当收到未知视图类型时的警告"
+    "description": "警告消息 - 当收到未知视图类型时的警告",
+    "_untranslated": true
   },
   "content_current_session": {
     "message": "目前會話",
@@ -2840,74 +2836,6 @@
   "rendering_manager_cleanup": {
     "message": "正在清理渲染管理器資源",
     "description": "清理渲染管理器资源时的日志消息"
-  },
-  "timeline_renderer_initialized": {
-    "message": "時間軸渲染器已初始化",
-    "description": "时间线渲染器初始化完成日志"
-  },
-  "timeline_renderer_no_container": {
-    "message": "無法渲染：SVG或容器未初始化",
-    "description": "时间线渲染器容器未初始化错误"
-  },
-  "timeline_renderer_cleaned_up": {
-    "message": "時間軸渲染器已清理",
-    "description": "时间线渲染器资源清理日志"
-  },
-  "using_modular_timeline_renderer": {
-    "message": "使用模組化時間軸渲染器",
-    "description": "模块化时间线渲染器使用日志"
-  },
-  "timeline_saved_state_detected": {
-    "message": "偵測到已儲存的時間軸狀態: {0}",
-    "description": "检测到时间线保存状态日志"
-  },
-  "timeline_zoom_setup_start": {
-    "message": "為時間軸視圖設定縮放行為",
-    "description": "时间线缩放设置开始日志"
-  },
-  "timeline_invalid_transform_detected": {
-    "message": "偵測到無效變換: {0}，恢復到安全狀態",
-    "description": "检测到无效变换警告"
-  },
-  "timeline_zoom_setup_complete": {
-    "message": "已設定時間軸縮放行為",
-    "description": "时间线缩放设置完成日志"
-  },
-  "timeline_zoom_setup_failed": {
-    "message": "設定時間軸縮放失敗: {0}",
-    "description": "时间线缩放设置失败错误"
-  },
-  "timeline_restore_transform": {
-    "message": "恢復時間軸保存的變換狀態: {0}",
-    "description": "恢复时间线变换状态日志"
-  },
-  "timeline_apply_transform_failed": {
-    "message": "應用變換失敗: {0}",
-    "description": "应用变换失败错误"
-  },
-  "timeline_render_error": {
-    "message": "時間軸渲染過程中出錯: {0}",
-    "description": "时间线渲染错误日志"
-  },
-  "timeline_render_error_message": {
-    "message": "時間軸渲染錯誤: {0}",
-    "description": "时间线渲染错误信息"
-  },
-  "timeline_no_data": {
-    "message": "無時間數據可顯示",
-    "description": "时间线无数据提示"
-  },
-  "timeline_title": {
-    "message": "時間軸",
-    "description": "时间线标题"
-  },
-  "timeline_date_range_same_day": {
-    "message": "時間軸 - {0} {1} 至 {2}",
-    "description": "同一天时间线日期范围格式"
-  },
-  "timeline_date_range_different_days": {
-    "message": "時間軸 - {0} {1} 至 {2} {3}",
-    "description": "不同天时间线日期范围格式"
   },
   "tree_renderer_initialized": {
     "message": "樹狀圖渲染器已初始化",
@@ -3285,10 +3213,6 @@
     "message": "已儲存樹狀圖視窗縮放狀態: {0}",
     "description": "树形视图缩放状态保存日志"
   },
-  "timeline_view_zoom_state_saved": {
-    "message": "已儲存時間軸視圖縮放狀態: {0}",
-    "description": "时间线视图缩放状态保存日志"
-  },
   "view_zoom_state_restoring": {
     "message": "恢復{0}視圖的縮放狀態",
     "description": "视图缩放状态恢复日志"
@@ -3533,17 +3457,9 @@
     "message": "已經是樹狀圖視圖，無需切換",
     "description": "已在树形图视图日志"
   },
-  "view_already_timeline": {
-    "message": "已經是時間軸視圖，無需切換",
-    "description": "已在时间线视图日志"
-  },
   "view_switching_to_tree": {
     "message": "切換到樹狀圖視圖",
     "description": "切换到树形图视图日志"
-  },
-  "view_switching_to_timeline": {
-    "message": "切換到時間軸視圖",
-    "description": "切换到时间线视图日志"
   },
   "view_buttons_state_updated": {
     "message": "視圖按鈕狀態已更新: {0}",
@@ -3828,10 +3744,6 @@
   "content_view_tree": {
     "message": "樹狀圖",
     "description": "树形图视图类型"
-  },
-  "content_view_timeline": {
-    "message": "時間軸",
-    "description": "时间线视图类型"
   },
   "content_duration_zero_minutes": {
     "message": "0 分鐘",
@@ -4917,109 +4829,217 @@
     "message": "清除數據",
     "description": "从HTML提取: src/options/index.html"
   },
-  "waterfall_timeline_now": {
-    "message": "現在",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": false
-  },
-  "waterfall_timeline_past": {
-    "message": "過去",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": false
-  },
-  "waterfall_view_zoom_state_saved": {
-    "message": "已儲存瀑布視圖縮放狀態: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
-  },
   "view_already_waterfall": {
     "message": "已經是瀑布視圖，無需切換",
-    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "view_switching_to_waterfall": {
     "message": "切換到瀑布視圖",
-    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
     "message": "🌊 瀑布視圖",
     "description": "从HTML提取: src/content/index.html",
-    "_untranslated": false
+    "_untranslated": true
   },
-  "waterfall_layout_calculation_start": {
-    "message": "開始計算瀑布佈局: {0} 個節點",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": false
+  "timeline_renderer_initialized": {
+    "message": "时间线渲染器已初始化",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
   },
-  "waterfall_layout_calculation_complete": {
-    "message": "瀑布佈局計算完成，時間槽: {0}，URL節點: {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": false
+  "timeline_renderer_no_container": {
+    "message": "无法渲染：SVG或容器未初始化",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_renderer_cleaned_up": {
+    "message": "时间线渲染器已清理",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "using_modular_timeline_renderer": {
+    "message": "使用模块化时间线渲染器",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_saved_state_detected": {
+    "message": "检测到保存的时间线状态: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_zoom_setup_start": {
+    "message": "为时间线视图设置缩放行为",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_invalid_transform_detected": {
+    "message": "检测到无效变换: {0}，恢复到安全状态",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_zoom_setup_complete": {
+    "message": "已设置时间线缩放行为",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_zoom_setup_failed": {
+    "message": "设置时间线缩放失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_restore_transform": {
+    "message": "恢复时间线保存的变换状态: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_apply_transform_failed": {
+    "message": "应用变换失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_render_error": {
+    "message": "时间线渲染过程中出错: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_render_error_message": {
+    "message": "时间线渲染错误: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_date_range_same_day": {
+    "message": "时间线 - {0} {1} 至 {2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_date_range_different_days": {
+    "message": "时间线 - {0} {1} 至 {2} {3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_no_data": {
+    "message": "无时间数据可显示",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
+  },
+  "timeline_title": {
+    "message": "时间线",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_renderer_created": {
-    "message": "瀑布視圖渲染器已創建",
+    "message": "瀑布视图渲染器已创建",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_renderer_initialized": {
-    "message": "瀑布視圖渲染器已初始化，尺寸: {0}x{1}",
+    "message": "瀑布视图渲染器已初始化，尺寸: {0}x{1}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_renderer_cannot_render": {
-    "message": "瀑布渲染器無法渲染：SVG或容器未初始化",
+    "message": "瀑布渲染器无法渲染：SVG或容器未初始化",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_renderer_render_start": {
-    "message": "開始渲染瀑布視圖，節點數: {0}，邊數: {1}",
+    "message": "开始渲染瀑布视图，节点数: {0}，边数: {1}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_renderer_render_error": {
-    "message": "瀑布視圖渲染失敗: {0}",
+    "message": "瀑布视图渲染失败: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_renderer_cleaned_up": {
-    "message": "瀑布視圖渲染器已清理",
+    "message": "瀑布视图渲染器已清理",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_focus_center_changed": {
-    "message": "觀察中心已更改為: {0}",
+    "message": "观察中心已更改为: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_non_uniform_timeline_rendered": {
-    "message": "非均勻時間軸已渲染",
+    "message": "非均匀时间轴已渲染",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_layout_start": {
-    "message": "開始渲染瀑布佈局",
+    "message": "开始渲染瀑布布局",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_layout_complete": {
-    "message": "瀑布佈局渲染完成",
+    "message": "瀑布布局渲染完成",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_layout_error": {
-    "message": "瀑布佈局渲染失敗: {0}",
+    "message": "瀑布布局渲染失败: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_layout_render_failed": {
-    "message": "瀑布佈局渲染失敗",
+    "message": "瀑布布局渲染失败",
     "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
   },
   "waterfall_dynamic_layout_complete": {
-    "message": "動態瀑布佈局渲染完成",
+    "message": "动态瀑布布局渲染完成",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": false
+    "_untranslated": true
+  },
+  "waterfall_layout_calculation_start": {
+    "message": "开始计算瀑布布局: {0} 个节点",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": true
+  },
+  "waterfall_layout_calculation_complete": {
+    "message": "瀑布布局计算完成，时间槽: {0}，URL节点: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": true
+  },
+  "waterfall_timeline_now": {
+    "message": "现在",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": true
+  },
+  "waterfall_timeline_past": {
+    "message": "过去",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": true
+  },
+  "timeline_view_zoom_state_saved": {
+    "message": "已保存时间线视图缩放状态: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": true
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "已保存瀑布视图缩放状态: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": true
+  },
+  "view_already_timeline": {
+    "message": "已经是时间线视图，无需切换",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": true
+  },
+  "view_switching_to_timeline": {
+    "message": "切换到时间线视图",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": true
+  },
+  "content_view_timeline": {
+    "message": "时间线",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
+    "_untranslated": true
+  },
+  "content_timeline_view": {
+    "message": "时间线",
+    "description": "从HTML提取: src/content/index.html",
+    "_untranslated": true
   }
 }

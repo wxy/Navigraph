@@ -132,9 +132,10 @@
         lastActivityTime = now;
         logger.log(_('content_page_activity_detected', '检测到页面活动({0})，触发刷新'), source);
         
-        // 修改为只刷新视图，不重新加载会话数据
+        // 修改为只刷新视图，不重新加载会话数据，但恢复视图状态
         if (window.visualizer && typeof window.visualizer.refreshVisualization === 'function') {
           window.visualizer.refreshVisualization(undefined, { 
+            restoreTransform: true,   // 恢复视图状态（包括观察窗口位置）
             skipSessionEvents: true,  // 防止触发会话事件
             source: 'pageActivity'
           });
