@@ -295,6 +295,47 @@ export class SessionViewController {
   }
   
   /**
+   * 切换到当天的会话
+   */
+  async switchToToday(): Promise<void> {
+    try {
+      logger.log(_('switching_to_today', '切换到当天的会话...'));
+      
+      // 获取所有会话
+      const sessionList = this.getSessionList();
+      
+      if (!sessionList || sessionList.length === 0) {
+        logger.warn(_('no_sessions_available', '没有可用的会话'));
+        this.uiManager.showError(_('content_no_sessions_available', '没有可用的会话'));
+        return;
+      }
+      
+      // 获取今天的日期（本地时区）
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayTime = today.getTime();
+      
+      // 查找今天的会话（会话的 startTime 在今天）
+      const todaySession = sessionList.find(session => {
+        const sessionDate = new Date(session.startTime);
+        sessionDate.setHours(0, 0, 0, 0);
+        return sessionDate.getTime() === todayTime;
+      });
+      
+      if (todaySession) {
+        logger.log(_('today_session_found', '找到今天的会话: {0}'), todaySession.id);
+        await this.handleSessionSelected(todaySession.id);
+      } else {
+        logger.warn(_('no_session_for_today', '没有找到今天的会话'));
+        this.uiManager.showError(_('content_no_session_for_today', '没有找到今天的会话'));
+      }
+    } catch (error) {
+      logger.error(_('switch_to_today_failed', '切换到当天失败: {0}'), error);
+      this.uiManager.showError(_('content_switch_to_today_failed', '切换到当天失败'));
+    }
+  }
+  
+  /**
    * 清理会话数据
    */
   cleanup(): void {

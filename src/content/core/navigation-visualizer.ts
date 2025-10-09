@@ -431,6 +431,51 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
+   * 切换已关闭页面筛选器
+   */
+  public toggleClosedFilter(): void {
+    logger.log(_('toggle_closed_filter', '切换已关闭页面筛选器'));
+    
+    // 获取当前 closed 筛选器的状态
+    const currentState = this.filters.closed;
+    
+    // 切换状态
+    this.filterManager.handleFilterChange('filter-closed', !currentState);
+  }
+
+  /**
+   * 切换视图（在树形和瀑布视图之间）
+   */
+  public toggleView(): void {
+    logger.log(_('toggle_view', '切换视图'));
+    
+    // 获取当前视图
+    const currentView = this.viewStateManager.currentView;
+    
+    // 切换到另一个视图
+    const newView = currentView === 'tree' ? 'waterfall' : 'tree';
+    
+    logger.log(_('switching_view', '从 {0} 切换到 {1}'), currentView, newView);
+    
+    // 使用现有的 switchView 方法
+    this.switchView(newView);
+  }
+
+  /**
+   * 切换到当天的会话
+   */
+  public switchToToday(): void {
+    logger.log(_('switch_to_today', '切换到当天'));
+    
+    // 使用 SessionViewController 切换到当天
+    if (this.sessionViewController) {
+      this.sessionViewController.switchToToday();
+    } else {
+      logger.warn(_('session_view_controller_unavailable', 'SessionViewController 不可用'));
+    }
+  }
+
+  /**
    * 更新筛选器配置（实现Visualizer接口）
    * 修改为使用FilterManager
    */
