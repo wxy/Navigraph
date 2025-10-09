@@ -2465,11 +2465,13 @@
   },
   "content_tree_view": {
     "message": "Baumansicht",
-    "description": "树形图视图按钮文本"
+    "description": "树形图视图按钮文本",
+    "_untranslated": true
   },
   "content_timeline_view": {
     "message": "Zeitleiste",
-    "description": "时间线视图按钮文本"
+    "description": "时间线视图按钮文本",
+    "_untranslated": true
   },
   "state_manager_view_state_saved": {
     "message": "{0} Ansichtsstatus gespeichert",
@@ -4914,5 +4916,89 @@
   "options_clear_data_title": {
     "message": "Daten löschen",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "waterfall_timeline_now": {
+    "message": "Jetzt",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_timeline_past": {
+    "message": "Vergangenheit",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "Zoomstatus der Wasserfallansicht gespeichert: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
+  },
+  "view_already_waterfall": {
+    "message": "Es ist bereits in der Wasserfallansicht, kein Wechsel nötig",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "view_switching_to_waterfall": {
+    "message": "Zur Wasserfallansicht wechseln",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
+  },
+  "content_waterfall_view": {
+    "message": "🌊 Wasserfallblick",
+    "description": "从HTML提取: src/content/index.html"
+  },
+  "waterfall_layout_calculation_start": {
+    "message": "Beginn der Berechnung des Wasserfall-Layouts: {0} Knoten",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_layout_calculation_complete": {
+    "message": "Berechnung des Wasserfall-Layouts abgeschlossen, Zeitfenster: {0}, URL-Knoten: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_renderer_created": {
+    "message": "Wasserfall-Ansichts-Renderer erstellt",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_renderer_initialized": {
+    "message": "Wasserfallansicht-Renderer initialisiert, Größe: {0}x{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_renderer_cannot_render": {
+    "message": "Der Wasserfall-Renderer kann nicht rendern: SVG oder Container nicht initialisiert",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_renderer_render_start": {
+    "message": "Starten Sie das Rendern der Wasserfallansicht, Anzahl der Knoten: {0}, Anzahl der Kanten: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_renderer_render_error": {
+    "message": "Das Rendern der Wasserfallansicht ist fehlgeschlagen: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_renderer_cleaned_up": {
+    "message": "Wasserfall-Ansichts-Renderer bereinigt",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_focus_center_changed": {
+    "message": "Das Anzeigezentrum wurde geändert auf: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_non_uniform_timeline_rendered": {
+    "message": "Uneinheitliche Zeitleiste gerendert",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_layout_start": {
+    "message": "Beginnen Sie mit dem Rendern des Wasserfall-Layouts",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_layout_complete": {
+    "message": "Rendering des Wasserfall-Layouts abgeschlossen",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_layout_error": {
+    "message": "Das Rendern des Wasserfall-Layouts ist fehlgeschlagen: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_layout_render_failed": {
+    "message": "Das Rendern des Wasserfalllayouts schlägt fehl",
+    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
+  },
+  "waterfall_dynamic_layout_complete": {
+    "message": "Dynamisches Wasserfall-Layout-Rendering abgeschlossen",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
   }
 }

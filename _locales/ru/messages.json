@@ -2465,11 +2465,13 @@
   },
   "content_tree_view": {
     "message": "Древовидная карта",
-    "description": "树形图视图按钮文本"
+    "description": "树形图视图按钮文本",
+    "_untranslated": true
   },
   "content_timeline_view": {
-    "message": "Horonologio",
-    "description": "时间线视图按钮文本"
+    "message": "Хоронологио",
+    "description": "时间线视图按钮文本",
+    "_untranslated": false
   },
   "state_manager_view_state_saved": {
     "message": "{0} состояние просмотра сохранено",
@@ -4914,5 +4916,110 @@
   "options_clear_data_title": {
     "message": "Очистить данные",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "waterfall_timeline_now": {
+    "message": "Сейчас",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_timeline_past": {
+    "message": "прошлое",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "Состояние масштабирования вида «Водопад» сохранено: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": false
+  },
+  "view_already_waterfall": {
+    "message": "Он уже в режиме водопада, нет необходимости переключаться.",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "view_switching_to_waterfall": {
+    "message": "Переключиться на вид водопада",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "content_waterfall_view": {
+    "message": "🌊 Вид на водопад",
+    "description": "从HTML提取: src/content/index.html",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_start": {
+    "message": "Начальный расчет каскадной схемы: {0} узлов",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_complete": {
+    "message": "Расчет каскадной схемы завершен, временной интервал: {0}, узел URL: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_created": {
+    "message": "Создан рендерер вида «Водопад»",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_initialized": {
+    "message": "Инициализирован рендерер вида «Водопад», размер: {0}x{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cannot_render": {
+    "message": "Рендерер «Водопад» не может отобразить: SVG или контейнер не инициализированы",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_start": {
+    "message": "Начать рендеринг вида водопада, количество узлов: {0}, количество ребер: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_error": {
+    "message": "Ошибка рендеринга вида «Водопад»: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cleaned_up": {
+    "message": "Очищен рендерер вида «Водопад»",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_focus_center_changed": {
+    "message": "Центр просмотра был изменен на: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_non_uniform_timeline_rendered": {
+    "message": "Неравномерная визуализация временной шкалы",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_start": {
+    "message": "Начните рендеринг макета водопада",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_complete": {
+    "message": "Рендеринг каскадной модели завершен",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_error": {
+    "message": "Ошибка визуализации каскадной модели: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_render_failed": {
+    "message": "Сбой рендеринга каскадной компоновки",
+    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_dynamic_layout_complete": {
+    "message": "Рендеринг динамической водопадной модели завершен",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
   }
 }

@@ -2465,11 +2465,13 @@
   },
   "content_tree_view": {
     "message": "Treemap",
-    "description": "树形图视图按钮文本"
+    "description": "树形图视图按钮文本",
+    "_untranslated": true
   },
   "content_timeline_view": {
     "message": "Timeline",
-    "description": "时间线视图按钮文本"
+    "description": "时间线视图按钮文本",
+    "_untranslated": true
   },
   "state_manager_view_state_saved": {
     "message": "{0} view state saved",
@@ -4914,5 +4916,110 @@
   "options_clear_data_title": {
     "message": "Clear Data",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "waterfall_timeline_now": {
+    "message": "Now",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_timeline_past": {
+    "message": "past",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "Waterfall view zoom state saved: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": false
+  },
+  "view_already_waterfall": {
+    "message": "It is already in waterfall view, no need to switch",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "view_switching_to_waterfall": {
+    "message": "Switch to waterfall view",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "content_waterfall_view": {
+    "message": "🌊 Waterfall View",
+    "description": "从HTML提取: src/content/index.html",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_start": {
+    "message": "Starting calculation of waterfall layout: {0} nodes",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_complete": {
+    "message": "Waterfall layout calculation completed, time slot: {0}, URL node: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_created": {
+    "message": "Waterfall view renderer created",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_initialized": {
+    "message": "Waterfall view renderer initialized, size: {0}x{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cannot_render": {
+    "message": "Waterfall renderer cannot render: SVG or container not initialized",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_start": {
+    "message": "Start rendering waterfall view, number of nodes: {0}, number of edges: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_error": {
+    "message": "Waterfall view rendering failed: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cleaned_up": {
+    "message": "Waterfall view renderer cleaned up",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_focus_center_changed": {
+    "message": "The viewing center has been changed to: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_non_uniform_timeline_rendered": {
+    "message": "Non-uniform timeline rendered",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_start": {
+    "message": "Start rendering the waterfall layout",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_complete": {
+    "message": "Waterfall layout rendering completed",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_error": {
+    "message": "Waterfall layout rendering failed: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_render_failed": {
+    "message": "Waterfall layout rendering fails",
+    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_dynamic_layout_complete": {
+    "message": "Dynamic waterfall layout rendering completed",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
   }
 }

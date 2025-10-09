@@ -2465,11 +2465,13 @@
   },
   "content_tree_view": {
     "message": "Vue arborescente",
-    "description": "树形图视图按钮文本"
+    "description": "树形图视图按钮文本",
+    "_untranslated": true
   },
   "content_timeline_view": {
     "message": "Chronologie",
-    "description": "时间线视图按钮文本"
+    "description": "时间线视图按钮文本",
+    "_untranslated": true
   },
   "state_manager_view_state_saved": {
     "message": "{0} état d'affichage enregistré",
@@ -4914,5 +4916,110 @@
   "options_clear_data_title": {
     "message": "Effacer les données",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "waterfall_timeline_now": {
+    "message": "Maintenant",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_timeline_past": {
+    "message": "passé",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "État du zoom de la vue en cascade enregistré : {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": false
+  },
+  "view_already_waterfall": {
+    "message": "Il est déjà en vue cascade, pas besoin de changer",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "view_switching_to_waterfall": {
+    "message": "Passer à la vue en cascade",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "content_waterfall_view": {
+    "message": "🌊 Vue sur la cascade",
+    "description": "从HTML提取: src/content/index.html",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_start": {
+    "message": "Calcul de départ de la disposition en cascade : {0} nœuds",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_complete": {
+    "message": "Calcul de la disposition en cascade terminé, plage horaire : {0}, nœud URL : {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_created": {
+    "message": "Création d'un moteur de rendu de vue en cascade",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_initialized": {
+    "message": "Moteur de rendu de vue en cascade initialisé, taille : {0}x{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cannot_render": {
+    "message": "Le moteur de rendu en cascade ne peut pas effectuer le rendu : SVG ou conteneur non initialisé",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_start": {
+    "message": "Démarrer le rendu de la vue en cascade, nombre de nœuds : {0}, nombre d’arêtes : {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_error": {
+    "message": "Échec du rendu de la vue en cascade : {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cleaned_up": {
+    "message": "Le moteur de rendu de la vue en cascade a été nettoyé",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_focus_center_changed": {
+    "message": "Le centre de visualisation a été modifié en : {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_non_uniform_timeline_rendered": {
+    "message": "Chronologie non uniforme rendue",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_start": {
+    "message": "Commencer le rendu de la disposition en cascade",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_complete": {
+    "message": "Rendu de la disposition en cascade terminé",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_error": {
+    "message": "Échec du rendu de la disposition en cascade : {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_render_failed": {
+    "message": "Le rendu de la disposition en cascade échoue",
+    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_dynamic_layout_complete": {
+    "message": "Rendu de la disposition dynamique en cascade terminé",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
   }
 }

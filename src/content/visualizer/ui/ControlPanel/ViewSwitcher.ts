@@ -6,12 +6,13 @@ const logger = new Logger('ViewSwitcher');
 
 /**
  * 视图切换器
- * 负责管理树形图和时间线视图之间的切换
+ * 负责管理树形图、时间线和瀑布视图之间的切换
  */
 export class ViewSwitcher {
   private visualizer: Visualizer;
   private treeViewButton: HTMLElement | null = null;
   private timelineViewButton: HTMLElement | null = null;
+  private waterfallViewButton: HTMLElement | null = null;
   
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -23,8 +24,9 @@ export class ViewSwitcher {
   public initialize(): void {
     this.treeViewButton = document.getElementById('tree-view');
     this.timelineViewButton = document.getElementById('timeline-view');
+    this.waterfallViewButton = document.getElementById('waterfall-view');
     
-    if (!this.treeViewButton || !this.timelineViewButton) {
+    if (!this.treeViewButton || !this.timelineViewButton || !this.waterfallViewButton) {
       logger.warn(_('view_switcher_buttons_not_found', '视图切换按钮未找到'));
       return;
     }
@@ -38,6 +40,10 @@ export class ViewSwitcher {
       this.switchView('timeline');
     });
     
+    this.waterfallViewButton.addEventListener('click', () => {
+      this.switchView('waterfall');
+    });
+    
     // 初始设置激活的视图
     this.updateButtonsState(this.visualizer.currentView);
     
@@ -48,18 +54,22 @@ export class ViewSwitcher {
    * 切换视图
    * @param view 目标视图
    */
-  private switchView(view: 'tree' | 'timeline'): void {
+  private switchView(view: 'tree' | 'timeline' | 'waterfall'): void {
     if (view === this.visualizer.currentView) {
       if (view === 'tree') {
         logger.log(_('view_already_tree', '已经是树形图视图，无需切换')); 
-      } else {
+      } else if (view === 'timeline') {
         logger.log(_('view_already_timeline', '已经是时间线视图，无需切换'));
+      } else if (view === 'waterfall') {
+        logger.log(_('view_already_waterfall', '已经是瀑布视图，无需切换'));
       }
       return;
     } else if (view === 'tree') {
       logger.log(_('view_switching_to_tree', '切换到树形图视图'));
-    } else {
+    } else if (view === 'timeline') {
       logger.log(_('view_switching_to_timeline', '切换到时间线视图'));
+    } else if (view === 'waterfall') {
+      logger.log(_('view_switching_to_waterfall', '切换到瀑布视图'));
     }
     
     // 调用可视化器的切换视图方法
@@ -74,19 +84,22 @@ export class ViewSwitcher {
    * @param currentView 当前视图
    */
   public updateButtonsState(currentView: string): void {
-    if (!this.treeViewButton || !this.timelineViewButton) {
+    if (!this.treeViewButton || !this.timelineViewButton || !this.waterfallViewButton) {
       return;
     }
     
     // 移除所有按钮的激活状态
     this.treeViewButton.classList.remove('active');
     this.timelineViewButton.classList.remove('active');
+    this.waterfallViewButton.classList.remove('active');
     
     // 根据当前视图设置激活状态
     if (currentView === 'tree') {
       this.treeViewButton.classList.add('active');
     } else if (currentView === 'timeline') {
       this.timelineViewButton.classList.add('active');
+    } else if (currentView === 'waterfall') {
+      this.waterfallViewButton.classList.add('active');
     }
     
     logger.debug(_('view_buttons_state_updated', '视图按钮状态已更新: {0}'), currentView);

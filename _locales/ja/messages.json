@@ -2465,11 +2465,13 @@
   },
   "content_tree_view": {
     "message": "スリルマップ",
-    "description": "树形图视图按钮文本"
+    "description": "树形图视图按钮文本",
+    "_untranslated": true
   },
   "content_timeline_view": {
     "message": "タイムライン",
-    "description": "时间线视图按钮文本"
+    "description": "时间线视图按钮文本",
+    "_untranslated": true
   },
   "state_manager_view_state_saved": {
     "message": "{0} ビューステートを保存しました",
@@ -4914,5 +4916,110 @@
   "options_clear_data_title": {
     "message": "データを消去",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "waterfall_timeline_now": {
+    "message": "今",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_timeline_past": {
+    "message": "過去",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_view_zoom_state_saved": {
+    "message": "ウォーターフォール ビューのズーム状態が保存されました: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
+    "_untranslated": false
+  },
+  "view_already_waterfall": {
+    "message": "すでにウォーターフォールビューになっているので、切り替える必要はありません",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "view_switching_to_waterfall": {
+    "message": "滝ビューに切り替える",
+    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
+    "_untranslated": false
+  },
+  "content_waterfall_view": {
+    "message": "🌊 滝の眺め",
+    "description": "从HTML提取: src/content/index.html",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_start": {
+    "message": "ウォーターフォールレイアウトの計算を開始: {0} ノード",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_calculation_complete": {
+    "message": "ウォーターフォール レイアウトの計算が完了しました。タイム スロット: {0}、URL ノード: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_created": {
+    "message": "ウォーターフォールビューレンダラーを作成しました",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_initialized": {
+    "message": "ウォーターフォール ビュー レンダラーが初期化されました。サイズ: {0}x{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cannot_render": {
+    "message": "ウォーターフォール レンダラーがレンダリングできません: SVG またはコンテナが初期化されていません",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_start": {
+    "message": "ウォーターフォール ビューのレンダリングを開始します。ノード数: {0}、エッジ数: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_render_error": {
+    "message": "ウォーターフォール ビューのレンダリングに失敗しました: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_renderer_cleaned_up": {
+    "message": "ウォーターフォールビューレンダラーをクリーンアップしました",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_focus_center_changed": {
+    "message": "表示センターが次のように変更されました: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_non_uniform_timeline_rendered": {
+    "message": "非均一なタイムラインがレンダリングされる",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_start": {
+    "message": "滝レイアウトのレンダリングを開始する",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_complete": {
+    "message": "ウォーターフォールレイアウトのレンダリングが完了しました",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_error": {
+    "message": "ウォーターフォール レイアウトのレンダリングに失敗しました: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_layout_render_failed": {
+    "message": "ウォーターフォールレイアウトのレンダリングが失敗する",
+    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
+  },
+  "waterfall_dynamic_layout_complete": {
+    "message": "ダイナミックウォーターフォールレイアウトのレンダリングが完了しました",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
+    "_untranslated": false
   }
 }
