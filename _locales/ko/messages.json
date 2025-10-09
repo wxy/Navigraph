@@ -2464,9 +2464,9 @@
     "description": "显示通知消息失败错误"
   },
   "content_tree_view": {
-    "message": "나무",
+    "message": "나무 나무",
     "description": "树形图视图按钮文本",
-    "_untranslated": true
+    "_untranslated": false
   },
   "content_timeline_view": {
     "message": "타임라인",
@@ -4918,108 +4918,108 @@
     "description": "从HTML提取: src/options/index.html"
   },
   "waterfall_timeline_now": {
-    "message": "现在",
+    "message": "지금",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_timeline_past": {
-    "message": "过去",
+    "message": "과거",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_view_zoom_state_saved": {
-    "message": "已保存瀑布视图缩放状态: {0}",
+    "message": "폭포 보기 확대 상태가 저장됨: {0}",
     "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "view_already_waterfall": {
-    "message": "已经是瀑布视图，无需切换",
+    "message": "이미 폭포수 보기로 되어 있으므로 전환할 필요가 없습니다.",
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "view_switching_to_waterfall": {
-    "message": "切换到瀑布视图",
+    "message": "폭포수 보기로 전환",
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "content_waterfall_view": {
-    "message": "🌊 瀑布视图",
+    "message": "🌊 폭포 전망",
     "description": "从HTML提取: src/content/index.html",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_layout_calculation_start": {
-    "message": "开始计算瀑布布局: {0} 个节点",
+    "message": "폭포수 레이아웃 계산 시작: {0}개 노드",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_layout_calculation_complete": {
-    "message": "瀑布布局计算完成，时间槽: {0}，URL节点: {1}",
+    "message": "폭포수 레이아웃 계산이 완료되었습니다. 시간 슬롯: {0}, URL 노드: {1}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_renderer_created": {
-    "message": "瀑布视图渲染器已创建",
+    "message": "폭포 뷰 렌더러가 생성되었습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_renderer_initialized": {
-    "message": "瀑布视图渲染器已初始化，尺寸: {0}x{1}",
+    "message": "폭포수 뷰 렌더러가 초기화되었습니다. 크기: {0}x{1}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_renderer_cannot_render": {
-    "message": "瀑布渲染器无法渲染：SVG或容器未初始化",
+    "message": "워터폴 렌더러가 SVG 또는 컨테이너를 초기화하지 않고 렌더링할 수 없습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_renderer_render_start": {
-    "message": "开始渲染瀑布视图，节点数: {0}，边数: {1}",
+    "message": "폭포수 뷰 렌더링 시작, 노드 수: {0}, 에지 수: {1}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_renderer_render_error": {
-    "message": "瀑布视图渲染失败: {0}",
+    "message": "폭포 뷰 렌더링에 실패했습니다: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_renderer_cleaned_up": {
-    "message": "瀑布视图渲染器已清理",
+    "message": "폭포 뷰 렌더러가 정리되었습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_focus_center_changed": {
-    "message": "观察中心已更改为: {0}",
+    "message": "시청 센터가 {0}로 변경되었습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_non_uniform_timeline_rendered": {
-    "message": "非均匀时间轴已渲染",
+    "message": "비균일한 타임라인이 렌더링됨",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_layout_start": {
-    "message": "开始渲染瀑布布局",
+    "message": "폭포 레이아웃 렌더링 시작",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_layout_complete": {
-    "message": "瀑布布局渲染完成",
+    "message": "폭포수 레이아웃 렌더링 완료",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_layout_error": {
-    "message": "瀑布布局渲染失败: {0}",
+    "message": "폭포형 레이아웃 렌더링에 실패했습니다: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_layout_render_failed": {
-    "message": "瀑布布局渲染失败",
+    "message": "폭포수 레이아웃 렌더링 실패",
     "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   },
   "waterfall_dynamic_layout_complete": {
-    "message": "动态瀑布布局渲染完成",
+    "message": "동적 폭포 레이아웃 렌더링 완료",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts",
-    "_untranslated": true
+    "_untranslated": false
   }
 }
