@@ -47,6 +47,31 @@ interface ObservationWindow {
   segments: TimeSegment[];     // 观察窗口覆盖的段
 }
 
+/**
+ * 泳道接口 - 代表一个标签页的水平轨道
+ */
+interface Swimlane {
+  tabId: string;           // 标签页 ID
+  y: number;               // 泳道的 Y 坐标
+  height: number;          // 泳道高度
+  nodes: NavNode[];        // 该标签页的所有节点
+  isClosed: boolean;       // 标签页是否已关闭
+  firstTimestamp: number;  // 该标签页首次出现的时间
+  lastTimestamp: number;   // 该标签页最后出现的时间
+}
+
+/**
+ * 折叠节点组 - 同一条带同一标签页的多个节点
+ */
+interface CollapsedNodeGroup {
+  tabId: string;                    // 标签页 ID
+  segmentIndex: number;             // 所在条带索引
+  nodes: NavNode[];                 // 包含的所有节点
+  displayNode: NavNode;             // 显示的节点（最早的）
+  swimlaneY: number;                // 所属泳道的 Y 坐标
+  count: number;                    // 节点数量
+}
+
 export class WaterfallRenderer implements BaseRenderer {
   private readonly SEGMENT_DURATION = 10 * 60 * 1000; // 10分钟 - 改为10分钟间隔，避免条带过多导致压缩区域过窄
   private readonly MAX_COMPRESSED_RATIO = 0.3; // 最大压缩区域占比30%
@@ -62,6 +87,14 @@ export class WaterfallRenderer implements BaseRenderer {
     icon: 20,
     dot: 8
   };
+
+  // 泳道配置常量
+  private readonly SWIMLANE_HEIGHT = 50; // 每个泳道的高度（包含间距）
+  private readonly SWIMLANE_NODE_HEIGHT = 40; // 泳道内节点的实际高度
+  private readonly SWIMLANE_SEPARATOR_DASH = '5,3'; // 虚线样式
+  private readonly SWIMLANE_SEPARATOR_COLOR = '#555'; // 虚线颜色
+  private readonly MAX_SWIMLANES = 20; // 最大泳道数量（防止过多标签页导致布局溢出）
+  private readonly COLLAPSE_THRESHOLD = 2; // 折叠阈值：>=2个节点时折叠
 
   private visualizer: Visualizer;
   private currentLayout: LayoutResult | null = null;
@@ -80,6 +113,10 @@ export class WaterfallRenderer implements BaseRenderer {
   private currentNormalSegmentIndices: Set<number> = new Set(); // 当前在观察窗口内的条带索引
   private prevWindowCenter: number | undefined; // 🎯 记录上一次观察窗口中心位置，用于检测移动方向
   private wheelScrollTimeout: number | null = null; // 滚轮滚动防抖定时器
+  
+  // 泳道数据
+  private swimlanes: Swimlane[] = []; // 当前渲染的泳道列表
+  private collapsedGroups: CollapsedNodeGroup[] = []; // 折叠的节点组
 
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -224,23 +261,30 @@ export class WaterfallRenderer implements BaseRenderer {
       this.observationStartIndex = 0;
     }
 
-    // 1. 计算时间分段和布局（使用保存的观察窗口位置）
+    // 1. 分析泳道
+    this.swimlanes = this.analyzeSwimlanes(validNodes);
+
+    // 2. 计算时间分段和布局（使用保存的观察窗口位置）
     const layout = this.calculateSegmentLayout(validNodes, this.width, this.observationStartIndex);
     this.currentLayout = layout;
 
-    // 2. 创建SVG分组
+    // 3. 识别需要折叠的节点组
+    this.collapsedGroups = this.identifyCollapsedGroups(layout.segments, this.swimlanes);
+
+    // 4. 创建SVG分组
     const mainGroup = this.createSVGGroups(this.svg);
 
-    // 3. 渲染各个部分
+    // 5. 渲染各个部分
     this.renderTimeAxis(mainGroup.timeAxisGroup, layout);
+    this.renderSwimlaneSeparators(mainGroup.nodesGroup, layout); // 绘制泳道分隔线
     this.renderSegmentNodes(mainGroup.nodesGroup, layout);
     this.renderConnections(mainGroup.connectionsGroup, layout);
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout);
     
-    // 4. 设置滚轮事件来滚动观察窗口
+    // 6. 设置滚轮事件来滚动观察窗口
     this.setupWheelScroll();
     
-    // 5. 存储选项供后续使用
+    // 7. 存储选项供后续使用
     this.renderOptions = options;
   }
 
@@ -359,6 +403,123 @@ export class WaterfallRenderer implements BaseRenderer {
    * @param containerWidth 容器宽度
    * @param observationStartIndex 观察窗口起始索引（可选）
    */
+  /**
+   * 分析节点并构建泳道信息
+   * @param nodes 所有节点
+   * @returns 泳道列表
+   */
+  private analyzeSwimlanes(nodes: NavNode[]): Swimlane[] {
+    // 1. 按 tabId 分组节点
+    const tabGroups = new Map<string, NavNode[]>();
+    
+    nodes.forEach(node => {
+      const tabId = node.tabId || 'unknown';
+      if (!tabGroups.has(tabId)) {
+        tabGroups.set(tabId, []);
+      }
+      tabGroups.get(tabId)!.push(node);
+    });
+
+    // 2. 为每个标签页创建泳道
+    const swimlanes: Swimlane[] = [];
+    
+    tabGroups.forEach((tabNodes, tabId) => {
+      // 按时间排序
+      const sortedNodes = tabNodes.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // 获取时间范围
+      const firstTimestamp = sortedNodes[0].timestamp;
+      const lastTimestamp = sortedNodes[sortedNodes.length - 1].timestamp;
+      
+      // 判断标签是否已关闭（检查最后一个节点）
+      const isClosed = sortedNodes[sortedNodes.length - 1].isClosed || false;
+      
+      swimlanes.push({
+        tabId,
+        y: 0, // 稍后分配
+        height: this.SWIMLANE_HEIGHT, // 使用泳道总高度，不是节点高度
+        nodes: sortedNodes,
+        isClosed,
+        firstTimestamp,
+        lastTimestamp
+      });
+    });
+
+    // 3. 按照活跃时间（最后时间戳）排序，最新的在上面
+    swimlanes.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+
+    // 4. 限制泳道数量
+    if (swimlanes.length > this.MAX_SWIMLANES) {
+      console.warn(`泳道数量 ${swimlanes.length} 超过最大值 ${this.MAX_SWIMLANES}，将截断`);
+      swimlanes.splice(this.MAX_SWIMLANES);
+    }
+
+    // 5. 分配Y坐标 - 从时间轴下方开始
+    const timeAxisY = 80; // 时间轴横线的Y坐标
+    const startGap = 15; // 时间轴下方的起始间隔
+    const swimlaneStartY = timeAxisY + startGap;
+    
+    swimlanes.forEach((lane, index) => {
+      lane.y = swimlaneStartY + (index * this.SWIMLANE_HEIGHT);
+    });
+
+    console.log(`✅ 分析出 ${swimlanes.length} 个泳道，起始Y坐标: ${swimlaneStartY}`, swimlanes);
+
+    return swimlanes;
+  }
+
+  /**
+   * 识别需要折叠的节点组
+   * @param segments 所有时间段
+   * @param swimlanes 泳道列表
+   * @returns 需要折叠的节点组列表
+   */
+  private identifyCollapsedGroups(
+    segments: TimeSegment[], 
+    swimlanes: Swimlane[]
+  ): CollapsedNodeGroup[] {
+    const groups: CollapsedNodeGroup[] = [];
+    
+    // 遍历每个时间段
+    segments.forEach((segment, segmentIndex) => {
+      // 按 tabId 分组该段内的节点
+      const tabGroups = new Map<string, NavNode[]>();
+      
+      segment.nodes.forEach(node => {
+        const tabId = node.tabId || 'unknown';
+        if (!tabGroups.has(tabId)) {
+          tabGroups.set(tabId, []);
+        }
+        tabGroups.get(tabId)!.push(node);
+      });
+      
+      // 检查每个 tabId 组的节点数量
+      tabGroups.forEach((nodes, tabId) => {
+        if (nodes.length >= this.COLLAPSE_THRESHOLD) {
+          // 需要折叠：按时间排序，取最早的节点作为显示节点
+          const sortedNodes = nodes.sort((a, b) => a.timestamp - b.timestamp);
+          const displayNode = sortedNodes[0];
+          
+          // 找到对应的泳道
+          const swimlane = swimlanes.find(lane => lane.tabId === tabId);
+          
+          groups.push({
+            tabId,
+            segmentIndex,
+            nodes: sortedNodes,
+            displayNode,
+            swimlaneY: swimlane?.y || 0,
+            count: sortedNodes.length
+          });
+        }
+      });
+    });
+    
+    console.log(`🎯 识别出 ${groups.length} 个折叠节点组`, groups);
+    
+    return groups;
+  }
+
   private calculateSegmentLayout(
     nodes: NavNode[] | TimeSegment[], 
     containerWidth: number, 
@@ -568,6 +729,52 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 渲染时间轴（与节点布局完全一致）+ V2样式：明暗条带
    */
+  /**
+   * 渲染泳道分隔线
+   * @param group SVG 分组
+   * @param layout 布局信息
+   */
+  private renderSwimlaneSeparators(group: any, layout: LayoutResult): void {
+    if (this.swimlanes.length === 0) {
+      return;
+    }
+
+    console.log(`🏊 渲染 ${this.swimlanes.length} 条泳道分隔线`);
+
+    const separatorGroup = group.append('g').attr('class', 'swimlane-separators');
+
+    // 🎯 获取条带区域的左右边界
+    const leftBoundary = layout.timeAxisData.startX;
+    const rightBoundary = layout.timeAxisData.endX;
+
+    // 绘制每个泳道底部的分隔线（除了最后一条）
+    this.swimlanes.slice(0, -1).forEach((lane, index) => {
+      // 分隔线位置：泳道底部（下一个泳道的顶部）
+      const y = lane.y + this.SWIMLANE_HEIGHT;
+      
+      separatorGroup.append('line')
+        .attr('class', 'swimlane-separator')
+        .attr('x1', leftBoundary)  // 从条带左边界开始
+        .attr('x2', rightBoundary) // 到条带右边界结束
+        .attr('y1', y)
+        .attr('y2', y)
+        .attr('stroke', this.SWIMLANE_SEPARATOR_COLOR)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', this.SWIMLANE_SEPARATOR_DASH)
+        .attr('opacity', 0.5);
+    });
+  }
+
+  /**
+   * 获取节点所属的泳道
+   * @param node 节点
+   * @returns 泳道对象，如果找不到则返回 null
+   */
+  private getSwimlaneForNode(node: NavNode): Swimlane | null {
+    const tabId = node.tabId || 'unknown';
+    return this.swimlanes.find(lane => lane.tabId === tabId) || null;
+  }
+
   private renderTimeAxis(group: any, layout: LayoutResult): void {
     console.log('🕐 渲染时间轴（带明暗条带和横线）');
 
@@ -711,16 +918,398 @@ export class WaterfallRenderer implements BaseRenderer {
       // 获取节点分组
       const nodeGroup = strip.select('.node-group');
       
+      // 🎯 找出该段内需要折叠的节点组
+      const collapsedGroupsInSegment = this.collapsedGroups.filter(
+        g => g.segmentIndex === segIndex
+      );
+      
+      // 创建一个 Set 存储应该被折叠（不显示）的节点 ID
+      const hiddenNodeIds = new Set<string>();
+      collapsedGroupsInSegment.forEach(group => {
+        // 除了 displayNode，其他节点都隐藏
+        group.nodes.forEach(node => {
+          if (node.id !== group.displayNode.id) {
+            hiddenNodeIds.add(node.id);
+          }
+        });
+      });
+      
       segment.nodes.forEach((node, index) => {
         if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
           return;
         }
+        
+        // 🎯 跳过被折叠的节点
+        if (hiddenNodeIds.has(node.id)) {
+          console.log(`🔽 跳过折叠节点: ${node.title || node.url}`);
+          return;
+        }
+        
         this.renderSingleNode(nodeGroup, node, segment, index);
+        
+        // 🎯 如果这个节点是折叠组的显示节点，渲染折叠角标
+        // 但是 dot 模式不需要折叠角标
+        if (segment.displayMode !== 'dot') {
+          const collapsedGroup = collapsedGroupsInSegment.find(
+            g => g.displayNode.id === node.id
+          );
+          if (collapsedGroup) {
+            this.renderCollapseBadge(nodeGroup, node, segment, collapsedGroup);
+          }
+        }
+        
         totalNodesRendered++;
       });
     });
 
     console.log(`✅ 总共渲染了 ${totalNodesRendered} 个节点`);
+  }
+
+  /**
+   * 渲染折叠角标
+   * @param group SVG 分组（应该传入节点的 group，这样角标在节点内部）
+   * @param node 显示的节点
+   * @param segment 所在时间段
+   * @param collapsedGroup 折叠组信息
+   */
+  private renderCollapseBadge(
+    group: any,
+    node: NavNode,
+    segment: TimeSegment,
+    collapsedGroup: CollapsedNodeGroup
+  ): void {
+    const swimlane = this.getSwimlaneForNode(node);
+    if (!swimlane) return;
+    
+    const nodeWidth = this.NODE_WIDTHS[segment.displayMode];
+    const nodeHeight = this.NODE_HEIGHTS[segment.displayMode];
+    const verticalPadding = (this.SWIMLANE_HEIGHT - nodeHeight) / 2;
+    
+    const centerOffset = (segment.allocatedWidth - nodeWidth) / 2;
+    const nodeX = segment.startX + Math.max(0, centerOffset);
+    const nodeY = swimlane.y + verticalPadding;
+    
+    // 🎯 成组标记：占据节点右侧整个边，右侧圆角吻合节点
+    const badgeText = `${collapsedGroup.count}`;
+    const badgeWidth = 22; // 稍微增加宽度
+    
+    const badgeX = nodeX + nodeWidth - badgeWidth; // 节点右侧边
+    const badgeY = nodeY; // 与节点顶部对齐
+    
+    const badgeGroup = group.append('g')
+      .attr('class', 'group-badge')
+      .attr('transform', `translate(${badgeX}, ${badgeY})`)
+      .style('cursor', 'pointer')
+      .attr('data-collapse-group', collapsedGroup.tabId);
+    
+    // 🎯 使用 path 创建右侧圆角的矩形
+    // 左侧直角，右侧圆角（与节点圆角一致）
+    const radius = 4; // 圆角半径，与节点的 rx 一致
+    const path = `
+      M 0,0
+      L ${badgeWidth - radius},0
+      Q ${badgeWidth},0 ${badgeWidth},${radius}
+      L ${badgeWidth},${nodeHeight - radius}
+      Q ${badgeWidth},${nodeHeight} ${badgeWidth - radius},${nodeHeight}
+      L 0,${nodeHeight}
+      Z
+    `;
+    
+    badgeGroup.append('path')
+      .attr('d', path)
+      .attr('fill', '#4a90e2')
+      .attr('opacity', 0.92)
+      .attr('stroke', 'rgba(255,255,255,0.3)') // 添加微妙的高光边框
+      .attr('stroke-width', 0.5);
+    
+    // 🎯 文字：垂直居中
+    badgeGroup.append('text')
+      .attr('x', badgeWidth / 2)
+      .attr('y', nodeHeight / 2)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('fill', '#fff')
+      .attr('font-size', '12px')
+      .attr('font-weight', 'bold')
+      .text(badgeText)
+      .style('pointer-events', 'none');
+    
+    // 悬停效果
+    badgeGroup.on('mouseenter', function(this: SVGGElement) {
+      d3.select(this).select('path')
+        .transition()
+        .duration(200)
+        .attr('opacity', 1)
+        .attr('fill', '#5aa2f0'); // 稍微亮一点的蓝色
+    }).on('mouseleave', function(this: SVGGElement) {
+      d3.select(this).select('path')
+        .transition()
+        .duration(200)
+        .attr('opacity', 0.92)
+        .attr('fill', '#4a90e2');
+    });
+    
+    // 点击事件 - 显示/隐藏抽屉
+    badgeGroup.on('click', (event: MouseEvent) => {
+      event.stopPropagation(); // 防止触发节点点击事件
+      event.preventDefault();
+      
+      console.log('🎯 折叠角标被点击:', {
+        tabId: collapsedGroup.tabId,
+        count: collapsedGroup.count,
+        nodes: collapsedGroup.nodes.map(n => n.title || n.url)
+      });
+      
+      // 🎯 显示抽屉
+      this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight);
+    });
+    
+    console.log(`🎯 渲染折叠角标: ${collapsedGroup.tabId} (${collapsedGroup.count}个节点)`);
+  }
+
+  /**
+   * 显示折叠节点抽屉（原位展开）
+   */
+  private showCollapsedNodesDrawer(
+    collapsedGroup: CollapsedNodeGroup,
+    firstNode: NavNode,
+    firstSegment: TimeSegment,
+    nodeX: number,
+    nodeY: number,
+    nodeWidth: number,
+    nodeHeight: number
+  ): void {
+    // 移除已存在的抽屉
+    d3.select('.collapsed-nodes-drawer').remove();
+    
+    // 获取泳道信息
+    const swimlane = this.getSwimlaneForNode(firstNode);
+    if (!swimlane) return;
+    
+    // 计算其他节点（排除第一个显示的节点）
+    const otherNodes = collapsedGroup.nodes.filter(n => n.id !== firstNode.id);
+    if (otherNodes.length === 0) return;
+    
+    // 🎯 节点间距：与泳道之间的垂直距离一致
+    const nodeGap = this.SWIMLANE_HEIGHT - nodeHeight; // 泳道间的垂直距离
+    
+    // 🎯 第一个节点和展开节点之间的间隙
+    const firstNodeGap = nodeGap;
+    
+    // 计算总高度（包含第一个间隙）
+    const drawerHeight = firstNodeGap + otherNodes.length * (nodeHeight + nodeGap);
+    
+    // 检查空间：优先向下延伸，如果空间不够向上延伸
+    const svgHeight = this.height;
+    const availableDownSpace = svgHeight - (nodeY + nodeHeight);
+    const availableUpSpace = nodeY;
+    
+    // 🎯 浮层重叠到原位节点，越过圆角（4px）
+    const overlapAmount = 4; // 节点的圆角半径
+    let drawerY = nodeY + nodeHeight - overlapAmount; // 向上重叠4px
+    let expandDirection: 'down' | 'up' = 'down';
+    
+    if (drawerHeight > availableDownSpace && availableUpSpace > availableDownSpace) {
+      // 向上展开：浮层下边界重叠原位节点上边界
+      expandDirection = 'up';
+      drawerY = nodeY - drawerHeight + overlapAmount; // 向下重叠4px
+    }
+    
+    // 🎯 滚动偏移量（提前声明，供全局处理器使用）
+    let scrollOffset = 0;
+    const maxScroll = Math.max(0, drawerHeight - (expandDirection === 'down' ? availableDownSpace : availableUpSpace));
+    
+    // 🎯 创建抽屉容器 - 使用 append 正常添加，但设置 pointer-events: none
+    // 让鼠标事件穿透到下层，保证原位节点和成组标记可以被点击
+    const drawer = this.svg.append('g')
+      .attr('class', 'collapsed-nodes-drawer')
+      .attr('data-swimlane', swimlane.tabId)
+      .style('pointer-events', 'none'); // 🎯 让鼠标事件穿透
+    
+    // 🎯 浮层区域的边界（用于检测鼠标是否在浮层内）
+    const actualDrawerHeight = Math.min(drawerHeight, expandDirection === 'down' ? availableDownSpace : availableUpSpace);
+    const drawerBounds = {
+      x: nodeX,
+      y: drawerY,
+      width: nodeWidth,
+      height: actualDrawerHeight
+    };
+    
+    // 🎯 背景矩形（不透明蓝色背景，避免与泳道线重叠）
+    // 边框 1px 细线，直角无圆角
+    // 🎯 恢复 pointer-events，可以捕获滚动和点击事件
+    const bgRect = drawer.append('rect')
+      .attr('x', nodeX)
+      .attr('y', expandDirection === 'down' ? drawerY : drawerY)
+      .attr('width', nodeWidth)
+      .attr('height', actualDrawerHeight)
+      .attr('fill', 'rgb(230, 242, 255)') // 不透明的浅蓝色背景
+      .attr('stroke', 'rgba(74, 144, 226, 0.5)') // 稍微深一点的边框
+      .attr('stroke-width', 1) // 细线
+      .style('pointer-events', 'all') // 🎯 恢复鼠标事件
+      .style('cursor', 'default');
+    
+    // 🎯 创建可滚动的节点容器（在背景矩形之后，确保节点在背景上方）
+    const nodesContainer = drawer.append('g')
+      .attr('class', 'drawer-nodes-container');
+    
+    // 🎯 在背景矩形上直接处理滚动事件（nodesContainer已创建，可以使用）
+    bgRect.on('wheel', (event: WheelEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      console.log('🎯 浮层滚动事件被拦截');
+      
+      if (maxScroll > 0) {
+        // 需要滚动：处理滚动
+        const delta = event.deltaY;
+        scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + delta * 0.5));
+        nodesContainer.attr('transform', `translate(0, ${-scrollOffset})`);
+        
+        // 更新箭头可见性
+        const arrow = drawer.select('.scroll-arrow');
+        if (!arrow.empty()) {
+          if (scrollOffset >= maxScroll - 5) {
+            arrow.attr('opacity', 0);
+          } else {
+            arrow.attr('opacity', 1);
+          }
+        }
+      }
+      // 如果不需要滚动，仅阻止事件传播（已在上面处理）
+    });
+    
+    // 🎯 渲染其他节点（从第一个间隙之后开始）
+    otherNodes.forEach((node, index) => {
+      const currentNodeY = expandDirection === 'down' 
+        ? drawerY + firstNodeGap + index * (nodeHeight + nodeGap)
+        : drawerY + firstNodeGap + index * (nodeHeight + nodeGap);
+      
+      // 🎯 在间隙中显示时间差标签
+      if (index === 0) {
+        // 第一个节点：显示与原位节点的时间差
+        const timeDiff = Math.abs(node.timestamp - firstNode.timestamp);
+        this.renderTimeDiffLabel(nodesContainer, nodeX, currentNodeY - firstNodeGap / 2, nodeWidth, timeDiff);
+      } else {
+        // 后续节点：显示与前一个节点的时间差
+        const prevNode = otherNodes[index - 1];
+        const timeDiff = Math.abs(node.timestamp - prevNode.timestamp);
+        this.renderTimeDiffLabel(nodesContainer, nodeX, currentNodeY - nodeGap / 2, nodeWidth, timeDiff);
+      }
+      
+      const nodeGroup = nodesContainer.append('g')
+        .attr('class', 'drawer-node')
+        .attr('data-node-id', node.id)
+        .attr('transform', `translate(${nodeX}, ${currentNodeY})`)
+        .style('cursor', 'pointer')
+        .style('pointer-events', 'all'); // 🎯 恢复鼠标事件，可以点击
+      
+      // 根据显示模式渲染节点（不需要传X,Y坐标，已通过transform定位）
+      if (firstSegment.displayMode === 'full') {
+        this.renderFullNode(nodeGroup, node, nodeWidth, nodeHeight);
+      } else if (firstSegment.displayMode === 'short') {
+        this.renderShortNode(nodeGroup, node, nodeWidth, nodeHeight);
+      } else if (firstSegment.displayMode === 'icon') {
+        this.renderIconNode(nodeGroup, node, 20, 20);
+      }
+      
+      // 🎯 点击节点触发详情显示
+      nodeGroup.on('click', (event: MouseEvent) => {
+        event.stopPropagation();
+        console.log('🎯 抽屉节点被点击:', node.title || node.url);
+        
+        // 触发节点详情显示
+        this.visualizer.showNodeDetails(node);
+        
+        // 不关闭抽屉，允许连续查看多个节点
+      });
+    });
+    
+    // 🎯 如果需要滚动，创建滚动指示箭头
+    if (maxScroll > 0) {
+      const arrowY = drawerY + actualDrawerHeight - 12; // 距离底部12px
+      const arrowX = nodeX + nodeWidth / 2;
+      
+      const scrollArrow = drawer.append('g')
+        .attr('class', 'scroll-arrow')
+        .attr('transform', `translate(${arrowX}, ${arrowY})`);
+      
+      // 向下箭头（SVG path）
+      scrollArrow.append('path')
+        .attr('d', 'M -4,-2 L 0,2 L 4,-2')
+        .attr('fill', 'none')
+        .attr('stroke', '#4a90e2')
+        .attr('stroke-width', 1.5)
+        .attr('opacity', 0.6);
+    }
+    
+    // 点击外部关闭
+    const closeDrawer = () => {
+      drawer.remove();
+      this.svg.on('click.drawer', null);
+    };
+    
+    this.svg.on('click.drawer', (event: MouseEvent) => {
+      closeDrawer();
+    });
+    
+    // 点击抽屉背景关闭（但不包括节点）
+    drawer.select('rect').on('click', (event: MouseEvent) => {
+      event.stopPropagation();
+      closeDrawer();
+    });
+    
+    // 防止点击抽屉本身时关闭
+    drawer.on('click', (event: MouseEvent) => {
+      event.stopPropagation();
+    });
+    
+    console.log(`🎯 显示抽屉: ${collapsedGroup.tabId} (${otherNodes.length}个节点, ${expandDirection})`);
+  }
+
+  /**
+   * 渲染时间差标签（在节点间隙中显示）
+   */
+  private renderTimeDiffLabel(
+    container: any,
+    x: number,
+    y: number,
+    width: number,
+    timeDiffMs: number
+  ): void {
+    // 格式化时间差
+    let timeDiffText = '';
+    if (timeDiffMs < 1000) {
+      // 小于1秒，显示毫秒
+      timeDiffText = `${timeDiffMs}ms`;
+    } else if (timeDiffMs < 60000) {
+      // 小于1分钟，显示秒
+      const seconds = (timeDiffMs / 1000).toFixed(1);
+      timeDiffText = `${seconds}s`;
+    } else if (timeDiffMs < 3600000) {
+      // 小于1小时，显示分钟
+      const minutes = Math.floor(timeDiffMs / 60000);
+      const seconds = Math.floor((timeDiffMs % 60000) / 1000);
+      timeDiffText = seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+    } else {
+      // 1小时以上，显示小时
+      const hours = Math.floor(timeDiffMs / 3600000);
+      const minutes = Math.floor((timeDiffMs % 3600000) / 60000);
+      timeDiffText = minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    
+    // 渲染标签（极小的灰色文字，稍微下移一点）
+    container.append('text')
+      .attr('x', x + width / 2)
+      .attr('y', y + 1) // 向下偏移1px
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('fill', '#999')
+      .attr('font-size', '8px')
+      .attr('font-style', 'italic')
+      .attr('opacity', 0.7)
+      .text(`+${timeDiffText}`)
+      .style('pointer-events', 'none');
   }
 
   /**
@@ -748,29 +1337,55 @@ export class WaterfallRenderer implements BaseRenderer {
       height = this.NODE_HEIGHTS[segment.displayMode];
     }
     
-    const timeAxisY = 80; // 时间轴横线的Y坐标
-    const startGap = 15; // 时间轴下方的起始间隔
-    
     let nodeX: number;
     let nodeY: number;
     
-    // 🎯 根据显示模式决定布局方式
-    if (segment.displayMode === 'full' || segment.displayMode === 'short') {
-      // 全节点和短节点：纵向堆叠
+    // 🏊 使用泳道布局（如果有）
+    const swimlane = this.getSwimlaneForNode(node);
+    
+    if (swimlane) {
+      // 🎯 泳道模式：所有节点水平对齐在泳道的Y坐标上
       const centerOffset = (segment.allocatedWidth - width) / 2;
       nodeX = segment.startX + Math.max(0, centerOffset);
-      nodeY = timeAxisY + startGap + (index * (height + 8)); // 纵向，间隔8px
+      
+      // 节点垂直居中在泳道内 - 使用节点的实际高度来计算居中位置
+      const verticalPadding = (this.SWIMLANE_HEIGHT - height) / 2;
+      nodeY = swimlane.y + verticalPadding;
+      
+      // 🐛 调试日志：输出节点定位信息
+      if (Math.random() < 0.01) { // 只输出1%的节点避免日志过多
+        console.log(`🏊 泳道节点定位:`, {
+          tabId: node.tabId,
+          swimlaneY: swimlane.y,
+          swimlaneHeight: this.SWIMLANE_HEIGHT,
+          nodeHeight: height,
+          verticalPadding,
+          finalNodeY: nodeY
+        });
+      }
     } else {
-      // 图标节点和圆点节点：横向排列+换行
-      const itemsPerRow = Math.floor(segment.allocatedWidth / (width + 2)); // 每行能放多少个，间隔2px
-      const row = Math.floor(index / Math.max(1, itemsPerRow)); // 第几行
-      const col = index % Math.max(1, itemsPerRow); // 第几列
+      // 🎯 无泳道模式（回退到原有逻辑）
+      const timeAxisY = 80; // 时间轴横线的Y坐标
+      const startGap = 15; // 时间轴下方的起始间隔
       
-      const horizontalGap = 2; // 横向间隔
-      const verticalGap = 2; // 纵向间隔
-      
-      nodeX = segment.startX + (col * (width + horizontalGap));
-      nodeY = timeAxisY + startGap + (row * (height + verticalGap));
+      // 根据显示模式决定布局方式
+      if (segment.displayMode === 'full' || segment.displayMode === 'short') {
+        // 全节点和短节点：纵向堆叠
+        const centerOffset = (segment.allocatedWidth - width) / 2;
+        nodeX = segment.startX + Math.max(0, centerOffset);
+        nodeY = timeAxisY + startGap + (index * (height + 8)); // 纵向，间隔8px
+      } else {
+        // 图标节点和圆点节点：横向排列+换行
+        const itemsPerRow = Math.floor(segment.allocatedWidth / (width + 2)); // 每行能放多少个，间隔2px
+        const row = Math.floor(index / Math.max(1, itemsPerRow)); // 第几行
+        const col = index % Math.max(1, itemsPerRow); // 第几列
+        
+        const horizontalGap = 2; // 横向间隔
+        const verticalGap = 2; // 纵向间隔
+        
+        nodeX = segment.startX + (col * (width + horizontalGap));
+        nodeY = timeAxisY + startGap + (row * (height + verticalGap));
+      }
     }
 
     const nodeGroup = group.append('g')
@@ -793,7 +1408,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染完整节点 - V2样式：图标 + 标题
    */
   private renderFullNode(group: any, node: NavNode, width: number, height: number): void {
-    // 背景矩形 - 添加渐变和阴影效果
+    // 背景矩形 - 取消阴影效果，保持简洁
     const bgRect = group.append('rect')
       .attr('width', width)
       .attr('height', height)
@@ -801,7 +1416,6 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('fill', 'url(#nodeGradient)')
       .attr('stroke', '#d0d0d0')
       .attr('stroke-width', 1)
-      .attr('filter', 'url(#nodeShadow)')
       .style('cursor', 'pointer')
       .attr('opacity', 0.95);
     
@@ -1516,6 +2130,9 @@ export class WaterfallRenderer implements BaseRenderer {
     const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
     this.currentLayout = newLayout;
 
+    // 🎯 重新识别折叠组
+    this.collapsedGroups = this.identifyCollapsedGroups(newLayout.segments, this.swimlanes);
+
     // 清空并重新渲染
     this.svg.selectAll('*').remove();
     
@@ -1526,6 +2143,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // 渲染各个部分
     this.renderTimeAxis(mainGroup.timeAxisGroup, newLayout);
+    this.renderSwimlaneSeparators(mainGroup.nodesGroup, newLayout); // 🏊 重新绘制泳道分隔线
     this.renderSegmentNodes(mainGroup.nodesGroup, newLayout);
     this.renderConnections(mainGroup.connectionsGroup, newLayout);
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout);
