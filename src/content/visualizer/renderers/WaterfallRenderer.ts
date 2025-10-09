@@ -10,7 +10,7 @@ const logger = new Logger('WaterfallRenderer_v3');
  * 瀑布渲染器 v3 - 基于正确的70/30布局原则
  * 
  * 核心设计思路：
- * 1. 以5分钟为单位将时间分段
+ * 1. 以10分钟为单位将时间分段（避免条带过多导致压缩区域过窄）
  * 2. 根据屏幕宽度分配正常显示区域(70%)和压缩区域(30%)
  * 3. 观察窗口决定哪个时间段处于正常显示区域
  * 4. 时间轴比例与节点显示比例完全一致
@@ -47,13 +47,13 @@ interface ObservationWindow {
 }
 
 export class WaterfallRenderer implements BaseRenderer {
-  private readonly SEGMENT_DURATION = 5 * 60 * 1000; // 5分钟
+  private readonly SEGMENT_DURATION = 10 * 60 * 1000; // 10分钟 - 改为10分钟间隔，避免条带过多导致压缩区域过窄
   private readonly MAX_COMPRESSED_RATIO = 0.3; // 最大压缩区域占比30%
   private readonly NODE_WIDTHS = {
     full: 150,   // 全节点：图标 + 标题
     short: 120,  // 短节点：标题
     icon: 20,    // 图标节点：完整图标
-    dot: 8       // 圆点节点：小圆点（最小压缩级别）
+    dot: 10      // 圆点节点：小圆点（最小压缩级别）- 调整为10px以容纳点+间隙
   };
   private readonly NODE_HEIGHTS = {
     full: 40,
@@ -103,6 +103,9 @@ export class WaterfallRenderer implements BaseRenderer {
     // 清空容器
     this.svg.selectAll('*').remove();
     
+    // 🎨 添加SVG渐变和滤镜定义
+    this.addSVGDefinitions();
+    
     if (!nodes || nodes.length === 0) {
       logger.warn('没有节点数据可渲染');
       return;
@@ -144,22 +147,126 @@ export class WaterfallRenderer implements BaseRenderer {
     const layout = this.calculateSegmentLayout(validNodes, this.width);
     this.currentLayout = layout;
 
-    // 2. 创建SVG分组结构
+    // 2. 创建SVG分组
     const mainGroup = this.createSVGGroups(this.svg);
 
-    // 3. 渲染时间轴（与节点布局完全一致）
+    // 3. 渲染各个部分
     this.renderTimeAxis(mainGroup.timeAxisGroup, layout);
-
-    // 4. 渲染节点（按段渲染）
     this.renderSegmentNodes(mainGroup.nodesGroup, layout);
-
-    // 5. 渲染连接线
     this.renderConnections(mainGroup.connectionsGroup, layout);
-
-    // 6. 渲染观察窗口滑块
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout);
+    
+    // 4. 存储选项供后续使用
+    this.renderOptions = options;
+  }
 
-    console.log('🔥🔥🔥 WaterfallRenderer v3 渲染完成');
+  /**
+   * 🎨 添加SVG渐变和滤镜定义
+   */
+  private addSVGDefinitions(): void {
+    const defs = this.svg.append('defs');
+    
+    // 条带背景渐变 - 偶数行
+    const stripGradientEven = defs.append('linearGradient')
+      .attr('id', 'stripGradientEven')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%');
+    stripGradientEven.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#fafafa')
+      .attr('stop-opacity', 1);
+    stripGradientEven.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#f0f0f0')
+      .attr('stop-opacity', 1);
+    
+    // 条带背景渐变 - 奇数行
+    const stripGradientOdd = defs.append('linearGradient')
+      .attr('id', 'stripGradientOdd')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%');
+    stripGradientOdd.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#f8f8f8')
+      .attr('stop-opacity', 1);
+    stripGradientOdd.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#e8e8e8')
+      .attr('stop-opacity', 1);
+    
+    // 节点背景渐变
+    const nodeGradient = defs.append('linearGradient')
+      .attr('id', 'nodeGradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%');
+    nodeGradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#f8f8f8')
+      .attr('stop-opacity', 1);
+    nodeGradient.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#e8e8e8')
+      .attr('stop-opacity', 1);
+    
+    // 节点背景渐变 - 浅色版
+    const nodeGradientLight = defs.append('linearGradient')
+      .attr('id', 'nodeGradientLight')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%');
+    nodeGradientLight.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#fcfcfc')
+      .attr('stop-opacity', 1);
+    nodeGradientLight.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#eeeeee')
+      .attr('stop-opacity', 1);
+    
+    // 观察窗口滤镜 - 轻微阴影
+    const windowShadow = defs.append('filter')
+      .attr('id', 'windowShadow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+    windowShadow.append('feGaussianBlur')
+      .attr('in', 'SourceAlpha')
+      .attr('stdDeviation', 2);
+    windowShadow.append('feOffset')
+      .attr('dx', 0)
+      .attr('dy', 1)
+      .attr('result', 'offsetblur');
+    const windowMerge = windowShadow.append('feMerge');
+    windowMerge.append('feMergeNode');
+    windowMerge.append('feMergeNode')
+      .attr('in', 'SourceGraphic');
+    
+    // 节点阴影滤镜
+    const nodeShadow = defs.append('filter')
+      .attr('id', 'nodeShadow')
+      .attr('x', '-20%')
+      .attr('y', '-20%')
+      .attr('width', '140%')
+      .attr('height', '140%');
+    nodeShadow.append('feGaussianBlur')
+      .attr('in', 'SourceAlpha')
+      .attr('stdDeviation', 1);
+    nodeShadow.append('feOffset')
+      .attr('dx', 0)
+      .attr('dy', 0.5)
+      .attr('result', 'offsetblur');
+    const nodeMerge = nodeShadow.append('feMerge');
+    nodeMerge.append('feMergeNode');
+    nodeMerge.append('feMergeNode')
+      .attr('in', 'SourceGraphic');
   }
 
   /**
@@ -180,12 +287,12 @@ export class WaterfallRenderer implements BaseRenderer {
       // 首次调用：nodes是NavNode数组，需要创建时间段
       const navNodes = nodes as NavNode[];
       
-      // 1. 找到时间范围并对齐到5分钟边界
+      // 1. 找到时间范围并对齐到10分钟边界
       const times = navNodes.map(node => node.timestamp).sort((a, b) => b - a); // 最新的在前
       const maxTimeRaw = times[0];
       const minTimeRaw = times[times.length - 1];
       
-      // 🎯 对齐到5分钟整数边界
+      // 🎯 对齐到10分钟整数边界
       const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
       const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
 
@@ -404,15 +511,23 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('data-time', new Date(segment.endTime).toISOString())
         .attr('data-segment-index', segment.originalIndex);
       
-      // 竖向条带背景 - 覆盖整个高度
-      stripGroup.append('rect')
+      // 竖向条带背景 - 添加微妙的渐变和悬停效果
+      const stripBg = stripGroup.append('rect')
         .attr('class', 'strip-background')
         .attr('x', segment.startX)
         .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
         .attr('height', stripHeight)
-        .attr('fill', isEven ? '#f0f2f5' : '#ffffff')  // 基于原始索引交替灰白
-        .attr('opacity', 0.8);
+        .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
+        .attr('opacity', 0.9)
+        .style('transition', 'opacity 0.2s ease');
+      
+      // 添加悬停效果
+      stripBg.on('mouseenter', function(this: SVGRectElement) {
+        d3.select(this).attr('opacity', 1);
+      }).on('mouseleave', function(this: SVGRectElement) {
+        d3.select(this).attr('opacity', 0.9);
+      });
       
       // 添加节点分组（暂时为空，稍后渲染）
       const nodeGroup = stripGroup.append('g')
@@ -475,11 +590,11 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('stroke', '#999')
       .attr('stroke-width', 1);
 
-    // 时间标签在横线上方
+    // 时间标签在横线上方，远离观察窗口
     strip.append('text')
       .attr('class', 'time-label')
       .attr('x', segment.startX + segment.allocatedWidth / 2)
-      .attr('y', timeAxisY - 8) // 横线上方
+      .attr('y', timeAxisY - 20) // 增加距离，从-8改为-20
       .attr('text-anchor', 'middle')
       .attr('font-size', '11px')
       .attr('font-weight', 'bold')
@@ -528,8 +643,26 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染单个节点
    */
   private renderSingleNode(group: any, node: NavNode, segment: TimeSegment, index: number): void {
-    const width = this.NODE_WIDTHS[segment.displayMode];
-    const height = this.NODE_HEIGHTS[segment.displayMode];
+    // 🎯 对于dot模式，使用动态宽度；其他模式使用固定宽度
+    let width: number;
+    let height: number;
+    
+    if (segment.displayMode === 'dot') {
+      // dot模式：动态调整大小以适应条带宽度
+      const availableWidth = segment.allocatedWidth;
+      const maxDotSize = 10;
+      const minDotSize = 4;
+      const horizontalGap = 2;
+      
+      // 根据条带宽度动态调整点的大小
+      const dotSize = Math.max(minDotSize, Math.min(maxDotSize, availableWidth - horizontalGap * 2));
+      width = dotSize;
+      height = dotSize;
+    } else {
+      // 其他模式：使用预定义的固定宽度
+      width = this.NODE_WIDTHS[segment.displayMode];
+      height = this.NODE_HEIGHTS[segment.displayMode];
+    }
     
     const timeAxisY = 80; // 时间轴横线的Y坐标
     const startGap = 15; // 时间轴下方的起始间隔
@@ -576,14 +709,32 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染完整节点 - V2样式：图标 + 标题
    */
   private renderFullNode(group: any, node: NavNode, width: number, height: number): void {
-    // 背景矩形
-    group.append('rect')
+    // 背景矩形 - 添加渐变和阴影效果
+    const bgRect = group.append('rect')
       .attr('width', width)
       .attr('height', height)
-      .attr('rx', 3)
-      .attr('fill', '#f0f0f0')
-      .attr('stroke', '#ddd')
-      .style('cursor', 'pointer');
+      .attr('rx', 4)
+      .attr('fill', 'url(#nodeGradient)')
+      .attr('stroke', '#d0d0d0')
+      .attr('stroke-width', 1)
+      .attr('filter', 'url(#nodeShadow)')
+      .style('cursor', 'pointer')
+      .attr('opacity', 0.95);
+    
+    // 悬停效果
+    bgRect.on('mouseenter', function(this: SVGRectElement) {
+      d3.select(this)
+        .transition()
+        .duration(200)
+        .attr('opacity', 1)
+        .attr('stroke', '#aaa');
+    }).on('mouseleave', function(this: SVGRectElement) {
+      d3.select(this)
+        .transition()
+        .duration(200)
+        .attr('opacity', 0.95)
+        .attr('stroke', '#d0d0d0');
+    });
 
     // 🎯 图标（favicon）
     const iconSize = 16;
@@ -667,13 +818,30 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染简短节点 - V2样式：只显示标题
    */
   private renderShortNode(group: any, node: NavNode, width: number, height: number): void {
-    group.append('rect')
+    const bgRect = group.append('rect')
       .attr('width', width)
       .attr('height', height)
-      .attr('rx', 2)
-      .attr('fill', '#e8e8e8')
-      .attr('stroke', '#ccc')
+      .attr('rx', 3)
+      .attr('fill', 'url(#nodeGradientLight)')
+      .attr('stroke', '#d8d8d8')
+      .attr('stroke-width', 1)
+      .attr('opacity', 0.9)
       .style('cursor', 'pointer');
+    
+    // 悬停效果
+    bgRect.on('mouseenter', function(this: SVGRectElement) {
+      d3.select(this)
+        .transition()
+        .duration(150)
+        .attr('opacity', 1)
+        .attr('stroke', '#bbb');
+    }).on('mouseleave', function(this: SVGRectElement) {
+      d3.select(this)
+        .transition()
+        .duration(150)
+        .attr('opacity', 0.9)
+        .attr('stroke', '#d8d8d8');
+    });
 
     const label = node.title || this.getNodeLabel(node);
     const maxChars = Math.floor(width / 5.5); // 大约5.5px每个字符
@@ -741,17 +909,104 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   /**
-   * 渲染圆点节点 - 压缩的小圆点
+   * 渲染圆点节点 - 最小化显示，使用彩色点
+   * 🎯 点的大小已经在 renderSingleNode 中动态计算，这里直接使用传入的 width/height
    */
   private renderDotNode(group: any, node: NavNode, width: number, height: number): void {
     const radius = Math.min(width, height) / 2;
     
-    group.append('circle')
+    // 🎨 根据标签页ID或URL生成彩色
+    const nodeColor = this.getNodeColor(node);
+    const hoverColor = this.adjustBrightness(nodeColor, -20); // 悬停时变深
+    
+    const circle = group.append('circle')
       .attr('cx', width / 2)
       .attr('cy', height / 2)
       .attr('r', radius)
-      .attr('fill', '#999')
-      .attr('stroke', 'none');
+      .attr('fill', nodeColor)
+      .attr('stroke', this.adjustBrightness(nodeColor, -30))
+      .attr('stroke-width', 0.5)
+      .attr('opacity', 0.85)
+      .style('cursor', 'pointer');
+    
+    // 悬停缩放效果
+    circle.on('mouseenter', function(this: SVGCircleElement) {
+      d3.select(this)
+        .transition()
+        .duration(150)
+        .attr('r', radius * 1.3)
+        .attr('opacity', 1)
+        .attr('fill', hoverColor);
+    }).on('mouseleave', function(this: SVGCircleElement) {
+      d3.select(this)
+        .transition()
+        .duration(150)
+        .attr('r', radius)
+        .attr('opacity', 0.85)
+        .attr('fill', nodeColor);
+    });
+  }
+
+  /**
+   * 🎨 根据节点生成颜色（基于tabId或URL哈希）
+   */
+  private getNodeColor(node: NavNode): string {
+    // 预定义的柔和色板
+    const colorPalette = [
+      '#FF6B6B', // 珊瑚红
+      '#4ECDC4', // 青绿色
+      '#45B7D1', // 天蓝色
+      '#FFA07A', // 浅橙色
+      '#98D8C8', // 薄荷绿
+      '#F7DC6F', // 柔和黄
+      '#BB8FCE', // 淡紫色
+      '#85C1E2', // 淡蓝色
+      '#F8B4D9', // 粉红色
+      '#A8E6CF', // 浅绿色
+      '#FFD3B6', // 杏色
+      '#FFAAA5', // 浅珊瑚色
+      '#A0C4FF', // 淡蓝色
+      '#BDB2FF', // 薰衣草色
+      '#FFC6FF', // 淡粉色
+    ];
+    
+    // 使用 tabId 或 URL 生成索引
+    let hash = 0;
+    if (node.tabId) {
+      hash = node.tabId;
+    } else if (node.url) {
+      for (let i = 0; i < node.url.length; i++) {
+        hash = ((hash << 5) - hash) + node.url.charCodeAt(i);
+        hash = hash & hash;
+      }
+    }
+    
+    const index = Math.abs(hash) % colorPalette.length;
+    return colorPalette[index];
+  }
+
+  /**
+   * 🎨 调整颜色亮度
+   */
+  private adjustBrightness(hex: string, percent: number): string {
+    // 移除 # 号
+    hex = hex.replace('#', '');
+    
+    // 转换为 RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // 调整亮度
+    const newR = Math.max(0, Math.min(255, r + percent));
+    const newG = Math.max(0, Math.min(255, g + percent));
+    const newB = Math.max(0, Math.min(255, b + percent));
+    
+    // 转换回 hex
+    return '#' + 
+      newR.toString(16).padStart(2, '0') +
+      newG.toString(16).padStart(2, '0') +
+      newB.toString(16).padStart(2, '0');
   }
 
   /**
@@ -849,7 +1104,7 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('ry', sliderHeight / 2)
         .attr('fill', 'rgba(0, 123, 255, 0.1)')
         .attr('stroke', '#007bff')
-        .attr('stroke-width', 1.5)
+        .attr('stroke-width', 1)
         .attr('stroke-dasharray', '4,4')
         .style('cursor', 'default');
 
@@ -885,7 +1140,7 @@ export class WaterfallRenderer implements BaseRenderer {
                       layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].allocatedWidth;
     const windowWidth = windowEndX - windowStartX;
 
-    // 可拖动的观察窗口滑块 - 在时间轴上
+    // 可拖动的观察窗口滑块 - 现代化设计
     const observationRect = group.append('rect')
       .attr('class', 'observation-slider')
       .attr('x', windowStartX)
@@ -894,20 +1149,62 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', sliderHeight)
       .attr('rx', sliderHeight / 2)
       .attr('ry', sliderHeight / 2)
-      .attr('fill', 'rgba(0, 123, 255, 0.2)')
-      .attr('stroke', '#007bff')
-      .attr('stroke-width', 2)
-      .style('cursor', 'grab');
+      .attr('fill', 'url(#observationGradient)')
+      .attr('stroke', '#4A90E2')
+      .attr('stroke-width', 1)
+      .attr('filter', 'url(#observationShadow)')
+      .style('cursor', 'grab')
+      .style('transition', 'all 0.2s ease');
 
-    // 标签
-    const observationText = group.append('text')
-      .attr('x', windowStartX + windowWidth / 2)
-      .attr('y', sliderY + sliderHeight / 2 + 4)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '10px')
-      .attr('fill', '#007bff')
-      .attr('font-weight', 'bold')
-      .text('观察窗口');
+    // 添加渐变定义
+    const defs = group.append('defs');
+    
+    // 观察窗口渐变
+    const gradient = defs.append('linearGradient')
+      .attr('id', 'observationGradient')
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%');
+    
+    gradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#E3F2FD')
+      .attr('stop-opacity', 0.4);
+    
+    gradient.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#BBDEFB')
+      .attr('stop-opacity', 0.6);
+    
+    // 阴影效果
+    const shadow = defs.append('filter')
+      .attr('id', 'observationShadow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+    
+    shadow.append('feGaussianBlur')
+      .attr('in', 'SourceAlpha')
+      .attr('stdDeviation', 2);
+    
+    shadow.append('feOffset')
+      .attr('dx', 0)
+      .attr('dy', 1)
+      .attr('result', 'offsetblur');
+    
+    shadow.append('feComponentTransfer')
+      .append('feFuncA')
+      .attr('type', 'linear')
+      .attr('slope', 0.3);
+    
+    const feMerge = shadow.append('feMerge');
+    feMerge.append('feMergeNode');
+    feMerge.append('feMergeNode')
+      .attr('in', 'SourceGraphic');
+
+    // 去掉文字标签，保持简洁
 
     this.observationWindow = {
       centerSegmentIndex: Math.floor(layout.normalDisplaySegments.length / 2),
@@ -916,14 +1213,14 @@ export class WaterfallRenderer implements BaseRenderer {
       segments: layout.normalDisplaySegments
     };
 
-    // 🎯 添加拖动功能
-    this.setupObservationWindowDrag(observationRect, observationText, layout);
+    // 🎯 添加拖动功能（不再需要text参数）
+    this.setupObservationWindowDrag(observationRect, null, layout);
   }
 
   /**
    * 设置观察窗口拖动功能
    */
-  private setupObservationWindowDrag(rect: any, text: any, layout: LayoutResult): void {
+  private setupObservationWindowDrag(rect: any, text: any | null, layout: LayoutResult): void {
     const self = this;
     let isDragging = false;
     let startX = 0;
@@ -1038,15 +1335,15 @@ export class WaterfallRenderer implements BaseRenderer {
         
         const clampedX = Math.max(minX, Math.min(maxX, targetX));
         
-        // 视觉反馈
+        // 视觉反馈 - 保持 1px 边框
         if (self.lastDragSnapped) {
-          rect.style('cursor', 'grabbing').attr('stroke-width', 3);
+          rect.style('cursor', 'grabbing').attr('stroke-width', 1.5);
         } else {
-          rect.attr('stroke-width', 2);
+          rect.attr('stroke-width', 1);
         }
         
         rect.attr('x', clampedX);
-        text.attr('x', clampedX + observationWindowWidth / 2);
+        // text 参数已移除，不再更新文字位置
         
         // 🎯✨ 拖动过程中实时更新条带布局（基于视觉位置）
         self.updateSegmentLayoutDuringDrag(clampedX, observationWindowWidth);
@@ -1056,7 +1353,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .on('end', function(event: any) {
         isDragging = false;
         rect.style('cursor', 'grab')
-            .attr('stroke-width', 2); // 恢复正常边框
+            .attr('stroke-width', 1); // 恢复正常边框
         
         // 🎯 根据最终位置计算新的观察窗口起始索引（基于覆盖比例）
         const finalX = parseFloat(rect.attr('x'));
@@ -1130,6 +1427,10 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // 清空并重新渲染
     this.svg.selectAll('*').remove();
+    
+    // 🎨 重新添加 SVG 定义
+    this.addSVGDefinitions();
+    
     const mainGroup = this.createSVGGroups(this.svg);
 
     // 渲染各个部分
@@ -1215,10 +1516,13 @@ export class WaterfallRenderer implements BaseRenderer {
       const width = layoutSegment.allocatedWidth;
       const startX = layoutSegment.startX;
       
-      // 更新条带背景宽度和位置
+      // 🎨 更新条带背景宽度和位置，保持原有的渐变样式
+      const isEven = segment.originalIndex % 2 === 0;
       strip.select('.strip-background')
         .attr('x', startX)
-        .attr('width', width);
+        .attr('width', width)
+        .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
+        .attr('opacity', 0.9);
       
       // 更新时间标签
       const timeLabel = strip.select('.time-label');
@@ -1310,16 +1614,23 @@ export class WaterfallRenderer implements BaseRenderer {
     
     const timeAxisY = 80;
     const startGap = 15;
-    const dotSize = 8;
+    
+    // 🎯 动态计算点的大小，确保不超过条带宽度
+    const availableWidth = layoutSegment.allocatedWidth;
+    const maxDotSize = 8;
+    const minDotSize = 4;
     const horizontalGap = 2;
     const verticalGap = 2;
     
+    // 根据条带宽度动态调整点的大小
+    const dotSize = Math.max(minDotSize, Math.min(maxDotSize, availableWidth - horizontalGap * 2));
+    
     // 🎯 横向排列dot节点（简单布局）
-    const itemsPerRow = Math.floor(layoutSegment.allocatedWidth / (dotSize + horizontalGap));
+    const itemsPerRow = Math.max(1, Math.floor(availableWidth / (dotSize + horizontalGap)));
     
     segment.nodes.forEach((node, index) => {
-      const row = Math.floor(index / Math.max(1, itemsPerRow));
-      const col = index % Math.max(1, itemsPerRow);
+      const row = Math.floor(index / itemsPerRow);
+      const col = index % itemsPerRow;
       
       const nodeX = layoutSegment.startX + (col * (dotSize + horizontalGap));
       const nodeY = timeAxisY + startGap + (row * (dotSize + verticalGap));
@@ -1328,12 +1639,41 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('class', 'navigation-node')
         .attr('transform', `translate(${nodeX}, ${nodeY})`);
       
-      dotGroup.append('circle')
+      // 🎨 使用彩色点渲染
+      const nodeColor = this.getNodeColor(node);
+      const hoverColor = this.adjustBrightness(nodeColor, -20);
+      
+      const circle = dotGroup.append('circle')
         .attr('cx', dotSize / 2)
         .attr('cy', dotSize / 2)
         .attr('r', dotSize / 2)
-        .attr('fill', '#999')
-        .attr('stroke', 'none');
+        .attr('fill', nodeColor)
+        .attr('stroke', this.adjustBrightness(nodeColor, -30))
+        .attr('stroke-width', 0.5)
+        .attr('opacity', 0.85)
+        .style('cursor', 'pointer');
+      
+      // 悬停效果
+      circle.on('mouseenter', function(this: SVGCircleElement) {
+        d3.select(this)
+          .transition()
+          .duration(150)
+          .attr('r', dotSize / 2 * 1.3)
+          .attr('opacity', 1)
+          .attr('fill', hoverColor);
+      }).on('mouseleave', function(this: SVGCircleElement) {
+        d3.select(this)
+          .transition()
+          .duration(150)
+          .attr('r', dotSize / 2)
+          .attr('opacity', 0.85)
+          .attr('fill', nodeColor);
+      });
+      
+      // 点击事件
+      dotGroup.on('click', () => {
+        this.visualizer.showNodeDetails(node);
+      });
     });
   }
 
