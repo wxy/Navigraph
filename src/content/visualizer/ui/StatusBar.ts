@@ -27,9 +27,108 @@ export class StatusBar {
       return;
     }
 
+    // 为"已隐藏"元素添加点击事件
+    this.setupFilteredClickHandler();
+    
+    // 为"视图"元素添加点击事件
+    this.setupViewClickHandler();
+    
+    // 为"日期"元素添加点击事件
+    this.setupDateClickHandler();
+
     // 不需要修改 HTML 结构，因为元素已经存在
     // 仅需记录初始化成功
     logger.log(_('status_bar_initialized', '状态栏已初始化'));
+  }
+
+  /**
+   * 设置"已隐藏"元素的点击处理
+   */
+  private setupFilteredClickHandler(): void {
+    const filteredElement = document.getElementById("status-filtered");
+    if (!filteredElement) {
+      logger.warn(_('status_filtered_element_not_found', '已隐藏元素未找到'));
+      return;
+    }
+
+    // 添加点击样式
+    filteredElement.style.cursor = 'pointer';
+    filteredElement.style.userSelect = 'none';
+
+    // 添加点击事件监听器
+    filteredElement.addEventListener('click', () => {
+      logger.log(_('status_filtered_clicked', '已隐藏状态被点击'));
+      
+      // 切换 closed 筛选器（显示/隐藏已关闭页面）
+      const visualizer = this.visualizer as any;
+      if (visualizer.toggleClosedFilter) {
+        visualizer.toggleClosedFilter();
+      } else {
+        logger.warn(_('status_filtered_toggle_unavailable', '切换筛选器功能不可用'));
+      }
+    });
+
+    logger.log(_('status_filtered_click_handler_setup', '已隐藏元素点击处理器已设置'));
+  }
+
+  /**
+   * 设置"视图"元素的点击处理
+   */
+  private setupViewClickHandler(): void {
+    const viewElement = document.getElementById("status-view");
+    if (!viewElement) {
+      logger.warn(_('status_view_element_not_found', '视图元素未找到'));
+      return;
+    }
+
+    // 添加点击样式
+    viewElement.style.cursor = 'pointer';
+    viewElement.style.userSelect = 'none';
+
+    // 添加点击事件监听器
+    viewElement.addEventListener('click', () => {
+      logger.log(_('status_view_clicked', '视图状态被点击'));
+      
+      // 切换视图
+      const visualizer = this.visualizer as any;
+      if (visualizer.toggleView) {
+        visualizer.toggleView();
+      } else {
+        logger.warn(_('status_view_toggle_unavailable', '切换视图功能不可用'));
+      }
+    });
+
+    logger.log(_('status_view_click_handler_setup', '视图元素点击处理器已设置'));
+  }
+
+  /**
+   * 设置"日期"元素的点击处理
+   */
+  private setupDateClickHandler(): void {
+    const dateElement = document.getElementById("status-date");
+    if (!dateElement) {
+      logger.warn(_('status_date_element_not_found', '日期元素未找到'));
+      return;
+    }
+
+    // 添加点击样式
+    dateElement.style.cursor = 'pointer';
+    dateElement.style.userSelect = 'none';
+
+    // 添加点击事件监听器
+    dateElement.addEventListener('click', () => {
+      logger.log(_('status_date_clicked', '日期状态被点击'));
+      
+      // 切换到当天
+      const visualizer = this.visualizer as any;
+      if (visualizer.switchToToday) {
+        visualizer.switchToToday();
+      } else {
+        logger.warn(_('status_date_switch_unavailable', '切换到当天功能不可用'));
+      }
+    });
+
+    logger.log(_('status_date_click_handler_setup', '日期元素点击处理器已设置'));
   }
 
   /**
@@ -72,6 +171,13 @@ export class StatusBar {
       if (filteredElement) {
         const filteredCount = Math.max(0, allNodesCount - nodeCount);
         filteredElement.textContent = _('content_hidden_count', '已隐藏: {0}', filteredCount.toString());
+        
+        // 根据隐藏数量设置文本颜色
+        if (filteredCount > 0) {
+          filteredElement.style.color = '#d32f2f'; // 红色 - 有隐藏节点
+        } else {
+          filteredElement.style.color = 'inherit'; // 默认颜色 - 无隐藏节点
+        }
       }
 
       // 更新会话日期
