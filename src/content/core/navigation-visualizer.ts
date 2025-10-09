@@ -229,6 +229,23 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   /**
+   * 获取观察窗口时间范围（仅瀑布视图）
+   * @returns 时间范围字符串，如 "14:20 - 14:50"，如果不是瀑布视图或无数据则返回 null
+   */
+  public getObservationWindowTimeRange(): string | null {
+    if (this.currentView !== 'waterfall') {
+      return null;
+    }
+
+    const currentRenderer = this.renderingManager.getCurrentRenderer();
+    if (currentRenderer && typeof currentRenderer.getObservationWindowTimeRange === 'function') {
+      return currentRenderer.getObservationWindowTimeRange();
+    }
+
+    return null;
+  }
+
+  /**
    * 应用全局配置
    */
   applyGlobalConfig() {

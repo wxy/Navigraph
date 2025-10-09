@@ -2,6 +2,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
 import { BaseRenderer } from './BaseRenderer.js';
+import { saveViewState, getViewState } from '../../utils/state-manager.js';
 
 const d3 = window.d3;
 const logger = new Logger('WaterfallRenderer_v3');
@@ -98,6 +99,41 @@ export class WaterfallRenderer implements BaseRenderer {
     this.container = null;
   }
 
+  /**
+   * 获取当前观察窗口的时间范围信息
+   * @returns 时间范围字符串，格式为 "HH:MM - HH:MM"，如果无法获取则返回 null
+   */
+  getObservationWindowTimeRange(): string | null {
+    if (!this.allSegments || this.allSegments.length === 0) {
+      return null;
+    }
+
+    if (!this.currentLayout || !this.currentLayout.normalDisplaySegments || this.currentLayout.normalDisplaySegments.length === 0) {
+      return null;
+    }
+
+    // 获取正常显示区域的第一个和最后一个时间段
+    const normalSegments = this.currentLayout.normalDisplaySegments;
+    const firstSegment = normalSegments[0]; // 最新的时间段
+    const lastSegment = normalSegments[normalSegments.length - 1]; // 最旧的时间段
+
+    // 格式化时间为 HH:MM
+    const formatTime = (timestamp: number): string => {
+      const date = new Date(timestamp);
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    };
+
+    // 因为时间段是从新到旧排序的，且时间标签显示的是 endTime：
+    // - 观察窗口的起始时间（最旧）= 最后一个段的 endTime（因为标签显示的就是 endTime）
+    // - 观察窗口的结束时间（最新）= 第一个段的 endTime
+    const startTime = formatTime(lastSegment.endTime);   // 最旧条带的标签时间
+    const endTime = formatTime(firstSegment.endTime);     // 最新条带的标签时间
+
+    return `${startTime} - ${endTime}`;
+  }
+
   render(nodes: NavNode[], edges: NavLink[], options?: any): void {
     console.log('🔥🔥🔥 WaterfallRenderer v3 开始渲染，节点数量:', nodes?.length || 0);
     
@@ -144,13 +180,48 @@ export class WaterfallRenderer implements BaseRenderer {
 
     console.log(`✅ 使用 ${validNodes.length} 个有效节点进行渲染`);
 
-    // 🔄 恢复观察窗口位置（如果有保存的位置且要求恢复变换）
-    const savedObservationIndex = this.visualizer.waterfallObservationIndex || 0;
-    const useRestoredPosition = options?.restoreTransform && savedObservationIndex > 0;
+    // 🔄 恢复观察窗口位置
+    // 优先级：内存中的值 > localStorage 中的值 > 默认值 0
+    let savedObservationIndex = this.visualizer.waterfallObservationIndex;
     
-    if (useRestoredPosition) {
+    console.log(`🔍 开始恢复观察窗口位置检查:`, {
+      tabId: this.visualizer.tabId,
+      memoryValue: savedObservationIndex,
+      restoreTransform: options?.restoreTransform
+    });
+    
+    // 如果内存中没有值，尝试从 localStorage 恢复
+    if (savedObservationIndex === undefined && options?.restoreTransform) {
+      const savedState = getViewState(this.visualizer.tabId || '', 'waterfall');
+      console.log(`📂 从 localStorage 读取的状态:`, savedState);
+      
+      if (savedState && savedState.waterfallObservationIndex !== undefined) {
+        savedObservationIndex = savedState.waterfallObservationIndex;
+        console.log(`💾 从 localStorage 恢复观察窗口索引: ${savedObservationIndex}`);
+        // 同步到内存
+        this.visualizer.waterfallObservationIndex = savedObservationIndex;
+      } else {
+        console.log(`⚠️ localStorage 中没有保存的观察窗口索引`);
+      }
+    }
+    
+    const useRestoredPosition = options?.restoreTransform && savedObservationIndex !== undefined;
+    
+    console.log(`📍 观察窗口恢复检查:`, {
+      savedObservationIndex,
+      restoreTransform: options?.restoreTransform,
+      useRestoredPosition
+    });
+    
+    if (useRestoredPosition && savedObservationIndex !== 0) {
       console.log(`🔄 恢复观察窗口位置，起始索引: ${savedObservationIndex}`);
-      this.observationStartIndex = savedObservationIndex;
+      this.observationStartIndex = savedObservationIndex!;
+    } else if (savedObservationIndex === 0 && options?.restoreTransform) {
+      console.log(`🔄 恢复观察窗口到起始位置（索引: 0）`);
+      this.observationStartIndex = 0;
+    } else {
+      console.log(`🆕 使用默认观察窗口位置（起始索引: 0）`);
+      this.observationStartIndex = 0;
     }
 
     // 1. 计算时间分段和布局（使用保存的观察窗口位置）
@@ -1424,10 +1495,22 @@ export class WaterfallRenderer implements BaseRenderer {
     // 🎯 更新当前观察窗口起始索引
     this.observationStartIndex = observationStartIndex;
     
-    // 💾 保存观察窗口索引到 visualizer
-    if (this.visualizer.waterfallObservationIndex !== undefined) {
-      this.visualizer.waterfallObservationIndex = observationStartIndex;
-    }
+    // 💾 保存观察窗口索引到内存和 localStorage
+    this.visualizer.waterfallObservationIndex = observationStartIndex;
+    
+    // 保存到 localStorage
+    const tabId = this.visualizer.tabId || '';
+    console.log(`💾 准备保存观察窗口索引到 localStorage:`, {
+      tabId,
+      observationStartIndex
+    });
+    
+    saveViewState(tabId, {
+      viewType: 'waterfall',
+      waterfallObservationIndex: observationStartIndex
+    });
+    
+    console.log(`✅ 已保存观察窗口索引到 localStorage`);
     
     // 重新计算布局
     const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
@@ -1449,6 +1532,9 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 重新设置滚轮事件
     this.setupWheelScroll();
+    
+    // 更新状态栏以显示新的时间范围
+    this.visualizer.updateStatusBar();
   }
 
   /**
@@ -1826,10 +1912,8 @@ export class WaterfallRenderer implements BaseRenderer {
     // 更新当前索引（用于下次对比）
     this.observationStartIndex = newStartIndex;
     
-    // 💾 保存观察窗口索引到 visualizer
-    if (this.visualizer.waterfallObservationIndex !== undefined) {
-      this.visualizer.waterfallObservationIndex = newStartIndex;
-    }
+    // 💾 保存观察窗口索引到内存（滚动停止后会保存到 localStorage）
+    this.visualizer.waterfallObservationIndex = newStartIndex;
     
     if (!this.currentLayout) return;
     
@@ -1859,6 +1943,9 @@ export class WaterfallRenderer implements BaseRenderer {
     } else {
       console.warn('⚠️ 未找到观察窗口滑块 .observation-slider');
     }
+    
+    // 🎯 实时更新状态栏显示的时间范围
+    this.visualizer.updateStatusBar();
   }
 
   /**

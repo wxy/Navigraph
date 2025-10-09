@@ -117,8 +117,14 @@ export class StatusBar {
           const zoom = visualizer.currentTransform?.k || 1;
           zoomElement.textContent = _('content_zoom_label', '缩放: {0}%', (100 * zoom).toFixed(0));
         } else {
-          // 瀑布视图显示 N/A
-          zoomElement.textContent = _('content_zoom_na', '缩放: N/A');
+          // 瀑布视图显示观察窗口时间范围
+          const timeRange = visualizer.getObservationWindowTimeRange?.();
+          if (timeRange) {
+            zoomElement.textContent = _('content_observation_time_label', '查看: {0}', timeRange);
+          } else {
+            // 默认占位显示
+            zoomElement.textContent = _('content_observation_time_placeholder', '查看: -');
+          }
         }
         zoomElement.style.display = "";
       }
