@@ -428,6 +428,11 @@
   fill: var(--svg-text);
 }
 
+/* 🎯 成组标记文字始终为白色，不受主题影响 */
+svg text.group-badge-text {
+  fill: #fff !important;
+}
+
 /* 确保 SVG 背景正确 */
 [data-theme="dark"] svg {
   background-color: var(--svg-background);
