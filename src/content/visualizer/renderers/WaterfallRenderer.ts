@@ -278,7 +278,7 @@ export class WaterfallRenderer implements BaseRenderer {
     this.renderTimeAxis(mainGroup.timeAxisGroup, layout);
     this.renderSwimlaneSeparators(mainGroup.nodesGroup, layout); // 绘制泳道分隔线
     this.renderSegmentNodes(mainGroup.nodesGroup, layout);
-    this.renderConnections(mainGroup.connectionsGroup, layout);
+    // this.renderConnections(mainGroup.connectionsGroup, layout); // 已禁用：泳道布局下连接线会造成视觉混乱
     this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout);
     
     // 6. 设置滚轮事件来滚动观察窗口
@@ -1017,18 +1017,19 @@ export class WaterfallRenderer implements BaseRenderer {
     
     badgeGroup.append('path')
       .attr('d', path)
-      .attr('fill', '#4a90e2')
-      .attr('opacity', 0.92)
-      .attr('stroke', 'rgba(255,255,255,0.3)') // 添加微妙的高光边框
+      .attr('fill', '#2c2c2c') // 深黑色背景
+      .attr('opacity', 0.95)
+      .attr('stroke', 'rgba(255,255,255,0.2)') // 微妙的白色边框
       .attr('stroke-width', 0.5);
     
-    // 🎯 文字：垂直居中
+    // 🎯 文字：垂直居中，白色文字
     badgeGroup.append('text')
+      .attr('class', 'group-badge-text') // 添加特定的CSS类
       .attr('x', badgeWidth / 2)
       .attr('y', nodeHeight / 2)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
-      .attr('fill', '#fff')
+      .attr('fill', '#fff') // 白色文字，与深黑背景形成最佳对比
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .text(badgeText)
@@ -1040,13 +1041,13 @@ export class WaterfallRenderer implements BaseRenderer {
         .transition()
         .duration(200)
         .attr('opacity', 1)
-        .attr('fill', '#5aa2f0'); // 稍微亮一点的蓝色
+        .attr('fill', '#1a1a1a'); // 悬停时更深的黑色
     }).on('mouseleave', function(this: SVGGElement) {
       d3.select(this).select('path')
         .transition()
         .duration(200)
-        .attr('opacity', 0.92)
-        .attr('fill', '#4a90e2');
+        .attr('opacity', 0.95)
+        .attr('fill', '#2c2c2c'); // 回到原来的深黑色
     });
     
     // 点击事件 - 显示/隐藏抽屉
@@ -1408,13 +1409,31 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染完整节点 - V2样式：图标 + 标题
    */
   private renderFullNode(group: any, node: NavNode, width: number, height: number): void {
-    // 背景矩形 - 取消阴影效果，保持简洁
+    // � 添加裁剪路径，防止文字溢出
+    const clipId = `node-clip-${Math.random().toString(36).substr(2, 9)}`;
+    const defs = group.append('defs');
+    defs.append('clipPath')
+      .attr('id', clipId)
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('rx', 4); // 与节点圆角一致
+    
+    // 应用裁剪路径到整个节点组
+    group.attr('clip-path', `url(#${clipId})`);
+    
+    // �🎨 根据导航类型获取颜色
+    const nodeColor = this.getNodeColor(node);
+    const strokeColor = this.adjustBrightness(nodeColor, -30);
+    const hoverColor = this.adjustBrightness(nodeColor, -20);
+    
+    // 背景矩形
     const bgRect = group.append('rect')
       .attr('width', width)
       .attr('height', height)
       .attr('rx', 4)
-      .attr('fill', 'url(#nodeGradient)')
-      .attr('stroke', '#d0d0d0')
+      .attr('fill', nodeColor)
+      .attr('stroke', strokeColor)
       .attr('stroke-width', 1)
       .style('cursor', 'pointer')
       .attr('opacity', 0.95);
@@ -1424,14 +1443,14 @@ export class WaterfallRenderer implements BaseRenderer {
       d3.select(this)
         .transition()
         .duration(200)
-        .attr('opacity', 1)
-        .attr('stroke', '#aaa');
+        .attr('fill', hoverColor)
+        .attr('opacity', 1);
     }).on('mouseleave', function(this: SVGRectElement) {
       d3.select(this)
         .transition()
         .duration(200)
-        .attr('opacity', 0.95)
-        .attr('stroke', '#d0d0d0');
+        .attr('fill', nodeColor)
+        .attr('opacity', 0.95);
     });
 
     // 🎯 图标（favicon）
@@ -1475,14 +1494,17 @@ export class WaterfallRenderer implements BaseRenderer {
     // 🎯 标题文本（图标右侧）
     const title = node.title || this.getNodeLabel(node);
     const textX = iconX + iconSize + 4; // 图标 + 间隔
-    const textWidth = width - textX - 6; // 剩余宽度
+    const textWidth = width - textX - 8; // 剩余宽度，留更多右边距
+    
+    // 🎯 更精确的字符数计算：11px字体大约每个字符6.5px宽度
+    const maxChars = Math.max(1, Math.floor(textWidth / 6.5));
     
     group.append('text')
       .attr('x', textX)
       .attr('y', height / 2 + 4)
       .attr('font-size', '11px')
       .attr('fill', '#333')
-      .text(this.truncateText(title, Math.floor(textWidth / 6))) // 大约6px每个字符
+      .text(this.truncateText(title, maxChars))
       .style('pointer-events', 'none');
     
     // 🎯 添加点击事件
@@ -1516,12 +1538,30 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染简短节点 - V2样式：只显示标题
    */
   private renderShortNode(group: any, node: NavNode, width: number, height: number): void {
+    // � 添加裁剪路径，防止文字溢出
+    const clipId = `short-clip-${Math.random().toString(36).substr(2, 9)}`;
+    const defs = group.append('defs');
+    defs.append('clipPath')
+      .attr('id', clipId)
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('rx', 3); // 与短节点圆角一致
+    
+    // 应用裁剪路径到整个节点组
+    group.attr('clip-path', `url(#${clipId})`);
+    
+    // �🎨 根据导航类型获取颜色
+    const nodeColor = this.getNodeColor(node);
+    const strokeColor = this.adjustBrightness(nodeColor, -30);
+    const hoverColor = this.adjustBrightness(nodeColor, -20);
+    
     const bgRect = group.append('rect')
       .attr('width', width)
       .attr('height', height)
       .attr('rx', 3)
-      .attr('fill', 'url(#nodeGradientLight)')
-      .attr('stroke', '#d8d8d8')
+      .attr('fill', nodeColor)
+      .attr('stroke', strokeColor)
       .attr('stroke-width', 1)
       .attr('opacity', 0.9)
       .style('cursor', 'pointer');
@@ -1531,18 +1571,19 @@ export class WaterfallRenderer implements BaseRenderer {
       d3.select(this)
         .transition()
         .duration(150)
-        .attr('opacity', 1)
-        .attr('stroke', '#bbb');
+        .attr('fill', hoverColor)
+        .attr('opacity', 1);
     }).on('mouseleave', function(this: SVGRectElement) {
       d3.select(this)
         .transition()
         .duration(150)
-        .attr('opacity', 0.9)
-        .attr('stroke', '#d8d8d8');
+        .attr('fill', nodeColor)
+        .attr('opacity', 0.9);
     });
 
     const label = node.title || this.getNodeLabel(node);
-    const maxChars = Math.floor(width / 5.5); // 大约5.5px每个字符
+    // 🎯 更精确的字符数计算：9px字体大约每个字符5px宽度，留边距
+    const maxChars = Math.max(1, Math.floor((width - 8) / 5));
     
     group.append('text')
       .attr('x', width / 2)
@@ -1567,6 +1608,10 @@ export class WaterfallRenderer implements BaseRenderer {
     const iconSize = Math.min(width, height) - 2;
     
     if (node.favicon) {
+      // 先获取颜色，避免在回调中的 this 绑定问题
+      const nodeColor = this.getNodeColor(node);
+      const strokeColor = this.adjustBrightness(nodeColor, -30);
+      
       group.append('image')
         .attr('x', (width - iconSize) / 2)
         .attr('y', (height - iconSize) / 2)
@@ -1576,25 +1621,28 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('preserveAspectRatio', 'xMidYMid meet')
         .style('pointer-events', 'none')
         .on('error', function(this: SVGImageElement) {
-          // 如果图标加载失败，显示默认圆形
+          // 如果图标加载失败，显示基于导航类型的彩色圆形
           d3.select(this).remove();
           group.append('circle')
             .attr('cx', width / 2)
             .attr('cy', height / 2)
             .attr('r', iconSize / 2)
-            .attr('fill', '#d0d0d0')
-            .attr('stroke', '#aaa')
+            .attr('fill', nodeColor)
+            .attr('stroke', strokeColor)
             .attr('stroke-width', 0.5)
             .style('pointer-events', 'none');
         });
     } else {
-      // 默认圆形图标
+      // 默认圆形图标 - 使用基于导航类型的颜色
+      const nodeColor = this.getNodeColor(node);
+      const strokeColor = this.adjustBrightness(nodeColor, -30);
+      
       group.append('circle')
         .attr('cx', width / 2)
         .attr('cy', height / 2)
         .attr('r', iconSize / 2)
-        .attr('fill', '#d0d0d0')
-        .attr('stroke', '#aaa')
+        .attr('fill', nodeColor)
+        .attr('stroke', strokeColor)
         .attr('stroke-width', 0.5)
         .style('pointer-events', 'none');
     }
@@ -1648,39 +1696,45 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 🎨 根据节点生成颜色（基于tabId或URL哈希）
    */
+  /**
+   * 获取节点颜色 - 基于导航类型（与树形图保持一致）
+   */
   private getNodeColor(node: NavNode): string {
-    // 预定义的柔和色板
-    const colorPalette = [
-      '#FF6B6B', // 珊瑚红
-      '#4ECDC4', // 青绿色
-      '#45B7D1', // 天蓝色
-      '#FFA07A', // 浅橙色
-      '#98D8C8', // 薄荷绿
-      '#F7DC6F', // 柔和黄
-      '#BB8FCE', // 淡紫色
-      '#85C1E2', // 淡蓝色
-      '#F8B4D9', // 粉红色
-      '#A8E6CF', // 浅绿色
-      '#FFD3B6', // 杏色
-      '#FFAAA5', // 浅珊瑚色
-      '#A0C4FF', // 淡蓝色
-      '#BDB2FF', // 薰衣草色
-      '#FFC6FF', // 淡粉色
-    ];
+    const type = node.type || 'default';
     
-    // 使用 tabId 或 URL 生成索引
-    let hash = 0;
-    if (node.tabId) {
-      hash = node.tabId;
-    } else if (node.url) {
-      for (let i = 0; i < node.url.length; i++) {
-        hash = ((hash << 5) - hash) + node.url.charCodeAt(i);
-        hash = hash & hash;
-      }
+    let color: string;
+    switch (type) {
+      case 'link_click':
+        color = '#7cb9e8'; // 蓝色 - 链接点击
+        break;
+      case 'address_bar':
+        color = '#c0e8a5'; // 绿色 - 地址栏输入
+        break;
+      case 'form_submit':
+        color = '#f5d76e'; // 黄色 - 表单提交
+        break;
+      case 'reload':
+        color = '#bcbcbc'; // 灰色 - 页面刷新
+        break;
+      case 'history_back':
+      case 'history_forward':
+        color = '#d3a4f9'; // 紫色 - 历史导航
+        break;
+      case 'redirect':
+        color = '#ff9966'; // 橙色 - 页面重定向
+        break;
+      case 'javascript':
+        color = '#66ccff'; // 青色 - JavaScript导航
+        break;
+      default:
+        color = '#e0e0e0'; // 更浅的灰色 - 默认
+        break;
     }
     
-    const index = Math.abs(hash) % colorPalette.length;
-    return colorPalette[index];
+    // 🐛 调试日志：显示节点类型和颜色
+    console.log(`🎨 节点颜色: ${type} → ${color} (${node.title || node.url || 'Unknown'})`);
+    
+    return color;
   }
 
   /**
