@@ -2465,8 +2465,7 @@
   },
   "content_tree_view": {
     "message": "Древовидная карта",
-    "description": "树形图视图按钮文本",
-    "_untranslated": false
+    "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
     "message": "{0} состояние просмотра сохранено",
@@ -4838,8 +4837,7 @@
   },
   "content_waterfall_view": {
     "message": "Вид на водопад",
-    "description": "从HTML提取: src/content/index.html",
-    "_untranslated": false
+    "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {
     "message": "Вид временной шкалы был удален.",

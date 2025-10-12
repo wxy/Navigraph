@@ -2465,8 +2465,7 @@
   },
   "content_tree_view": {
     "message": "Treemap",
-    "description": "树形图视图按钮文本",
-    "_untranslated": false
+    "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
     "message": "{0} view state saved",
@@ -2734,8 +2733,7 @@
   },
   "renderer_factory_unknown_type": {
     "message": "Unknown view type: {0}, using default tree renderer",
-    "description": "警告消息 - 当收到未知视图类型时的警告",
-    "_untranslated": false
+    "description": "警告消息 - 当收到未知视图类型时的警告"
   },
   "content_current_session": {
     "message": "Current Session",
@@ -4839,8 +4837,7 @@
   },
   "content_waterfall_view": {
     "message": "Waterfall View",
-    "description": "从HTML提取: src/content/index.html",
-    "_untranslated": false
+    "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {
     "message": "The Timeline view has been removed",

@@ -2465,8 +2465,7 @@
   },
   "content_tree_view": {
     "message": "スリルマップ",
-    "description": "树形图视图按钮文本",
-    "_untranslated": false
+    "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
     "message": "{0} ビューステートを保存しました",
@@ -2734,8 +2733,7 @@
   },
   "renderer_factory_unknown_type": {
     "message": "不明なビュータイプ: {0}、デフォルトのツリー レンダラーを使用しています",
-    "description": "警告消息 - 当收到未知视图类型时的警告",
-    "_untranslated": false
+    "description": "警告消息 - 当收到未知视图类型时的警告"
   },
   "content_current_session": {
     "message": "現在のセッション",
