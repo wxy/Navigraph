@@ -25,6 +25,7 @@ interface TimeSegment {
   allocatedWidth: number;
   startX: number;
   originalIndex: number;  // 🎯 添加原始索引，用于保持明暗条纹一致性
+  isFiller?: boolean;     // 🎯 标识是否为填充段（为了铺满而添加的空白段）
 }
 
 interface LayoutResult {
@@ -48,16 +49,46 @@ interface ObservationWindow {
 }
 
 /**
- * 泳道接口 - 代表一个标签页的水平轨道
+ * 标签页生命周期 - 一个标签页从打开到关闭的完整周期
+ */
+interface TabLifecycle {
+  tabId: string;           // 标签页 ID
+  startTime: number;       // 标签页开始时间
+  endTime: number;         // 标签页结束时间（关闭时间）
+  isClosed: boolean;       // 是否已明确关闭
+  nodes: NavNode[];        // 该周期内的所有节点
+  closureMarkerTime?: number; // 关闭标记显示的时间（下一个时段）
+}
+
+/**
+ * 关闭标记 - 表示标签页关闭的视觉标记
+ */
+interface ClosureMarker {
+  tabId: string;           // 关闭的标签页 ID  
+  timestamp: number;       // 显示时间（关闭后的下一个时段）
+  swimlaneIndex: number;   // 所在泳道索引
+}
+
+/**
+ * 泳道接口 - V2版本：支持多个标签页周期复用
  */
 interface Swimlane {
-  tabId: string;           // 标签页 ID
+  laneIndex: number;       // 泳道编号
   y: number;               // 泳道的 Y 坐标
   height: number;          // 泳道高度
-  nodes: NavNode[];        // 该标签页的所有节点
-  isClosed: boolean;       // 标签页是否已关闭
-  firstTimestamp: number;  // 该标签页首次出现的时间
-  lastTimestamp: number;   // 该标签页最后出现的时间
+  lifecycles: TabLifecycle[]; // 该泳道承载的多个标签页生命周期
+  isAvailable: boolean;    // 当前是否可用于分配新标签页
+  lastActivityTime: number; // 最后活动时间
+}
+
+/**
+ * 泳道分配结果
+ */
+interface LaneAllocation {
+  swimlanes: Swimlane[];   // 分配后的泳道列表
+  closureMarkers: ClosureMarker[]; // 所有关闭标记
+  totalTabCount: number;   // 总标签页数量
+  reuseCount: number;      // 复用次数
 }
 
 /**
@@ -114,9 +145,14 @@ export class WaterfallRenderer implements BaseRenderer {
   private prevWindowCenter: number | undefined; // 🎯 记录上一次观察窗口中心位置，用于检测移动方向
   private wheelScrollTimeout: number | null = null; // 滚轮滚动防抖定时器
   
-  // 泳道数据
-  private swimlanes: Swimlane[] = []; // 当前渲染的泳道列表
+  // 泳道数据 - V2版本：支持复用
+  private swimlanes: Swimlane[] = []; // 当前渲染的泳道列表（新结构）
+  private closureMarkers: ClosureMarker[] = []; // 关闭标记列表
   private collapsedGroups: CollapsedNodeGroup[] = []; // 折叠的节点组
+  private laneAllocation: LaneAllocation | null = null; // 泳道分配结果
+
+  // 时间段常量（10分钟）
+  private readonly TIME_SEGMENT_DURATION = 10 * 60 * 1000; // 10分钟（毫秒）
 
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -261,8 +297,10 @@ export class WaterfallRenderer implements BaseRenderer {
       this.observationStartIndex = 0;
     }
 
-    // 1. 分析泳道
-    this.swimlanes = this.analyzeSwimlanes(validNodes);
+    // 1. 🎯 智能泳道分配（支持复用）
+    this.laneAllocation = this.allocateSwimlanesWithReuse(validNodes);
+    this.swimlanes = this.laneAllocation.swimlanes;
+    this.closureMarkers = this.laneAllocation.closureMarkers;
 
     // 2. 计算时间分段和布局（使用保存的观察窗口位置）
     const layout = this.calculateSegmentLayout(validNodes, this.width, this.observationStartIndex);
@@ -404,68 +442,182 @@ export class WaterfallRenderer implements BaseRenderer {
    * @param observationStartIndex 观察窗口起始索引（可选）
    */
   /**
-   * 分析节点并构建泳道信息
-   * @param nodes 所有节点
-   * @returns 泳道列表
+   * 🗂️ 旧版本泳道分析方法（已弃用，保留用于参考）
+   * @deprecated 请使用 allocateSwimlanesWithReuse 方法
    */
-  private analyzeSwimlanes(nodes: NavNode[]): Swimlane[] {
-    // 1. 按 tabId 分组节点
-    const tabGroups = new Map<string, NavNode[]>();
+  private analyzeSwimlanes_deprecated(nodes: NavNode[]): any[] {
+    // 该方法已弃用，返回空数组避免编译错误
+    console.warn('⚠️ analyzeSwimlanes_deprecated 方法已弃用，请使用新的泳道复用算法');
+    return [];
+  }
+
+  /**
+   * 🎯 新版本：智能泳道分配算法（支持复用）
+   * @param nodes 所有节点
+   * @returns 泳道分配结果
+   */
+  private allocateSwimlanesWithReuse(nodes: NavNode[]): LaneAllocation {
+    // 1. 收集所有标签页的生命周期信息
+    const tabLifecycles = this.collectTabLifecycles(nodes);
     
-    nodes.forEach(node => {
+    // 2. 按时间顺序排序标签页生命周期
+    const sortedLifecycles = Array.from(tabLifecycles.values())
+      .sort((a, b) => a.startTime - b.startTime);
+    
+    // 3. 智能分配泳道
+    const { swimlanes, closureMarkers, reuseCount } = this.assignLanesWithReuse(sortedLifecycles);
+    
+    // 4. 分配Y坐标
+    this.assignSwimlanePositions(swimlanes);
+    
+    console.log(`🏊 智能泳道分配完成: ${swimlanes.length}个泳道, ${reuseCount}次复用, ${closureMarkers.length}个关闭标记`);
+    
+    return {
+      swimlanes,
+      closureMarkers,
+      totalTabCount: tabLifecycles.size,
+      reuseCount
+    };
+  }
+
+  /**
+   * 收集所有标签页的生命周期信息
+   */
+  private collectTabLifecycles(nodes: NavNode[]): Map<string, TabLifecycle> {
+    const lifecycles = new Map<string, TabLifecycle>();
+    
+    // 按时间排序处理节点
+    const sortedNodes = [...nodes].sort((a, b) => a.timestamp - b.timestamp);
+    
+    sortedNodes.forEach(node => {
       const tabId = node.tabId || 'unknown';
-      if (!tabGroups.has(tabId)) {
-        tabGroups.set(tabId, []);
+      
+      if (!lifecycles.has(tabId)) {
+        lifecycles.set(tabId, {
+          tabId,
+          startTime: node.timestamp,
+          endTime: node.timestamp,
+          isClosed: false,
+          nodes: []
+        });
       }
-      tabGroups.get(tabId)!.push(node);
+      
+      const lifecycle = lifecycles.get(tabId)!;
+      lifecycle.endTime = node.timestamp;
+      lifecycle.isClosed = node.isClosed || false;
+      lifecycle.nodes.push(node);
     });
 
-    // 2. 为每个标签页创建泳道
-    const swimlanes: Swimlane[] = [];
+    // 计算关闭标记时间（关闭后的下一个时段）
+    lifecycles.forEach(lifecycle => {
+      if (lifecycle.isClosed) {
+        lifecycle.closureMarkerTime = lifecycle.endTime + this.TIME_SEGMENT_DURATION;
+      }
+    });
     
-    tabGroups.forEach((tabNodes, tabId) => {
-      // 按时间排序
-      const sortedNodes = tabNodes.sort((a, b) => a.timestamp - b.timestamp);
-      
-      // 获取时间范围
-      const firstTimestamp = sortedNodes[0].timestamp;
-      const lastTimestamp = sortedNodes[sortedNodes.length - 1].timestamp;
-      
-      // 判断标签是否已关闭（检查最后一个节点）
-      const isClosed = sortedNodes[sortedNodes.length - 1].isClosed || false;
-      
-      swimlanes.push({
-        tabId,
-        y: 0, // 稍后分配
-        height: this.SWIMLANE_HEIGHT, // 使用泳道总高度，不是节点高度
-        nodes: sortedNodes,
-        isClosed,
-        firstTimestamp,
-        lastTimestamp
-      });
+    return lifecycles;
+  }
+
+  /**
+   * 智能分配泳道（支持复用）
+   */
+  private assignLanesWithReuse(lifecycles: TabLifecycle[]): {
+    swimlanes: Swimlane[];
+    closureMarkers: ClosureMarker[];
+    reuseCount: number;
+  } {
+    const swimlanes: Swimlane[] = [];
+    const closureMarkers: ClosureMarker[] = [];
+    let reuseCount = 0;
+
+    lifecycles.forEach(lifecycle => {
+      let assignedLaneIndex = -1;
+
+      // 🔄 尝试复用已有泳道
+      for (let i = 0; i < swimlanes.length; i++) {
+        const lane = swimlanes[i];
+        
+        if (this.canReuseLane(lane, lifecycle)) {
+          assignedLaneIndex = i;
+          reuseCount++;
+          console.log(`🔄 泳道 ${i} 复用: ${lifecycle.tabId}`);
+          break;
+        }
+      }
+
+      // 如果没有可复用的泳道，创建新泳道
+      if (assignedLaneIndex === -1) {
+        assignedLaneIndex = swimlanes.length;
+        swimlanes.push({
+          laneIndex: assignedLaneIndex,
+          y: 0, // 稍后分配
+          height: this.SWIMLANE_HEIGHT,
+          lifecycles: [],
+          isAvailable: true,
+          lastActivityTime: 0
+        });
+        console.log(`🆕 创建新泳道 ${assignedLaneIndex} for ${lifecycle.tabId}`);
+      }
+
+      // 分配标签页到泳道
+      const lane = swimlanes[assignedLaneIndex];
+      lane.lifecycles.push(lifecycle);
+      lane.lastActivityTime = lifecycle.endTime;
+      lane.isAvailable = !lifecycle.isClosed || !!lifecycle.closureMarkerTime;
+
+      // 添加关闭标记（如果需要）
+      if (lifecycle.isClosed && lifecycle.closureMarkerTime) {
+        const marker = {
+          tabId: lifecycle.tabId,
+          timestamp: lifecycle.closureMarkerTime,
+          swimlaneIndex: assignedLaneIndex
+        };
+        closureMarkers.push(marker);
+        console.log(`🔴 创建关闭标记: 标签${marker.tabId}, 时间戳=${marker.timestamp}, 泳道=${marker.swimlaneIndex}`);
+      }
     });
 
-    // 3. 按照活跃时间（最后时间戳）排序，最新的在上面
-    swimlanes.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+    return { swimlanes, closureMarkers, reuseCount };
+  }
 
-    // 4. 限制泳道数量
-    if (swimlanes.length > this.MAX_SWIMLANES) {
-      console.warn(`泳道数量 ${swimlanes.length} 超过最大值 ${this.MAX_SWIMLANES}，将截断`);
-      swimlanes.splice(this.MAX_SWIMLANES);
+  /**
+   * 检查泳道是否可以被复用
+   */
+  private canReuseLane(lane: Swimlane, newLifecycle: TabLifecycle): boolean {
+    if (lane.lifecycles.length === 0) return true;
+
+    const lastLifecycle = lane.lifecycles[lane.lifecycles.length - 1];
+    
+    // 必须是已关闭的标签页
+    if (!lastLifecycle.isClosed) return false;
+    
+    // 必须有明确的关闭标记时间
+    if (!lastLifecycle.closureMarkerTime) return false;
+    
+    // 🎯 关键修复：新标签页开始时间必须在关闭标记时间之后
+    // 这确保了关闭标记和新节点不会重合
+    const canReuse = newLifecycle.startTime >= lastLifecycle.closureMarkerTime + this.TIME_SEGMENT_DURATION;
+    
+    if (canReuse) {
+      console.log(`✅ 泳道可复用检查通过: 新标签 ${newLifecycle.tabId} (${new Date(newLifecycle.startTime).toLocaleTimeString()}) 在关闭标记 ${new Date(lastLifecycle.closureMarkerTime).toLocaleTimeString()} 之后开始`);
+    } else {
+      console.log(`❌ 泳道复用检查失败: 新标签 ${newLifecycle.tabId} 时间冲突`);
     }
+    
+    return canReuse;
+  }
 
-    // 5. 分配Y坐标 - 从时间轴下方开始
-    const timeAxisY = 80; // 时间轴横线的Y坐标
-    const startGap = 15; // 时间轴下方的起始间隔
+  /**
+   * 分配泳道Y坐标
+   */
+  private assignSwimlanePositions(swimlanes: Swimlane[]): void {
+    const timeAxisY = 80;
+    const startGap = 15;
     const swimlaneStartY = timeAxisY + startGap;
     
     swimlanes.forEach((lane, index) => {
       lane.y = swimlaneStartY + (index * this.SWIMLANE_HEIGHT);
     });
-
-    console.log(`✅ 分析出 ${swimlanes.length} 个泳道，起始Y坐标: ${swimlaneStartY}`, swimlanes);
-
-    return swimlanes;
   }
 
   /**
@@ -500,8 +652,13 @@ export class WaterfallRenderer implements BaseRenderer {
           const sortedNodes = nodes.sort((a, b) => a.timestamp - b.timestamp);
           const displayNode = sortedNodes[0];
           
-          // 找到对应的泳道
-          const swimlane = swimlanes.find(lane => lane.tabId === tabId);
+          // 找到对应的泳道 - V2版本：在所有生命周期中查找
+          const swimlane = this.findSwimlaneByTabId(tabId);
+          
+          if (!swimlane) {
+            console.warn(`⚠️ 未找到标签页 ${tabId} 对应的泳道`);
+            return;
+          }
           
           groups.push({
             tabId,
@@ -540,6 +697,8 @@ export class WaterfallRenderer implements BaseRenderer {
       // 🎯 对齐到10分钟整数边界
       const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
       const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
+      
+      console.log(`🎯 时间段生成: 节点时间范围 ${maxTimeRaw}-${minTimeRaw}, 段时间范围 ${maxTime}-${minTime}`);
 
       // 2. 创建时间分段
       segments = [];
@@ -613,20 +772,56 @@ export class WaterfallRenderer implements BaseRenderer {
 
     if (!needCompression) {
       // ✅ 不需要压缩：所有段都以full模式显示
-      // 🎯 固定条带宽度为 NODE_WIDTHS.full，右侧留白
-      const segmentWidth = this.NODE_WIDTHS.full;
+      // 🎯 修复：保持标准宽度，在右侧填充空白区段来铺满空间
+      const standardSegmentWidth = this.NODE_WIDTHS.full;
       
-      segments.forEach(segment => {
+      // 计算实际内容占用的宽度
+      const contentWidth = segments.length * standardSegmentWidth;
+      
+      // 如果还有剩余空间，在右侧添加空白区段
+      let allSegments = [...segments];
+      let totalUsedWidth = contentWidth;
+      
+      if (contentWidth < availableWidth) {
+        const remainingWidth = availableWidth - contentWidth;
+        const additionalSegmentCount = Math.floor(remainingWidth / standardSegmentWidth);
+        
+        console.log(`🎯 添加 ${additionalSegmentCount} 个空白区段以铺满空间`);
+        
+        // 生成空白区段（时间递减，从左到右）
+        for (let i = 0; i < additionalSegmentCount; i++) {
+          const lastRealSegment = segments[segments.length - 1]; // 使用原始数据段
+          const emptySegment: TimeSegment = {
+            // 🎯 瀑布视图是逆时间轴：空白段时间应该更早（递减）
+            startTime: lastRealSegment.startTime - ((i + 1) * this.TIME_SEGMENT_DURATION),
+            endTime: lastRealSegment.startTime - (i * this.TIME_SEGMENT_DURATION),
+            nodes: [], // 空白段没有节点
+            displayMode: 'full',
+            allocatedWidth: standardSegmentWidth,
+            startX: 0, // 将在下面设置
+            originalIndex: lastRealSegment.originalIndex + i + 1, // 继续索引序列
+            isFiller: true // 🎯 标识为填充段
+          };
+          allSegments.push(emptySegment);
+        }
+        
+        totalUsedWidth = allSegments.length * standardSegmentWidth;
+      }
+      
+      // 设置所有段的位置
+      allSegments.forEach((segment, index) => {
         segment.displayMode = 'full';
-        segment.allocatedWidth = segmentWidth;
-        segment.startX = currentX;
-        currentX += segmentWidth;
+        segment.allocatedWidth = standardSegmentWidth;
+        segment.startX = startX + (index * standardSegmentWidth);
       });
       
-      normalSegments = segments;
+      // 🎯 更新 currentX 以包含所有段（包括空白段）
+      currentX = startX + (allSegments.length * standardSegmentWidth);
+      
+      normalSegments = allSegments;
       compressedSegments = [];
       
-      console.log('✅ 无需压缩，所有段以固定全节点宽度显示，右侧留白');
+      console.log(`✅ 无需压缩，${segments.length}个数据段 + ${allSegments.length - segments.length}个空白段，标准宽度 ${standardSegmentWidth}px`);
     } else {
       // ⚠️ 需要压缩：应用70/30原则
       const maxCompressedWidth = availableWidth * this.MAX_COMPRESSED_RATIO;
@@ -739,7 +934,7 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-    console.log(`🏊 渲染 ${this.swimlanes.length} 条泳道分隔线`);
+    console.log(`🏊 渲染 ${this.swimlanes.length} 条泳道分隔线和数字标识`);
 
     const separatorGroup = group.append('g').attr('class', 'swimlane-separators');
 
@@ -747,32 +942,79 @@ export class WaterfallRenderer implements BaseRenderer {
     const leftBoundary = layout.timeAxisData.startX;
     const rightBoundary = layout.timeAxisData.endX;
 
-    // 绘制每个泳道底部的分隔线（除了最后一条）
-    this.swimlanes.slice(0, -1).forEach((lane, index) => {
-      // 分隔线位置：泳道底部（下一个泳道的顶部）
-      const y = lane.y + this.SWIMLANE_HEIGHT;
+    // 🔢 创建泳道数字标识分组
+    const numberGroup = group.append('g').attr('class', 'swimlane-numbers');
+
+    // 渲染每个泳道的数字标识和分隔线
+    this.swimlanes.forEach((lane, index) => {
+      // 🔢 添加泳道数字标识（左侧空白区域）
+      const numberX = 20; // 距离左边缘20px
+      const numberY = lane.y + (this.SWIMLANE_HEIGHT / 2); // 泳道中央
       
-      separatorGroup.append('line')
-        .attr('class', 'swimlane-separator')
-        .attr('x1', leftBoundary)  // 从条带左边界开始
-        .attr('x2', rightBoundary) // 到条带右边界结束
-        .attr('y1', y)
-        .attr('y2', y)
-        .attr('stroke', this.SWIMLANE_SEPARATOR_COLOR)
-        .attr('stroke-width', 1)
-        .attr('stroke-dasharray', this.SWIMLANE_SEPARATOR_DASH)
-        .attr('opacity', 0.5);
+      numberGroup.append('text')
+        .attr('class', 'swimlane-number')
+        .attr('x', numberX)
+        .attr('y', numberY)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'central')
+        .attr('font-family', 'Arial, sans-serif')
+        .attr('font-size', '32px')
+        .attr('font-weight', 'bold')
+        .attr('font-style', 'italic') // 🎯 添加斜体样式
+        .attr('fill', '#666666')
+        .attr('opacity', 0.4) // 半透明效果
+        .text(index + 1); // 显示1、2、3...
+
+      // 绘制泳道底部的分隔线（除了最后一条）
+      if (index < this.swimlanes.length - 1) {
+        const separatorY = lane.y + this.SWIMLANE_HEIGHT;
+        
+        separatorGroup.append('line')
+          .attr('class', 'swimlane-separator')
+          .attr('x1', leftBoundary)  // 从条带左边界开始
+          .attr('x2', rightBoundary) // 到条带右边界结束
+          .attr('y1', separatorY)
+          .attr('y2', separatorY)
+          .attr('stroke', this.SWIMLANE_SEPARATOR_COLOR)
+          .attr('stroke-width', 1)
+          .attr('stroke-dasharray', this.SWIMLANE_SEPARATOR_DASH)
+          .attr('opacity', 0.5);
+      }
     });
   }
 
   /**
-   * 获取节点所属的泳道
+   * 获取节点所属的泳道 - V2版本：支持多生命周期
    * @param node 节点
    * @returns 泳道对象，如果找不到则返回 null
    */
   private getSwimlaneForNode(node: NavNode): Swimlane | null {
     const tabId = node.tabId || 'unknown';
-    return this.swimlanes.find(lane => lane.tabId === tabId) || null;
+    
+    // 在所有泳道的所有生命周期中查找包含该节点的泳道
+    for (const lane of this.swimlanes) {
+      for (const lifecycle of lane.lifecycles) {
+        if (lifecycle.tabId === tabId && lifecycle.nodes.includes(node)) {
+          return lane;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * 根据标签页ID查找对应的泳道
+   */
+  private findSwimlaneByTabId(tabId: string): Swimlane | null {
+    for (const lane of this.swimlanes) {
+      for (const lifecycle of lane.lifecycles) {
+        if (lifecycle.tabId === tabId) {
+          return lane;
+        }
+      }
+    }
+    return null;
   }
 
   private renderTimeAxis(group: any, layout: LayoutResult): void {
@@ -829,12 +1071,14 @@ export class WaterfallRenderer implements BaseRenderer {
       this.strips.push(stripGroup);
     });
 
-    // 🎯 绘制时间轴横线（带箭头）- 使用所有条带确保完整
-    const allSegments = this.allSegments.length > 0 ? this.allSegments : layout.segments;
-    const firstSegment = allSegments[0];
-    const lastSegment = allSegments[allSegments.length - 1];
-    const lineStartX = firstSegment.startX;
-    const lineEndX = lastSegment.startX + lastSegment.allocatedWidth;
+    // 🎯 绘制时间轴横线（带箭头）- 使用布局结果中的所有段确保完整
+    const allLayoutSegments = layout.segments;
+    const firstSegment = allLayoutSegments[0];
+    const lastSegment = allLayoutSegments[allLayoutSegments.length - 1];
+    const lineStartX = firstSegment ? firstSegment.startX : 50;
+    const lineEndX = lastSegment ? (lastSegment.startX + lastSegment.allocatedWidth) : 200;
+    
+    console.log(`🎯 时间轴延伸: 从 ${lineStartX} 到 ${lineEndX} (共 ${allLayoutSegments.length} 个段)`);
     
     // 主时间轴线
     axisLineGroup.append('line')
@@ -962,7 +1206,180 @@ export class WaterfallRenderer implements BaseRenderer {
       });
     });
 
+    // 🎯 渲染关闭标记
+    this.renderClosureMarkers(group, layout);
+
     console.log(`✅ 总共渲染了 ${totalNodesRendered} 个节点`);
+  }
+
+  /**
+   * 🎯 渲染关闭标记
+   * @param group SVG 分组  
+   * @param layout 布局信息
+   */
+  private renderClosureMarkers(group: any, layout: LayoutResult): void {
+    if (!this.closureMarkers || this.closureMarkers.length === 0) {
+      return;
+    }
+
+    console.log(`🔴 渲染 ${this.closureMarkers.length} 个关闭标记`);
+
+    // 创建关闭标记分组
+    const markerGroup = group.append('g').attr('class', 'closure-markers');
+
+    this.closureMarkers.forEach(marker => {
+      // 🎯 边界外过滤：跳过超出时间段范围的关闭标记（节省空间）
+      if (layout.segments.length > 0) {
+        const firstSegment = layout.segments[0]; // 最新时间段
+        const lastSegment = layout.segments[layout.segments.length - 1]; // 最早时间段
+        
+        if (marker.timestamp > firstSegment.endTime || marker.timestamp < lastSegment.startTime) {
+          console.log(`⚡ 跳过边界外关闭标记: 标签${marker.tabId}, 时间戳=${marker.timestamp} 超出段范围[${lastSegment.startTime}-${firstSegment.endTime}]`);
+          return;
+        }
+      }
+      
+      // 找到标记对应的时间段和泳道
+      const segment = this.findSegmentByTimestamp(marker.timestamp, layout);
+      const swimlane = this.swimlanes[marker.swimlaneIndex];
+      
+      if (!segment || !swimlane) {
+        console.error(`❌ 关闭标记调试信息:`);
+        console.error(`   标签ID: ${marker.tabId}`);
+        console.error(`   时间戳: ${marker.timestamp} (${new Date(marker.timestamp).toLocaleString()})`);
+        console.error(`   泳道索引: ${marker.swimlaneIndex}`);
+        console.error(`   找到的段: ${segment ? '是' : '否'}`);
+        console.error(`   找到的泳道: ${swimlane ? '是' : '否'}`);
+        console.error(`   总段数: ${layout.segments.length}`);
+        console.error(`   总泳道数: ${this.swimlanes.length}`);
+        
+        if (layout.segments.length > 0) {
+          const firstSegment = layout.segments[0];
+          const lastSegment = layout.segments[layout.segments.length - 1];
+          console.error(`   段时间范围: ${firstSegment.startTime} - ${lastSegment.endTime}`);
+          console.error(`   段时间范围（可读）: ${new Date(firstSegment.startTime).toLocaleString()} - ${new Date(lastSegment.endTime).toLocaleString()}`);
+        }
+        
+        console.warn(`⚠️ 无法找到关闭标记 ${marker.tabId} 的对应段或泳道`);
+        return;
+      }
+
+      // 🎯 只跳过填充的空白段中的关闭标记，但允许在数据空段中显示
+      if (segment.isFiller) {
+        console.log(`⚡ 跳过填充空白段中的关闭标记: ${marker.tabId}`);
+        return;
+      }
+      
+      if (segment.displayMode === 'dot' || segment.displayMode === 'icon') {
+        console.log(`⚡ 跳过压缩条带中的关闭标记: ${marker.tabId} (模式: ${segment.displayMode})`);
+        return;
+      }
+
+      // 🎯 关闭标记应该显示在找到的时间段的中央
+      // 因为整个段都表示"该泳道现在可以复用"的状态
+      const markerX = segment.startX + (segment.allocatedWidth / 2);
+      const markerY = swimlane.y + (this.SWIMLANE_HEIGHT / 2); // 泳道中央
+      
+      console.log(`🎯 关闭标记 ${marker.tabId} 显示在段中央: X=${markerX.toFixed(1)}, 段范围=[${segment.startTime}-${segment.endTime}]`);
+      
+      // 🎯 日本麻将立直棒样式设计
+      const stickHeight = this.SWIMLANE_HEIGHT * 0.6; // 棒子高度（稍小一些）
+      const stickWidth = 5; // 棒子宽度
+      const cornerRadius = 3; // 两端圆角半径
+      const centerDotRadius = 2; // 中心红点半径（更小）
+
+      // 渲染关闭标记（日本麻将立直棒样式）
+      const markerContainer = markerGroup.append('g')
+        .attr('class', 'closure-marker')
+        .attr('data-tab-id', marker.tabId)
+        .attr('transform', `translate(${markerX}, ${markerY})`);
+
+      // 主棒身（白色竖直矩形，圆角端点）
+      markerContainer.append('rect')
+        .attr('x', -stickWidth / 2)
+        .attr('y', -stickHeight / 2)
+        .attr('width', stickWidth)
+        .attr('height', stickHeight)
+        .attr('fill', '#ffffff')
+        .attr('stroke', '#cccccc')
+        .attr('stroke-width', 1)
+        .attr('rx', cornerRadius)
+        .attr('ry', cornerRadius); // 两端圆角
+
+      // 中心红色圆点（更小）
+      markerContainer.append('circle')
+        .attr('r', centerDotRadius)
+        .attr('fill', '#e74c3c')
+        .attr('stroke', 'none');
+
+      // 添加提示标题
+      markerContainer.append('title')
+        .text(`标签页 ${marker.tabId} 已关闭`);
+
+      console.log(`🔴 已渲染关闭标记: ${marker.tabId} at (${markerX.toFixed(1)}, ${markerY.toFixed(1)})`);
+    });
+  }
+
+  /**
+   * 根据时间戳查找对应的时间段
+   */
+  private findSegmentByTimestamp(timestamp: number, layout: LayoutResult): TimeSegment | null {
+    // 🎯 首先在所有段中查找（包括空段，因为关闭标记可能显示在空段中）
+    for (const segment of layout.segments) {
+      if (timestamp >= segment.startTime && timestamp <= segment.endTime) {
+        return segment;
+      }
+    }
+    
+    // 🎯 如果没找到，输出调试信息
+    console.warn(`🔍 findSegmentByTimestamp 调试信息:`);
+    console.warn(`   查找时间戳: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
+    console.warn(`   总段数: ${layout.segments.length}`);
+    
+    if (layout.segments.length > 0) {
+      console.warn(`   段列表:`);
+      layout.segments.forEach((seg, index) => {
+        const inRange = timestamp >= seg.startTime && timestamp <= seg.endTime;
+        console.warn(`     [${index}] ${seg.startTime}-${seg.endTime} (${new Date(seg.startTime).toLocaleString()} - ${new Date(seg.endTime).toLocaleString()}) ${inRange ? '✅' : '❌'} nodes:${seg.nodes.length} filler:${seg.isFiller}`);
+      });
+    }
+    
+    // 🎯 对于关闭标记：如果时间戳在所有段之外，尝试找到最近的段
+    // 这种情况常发生在关闭标记时间戳为 lifecycle.endTime + TIME_SEGMENT_DURATION
+    if (layout.segments.length > 0) {
+      const lastSegment = layout.segments[layout.segments.length - 1];
+      
+      // 🎯 更宽松的容错范围：如果时间戳在最后段结束后的合理范围内，使用最后段
+      // 扩大到 3 倍时间段长度，覆盖各种时间计算误差
+      if (timestamp > lastSegment.endTime && 
+          timestamp <= lastSegment.endTime + this.TIME_SEGMENT_DURATION * 3) {
+        console.log(`🎯 关闭标记时间戳 ${timestamp} 超出范围，使用最后段 [${lastSegment.startTime}-${lastSegment.endTime}]`);
+        return lastSegment;
+      }
+      
+      // 🎯 如果时间戳甚至超出了3倍范围，尝试查找最接近的段
+      let closestSegment = lastSegment;
+      let minDistance = Math.abs(timestamp - lastSegment.endTime);
+      
+      for (const segment of layout.segments) {
+        const distanceToStart = Math.abs(timestamp - segment.startTime);
+        const distanceToEnd = Math.abs(timestamp - segment.endTime);
+        const minSegmentDistance = Math.min(distanceToStart, distanceToEnd);
+        
+        if (minSegmentDistance < minDistance) {
+          minDistance = minSegmentDistance;
+          closestSegment = segment;
+        }
+      }
+      
+      // 如果找到了相对接近的段（在1小时内），使用它
+      if (minDistance <= 60 * 60 * 1000) { // 1小时容错
+        console.log(`🎯 关闭标记时间戳 ${timestamp} 找到最接近段 [${closestSegment.startTime}-${closestSegment.endTime}]，距离 ${(minDistance / 1000).toFixed(1)}秒`);
+        return closestSegment;
+      }
+    }
+    
+    return null;
   }
 
   /**
@@ -1124,7 +1541,7 @@ export class WaterfallRenderer implements BaseRenderer {
     // 让鼠标事件穿透到下层，保证原位节点和成组标记可以被点击
     const drawer = this.svg.append('g')
       .attr('class', 'collapsed-nodes-drawer')
-      .attr('data-swimlane', swimlane.tabId)
+      .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
       .style('pointer-events', 'none'); // 🎯 让鼠标事件穿透
     
     // 🎯 浮层区域的边界（用于检测鼠标是否在浮层内）
