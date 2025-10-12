@@ -2466,7 +2466,7 @@
   "content_tree_view": {
     "message": "Древовидная карта",
     "description": "树形图视图按钮文本",
-    "_untranslated": true
+    "_untranslated": false
   },
   "state_manager_view_state_saved": {
     "message": "{0} состояние просмотра сохранено",
@@ -2734,8 +2734,7 @@
   },
   "renderer_factory_unknown_type": {
     "message": "Неизвестный тип представления: {0}, используется рендерер деревьев по умолчанию.",
-    "description": "警告消息 - 当收到未知视图类型时的警告",
-    "_untranslated": false
+    "description": "警告消息 - 当收到未知视图类型时的警告"
   },
   "content_current_session": {
     "message": "Текущая сессия",
@@ -4840,161 +4839,130 @@
   "content_waterfall_view": {
     "message": "Вид на водопад",
     "description": "从HTML提取: src/content/index.html",
-    "_untranslated": true
+    "_untranslated": false
   },
   "timeline_view_removed": {
     "message": "Вид временной шкалы был удален.",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "toggle_closed_filter": {
     "message": "Переключить фильтр «Закрытые страницы»",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "toggle_view": {
     "message": "Переключить вид",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switching_view": {
     "message": "Переключение с {0} на {1}",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switch_to_today": {
     "message": "Переключиться на текущий день",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "session_view_controller_unavailable": {
     "message": "SessionViewController недоступен",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switching_to_today": {
     "message": "Перейдем к сегодняшней сессии...",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "no_sessions_available": {
     "message": "Нет доступных сеансов",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_no_sessions_available": {
     "message": "Нет доступных сеансов",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "today_session_found": {
     "message": "Найдена сегодняшняя сессия: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "no_session_for_today": {
     "message": "Сеансов на сегодня не найдено",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_no_session_for_today": {
     "message": "Сеансов на сегодня не найдено",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "switch_to_today_failed": {
     "message": "Не удалось переключиться на текущий день: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_switch_to_today_failed": {
     "message": "Не удалось перейти на текущий день.",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "waterfall_observation_index_updated": {
     "message": "Обновлен индекс окна просмотра водопада: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
   "waterfall_skip_zoom_setup": {
     "message": "Вид «Водопад» пропускает настройки масштабирования",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
   "status_filtered_element_not_found": {
     "message": "Скрытый элемент не найден",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_clicked": {
     "message": "Скрытое состояние нажато",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_toggle_unavailable": {
     "message": "Функция переключения фильтра недоступна.",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_click_handler_setup": {
     "message": "Установлен обработчик щелчков скрытого элемента.",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_element_not_found": {
     "message": "Элемент представления не найден",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_clicked": {
     "message": "ViewState нажат",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_toggle_unavailable": {
     "message": "Функция переключения вида недоступна.",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_click_handler_setup": {
     "message": "Обработчик щелчков элемента View установлен",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_element_not_found": {
     "message": "Элемент даты не найден",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_clicked": {
     "message": "Дата и статус нажатия",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_switch_unavailable": {
     "message": "Функция перехода на текущий день недоступна.",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_click_handler_setup": {
     "message": "Установлен обработчик щелчков элемента даты",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_view_waterfall": {
     "message": "Водопадная диаграмма",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_observation_time_label": {
     "message": "Просмотр: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_observation_time_placeholder": {
     "message": "Проверять: -",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   }
 }

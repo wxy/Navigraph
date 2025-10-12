@@ -2466,7 +2466,7 @@
   "content_tree_view": {
     "message": "スリルマップ",
     "description": "树形图视图按钮文本",
-    "_untranslated": true
+    "_untranslated": false
   },
   "state_manager_view_state_saved": {
     "message": "{0} ビューステートを保存しました",
@@ -2735,7 +2735,7 @@
   "renderer_factory_unknown_type": {
     "message": "不明なビュータイプ: {0}、デフォルトのツリー レンダラーを使用しています",
     "description": "警告消息 - 当收到未知视图类型时的警告",
-    "_untranslated": true
+    "_untranslated": false
   },
   "content_current_session": {
     "message": "現在のセッション",
@@ -4839,162 +4839,130 @@
   },
   "content_waterfall_view": {
     "message": "滝の見えるめ",
-    "description": "从HTML提取: src/content/index.html",
-    "_untranslated": false
+    "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {
     "message": "タイムラインビューは削除されました",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "toggle_closed_filter": {
     "message": "閉じたページのフィルターを切り替える",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "toggle_view": {
     "message": "表示を切り替える",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switching_view": {
     "message": "{0} から {1} に切り替えています",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switch_to_today": {
     "message": "現在の日付に切り替える",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "session_view_controller_unavailable": {
     "message": "SessionViewControllerは利用できません",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switching_to_today": {
     "message": "今日のセッションに切り替えます...",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "no_sessions_available": {
     "message": "利用可能なセッションはありません",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_no_sessions_available": {
     "message": "利用可能なセッションはありません",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "today_session_found": {
     "message": "今日のセッションが見つかりました: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "no_session_for_today": {
     "message": "今日のセッションは見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_no_session_for_today": {
     "message": "今日のセッションは見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "switch_to_today_failed": {
     "message": "現在の日付への切り替えに失敗しました: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_switch_to_today_failed": {
     "message": "現在の日付への切り替えに失敗しました",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "waterfall_observation_index_updated": {
     "message": "ウォーターフォール ビュー ウォッチ ウィンドウ インデックスが更新されました: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
   "waterfall_skip_zoom_setup": {
     "message": "ウォーターフォールビューはズーム設定をスキップします",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
   "status_filtered_element_not_found": {
     "message": "隠し要素が見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_clicked": {
     "message": "非表示状態がクリックされる",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_toggle_unavailable": {
     "message": "フィルター切り替え機能は利用できません",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_click_handler_setup": {
     "message": "隠し要素のクリックハンドラが設定されました",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_element_not_found": {
     "message": "ビュー要素が見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_clicked": {
     "message": "ViewStateがクリックされた",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_toggle_unavailable": {
     "message": "表示切り替え機能は利用できません",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_click_handler_setup": {
     "message": "ビュー要素のクリックハンドラが設定されている",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_element_not_found": {
     "message": "日付要素が見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_clicked": {
     "message": "日付 ステータス クリック",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_switch_unavailable": {
     "message": "現在の日付に切り替える機能は利用できません",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_click_handler_setup": {
     "message": "日付要素のクリックハンドラが設定されています",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_view_waterfall": {
     "message": "ウォーターフォールチャート",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_observation_time_label": {
     "message": "表示: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_observation_time_placeholder": {
     "message": "チェック： -",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   }
 }

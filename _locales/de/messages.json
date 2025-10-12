@@ -2466,7 +2466,7 @@
   "content_tree_view": {
     "message": "Baumansicht",
     "description": "树形图视图按钮文本",
-    "_untranslated": true
+    "_untranslated": false
   },
   "state_manager_view_state_saved": {
     "message": "{0} Ansichtsstatus gespeichert",
@@ -2735,7 +2735,7 @@
   "renderer_factory_unknown_type": {
     "message": "Unbekannter Ansichtstyp: {0}, verwendet standardmäßigen Baum-Renderer",
     "description": "警告消息 - 当收到未知视图类型时的警告",
-    "_untranslated": true
+    "_untranslated": false
   },
   "content_current_session": {
     "message": "Aktuelle Sitzung",
@@ -4840,161 +4840,130 @@
   "content_waterfall_view": {
     "message": "Wasserfallblick",
     "description": "从HTML提取: src/content/index.html",
-    "_untranslated": true
+    "_untranslated": false
   },
   "timeline_view_removed": {
     "message": "Die Timeline-Ansicht wurde entfernt",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "toggle_closed_filter": {
     "message": "Filter „Geschlossene Seiten“ umschalten",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "toggle_view": {
     "message": "Ansicht wechseln",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switching_view": {
     "message": "Wechsel von {0} zu {1}",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switch_to_today": {
     "message": "Zum aktuellen Tag wechseln",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "session_view_controller_unavailable": {
     "message": "SessionViewController ist nicht verfügbar",
-    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
   "switching_to_today": {
     "message": "Wechsel zur heutigen Sitzung ...",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "no_sessions_available": {
     "message": "Keine Sitzungen verfügbar",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_no_sessions_available": {
     "message": "Keine Sitzungen verfügbar",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "today_session_found": {
     "message": "Heutige Sitzung gefunden: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "no_session_for_today": {
     "message": "Für heute wurden keine Sitzungen gefunden",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_no_session_for_today": {
     "message": "Für heute wurden keine Sitzungen gefunden",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "switch_to_today_failed": {
     "message": "Das Umschalten auf den aktuellen Tag ist fehlgeschlagen: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "content_switch_to_today_failed": {
     "message": "Das Umschalten auf den aktuellen Tag ist fehlgeschlagen",
-    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
   "waterfall_observation_index_updated": {
     "message": "Index des Überwachungsfensters der Wasserfallansicht aktualisiert: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
   "waterfall_skip_zoom_setup": {
     "message": "Die Wasserfallansicht überspringt die Zoomeinstellungen",
-    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
   "status_filtered_element_not_found": {
     "message": "Verstecktes Element nicht gefunden",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_clicked": {
     "message": "Ausgeblendeter Zustand wird angeklickt",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_toggle_unavailable": {
     "message": "Die Funktion zum Umschalten des Filters ist nicht verfügbar",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_filtered_click_handler_setup": {
     "message": "Der Klickhandler für versteckte Elemente wurde festgelegt",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_element_not_found": {
     "message": "Ansichtselement nicht gefunden",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_clicked": {
     "message": "ViewState wird angeklickt",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_toggle_unavailable": {
     "message": "Die Funktion „Ansicht wechseln“ ist nicht verfügbar",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_view_click_handler_setup": {
     "message": "Der Klickhandler für das Ansichtselement ist festgelegt",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_element_not_found": {
     "message": "Datumselement nicht gefunden",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_clicked": {
     "message": "Datum Status Klick",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_switch_unavailable": {
     "message": "Die Funktion „Zum aktuellen Tag wechseln“ ist nicht verfügbar",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "status_date_click_handler_setup": {
     "message": "Datumselement-Klickhandler ist eingestellt",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_view_waterfall": {
     "message": "Wasserfalldiagramm",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_observation_time_label": {
     "message": "Ansicht: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "content_observation_time_placeholder": {
     "message": "Überprüfen: -",
-    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts",
-    "_untranslated": false
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   }
 }
