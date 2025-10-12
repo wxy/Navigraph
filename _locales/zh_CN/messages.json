@@ -2732,7 +2732,7 @@
     "description": "日志消息 - 创建渲染器时的提示，{0}为视图类型(tree或timeline)"
   },
   "renderer_factory_unknown_type": {
-    "message": "未知视图类型: {0}，使用默认树形渲染器",
+    "message": "未知视图类型: {0}，使用默认瀑布渲染器",
     "description": "警告消息 - 当收到未知视图类型时的警告"
   },
   "content_current_session": {
@@ -4836,167 +4836,131 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "瀑布",
+    "message": "瀑布图",
     "description": "从HTML提取: src/content/index.html"
   },
-  "timeline_renderer_initialized": {
-    "message": "时间线渲染器已初始化",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "timeline_view_removed": {
+    "message": "Timeline 视图已被移除",
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
-  "timeline_renderer_no_container": {
-    "message": "无法渲染：SVG或容器未初始化",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "toggle_closed_filter": {
+    "message": "切换已关闭页面筛选器",
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
-  "timeline_renderer_cleaned_up": {
-    "message": "时间线渲染器已清理",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "toggle_view": {
+    "message": "切换视图",
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
-  "using_modular_timeline_renderer": {
-    "message": "使用模块化时间线渲染器",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "switching_view": {
+    "message": "从 {0} 切换到 {1}",
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
-  "timeline_saved_state_detected": {
-    "message": "检测到保存的时间线状态: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "switch_to_today": {
+    "message": "切换到当天",
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
-  "timeline_zoom_setup_start": {
-    "message": "为时间线视图设置缩放行为",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "session_view_controller_unavailable": {
+    "message": "SessionViewController 不可用",
+    "description": "从TS提取 (_): src/content/core/navigation-visualizer.ts"
   },
-  "timeline_invalid_transform_detected": {
-    "message": "检测到无效变换: {0}，恢复到安全状态",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "switching_to_today": {
+    "message": "切换到当天的会话...",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_zoom_setup_complete": {
-    "message": "已设置时间线缩放行为",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "no_sessions_available": {
+    "message": "没有可用的会话",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_zoom_setup_failed": {
-    "message": "设置时间线缩放失败: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "content_no_sessions_available": {
+    "message": "没有可用的会话",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_restore_transform": {
-    "message": "恢复时间线保存的变换状态: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "today_session_found": {
+    "message": "找到今天的会话: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_apply_transform_failed": {
-    "message": "应用变换失败: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "no_session_for_today": {
+    "message": "没有找到今天的会话",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_render_error": {
-    "message": "时间线渲染过程中出错: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "content_no_session_for_today": {
+    "message": "没有找到今天的会话",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_render_error_message": {
-    "message": "时间线渲染错误: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "switch_to_today_failed": {
+    "message": "切换到当天失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_date_range_same_day": {
-    "message": "时间线 - {0} {1} 至 {2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
+  "content_switch_to_today_failed": {
+    "message": "切换到当天失败",
+    "description": "从TS提取 (_): src/content/visualizer/state/SessionViewController.ts"
   },
-  "timeline_date_range_different_days": {
-    "message": "时间线 - {0} {1} 至 {2} {3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
-  },
-  "timeline_no_data": {
-    "message": "无时间数据可显示",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
-  },
-  "timeline_title": {
-    "message": "时间线",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TimelineRenderer.ts"
-  },
-  "waterfall_renderer_created": {
-    "message": "瀑布视图渲染器已创建",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_renderer_initialized": {
-    "message": "瀑布视图渲染器已初始化，尺寸: {0}x{1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_renderer_cannot_render": {
-    "message": "瀑布渲染器无法渲染：SVG或容器未初始化",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_renderer_render_start": {
-    "message": "开始渲染瀑布视图，节点数: {0}，边数: {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_renderer_render_error": {
-    "message": "瀑布视图渲染失败: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_renderer_cleaned_up": {
-    "message": "瀑布视图渲染器已清理",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_focus_center_changed": {
-    "message": "观察中心已更改为: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_non_uniform_timeline_rendered": {
-    "message": "非均匀时间轴已渲染",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_layout_start": {
-    "message": "开始渲染瀑布布局",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_layout_complete": {
-    "message": "瀑布布局渲染完成",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_layout_error": {
-    "message": "瀑布布局渲染失败: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_layout_render_failed": {
-    "message": "瀑布布局渲染失败",
-    "description": "从TS提取 (_Error): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_dynamic_layout_complete": {
-    "message": "动态瀑布布局渲染完成",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_layout_calculation_start": {
-    "message": "开始计算瀑布布局: {0} 个节点",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_layout_calculation_complete": {
-    "message": "瀑布布局计算完成，时间槽: {0}，URL节点: {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_timeline_now": {
-    "message": "现在",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "waterfall_timeline_past": {
-    "message": "过去",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer_original.ts"
-  },
-  "timeline_view_zoom_state_saved": {
-    "message": "已保存时间线视图缩放状态: {0}",
+  "waterfall_observation_index_updated": {
+    "message": "瀑布视图观察窗口索引已更新: {0}",
     "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
-  "waterfall_view_zoom_state_saved": {
-    "message": "已保存瀑布视图缩放状态: {0}",
+  "waterfall_skip_zoom_setup": {
+    "message": "瀑布视图跳过缩放设置",
     "description": "从TS提取 (_): src/content/visualizer/state/ViewStateManager.ts"
   },
-  "view_already_timeline": {
-    "message": "已经是时间线视图，无需切换",
-    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
-  },
-  "view_switching_to_timeline": {
-    "message": "切换到时间线视图",
-    "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
-  },
-  "content_view_timeline": {
-    "message": "时间线",
+  "status_filtered_element_not_found": {
+    "message": "已隐藏元素未找到",
     "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
-  "content_timeline_view": {
-    "message": "时间线",
-    "description": "从HTML提取: src/content/index.html"
+  "status_filtered_clicked": {
+    "message": "已隐藏状态被点击",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_filtered_toggle_unavailable": {
+    "message": "切换筛选器功能不可用",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_filtered_click_handler_setup": {
+    "message": "已隐藏元素点击处理器已设置",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_view_element_not_found": {
+    "message": "视图元素未找到",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_view_clicked": {
+    "message": "视图状态被点击",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_view_toggle_unavailable": {
+    "message": "切换视图功能不可用",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_view_click_handler_setup": {
+    "message": "视图元素点击处理器已设置",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_date_element_not_found": {
+    "message": "日期元素未找到",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_date_clicked": {
+    "message": "日期状态被点击",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_date_switch_unavailable": {
+    "message": "切换到当天功能不可用",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "status_date_click_handler_setup": {
+    "message": "日期元素点击处理器已设置",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_view_waterfall": {
+    "message": "瀑布图",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_observation_time_label": {
+    "message": "查看: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "content_observation_time_placeholder": {
+    "message": "查看: -",
+    "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   }
 }
