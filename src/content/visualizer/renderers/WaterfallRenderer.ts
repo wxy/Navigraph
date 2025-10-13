@@ -312,12 +312,13 @@ export class WaterfallRenderer implements BaseRenderer {
     // 4. 创建SVG分组
     const mainGroup = this.createSVGGroups(this.svg);
 
-    // 5. 渲染各个部分
-    this.renderTimeAxis(mainGroup.timeAxisGroup, layout);
-    this.renderSwimlaneSeparators(mainGroup.nodesGroup, layout); // 绘制泳道分隔线
-    this.renderSegmentNodes(mainGroup.nodesGroup, layout);
-    // this.renderConnections(mainGroup.connectionsGroup, layout); // 已禁用：泳道布局下连接线会造成视觉混乱
-    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout);
+    // 5. 渲染各个部分（使用新的分离结构）
+    this.renderTimeAxis(mainGroup.timeAxisGroup, layout); // 🕐 时间轴（固定，不滚动）
+    this.renderTimeStrips(mainGroup.timeStripsGroup, layout); // 🎨 垂直时间条带（可滚动）
+    this.renderSwimlaneSeparators(mainGroup.swimlaneSeperatorsGroup, layout); // 🏊 泳道分隔线（可滚动）
+    this.renderSegmentNodes(mainGroup.nodesGroup, layout); // 🎯 纯粹的节点（可滚动）
+    this.renderClosureMarkers(mainGroup.closureMarkersGroup, layout); // 🔴 关闭标记（可滚动）
+    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout); // 🎚️ 观察窗口（固定，不滚动）
     
     // 6. 设置滚轮事件来滚动观察窗口
     this.setupWheelScroll();
@@ -910,14 +911,32 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   /**
-   * 创建SVG分组结构
+   * 创建SVG分组结构 - 优化版：分离关注点并支持垂直滚动
    */
   private createSVGGroups(container: any) {
+    // 时间轴组（固定在顶部，不参与滚动）
+    const timeAxisGroup = container.append('g').attr('class', 'time-axis-group');
+    
+    // 可滚动的主容器组（包含所有需要垂直滚动的内容）
+    const scrollableGroup = container.append('g').attr('class', 'scrollable-group');
+    
+    // 在可滚动组内创建各个子组（独立的关注点）
+    const timeStripsGroup = scrollableGroup.append('g').attr('class', 'time-strips-group'); // 🎯 垂直时间条带
+    const swimlaneSeperatorsGroup = scrollableGroup.append('g').attr('class', 'swimlane-separators-group'); // 🎯 泳道分隔线
+    const nodesGroup = scrollableGroup.append('g').attr('class', 'nodes-group'); // 🎯 纯粹的节点
+    const closureMarkersGroup = scrollableGroup.append('g').attr('class', 'closure-markers-group'); // 🎯 关闭标记
+    
+    // 焦点覆盖组（固定在顶部，不参与滚动）
+    const focusOverlayGroup = container.append('g').attr('class', 'focus-overlay-group');
+    
     return {
-      timeAxisGroup: container.append('g').attr('class', 'time-axis-group'),
-      connectionsGroup: container.append('g').attr('class', 'connections-group'),
-      nodesGroup: container.append('g').attr('class', 'nodes-group'),
-      focusOverlayGroup: container.append('g').attr('class', 'focus-overlay-group')
+      timeAxisGroup,
+      scrollableGroup, // 🎯 新增：可滚动的主容器
+      timeStripsGroup, // 🎯 新增：独立的时间条带
+      swimlaneSeperatorsGroup, // 🎯 新增：独立的泳道分隔线
+      nodesGroup,
+      closureMarkersGroup,
+      focusOverlayGroup
     };
   }
 
@@ -1018,35 +1037,67 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   private renderTimeAxis(group: any, layout: LayoutResult): void {
-    console.log('🕐 渲染时间轴（带明暗条带和横线）');
+    console.log('🕐 渲染时间轴（仅横线、箭头、标签）');
 
     // 🎨 创建分组结构
-    const backgroundGroup = group.append('g').attr('class', 'time-axis-backgrounds');
     const axisLineGroup = group.append('g').attr('class', 'time-axis-line');
     const labelGroup = group.append('g').attr('class', 'time-axis-labels');
 
-    // � 时间轴横线位置
+    // 📏 时间轴横线位置
     const timeAxisY = 80; // 时间轴横线的Y坐标（降低避免与顶部图标重叠）
-    const stripTop = 0; // 条带从顶部开始
+
+    // 🎯 绘制时间轴横线（横贯整个时间轴区域）
+    const timeAxisMargin = 50; // 时间轴左右边距
+    const lineStartX = timeAxisMargin; // 从左边距开始
+    const lineEndX = this.width - timeAxisMargin; // 到右边距结束
+    
+    console.log(`🎯 时间轴横贯整个区域: 从 ${lineStartX} 到 ${lineEndX} (SVG宽度: ${this.width})`);
+    
+    // 主时间轴线（横贯整个时间轴区域）
+    axisLineGroup.append('line')
+      .attr('x1', lineStartX)
+      .attr('y1', timeAxisY)
+      .attr('x2', lineEndX)
+      .attr('y2', timeAxisY)
+      .attr('stroke', '#666')
+      .attr('stroke-width', 2)
+      .attr('class', 'time-axis-main-line');
+    
+    // 时间方向箭头（在最右端 - 指向新时间方向）
+    // 因为时间从右到左（最新在左），时间轴从旧到新，所以箭头在右端指向右
+    const arrowSize = 8;
+    axisLineGroup.append('polygon')
+      .attr('points', `${lineEndX},${timeAxisY} ${lineEndX - arrowSize},${timeAxisY - arrowSize/2} ${lineEndX - arrowSize},${timeAxisY + arrowSize/2}`)
+      .attr('fill', '#666')
+      .attr('class', 'time-axis-arrow');
+
+    // 🎯 时间标签（在可滚动的条带中，而非时间轴组中）
+    // 这些现在由renderTimeStrips方法处理
+  }
+
+  /**
+   * � 渲染独立的时间条带背景
+   */
+  private renderTimeStrips(group: any, layout: LayoutResult): void {
+    console.log('🎨 渲染独立的时间条带背景（可滚动）');
+
+    // ⚡ 获取条带相关常量
+    const stripTop = 0; // 条带顶部Y坐标（相对于组）
     const stripHeight = this.height; // 条带高度（覆盖整个高度）
     
-    // � 清空并重建strips数组
+    // 🧹 清空并重建strips数组（兼容现有系统）
     this.strips = [];
     
-    // �🎨 添加明暗条带背景 - 从顶部延伸到底部
+    // 🎨 渲染条带背景和创建strips数组
     layout.segments.forEach((segment) => {
       // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
       const isEven = segment.originalIndex % 2 === 0;
       
-      // 创建条带分组（包含背景和节点）
-      const stripGroup = backgroundGroup.append('g')
-        .attr('class', `time-strip time-strip-${segment.originalIndex}`)
-        .attr('data-time', new Date(segment.endTime).toISOString())
-        .attr('data-segment-index', segment.originalIndex);
-      
       // 竖向条带背景 - 添加微妙的渐变和悬停效果
-      const stripBg = stripGroup.append('rect')
-        .attr('class', 'strip-background')
+      const stripBg = group.append('rect')
+        .attr('class', `strip-background strip-${segment.originalIndex}`)
+        .attr('data-time', new Date(segment.endTime).toISOString())
+        .attr('data-segment-index', segment.originalIndex)
         .attr('x', segment.startX)
         .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
@@ -1062,7 +1113,14 @@ export class WaterfallRenderer implements BaseRenderer {
         d3.select(this).attr('opacity', 0.9);
       });
       
-      // 添加节点分组（暂时为空，稍后渲染）
+      // 🎯 为兼容现有系统，创建虚拟的strip组
+      // 这样现有的节点渲染逻辑可以继续工作
+      const stripGroup = group.append('g')
+        .attr('class', `time-strip time-strip-${segment.originalIndex}`)
+        .attr('data-time', new Date(segment.endTime).toISOString())
+        .attr('data-segment-index', segment.originalIndex);
+      
+      // 添加节点分组（现有系统期望的结构）
       const nodeGroup = stripGroup.append('g')
         .attr('class', 'node-group')
         .attr('transform', `translate(0, 0)`);
@@ -1070,34 +1128,11 @@ export class WaterfallRenderer implements BaseRenderer {
       // 保存到strips数组
       this.strips.push(stripGroup);
     });
-
-    // 🎯 绘制时间轴横线（带箭头）- 使用布局结果中的所有段确保完整
-    const allLayoutSegments = layout.segments;
-    const firstSegment = allLayoutSegments[0];
-    const lastSegment = allLayoutSegments[allLayoutSegments.length - 1];
-    const lineStartX = firstSegment ? firstSegment.startX : 50;
-    const lineEndX = lastSegment ? (lastSegment.startX + lastSegment.allocatedWidth) : 200;
     
-    console.log(`🎯 时间轴延伸: 从 ${lineStartX} 到 ${lineEndX} (共 ${allLayoutSegments.length} 个段)`);
+    console.log(`✅ 渲染了 ${layout.segments.length} 个时间条带背景，创建了 ${this.strips.length} 个strips`);
     
-    // 主时间轴线
-    axisLineGroup.append('line')
-      .attr('x1', lineStartX)
-      .attr('y1', timeAxisY)
-      .attr('x2', lineEndX)
-      .attr('y2', timeAxisY)
-      .attr('stroke', '#666')
-      .attr('stroke-width', 2)
-      .attr('class', 'time-axis-main-line');
-    
-    // 右侧箭头
-    const arrowSize = 8;
-    axisLineGroup.append('polygon')
-      .attr('points', `${lineEndX},${timeAxisY} ${lineEndX - arrowSize},${timeAxisY - arrowSize/2} ${lineEndX - arrowSize},${timeAxisY + arrowSize/2}`)
-      .attr('fill', '#666')
-      .attr('class', 'time-axis-arrow');
-
-    // 🎯 时间标签归属于条带，添加到条带分组中
+    // 🎯 时间标签添加到条带中
+    const timeAxisY = 80; // 与时间轴Y坐标保持一致
     this.strips.forEach((strip, i) => {
       const segment = layout.segments[i];
       if (segment && (segment.displayMode === 'full' || segment.displayMode === 'short')) {
@@ -1107,7 +1142,7 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   /**
-   * 🎯 添加时间标签到条带（时间标签归属于条带）
+   * �🎯 添加时间标签到条带（时间标签归属于条带）
    */
   private addTimeLabelToStrip(strip: any, segment: TimeSegment, timeAxisY: number = 80): void {
     const timeLabel = new Date(segment.endTime).toLocaleTimeString('zh-CN', {
@@ -1205,9 +1240,6 @@ export class WaterfallRenderer implements BaseRenderer {
         totalNodesRendered++;
       });
     });
-
-    // 🎯 渲染关闭标记
-    this.renderClosureMarkers(group, layout);
 
     console.log(`✅ 总共渲染了 ${totalNodesRendered} 个节点`);
   }
@@ -2181,64 +2213,6 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 渲染连接线 - V2样式：连接同一标签页的节点
    */
-  private renderConnections(group: any, layout: LayoutResult): void {
-    console.log('🔗 渲染连接线');
-    
-    // 收集所有节点并按标签页分组
-    const nodesByTab = new Map<number, Array<{ node: NavNode; x: number; y: number }>>();
-    
-    layout.normalDisplaySegments.forEach(segment => {
-      segment.nodes.forEach(node => {
-        const tabId = node.tabId || 0;
-        if (!nodesByTab.has(tabId)) {
-          nodesByTab.set(tabId, []);
-        }
-        nodesByTab.get(tabId)!.push({
-          node,
-          x: segment.startX + 60, // 节点中心位置
-          y: layout.timeAxisData.y + 40
-        });
-      });
-    });
-    
-    layout.compressedSegments.forEach(segment => {
-      segment.nodes.forEach(node => {
-        const tabId = node.tabId || 0;
-        if (!nodesByTab.has(tabId)) {
-          nodesByTab.set(tabId, []);
-        }
-        nodesByTab.get(tabId)!.push({
-          node,
-          x: segment.startX + 60,
-          y: layout.timeAxisData.y + 40
-        });
-      });
-    });
-    
-    // 为每个标签页的节点绘制连接线
-    nodesByTab.forEach(tabNodes => {
-      if (tabNodes.length < 2) return;
-      
-      // 按时间排序
-      tabNodes.sort((a, b) => a.node.timestamp - b.node.timestamp);
-      
-      // 连接相邻节点
-      for (let i = 1; i < tabNodes.length; i++) {
-        const prev = tabNodes[i - 1];
-        const curr = tabNodes[i];
-        
-        group.append('line')
-          .attr('x1', prev.x)
-          .attr('y1', prev.y)
-          .attr('x2', curr.x)
-          .attr('y2', curr.y)
-          .attr('stroke', '#ccc')
-          .attr('stroke-width', 1)
-          .attr('opacity', 0.5);
-      }
-    });
-  }
-
   /**
    * 渲染观察窗口滑块 - 在时间轴横线上滑动
    */
@@ -2612,12 +2586,13 @@ export class WaterfallRenderer implements BaseRenderer {
     
     const mainGroup = this.createSVGGroups(this.svg);
 
-    // 渲染各个部分
-    this.renderTimeAxis(mainGroup.timeAxisGroup, newLayout);
-    this.renderSwimlaneSeparators(mainGroup.nodesGroup, newLayout); // 🏊 重新绘制泳道分隔线
-    this.renderSegmentNodes(mainGroup.nodesGroup, newLayout);
-    this.renderConnections(mainGroup.connectionsGroup, newLayout);
-    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout);
+    // 渲染各个部分（使用新的分离结构）
+    this.renderTimeAxis(mainGroup.timeAxisGroup, newLayout); // 🕐 时间轴（固定，不滚动）
+    this.renderTimeStrips(mainGroup.timeStripsGroup, newLayout); // � 垂直时间条带（可滚动）
+    this.renderSwimlaneSeparators(mainGroup.swimlaneSeperatorsGroup, newLayout); // 🏊 泳道分隔线（可滚动）
+    this.renderSegmentNodes(mainGroup.nodesGroup, newLayout); // 🎯 纯粹的节点（可滚动）
+    this.renderClosureMarkers(mainGroup.closureMarkersGroup, newLayout); // 🔴 关闭标记（可滚动）
+    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout); // 🎚️ 观察窗口（固定，不滚动）
     
     // 重新设置滚轮事件
     this.setupWheelScroll();
