@@ -958,10 +958,6 @@ export class WaterfallRenderer implements BaseRenderer {
     // 在内容组内创建各个子组（所有内容都完整渲染）
     const timeStripsGroup = contentGroup.append('g').attr('class', 'time-strips-group');
     const swimlaneSeperatorsGroup = contentGroup.append('g').attr('class', 'swimlane-separators-group');
-    
-    // 🎯 在条带层之后、节点层之前插入拖拽层
-    const dragLayerGroup = contentGroup.append('g').attr('class', 'drag-layer-group');
-    
     const nodesGroup = contentGroup.append('g').attr('class', 'nodes-group');
     const closureMarkersGroup = contentGroup.append('g').attr('class', 'closure-markers-group');
     
@@ -977,7 +973,6 @@ export class WaterfallRenderer implements BaseRenderer {
       scrollableGroup: contentGroup, // 兼容性引用
       timeStripsGroup,
       swimlaneSeperatorsGroup,
-      dragLayerGroup,    // 🎯 新增：拖拽层组
       nodesGroup,
       closureMarkersGroup,
       focusOverlayGroup
@@ -1801,14 +1796,6 @@ export class WaterfallRenderer implements BaseRenderer {
     };
     
     this.svg.on('click.drawer', (event: MouseEvent) => {
-      // 🎯 忽略来自拖拽层转发的事件，避免关闭刚刚打开的抽屉
-      if ((event as any).fromDragLayer) {
-        console.log('🎯 忽略来自拖拽层的事件，不关闭抽屉');
-        return;
-      }
-      // 🎯 如果刚刚通过拖拽层点击了节点，也要避免立即关闭抽屉
-      // 注意：这里无法直接访问justForwardedNodeClick变量，因为它在另一个作用域
-      // 我们依靠事件标记来判断
       closeDrawer();
     });
     
@@ -3176,85 +3163,25 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-    console.log('🖱️ 设置垂直拖拽滚动（正确的图层顺序）');
+    console.log('🖱️ 设置垂直拖拽滚动（整个泳道区域）');
     
-    // 🎯 查找已创建的拖拽层组
-    const dragLayerGroup = this.scrollableGroup.select('.drag-layer-group');
-    if (dragLayerGroup.empty()) {
-      console.warn('⚠️ 拖拽层组不存在，无法设置拖拽');
-      return;
-    }
-    
+    // 关键修复：在主SVG容器中创建拖拽层，避免被viewport的clipPath影响
+    const mainContainer = this.svg;
     const timeAxisHeight = 100;
     const viewportHeight = this.height - timeAxisHeight;
     
-    console.log(`📐 拖拽区域尺寸: 宽度=${this.width}, 高度=${viewportHeight}`);
+    console.log(`📐 拖拽区域尺寸: 宽度=${this.width}, 高度=${viewportHeight}, Y位置=${timeAxisHeight}`);
     
-    // 清理已存在的拖拽区域
-    dragLayerGroup.selectAll('*').remove();
-    
-    // 🎯 调试：检查图层位置
-    console.log('🔍 拖拽层组在DOM中的位置:');
-    const parent = dragLayerGroup.node().parentNode;
-    const siblings = Array.from(parent.children);
-    siblings.forEach((child, index) => {
-      const element = child as SVGElement;
-      console.log(`  ${index}: ${element.className.baseVal || element.tagName} - ${child === dragLayerGroup.node() ? '← 拖拽层' : ''}`);
-    });
-    
-    // 创建拖拽区域，覆盖整个内容区域
-    const dragArea = dragLayerGroup.append('rect')
+    // 创建拖拽区域，位置与viewport一致但不受clipPath影响
+    const dragArea = mainContainer.append('rect')
       .attr('class', 'vertical-drag-area-full')
       .attr('x', 0)
-      .attr('y', 0) // 相对于内容组的坐标
+      .attr('y', timeAxisHeight) // 在时间轴下方
       .attr('width', this.width)
-      .attr('height', viewportHeight) // 🎯 修复：只覆盖viewport区域
-      .attr('fill', 'transparent') // 🎯 恢复透明背景
-      .style('cursor', 'default') // 🎯 默认光标，后面动态改变
-      .style('pointer-events', 'all'); // 🎯 启用事件拦截但在事件中进行智能判断
-    
-    // 🎯 动态光标管理：根据下方元素改变光标
-    dragArea.on('mousemove', function(this: SVGElement, event: any) {
-      if (self.isDraggingVertical) return; // 拖拽时不改变光标
-      
-      // 检测下方元素
-      d3.select(this).style('pointer-events', 'none');
-      const elementBelow = document.elementFromPoint(event.clientX, event.clientY);
-      d3.select(this).style('pointer-events', 'all');
-      
-      if (elementBelow) {
-        let isNode = false;
-        
-        // 检测是否为节点相关元素
-        if (elementBelow.classList) {
-          isNode = elementBelow.classList.contains('navigation-node') || 
-                  elementBelow.classList.contains('node-group') ||
-                  elementBelow.classList.contains('drawer-node') ||
-                  elementBelow.classList.contains('collapsed-badge') ||
-                  elementBelow.classList.contains('collapsed-nodes-drawer') ||
-                  elementBelow.classList.contains('drawer-nodes-container');
-        }
-        
-        if (!isNode) {
-          const parentNode = elementBelow.closest('.navigation-node') ||
-                            elementBelow.closest('.node-group') ||
-                            elementBelow.closest('.drawer-node') ||
-                            elementBelow.closest('.collapsed-badge') ||
-                            elementBelow.closest('.collapsed-nodes-drawer') ||
-                            elementBelow.closest('.drawer-nodes-container');
-          isNode = !!parentNode;
-        }
-        
-        // 根据下方元素设置光标
-        if (isNode) {
-          d3.select(this).style('cursor', 'pointer'); // 节点上显示pointer
-        } else if (self.maxVerticalScroll > 0) {
-          d3.select(this).style('cursor', 'ns-resize'); // 空白区域且可滚动时显示拖拽光标
-        } else {
-          d3.select(this).style('cursor', 'default'); // 空白区域且不可滚动时显示默认光标
-        }
-      }
-    });
+      .attr('height', viewportHeight)
+      .attr('fill', 'transparent') // 完全透明
+      .style('cursor', 'ns-resize')
+      .style('pointer-events', 'all') // 🎯 暂时启用事件拦截以进行拖拽检测
     
     console.log('✅ 拖拽区域已创建:', dragArea.node());
     
@@ -3262,149 +3189,25 @@ export class WaterfallRenderer implements BaseRenderer {
     let startY = 0;
     let startOffset = 0;
     let isDragging = false;
-    let justForwardedNodeClick = false; // 🎯 跟踪是否刚刚转发了节点点击事件
 
-    // 🎯 智能事件处理：检测鼠标下方是否有节点
-    dragArea.on('mousedown', function(this: SVGElement, event: any) {
-      console.log('🔍 拖拽层接收到mousedown事件', { x: event.clientX, y: event.clientY });
-      
-      // 🎯 关键技巧：临时禁用拖拽层，检测下方是否有节点
-      d3.select(this).style('pointer-events', 'none');
-      const elementBelow = document.elementFromPoint(event.clientX, event.clientY);
-      d3.select(this).style('pointer-events', 'all');
-      
-      console.log('🔍 检测到下方元素:', elementBelow, elementBelow?.className);
-      
-      // 检查下方元素是否是节点相关
-      if (elementBelow) {
-        let isNode = false;
-        
-        // 🎯 修复：正确处理SVG元素的className检测，使用正确的类名
-        if (elementBelow.classList) {
-          isNode = elementBelow.classList.contains('navigation-node') || 
-                  elementBelow.classList.contains('node-group') ||
-                  elementBelow.classList.contains('drawer-node') ||
-                  elementBelow.classList.contains('collapsed-badge') ||
-                  elementBelow.classList.contains('group-badge') || // 🎯 添加折叠标记的实际类名
-                  elementBelow.classList.contains('collapsed-nodes-drawer') ||
-                  elementBelow.classList.contains('drawer-nodes-container');
-        }
-        
-        // 如果元素本身不是节点，检查父元素
-        if (!isNode) {
-          const parentNode = elementBelow.closest('.navigation-node') ||
-                            elementBelow.closest('.node-group') ||
-                            elementBelow.closest('.drawer-node') ||
-                            elementBelow.closest('.collapsed-badge') ||
-                            elementBelow.closest('.group-badge') || // 🎯 添加折叠标记的实际类名
-                            elementBelow.closest('.collapsed-nodes-drawer') ||
-                            elementBelow.closest('.drawer-nodes-container');
-          isNode = !!parentNode;
-        }
-        
-        // 🎯 额外检查：如果是节点内部的SVG元素，也认为是节点
-        if (!isNode) {
-          let current = elementBelow.parentElement;
-          while (current && current !== document.body) {
-            if (current.classList && (
-                current.classList.contains('navigation-node') || 
-                current.classList.contains('node-group') ||
-                current.classList.contains('drawer-node') ||
-                current.classList.contains('collapsed-badge') ||
-                current.classList.contains('group-badge') || // 🎯 添加折叠标记的实际类名
-                current.classList.contains('collapsed-nodes-drawer') ||
-                current.classList.contains('drawer-nodes-container'))) {
-              isNode = true;
-              break;
-            }
-            current = current.parentElement;
-          }
-        }
-        
-        console.log('🔍 是否为节点相关元素:', isNode, '元素类型:', elementBelow.tagName);
-        
-        if (isNode) {
-          console.log('🎯 检测到下方有节点，转发事件给节点', elementBelow);
-          
-          // 🎯 标记我们即将转发节点点击事件
-          justForwardedNodeClick = true;
-          
-          // 阻止拖拽层处理这个事件
-          event.preventDefault();
-          event.stopPropagation();
-          
-          // 🎯 查找正确的事件目标：向上查找有事件处理器的父组
-          let targetElement = elementBelow;
-          
-          // 查找最近的有事件处理器的父元素
-          let current = elementBelow.parentElement;
-          while (current && current !== document.body) {
-            // 检查是否是可点击的组（D3通常在g元素上绑定事件）
-            if (current.tagName === 'g' && (
-                current.classList.contains('navigation-node') ||
-                current.classList.contains('node-group') ||
-                current.classList.contains('drawer-node') ||
-                current.classList.contains('collapsed-badge') ||
-                current.classList.contains('group-badge') || // 🎯 修复：使用正确的折叠标记类名
-                current.getAttribute('class')?.includes('badge-group')
-              )) {
-              targetElement = current;
-              console.log('🎯 找到目标组元素:', targetElement.className || targetElement.getAttribute('class'));
-              break;
-            }
-            current = current.parentElement;
-          }
-          
-          // 创建并直接调用D3事件（如果可能）
-          try {
-            // 尝试触发D3的click事件
-            const d3Element = d3.select(targetElement);
-            if (d3Element && typeof d3Element.dispatch === 'function') {
-              console.log('🎯 使用D3事件系统触发click');
-              d3Element.dispatch('click', { 
-                detail: { 
-                  clientX: event.clientX, 
-                  clientY: event.clientY,
-                  button: event.button,
-                  fromDragLayer: true // 🎯 添加标记表示这是从拖拽层转发的事件
-                }
-              });
-            } else {
-              // 如果D3事件系统不可用，回退到原生事件
-              console.log('🎯 使用原生事件系统');
-              const clickEvent = new MouseEvent('click', {
-                bubbles: false, // 🎯 关键修复：不冒泡，避免触发抽屉关闭
-                cancelable: true,
-                clientX: event.clientX,
-                clientY: event.clientY,
-                button: event.button
-              });
-              // 🎯 添加自定义属性标记
-              (clickEvent as any).fromDragLayer = true;
-              targetElement.dispatchEvent(clickEvent);
-            }
-          } catch (error) {
-            console.warn('🔍 事件转发失败:', error);
-            // 回退到原生事件
-            const clickEvent = new MouseEvent('click', {
-              bubbles: false,
-              cancelable: true,
-              clientX: event.clientX,
-              clientY: event.clientY,
-              button: event.button
-            });
-            // 🎯 添加自定义属性标记
-            (clickEvent as any).fromDragLayer = true;
-            targetElement.dispatchEvent(clickEvent);
-          }
-          
-          return; // 不处理拖拽
+    // 鼠标按下时开始拖拽检测
+    // 鼠标按下时开始拖拽检测 - 加入目标检查
+    dragArea.on('mousedown', function(event: any) {
+      // 🎯 关键修复：检查点击目标，如果是节点相关元素就不处理拖拽
+      const target = event.target;
+      if (target) {
+        // 检查是否点击的是节点、折叠标记或其子元素
+        if (target.classList.contains('node') || 
+            target.classList.contains('collapsed-badge') ||
+            target.closest('.node') || 
+            target.closest('.collapsed-badge') ||
+            target.closest('.observation-window')) {
+          console.log('🎯 点击目标是节点相关元素，跳过拖拽处理');
+          return; // 不处理拖拽，让节点的点击事件正常触发
         }
       }
       
-      console.log('🖱️ 拖拽层检测到鼠标按下（空白区域）');
-      
-      event.preventDefault();
+      console.log('🖱️ 鼠标按下事件触发（空白区域）');      event.preventDefault();
       event.stopPropagation();
       
       isDragging = false;
@@ -3434,26 +3237,12 @@ export class WaterfallRenderer implements BaseRenderer {
       
       // 鼠标释放事件
       const mouseup = function() {
-        // 🎯 如果刚刚转发了节点点击事件，延迟清理，避免影响抽屉显示
-        if (justForwardedNodeClick) {
-          console.log('🎯 刚刚转发了节点点击，延迟重置标记');
-          setTimeout(() => {
-            justForwardedNodeClick = false;
-            console.log('🎯 重置转发标记');
-          }, 50); // 短延迟，确保抽屉有时间显示
-        }
-        
         if (isDragging) {
           console.log('🖱️ 结束垂直拖拽滚动');
         }
-        
-        // 🎯 只有在真正拖拽的情况下才清理事件，避免干扰其他元素的mouseup
-        if (isDragging) {
-          isDragging = false;
-          self.isDraggingVertical = false;
-          d3.select('body').style('cursor', 'default');
-        }
-        
+        isDragging = false;
+        self.isDraggingVertical = false;
+        d3.select('body').style('cursor', 'default');
         d3.select(window).on('mousemove.vscroll', null);
         d3.select(window).on('mouseup.vscroll', null);
       };
