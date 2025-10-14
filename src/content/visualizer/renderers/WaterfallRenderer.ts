@@ -215,8 +215,6 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   render(nodes: NavNode[], edges: NavLink[], options?: any): void {
-    console.log('🔥🔥🔥 WaterfallRenderer v3 开始渲染，节点数量:', nodes?.length || 0);
-    
     // 清空容器
     this.svg.selectAll('*').remove();
     
@@ -250,15 +248,12 @@ export class WaterfallRenderer implements BaseRenderer {
     if (!showClosed) {
       const beforeFilter = validNodes.length;
       validNodes = validNodes.filter(node => !node.isClosed);
-      console.log(`🎯 筛选已关闭节点: ${beforeFilter} -> ${validNodes.length}`);
     }
 
     if (validNodes.length === 0) {
       logger.warn('筛选后没有可显示的节点');
       return;
     }
-
-    console.log(`✅ 使用 ${validNodes.length} 个有效节点进行渲染`);
 
     // 🔄 恢复观察窗口位置
     // 优先级：内存中的值 > localStorage 中的值 > 默认值 0
@@ -273,34 +268,21 @@ export class WaterfallRenderer implements BaseRenderer {
     // 如果内存中没有值，尝试从 localStorage 恢复
     if (savedObservationIndex === undefined && options?.restoreTransform) {
       const savedState = getViewState(this.visualizer.tabId || '', 'waterfall');
-      console.log(`📂 从 localStorage 读取的状态:`, savedState);
       
       if (savedState && savedState.waterfallObservationIndex !== undefined) {
         savedObservationIndex = savedState.waterfallObservationIndex;
-        console.log(`💾 从 localStorage 恢复观察窗口索引: ${savedObservationIndex}`);
         // 同步到内存
         this.visualizer.waterfallObservationIndex = savedObservationIndex;
-      } else {
-        console.log(`⚠️ localStorage 中没有保存的观察窗口索引`);
       }
     }
     
     const useRestoredPosition = options?.restoreTransform && savedObservationIndex !== undefined;
     
-    console.log(`📍 观察窗口恢复检查:`, {
-      savedObservationIndex,
-      restoreTransform: options?.restoreTransform,
-      useRestoredPosition
-    });
-    
     if (useRestoredPosition && savedObservationIndex !== 0) {
-      console.log(`🔄 恢复观察窗口位置，起始索引: ${savedObservationIndex}`);
       this.observationStartIndex = savedObservationIndex!;
     } else if (savedObservationIndex === 0 && options?.restoreTransform) {
-      console.log(`🔄 恢复观察窗口到起始位置（索引: 0）`);
       this.observationStartIndex = 0;
     } else {
-      console.log(`🆕 使用默认观察窗口位置（起始索引: 0）`);
       this.observationStartIndex = 0;
     }
 
@@ -481,7 +463,6 @@ export class WaterfallRenderer implements BaseRenderer {
     // 4. 分配Y坐标
     this.assignSwimlanePositions(swimlanes);
     
-    console.log(`🏊 智能泳道分配完成: ${swimlanes.length}个泳道, ${reuseCount}次复用, ${closureMarkers.length}个关闭标记`);
     
     return {
       swimlanes,
@@ -551,7 +532,6 @@ export class WaterfallRenderer implements BaseRenderer {
         if (this.canReuseLane(lane, lifecycle)) {
           assignedLaneIndex = i;
           reuseCount++;
-          console.log(`🔄 泳道 ${i} 复用: ${lifecycle.tabId}`);
           break;
         }
       }
@@ -567,7 +547,6 @@ export class WaterfallRenderer implements BaseRenderer {
           isAvailable: true,
           lastActivityTime: 0
         });
-        console.log(`🆕 创建新泳道 ${assignedLaneIndex} for ${lifecycle.tabId}`);
       }
 
       // 分配标签页到泳道
@@ -746,7 +725,6 @@ export class WaterfallRenderer implements BaseRenderer {
         console.error('⚠️ 时间分段循环达到最大迭代次数，强制终止');
       }
 
-      console.log('创建了', segments.length, '个时间段');
 
       // 保存所有段用于后续拖动
       this.allSegments = segments;
