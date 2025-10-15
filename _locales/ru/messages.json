@@ -4962,5 +4962,413 @@
   "content_observation_time_placeholder": {
     "message": "Проверять: -",
     "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "waterfall_nodes_too_many": {
+    "message": "⚠️ Слишком много узлов ({0}), ограничение — {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_invalid_timestamp_node": {
+    "message": "⚠️ Обнаружены и отфильтрованы узлы с недействительными временными метками:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_restoring_observation_window": {
+    "message": "🔍 Начало восстановления проверки положения окна наблюдения: tabId={0}, значение памяти={1}, восстановление преобразования={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_analyze_swimlanes_deprecated": {
+    "message": "⚠️ Метод analyzeSwimlanes_deprecated устарел, используйте новый алгоритм повторного использования полос.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_create_closure_marker": {
+    "message": "🔴 Создайте закрывающий тег: метка {0}, временная метка={1}, полоса={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_can_reuse_lane_ok": {
+    "message": "✅ Проверка возможности повторного использования дорожки пройдена: новый тег {0} ({1}) начинается после закрывающего тега {2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_can_reuse_lane_fail": {
+    "message": "❌ Проверка повторного использования полосы не удалась: новая метка {0} имеет временной конфликт",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_assign_swimlane_positions": {
+    "message": "🏊 Назначьте положение полос: начальная Y={0}, количество полос={1}, общая высота={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_swimlane_not_found": {
+    "message": "⚠️ Для вкладки {0} не найдена дорожка.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_identified_collapsed_groups": {
+    "message": "🎯 {0} определено свернутое число групп узлов",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_segments_generated": {
+    "message": "🎯 Генерация периода времени: диапазон времени узла {0}-{1}, диапазон времени сегмента {2}-{3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_segment_loop_max_iter": {
+    "message": "⚠️ Цикл сегмента времени достигает максимального числа итераций и принудительно завершается.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_adding_filler_segments": {
+    "message": "🎯 Добавьте {0} пустых секций, чтобы заполнить пространство",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_no_compression": {
+    "message": "✅ Сжатие не требуется, {0} сегментов данных + {1} пустых сегментов, стандартная ширина {2} пикселей",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_created_svg_structure": {
+    "message": "📦 Создайте структуру SVG: высота области просмотра = {0}, высота шкалы времени = {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_render_swimlane_separators": {
+    "message": "🏊 Отобразить {0} разделителей полос и нумерованные метки",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_render_time_axis_start": {
+    "message": "🕐 Отрисовка временной шкалы (только горизонтальные линии, стрелки, метки) — очистка старого контента",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_time_axis_span": {
+    "message": "🎯 Временная шкала охватывает всю область: от {0} до {1} (ширина SVG: {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_time_axis_done": {
+    "message": "✅ Рендеринг временной шкалы завершен: горизонтальная линия ✓, стрелка ✓, метка времени {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_render_time_strips": {
+    "message": "🎨 Визуализируйте независимый фон временной полосы (с возможностью прокрутки)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_time_strips_done": {
+    "message": "✅ Отрисовано {0} фонов временных полос, создано {1} полос",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_addTimeLabel_disabled": {
+    "message": "⚠️ addTimeLabelToStrip отключен, метки времени обрабатываются фиксированными временными шкалами",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_render_segment_nodes": {
+    "message": "🎯 Узел рендеринга сегмента, количество сегментов: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_max_nodes_rendered": {
+    "message": "⚠️ Отображено {0} узлов, пропущены оставшиеся сегменты",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_strip_not_found": {
+    "message": "⚠️ Не удалось найти группу полос для сегмента {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_total_nodes_rendered": {
+    "message": "✅ Всего было визуализировано {0} узлов.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_render_closure_markers": {
+    "message": "🔴 Отобразить {0} закрывающих тегов",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_debug": {
+    "message": "❌ Чтобы отключить отладочную информацию разметки:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_id": {
+    "message": "Идентификатор тега: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_timestamp": {
+    "message": "Метка времени: {0} ({1})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_swimlane_index": {
+    "message": "Индекс полосы: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_segment_found": {
+    "message": "Найдено сегментов: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_swimlane_found": {
+    "message": "Найдено полос: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_total_segments": {
+    "message": "Общее количество сегментов: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_total_swimlanes": {
+    "message": "Общее количество полос: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_segment_range": {
+    "message": "Временной диапазон: {0} - {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_segment_range_readable": {
+    "message": "Временной диапазон (читаемый): {0} - {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_cannot_find_closure_marker": {
+    "message": "⚠️ Не удалось найти соответствующий раздел или дорожку для закрывающего тега {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_skip_filler_closure": {
+    "message": "⚡ Пропустить закрывающий тег в абзаце с заполнением: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_skip_compressed_closure": {
+    "message": "⚡ Пропуск закрывающего тега в сжатой полосе: {0} (режим: {1})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_render_pos": {
+    "message": "🎯 Маркер закрытия {0} отображается в центре сегмента: X={1}, диапазон сегмента=[{2}-{3}]",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_marker_rendered": {
+    "message": "🔴 Отображенный закрывающий тег: {0} в ({1}, {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_findSegment_debug": {
+    "message": "🔍 отладочная информация findSegmentByTimestamp:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_findSegment_lookup_ts": {
+    "message": "Найти временную метку: {0} ({1})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_findSegment_total_segments": {
+    "message": "Общее количество сегментов: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_findSegment_segments_list": {
+    "message": "Список сегментов:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_findSegment_segment_line": {
+    "message": "[{0}] {1}-{2} ({3} - {4}) {5} узлы:{6} заполнитель:{7}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_ts_out_of_range_use_last": {
+    "message": "🎯 Закройте временную метку маркера {0} вне диапазона, используется последний сегмент [{1}-{2}]",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_closure_ts_found_closest": {
+    "message": "🎯 Близкая временная метка маркера {0} найдена, ближайший сегмент [{1}-{2}], расстояние {3} секунд",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_collapse_badge_clicked": {
+    "message": "🎯 Нажатие на иконку сворачивания: tabId={0}, count={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_wheel_disabled_during_observation_drag": {
+    "message": "🚫 Отключить прокрутку колесика мыши при перетаскивании окон (чтобы избежать случайных нажатий Magic Mouse)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_scroll_intercepted": {
+    "message": "🎯 Перехватывается событие плавающей прокрутки",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_node_clicked": {
+    "message": "🎯 Щелчок по узлу ящика: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_show_collapsed_drawer": {
+    "message": "🎯 Показать ящик: {0} ({1} узлов, {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_swimlane_node_position_debug": {
+    "message": "🏊 Позиционирование узлов Swimlane:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_render_observation_slider": {
+    "message": "🎚️ Рендеринг слайдеров окна просмотра",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_no_compression": {
+    "message": "✅ Никакого сжатия, смотровое окно покрывает фактическую ширину всех полос",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_has_compression": {
+    "message": "⚠️ При сжатии окно наблюдения перемещается по временной шкале.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_drag_setup": {
+    "message": "🔍 Настройки перетаскивания окна наблюдения: Общее количество сегментов = {0}, Номер сегмента окна наблюдения = {1}, Максимальный начальный индекс = {2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_drag_range_info": {
+    "message": "🔍 Диапазон перетаскивания: от {0}-го сегмента до {1}-го сегмента (позволяет охватить все сегменты)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_boundary_check": {
+    "message": "🔍 Проверка границ перетаскивания: minX={0}, maxX={1}, targetX={2}, последний сегмент={3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_reject_right_boundary_snap": {
+    "message": "🚫 Отклонить привязку за пределами правой границы и принудительно закрепить ее в пределах границы: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_correct_drag_end_pos": {
+    "message": "🎯 Исправлено конечное положение перетаскивания: {0} -> {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_end_analysis": {
+    "message": "🔍 Анализ конечной позиции перетаскивания: позиция окна = [{0}, {1}], ширина = {2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_detect_left_boundary_drag": {
+    "message": "🎯 Обнаружено перетаскивание левой границы: левый край окна = {0}, минимальное перетаскивание X = {1}, отображение последнего периода времени (индекс = 0)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_detect_right_boundary_drag": {
+    "message": "🎯 Обнаружено перетаскивание правой границы: левый край окна = {0}, максимальное перетаскивание X = {1}, отображается самый старый период времени (индекс = {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_direction_analysis": {
+    "message": "🔍 Анализ направления перетаскивания: левый край текущего окна = {0}, новое положение = {1}, перетаскивание вправо = {2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_right_target": {
+    "message": "🎯 Перетащите вправо: Целевая полоса = {0}, Рассчитанный начальный индекс = {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_right_no_target": {
+    "message": "🎯 Перетащите вправо: подходящая полоса не найдена, используется максимальный индекс = {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_left": {
+    "message": "🎯 Перетащите влево: целевая полоса = {0}, начальный индекс = {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drag_end_target_index": {
+    "message": "🖱️ Перетаскивание заканчивается, целевой начальный индекс: {0}, текущий: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_rerender_for_new_window": {
+    "message": "🔄 Перерисовать в соответствии с новым положением окна наблюдения, начальный индекс: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_save_observation_index_prepare": {
+    "message": "💾 Подготовьтесь к сохранению индекса окна наблюдения в localStorage:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_saved_observation_index": {
+    "message": "✅ Индекс окна просмотра сохранен в localStorage",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_strip_entered_observation": {
+    "message": "✨ Полоса {0} Войдите в окно наблюдения и разверните узел.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_segment_leaving": {
+    "message": "💨 Полоса {0} покидает окно просмотра, сжимая узел",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_wheel_event_setup_no_svg": {
+    "message": "⚠️ Невозможно установить событие колеса прокрутки: SVG или макет не существует",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_wheel_disabled_during_observation_drag": {
+    "message": "🚫 Отключить прокрутку колеса мыши при перетаскивании окон (для предотвращения случайных нажатий Magic Mouse)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_wheel_disabled_during_vertical_drag": {
+    "message": "🚫 Отключить прокрутку колеса во время перетаскивания",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_wheel_scroll_setup_done": {
+    "message": "✅ Установлена прокрутка колеса (только вертикальная прокрутка), максимальная вертикальная прокрутка: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_no_swimlanes_vertical_scroll": {
+    "message": "🔢 Данные о плавающих дорожках отсутствуют, вертикальная прокрутка недоступна.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_vertical_scroll_calc": {
+    "message": "🔢 Расчет вертикальной прокрутки: количество полос = {0}, общая высота контента = {1}, высота области просмотра = {2}, максимальная прокрутка = {3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_vertical_scroll_update": {
+    "message": "🔄 Вертикальная прокрутка: {0}/{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_setup_vertical_drag_start": {
+    "message": "🔍 Начинаем настраивать вертикальную прокрутку перетаскиванием (новая упрощенная архитектура)...",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_setup_vertical_drag_check": {
+    "message": "📊 Проверка настроек перетаскивания: scrollableGroup={0}, maxVerticalScroll={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_no_scrollable_group": {
+    "message": "⚠️ scrollableGroup не существует, перетаскивание невозможно настроить",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_no_vertical_drag_needed": {
+    "message": "🔢 Не нужно устанавливать вертикальное перетаскивание: содержимое не превышает видимую область, maxVerticalScroll = {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_setup_vertical_drag_on_strips": {
+    "message": "🖱️ Установите вертикальную прокрутку перетаскиванием (упрощенная версия: перетаскивание непосредственно на временной полосе)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_time_strips_group_missing": {
+    "message": "⚠️ Группа временной полосы не существует и перетаскивание невозможно установить",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_time_strip_background_count": {
+    "message": "🔍 Количество найденных фонов временной полосы: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_time_strip_blank_start_drag": {
+    "message": "🖱️ Начните перетаскивать пустую область временной полосы.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_vertical_drag_start": {
+    "message": "🖱️ Начните перетаскивать",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_vertical_drag_started": {
+    "message": "🖱️ Начните вертикальную прокрутку с помощью перетаскивания",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_vertical_drag_end": {
+    "message": "🖱️ Завершить вертикальную прокрутку",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_vertical_drag_setup_done": {
+    "message": "✅ Вертикальное перетаскивание теперь установлено на временной полосе (упрощенная версия)",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_window_at_boundary": {
+    "message": "⚠️ Окно наблюдения достигло границы и не может быть прокручено дальше",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_wheel_observation_scroll": {
+    "message": "🖱️ Прокрутите колесо, чтобы просмотреть окно: {0} -> {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_wheel_stopped_full_rerender": {
+    "message": "⏱️ Колесо прокрутки остановлено, полная перерисовка",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_slider_updated": {
+    "message": "✅ Обновлен ползунок окна наблюдения: x={0}, ширина={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_observation_slider_missing": {
+    "message": "⚠️ Ползунок окна наблюдения. Ползунок наблюдения не найден.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_move_observation_window": {
+    "message": "Мобильное окно просмотра: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_waterfall_view_label": {
+    "message": "Вид на водопад",
+    "description": "从TS提取 (_): src/options/options.ts"
   }
 }
