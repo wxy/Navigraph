@@ -40,7 +40,6 @@ interface LayoutResult {
     segments: TimeSegment[];
   };
 }
-
 interface ObservationWindow {
   centerSegmentIndex: number;  // 观察窗口中心所在的段索引
   startX: number;
@@ -110,7 +109,7 @@ export class WaterfallRenderer implements BaseRenderer {
     full: 150,   // 全节点：图标 + 标题
     short: 120,  // 短节点：标题
     icon: 20,    // 图标节点：完整图标
-    dot: 10      // 圆点节点：小圆点（最小压缩级别）- 调整为10px以容纳点+间隙
+    dot: 10      // 圆点节点：小圆点（最小压缩级别）
   };
   private readonly NODE_HEIGHTS = {
     full: 40,
@@ -229,14 +228,14 @@ export class WaterfallRenderer implements BaseRenderer {
     // 🛡️ 安全检查：限制节点数量，防止性能问题
     const MAX_NODES = 500;
     if (nodes.length > MAX_NODES) {
-      console.warn(`⚠️ 节点数量过多(${nodes.length})，限制为${MAX_NODES}个`);
+      logger.warn(_('waterfall_nodes_too_many', '⚠️ 节点数量过多({0})，限制为{1}个'), nodes.length, MAX_NODES);
       nodes = nodes.slice(0, MAX_NODES);
     }
 
     // 🛡️ 安全检查：验证时间戳有效性
     let validNodes = nodes.filter(node => {
       if (!node.timestamp || typeof node.timestamp !== 'number' || isNaN(node.timestamp)) {
-        console.warn('⚠️ 发现无效时间戳的节点，已过滤:', node);
+        logger.warn(_('waterfall_invalid_timestamp_node', '⚠️ 发现无效时间戳的节点，已过滤:'), node);
         return false;
       }
       return true;
@@ -259,11 +258,7 @@ export class WaterfallRenderer implements BaseRenderer {
     // 优先级：内存中的值 > localStorage 中的值 > 默认值 0
     let savedObservationIndex = this.visualizer.waterfallObservationIndex;
     
-    console.log(`🔍 开始恢复观察窗口位置检查:`, {
-      tabId: this.visualizer.tabId,
-      memoryValue: savedObservationIndex,
-      restoreTransform: options?.restoreTransform
-    });
+    logger.log(_('waterfall_restoring_observation_window', '🔍 开始恢复观察窗口位置检查: tabId={0}, 内存值={1}, 恢复变换={2}'), this.visualizer.tabId, savedObservationIndex, options?.restoreTransform);
     
     // 如果内存中没有值，尝试从 localStorage 恢复
     if (savedObservationIndex === undefined && options?.restoreTransform) {
@@ -440,7 +435,7 @@ export class WaterfallRenderer implements BaseRenderer {
    */
   private analyzeSwimlanes_deprecated(nodes: NavNode[]): any[] {
     // 该方法已弃用，返回空数组避免编译错误
-    console.warn('⚠️ analyzeSwimlanes_deprecated 方法已弃用，请使用新的泳道复用算法');
+      logger.warn(_('waterfall_analyze_swimlanes_deprecated', '⚠️ analyzeSwimlanes_deprecated 方法已弃用，请使用新的泳道复用算法'));
     return [];
   }
 
@@ -563,7 +558,7 @@ export class WaterfallRenderer implements BaseRenderer {
           swimlaneIndex: assignedLaneIndex
         };
         closureMarkers.push(marker);
-        console.log(`🔴 创建关闭标记: 标签${marker.tabId}, 时间戳=${marker.timestamp}, 泳道=${marker.swimlaneIndex}`);
+        logger.log(_('waterfall_create_closure_marker', '🔴 创建关闭标记: 标签{0}, 时间戳={1}, 泳道={2}'), marker.tabId, marker.timestamp, marker.swimlaneIndex);
       }
     });
 
@@ -589,9 +584,9 @@ export class WaterfallRenderer implements BaseRenderer {
     const canReuse = newLifecycle.startTime >= lastLifecycle.closureMarkerTime + this.TIME_SEGMENT_DURATION;
     
     if (canReuse) {
-      console.log(`✅ 泳道可复用检查通过: 新标签 ${newLifecycle.tabId} (${new Date(newLifecycle.startTime).toLocaleTimeString()}) 在关闭标记 ${new Date(lastLifecycle.closureMarkerTime).toLocaleTimeString()} 之后开始`);
+      logger.log(_('waterfall_can_reuse_lane_ok', '✅ 泳道可复用检查通过: 新标签 {0} ({1}) 在关闭标记 {2} 之后开始'), newLifecycle.tabId, new Date(newLifecycle.startTime).toLocaleTimeString(), new Date(lastLifecycle.closureMarkerTime).toLocaleTimeString());
     } else {
-      console.log(`❌ 泳道复用检查失败: 新标签 ${newLifecycle.tabId} 时间冲突`);
+      logger.log(_('waterfall_can_reuse_lane_fail', '泳道复用检查失败: 新标签 {0} 时间冲突'), newLifecycle.tabId);
     }
     
     return canReuse;
@@ -608,7 +603,7 @@ export class WaterfallRenderer implements BaseRenderer {
       lane.y = startY + (index * this.SWIMLANE_HEIGHT);
     });
     
-    console.log(`🏊 分配泳道位置: 起始Y=${startY}, 泳道数=${swimlanes.length}, 总高度=${startY + swimlanes.length * this.SWIMLANE_HEIGHT}`);
+    logger.log(_('waterfall_assign_swimlane_positions', '🏊 分配泳道位置: 起始Y={0}, 泳道数={1}, 总高度={2}'), startY, swimlanes.length, startY + swimlanes.length * this.SWIMLANE_HEIGHT);
   }
 
   /**
@@ -647,7 +642,7 @@ export class WaterfallRenderer implements BaseRenderer {
           const swimlane = this.findSwimlaneByTabId(tabId);
           
           if (!swimlane) {
-            console.warn(`⚠️ 未找到标签页 ${tabId} 对应的泳道`);
+            logger.warn(_('waterfall_swimlane_not_found', '⚠️ 未找到标签页 {0} 对应的泳道'), tabId);
             return;
           }
           
@@ -663,7 +658,7 @@ export class WaterfallRenderer implements BaseRenderer {
       });
     });
     
-    console.log(`🎯 识别出 ${groups.length} 个折叠节点组`, groups);
+    logger.log(_('waterfall_identified_collapsed_groups', '🎯 识别出 {0} 个折叠节点组'), groups.length, groups);
     
     return groups;
   }
@@ -689,7 +684,7 @@ export class WaterfallRenderer implements BaseRenderer {
       const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
       const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
       
-      console.log(`🎯 时间段生成: 节点时间范围 ${maxTimeRaw}-${minTimeRaw}, 段时间范围 ${maxTime}-${minTime}`);
+      logger.log(_('waterfall_segments_generated', '🎯 时间段生成: 节点时间范围 {0}-{1}, 段时间范围 {2}-{3}'), maxTimeRaw, minTimeRaw, maxTime, minTime);
 
       // 2. 创建时间分段
       segments = [];
@@ -722,7 +717,7 @@ export class WaterfallRenderer implements BaseRenderer {
       }
       
       if (safetyCounter >= MAX_ITERATIONS) {
-        console.error('⚠️ 时间分段循环达到最大迭代次数，强制终止');
+        logger.error(_('waterfall_segment_loop_max_iter', '⚠️ 时间分段循环达到最大迭代次数，强制终止'));
       }
 
 
@@ -776,7 +771,7 @@ export class WaterfallRenderer implements BaseRenderer {
         const remainingWidth = availableWidth - contentWidth;
         const additionalSegmentCount = Math.floor(remainingWidth / standardSegmentWidth);
         
-        console.log(`🎯 添加 ${additionalSegmentCount} 个空白区段以铺满空间`);
+    logger.log(_('waterfall_adding_filler_segments', '🎯 添加 {0} 个空白区段以铺满空间'), additionalSegmentCount);
         
         // 生成空白区段（时间递减，从左到右）
         for (let i = 0; i < additionalSegmentCount; i++) {
@@ -811,7 +806,7 @@ export class WaterfallRenderer implements BaseRenderer {
       normalSegments = allSegments;
       compressedSegments = [];
       
-      console.log(`✅ 无需压缩，${segments.length}个数据段 + ${allSegments.length - segments.length}个空白段，标准宽度 ${standardSegmentWidth}px`);
+    logger.log(_('waterfall_no_compression', '✅ 无需压缩，{0}个数据段 + {1}个空白段，标准宽度 {2}px'), segments.length, allSegments.length - segments.length, standardSegmentWidth);
     } else {
       // ⚠️ 需要压缩：应用70/30原则
       const maxCompressedWidth = availableWidth * this.MAX_COMPRESSED_RATIO;
@@ -946,7 +941,7 @@ export class WaterfallRenderer implements BaseRenderer {
     // 焦点覆盖组（固定在顶部，不参与滚动）
     const focusOverlayGroup = container.append('g').attr('class', 'focus-overlay-group');
     
-    console.log(`📦 创建SVG结构: viewport高度=${viewportHeight}, 时间轴高度=${timeAxisHeight}`);
+    logger.log(_('waterfall_created_svg_structure', '📦 创建SVG结构: viewport高度={0}, 时间轴高度={1}'), viewportHeight, timeAxisHeight);
     
     return {
       timeAxisGroup,
@@ -975,7 +970,7 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-    console.log(`🏊 渲染 ${this.swimlanes.length} 条泳道分隔线和数字标识`);
+    logger.log(_('waterfall_render_swimlane_separators', '🏊 渲染 {0} 条泳道分隔线和数字标识'), this.swimlanes.length);
 
     const separatorGroup = group.append('g').attr('class', 'swimlane-separators');
 
@@ -1059,7 +1054,7 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   private renderTimeAxis(group: any, layout: LayoutResult): void {
-    console.log('🕐 渲染时间轴（仅横线、箭头、标签）- 清理旧内容');
+    logger.log(_('waterfall_render_time_axis_start', '🕐 渲染时间轴（仅横线、箭头、标签）- 清理旧内容'));
 
     // 🧹 清空时间轴组，避免重复渲染
     group.selectAll('*').remove();
@@ -1076,7 +1071,7 @@ export class WaterfallRenderer implements BaseRenderer {
     const lineStartX = timeAxisMargin; // 从左边距开始
     const lineEndX = this.width - timeAxisMargin; // 到右边距结束
     
-    console.log(`🎯 时间轴横贯整个区域: 从 ${lineStartX} 到 ${lineEndX} (SVG宽度: ${this.width})`);
+    logger.log(_('waterfall_time_axis_span', '🎯 时间轴横贯整个区域: 从 {0} 到 {1} (SVG宽度: {2})'), lineStartX, lineEndX, this.width);
     
     // 主时间轴线（横贯整个时间轴区域）
     axisLineGroup.append('line')
@@ -1105,7 +1100,7 @@ export class WaterfallRenderer implements BaseRenderer {
       }
     });
     
-    console.log(`✅ 时间轴渲染完成: 横线 ✓, 箭头 ✓, 时间标签 ${labelCount} 个`);
+    logger.log(_('waterfall_time_axis_done', '✅ 时间轴渲染完成: 横线 ✓, 箭头 ✓, 时间标签 {0} 个'), labelCount);
   }
 
   /**
@@ -1118,8 +1113,6 @@ export class WaterfallRenderer implements BaseRenderer {
     });
 
     const centerX = segment.startX + segment.allocatedWidth / 2;
-    
-    console.log(`🏷️ 添加时间标签到固定时间轴: ${timeLabel} 在 X=${centerX}, Y=${timeAxisY}`);
 
     // 刻度线（向上，朝向时间标签）
     group.append('line')
@@ -1148,7 +1141,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * � 渲染独立的时间条带背景
    */
   private renderTimeStrips(group: any, layout: LayoutResult): void {
-    console.log('🎨 渲染独立的时间条带背景（可滚动）');
+    logger.log(_('waterfall_render_time_strips', '🎨 渲染独立的时间条带背景（可滚动）'));
 
     // ⚡ 获取条带相关常量
     const stripTop = 0; // 条带顶部Y坐标（相对于组）
@@ -1198,7 +1191,7 @@ export class WaterfallRenderer implements BaseRenderer {
       this.strips.push(stripGroup);
     });
     
-    console.log(`✅ 渲染了 ${layout.segments.length} 个时间条带背景，创建了 ${this.strips.length} 个strips`);
+  logger.log(_('waterfall_time_strips_done', '✅ 渲染了 {0} 个时间条带背景，创建了 {1} 个strips'), layout.segments.length, this.strips.length);
   }
 
   /**
@@ -1211,7 +1204,7 @@ export class WaterfallRenderer implements BaseRenderer {
    */
   private addTimeLabelToStrip(strip: any, segment: TimeSegment, timeAxisY: number = 80): void {
     // 方法已禁用，时间标签由固定时间轴负责
-    console.log('⚠️ addTimeLabelToStrip 已禁用，时间标签由固定时间轴负责');
+  logger.warn(_('waterfall_addTimeLabel_disabled', '⚠️ addTimeLabelToStrip 已禁用，时间标签由固定时间轴负责'));
     return;
     
     /* 原代码已注释
@@ -1247,21 +1240,21 @@ export class WaterfallRenderer implements BaseRenderer {
    * 按段渲染节点
    */
   private renderSegmentNodes(group: any, layout: LayoutResult): void {
-    console.log('🎯 渲染段节点，段数量:', layout.segments.length);
+  logger.log(_('waterfall_render_segment_nodes', '🎯 渲染段节点，段数量: {0}'), layout.segments.length);
 
     let totalNodesRendered = 0;
     const MAX_NODES_TO_RENDER = 500; // 防止渲染过多节点
 
     layout.segments.forEach((segment, segIndex) => {
       if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
-        console.warn(`⚠️ 已渲染${totalNodesRendered}个节点，跳过剩余段`);
+  logger.warn(_('waterfall_max_nodes_rendered', '⚠️ 已渲染{0}个节点，跳过剩余段'), totalNodesRendered);
         return;
       }
 
       // 🎯 使用strips数组中对应的条带分组
       const strip = this.strips[segIndex];
       if (!strip) {
-        console.warn(`⚠️ 找不到段 ${segIndex} 的条带分组`);
+  logger.warn(_('waterfall_strip_not_found', '⚠️ 找不到段 {0} 的条带分组'), segIndex);
         return;
       }
       
@@ -1291,7 +1284,6 @@ export class WaterfallRenderer implements BaseRenderer {
         
         // 🎯 跳过被折叠的节点
         if (hiddenNodeIds.has(node.id)) {
-          console.log(`🔽 跳过折叠节点: ${node.title || node.url}`);
           return;
         }
         
@@ -1312,7 +1304,7 @@ export class WaterfallRenderer implements BaseRenderer {
       });
     });
 
-    console.log(`✅ 总共渲染了 ${totalNodesRendered} 个节点`);
+  logger.log(_('waterfall_total_nodes_rendered', '✅ 总共渲染了 {0} 个节点'), totalNodesRendered);
   }
 
   /**
@@ -1325,7 +1317,7 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-    console.log(`🔴 渲染 ${this.closureMarkers.length} 个关闭标记`);
+  logger.log(_('waterfall_render_closure_markers', '🔴 渲染 {0} 个关闭标记'), this.closureMarkers.length);
 
     // 创建关闭标记分组
     const markerGroup = group.append('g').attr('class', 'closure-markers');
@@ -1337,7 +1329,6 @@ export class WaterfallRenderer implements BaseRenderer {
         const lastSegment = layout.segments[layout.segments.length - 1]; // 最早时间段
         
         if (marker.timestamp > firstSegment.endTime || marker.timestamp < lastSegment.startTime) {
-          console.log(`⚡ 跳过边界外关闭标记: 标签${marker.tabId}, 时间戳=${marker.timestamp} 超出段范围[${lastSegment.startTime}-${firstSegment.endTime}]`);
           return;
         }
       }
@@ -1347,34 +1338,34 @@ export class WaterfallRenderer implements BaseRenderer {
       const swimlane = this.swimlanes[marker.swimlaneIndex];
       
       if (!segment || !swimlane) {
-        console.error(`❌ 关闭标记调试信息:`);
-        console.error(`   标签ID: ${marker.tabId}`);
-        console.error(`   时间戳: ${marker.timestamp} (${new Date(marker.timestamp).toLocaleString()})`);
-        console.error(`   泳道索引: ${marker.swimlaneIndex}`);
-        console.error(`   找到的段: ${segment ? '是' : '否'}`);
-        console.error(`   找到的泳道: ${swimlane ? '是' : '否'}`);
-        console.error(`   总段数: ${layout.segments.length}`);
-        console.error(`   总泳道数: ${this.swimlanes.length}`);
+  logger.error(_('waterfall_closure_marker_debug', '❌ 关闭标记调试信息:'));
+  logger.error(_('waterfall_closure_marker_id', '   标签ID: {0}'), marker.tabId);
+  logger.error(_('waterfall_closure_marker_timestamp', '   时间戳: {0} ({1})'), marker.timestamp, new Date(marker.timestamp).toLocaleString());
+  logger.error(_('waterfall_closure_marker_swimlane_index', '   泳道索引: {0}'), marker.swimlaneIndex);
+  logger.error(_('waterfall_closure_marker_segment_found', '   找到的段: {0}'), segment ? '是' : '否');
+  logger.error(_('waterfall_closure_marker_swimlane_found', '   找到的泳道: {0}'), swimlane ? '是' : '否');
+  logger.error(_('waterfall_closure_marker_total_segments', '   总段数: {0}'), layout.segments.length);
+  logger.error(_('waterfall_closure_marker_total_swimlanes', '   总泳道数: {0}'), this.swimlanes.length);
         
         if (layout.segments.length > 0) {
           const firstSegment = layout.segments[0];
           const lastSegment = layout.segments[layout.segments.length - 1];
-          console.error(`   段时间范围: ${firstSegment.startTime} - ${lastSegment.endTime}`);
-          console.error(`   段时间范围（可读）: ${new Date(firstSegment.startTime).toLocaleString()} - ${new Date(lastSegment.endTime).toLocaleString()}`);
+          logger.error(_('waterfall_closure_marker_segment_range', '   段时间范围: {0} - {1}'), firstSegment.startTime, lastSegment.endTime);
+          logger.error(_('waterfall_closure_marker_segment_range_readable', '   段时间范围（可读）: {0} - {1}'), new Date(firstSegment.startTime).toLocaleString(), new Date(lastSegment.endTime).toLocaleString());
         }
         
-        console.warn(`⚠️ 无法找到关闭标记 ${marker.tabId} 的对应段或泳道`);
+  logger.warn(_('waterfall_cannot_find_closure_marker', '⚠️ 无法找到关闭标记 {0} 的对应段或泳道'), marker.tabId);
         return;
       }
 
       // 🎯 只跳过填充的空白段中的关闭标记，但允许在数据空段中显示
       if (segment.isFiller) {
-        console.log(`⚡ 跳过填充空白段中的关闭标记: ${marker.tabId}`);
+  logger.log(_('waterfall_skip_filler_closure', '⚡ 跳过填充空白段中的关闭标记: {0}'), marker.tabId);
         return;
       }
       
       if (segment.displayMode === 'dot' || segment.displayMode === 'icon') {
-        console.log(`⚡ 跳过压缩条带中的关闭标记: ${marker.tabId} (模式: ${segment.displayMode})`);
+  logger.log(_('waterfall_skip_compressed_closure', '⚡ 跳过压缩条带中的关闭标记: {0} (模式: {1})'), marker.tabId, segment.displayMode);
         return;
       }
 
@@ -1383,7 +1374,7 @@ export class WaterfallRenderer implements BaseRenderer {
       const markerX = segment.startX + (segment.allocatedWidth / 2);
       const markerY = swimlane.y + (this.SWIMLANE_HEIGHT / 2); // 泳道中央
       
-      console.log(`🎯 关闭标记 ${marker.tabId} 显示在段中央: X=${markerX.toFixed(1)}, 段范围=[${segment.startTime}-${segment.endTime}]`);
+  logger.log(_('waterfall_closure_marker_render_pos', '🎯 关闭标记 {0} 显示在段中央: X={1}, 段范围=[{2}-{3}]'), marker.tabId, markerX.toFixed(1), segment.startTime, segment.endTime);
       
       // 🎯 日本麻将立直棒样式设计
       const stickHeight = this.SWIMLANE_HEIGHT * 0.6; // 棒子高度（稍小一些）
@@ -1419,7 +1410,7 @@ export class WaterfallRenderer implements BaseRenderer {
       markerContainer.append('title')
         .text(`标签页 ${marker.tabId} 已关闭`);
 
-      console.log(`🔴 已渲染关闭标记: ${marker.tabId} at (${markerX.toFixed(1)}, ${markerY.toFixed(1)})`);
+  logger.log(_('waterfall_closure_marker_rendered', '🔴 已渲染关闭标记: {0} at ({1}, {2})'), marker.tabId, markerX.toFixed(1), markerY.toFixed(1));
     });
   }
 
@@ -1434,16 +1425,16 @@ export class WaterfallRenderer implements BaseRenderer {
       }
     }
     
-    // 🎯 如果没找到，输出调试信息
-    console.warn(`🔍 findSegmentByTimestamp 调试信息:`);
-    console.warn(`   查找时间戳: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
-    console.warn(`   总段数: ${layout.segments.length}`);
+  // 🎯 如果没找到，输出调试信息
+  logger.warn(_('waterfall_findSegment_debug', '🔍 findSegmentByTimestamp 调试信息:'));
+  logger.warn(_('waterfall_findSegment_lookup_ts', '   查找时间戳: {0} ({1})'), timestamp, new Date(timestamp).toLocaleString());
+  logger.warn(_('waterfall_findSegment_total_segments', '   总段数: {0}'), layout.segments.length);
     
     if (layout.segments.length > 0) {
-      console.warn(`   段列表:`);
+      logger.warn(_('waterfall_findSegment_segments_list', '   段列表:'));
       layout.segments.forEach((seg, index) => {
         const inRange = timestamp >= seg.startTime && timestamp <= seg.endTime;
-        console.warn(`     [${index}] ${seg.startTime}-${seg.endTime} (${new Date(seg.startTime).toLocaleString()} - ${new Date(seg.endTime).toLocaleString()}) ${inRange ? '✅' : '❌'} nodes:${seg.nodes.length} filler:${seg.isFiller}`);
+        logger.warn(_('waterfall_findSegment_segment_line', '     [{0}] {1}-{2} ({3} - {4}) {5} nodes:{6} filler:{7}'), index, seg.startTime, seg.endTime, new Date(seg.startTime).toLocaleString(), new Date(seg.endTime).toLocaleString(), inRange ? '✅' : '❌', seg.nodes.length, seg.isFiller);
       });
     }
     
@@ -1456,7 +1447,7 @@ export class WaterfallRenderer implements BaseRenderer {
       // 扩大到 3 倍时间段长度，覆盖各种时间计算误差
       if (timestamp > lastSegment.endTime && 
           timestamp <= lastSegment.endTime + this.TIME_SEGMENT_DURATION * 3) {
-        console.log(`🎯 关闭标记时间戳 ${timestamp} 超出范围，使用最后段 [${lastSegment.startTime}-${lastSegment.endTime}]`);
+        logger.log(_('waterfall_closure_ts_out_of_range_use_last', '🎯 关闭标记时间戳 {0} 超出范围，使用最后段 [{1}-{2}]'), timestamp, lastSegment.startTime, lastSegment.endTime);
         return lastSegment;
       }
       
@@ -1477,7 +1468,7 @@ export class WaterfallRenderer implements BaseRenderer {
       
       // 如果找到了相对接近的段（在1小时内），使用它
       if (minDistance <= 60 * 60 * 1000) { // 1小时容错
-        console.log(`🎯 关闭标记时间戳 ${timestamp} 找到最接近段 [${closestSegment.startTime}-${closestSegment.endTime}]，距离 ${(minDistance / 1000).toFixed(1)}秒`);
+        logger.log(_('waterfall_closure_ts_found_closest', '🎯 关闭标记时间戳 {0} 找到最接近段 [{1}-{2}]，距离 {3}秒'), timestamp, closestSegment.startTime, closestSegment.endTime, (minDistance / 1000).toFixed(1));
         return closestSegment;
       }
     }
@@ -1575,17 +1566,12 @@ export class WaterfallRenderer implements BaseRenderer {
       event.stopPropagation(); // 防止触发节点点击事件
       event.preventDefault();
       
-      console.log('🎯 折叠角标被点击:', {
-        tabId: collapsedGroup.tabId,
-        count: collapsedGroup.count,
-        nodes: collapsedGroup.nodes.map(n => n.title || n.url)
-      });
+      logger.log(_('waterfall_collapse_badge_clicked', '🎯 折叠角标被点击: tabId={0}, count={1}'), collapsedGroup.tabId, collapsedGroup.count, collapsedGroup.nodes.map(n => n.title || n.url));
       
       // 🎯 显示抽屉
       this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight);
     });
-    
-    console.log(`🎯 渲染折叠角标: ${collapsedGroup.tabId} (${collapsedGroup.count}个节点)`);
+
   }
 
   /**
@@ -1680,14 +1666,14 @@ export class WaterfallRenderer implements BaseRenderer {
       if (this.isDraggingObservationWindow) {
         event.preventDefault();
         event.stopPropagation();
-        console.log('🚫 观察窗口拖拽期间禁用抽屉滚轮滚动（防止Magic Mouse误触）');
+        logger.log(_('waterfall_drawer_wheel_disabled_during_observation_drag', '🚫 观察窗口拖拽期间禁用抽屉滚轮滚动（防止Magic Mouse误触）'));
         return;
       }
       
       event.preventDefault();
       event.stopPropagation();
       
-      console.log('🎯 浮层滚动事件被拦截');
+  logger.log(_('waterfall_drawer_scroll_intercepted', '🎯 浮层滚动事件被拦截'));
       
       if (maxScroll > 0) {
         // 需要滚动：处理滚动
@@ -1745,7 +1731,7 @@ export class WaterfallRenderer implements BaseRenderer {
       // 🎯 点击节点触发详情显示
       nodeGroup.on('click', (event: MouseEvent) => {
         event.stopPropagation();
-        console.log('🎯 抽屉节点被点击:', node.title || node.url);
+        logger.log(_('waterfall_drawer_node_clicked', '🎯 抽屉节点被点击: {0}'), node.title || node.url);
         
         // 触发节点详情显示
         this.visualizer.showNodeDetails(node);
@@ -1793,7 +1779,7 @@ export class WaterfallRenderer implements BaseRenderer {
       event.stopPropagation();
     });
     
-    console.log(`🎯 显示抽屉: ${collapsedGroup.tabId} (${otherNodes.length}个节点, ${expandDirection})`);
+  logger.log(_('waterfall_show_collapsed_drawer', '🎯 显示抽屉: {0} ({1}个节点, {2})'), collapsedGroup.tabId, otherNodes.length, expandDirection);
   }
 
   /**
@@ -1883,7 +1869,7 @@ export class WaterfallRenderer implements BaseRenderer {
       
       // 🐛 调试日志：输出节点定位信息
       if (Math.random() < 0.01) { // 只输出1%的节点避免日志过多
-        console.log(`🏊 泳道节点定位:`, {
+  logger.log(_('waterfall_swimlane_node_position_debug', '🏊 泳道节点定位:'), {
           tabId: node.tabId,
           swimlaneY: swimlane.y,
           swimlaneHeight: this.SWIMLANE_HEIGHT,
@@ -2259,9 +2245,6 @@ export class WaterfallRenderer implements BaseRenderer {
         break;
     }
     
-    // 🐛 调试日志：显示节点类型和颜色
-    console.log(`🎨 节点颜色: ${type} → ${color} (${node.title || node.url || 'Unknown'})`);
-    
     return color;
   }
 
@@ -2296,7 +2279,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * 渲染观察窗口滑块 - 在时间轴横线上滑动
    */
   private renderObservationWindowSlider(group: any, layout: LayoutResult): void {
-    console.log('🎚️ 渲染观察窗口滑块');
+  logger.log(_('waterfall_render_observation_slider', '🎚️ 渲染观察窗口滑块'));
 
     const timeAxisY = 80; // 时间轴横线的Y坐标（与renderTimeAxis保持一致）
     const sliderHeight = 16; // 滑块高度（更扁平，适合在线上）
@@ -2307,7 +2290,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     if (!hasCompression) {
       // ✅ 无压缩情况：观察窗口覆盖所有条带的实际宽度
-      console.log('✅ 无压缩，观察窗口覆盖所有条带实际宽度');
+  logger.log(_('waterfall_observation_no_compression', '✅ 无压缩，观察窗口覆盖所有条带实际宽度'));
       
       const firstSegment = layout.segments[0];
       const lastSegment = layout.segments[layout.segments.length - 1];
@@ -2341,7 +2324,7 @@ export class WaterfallRenderer implements BaseRenderer {
     }
 
     // ⚠️ 有压缩情况：观察窗口只覆盖正常显示区域，可拖动
-    console.log('⚠️ 有压缩，观察窗口在时间轴上滑动');
+  logger.log(_('waterfall_observation_has_compression', '⚠️ 有压缩，观察窗口在时间轴上滑动'));
     
     if (layout.normalDisplaySegments.length === 0) {
       return;
@@ -2447,8 +2430,8 @@ export class WaterfallRenderer implements BaseRenderer {
     // 🎯 计算最大可拖动的起始索引（确保最后几个段也能被观察）
     const maxObservationStartIndex = Math.max(0, this.allSegments.length - layout.normalDisplaySegments.length);
     
-    console.log(`🔍 观察窗口拖拽设置: 总段数=${this.allSegments.length}, 观察窗口段数=${layout.normalDisplaySegments.length}, 最大起始索引=${maxObservationStartIndex}`);
-    console.log(`🔍 拖拽范围段: 从第${0}段 到 第${this.allSegments.length - 1}段（允许覆盖所有段）`);
+  logger.log(_('waterfall_observation_drag_setup', '🔍 观察窗口拖拽设置: 总段数={0}, 观察窗口段数={1}, 最大起始索引={2}'), this.allSegments.length, layout.normalDisplaySegments.length, maxObservationStartIndex);
+  logger.log(_('waterfall_observation_drag_range_info', '🔍 拖拽范围段: 从第{0}段 到 第{1}段（允许覆盖所有段）'), 0, this.allSegments.length - 1);
 
     const drag = d3.drag()
       .on('start', function(event: any) {
@@ -2548,14 +2531,14 @@ export class WaterfallRenderer implements BaseRenderer {
           (lastSegment.startX + lastSegment.allocatedWidth - observationWindowWidth) : 
           layout.timeAxisData.startX;
         
-        console.log(`🔍 拖动边界检查: minX=${minX}, maxX=${maxX}, targetX=${targetX}, 最后段=${lastSegment?.startX}-${lastSegment ? lastSegment.startX + lastSegment.allocatedWidth : 'N/A'}`);
+  logger.log(_('waterfall_drag_boundary_check', '🔍 拖动边界检查: minX={0}, maxX={1}, targetX={2}, 最后段={3}'), minX, maxX, targetX, lastSegment ? `${lastSegment.startX}-${lastSegment.startX + lastSegment.allocatedWidth}` : 'N/A');
         
         // 🎯 修复右边界问题：严格限制边界，不允许超出
         // 如果吸附位置超出边界，优先保证边界限制，放弃吸附
         if (targetX > maxX) {
           targetX = maxX;
           self.lastDragSnapped = false; // 取消吸附状态
-          console.log(`🚫 拒绝超出右边界的吸附，强制限制在边界内: ${targetX}`);
+          logger.log(_('waterfall_reject_right_boundary_snap', '🚫 拒绝超出右边界的吸附，强制限制在边界内: {0}'), targetX);
         }
         
         const clampedX = Math.max(minX, Math.min(maxX, targetX));
@@ -2596,7 +2579,7 @@ export class WaterfallRenderer implements BaseRenderer {
         // 如果当前位置超出边界，强制回到边界内
         const correctedX = Math.max(minX, Math.min(maxX, currentX));
         if (Math.abs(correctedX - currentX) > 0.1) {
-          console.log(`🎯 修正拖拽结束位置: ${currentX.toFixed(1)} -> ${correctedX.toFixed(1)}`);
+          logger.log(_('waterfall_correct_drag_end_pos', '🎯 修正拖拽结束位置: {0} -> {1}'), currentX.toFixed(1), correctedX.toFixed(1));
           rect.attr('x', correctedX);
         }
         
@@ -2605,7 +2588,7 @@ export class WaterfallRenderer implements BaseRenderer {
         const windowLeftEdge = finalX;
         const windowRightEdge = finalX + observationWindowWidth;
         
-        console.log(`🔍 拖拽结束位置分析: 窗口位置=[${windowLeftEdge.toFixed(1)}, ${windowRightEdge.toFixed(1)}], 宽度=${observationWindowWidth.toFixed(1)}`);
+  logger.log(_('waterfall_drag_end_analysis', '🔍 拖拽结束位置分析: 窗口位置=[{0}, {1}], 宽度={2}'), windowLeftEdge.toFixed(1), windowRightEdge.toFixed(1), observationWindowWidth.toFixed(1));
         
         // 计算每个条带的覆盖比例
         const stripCoverages = self.allSegments.map((segment, i) => {
@@ -2639,12 +2622,12 @@ export class WaterfallRenderer implements BaseRenderer {
         if (isAtLeftBoundary) {
           // 用户拖拽到最左边，显示最新的时间段（从索引0开始）
           newStartIndex = 0;
-          console.log(`🎯 检测到左边界拖拽：窗口左边缘=${windowLeftEdge.toFixed(1)}, 最小拖拽X=${minDragX.toFixed(1)}, 显示最新时间段（索引=0）`);
+          logger.log(_('waterfall_detect_left_boundary_drag', '🎯 检测到左边界拖拽：窗口左边缘={0}, 最小拖拽X={1}, 显示最新时间段（索引=0）'), windowLeftEdge.toFixed(1), minDragX.toFixed(1));
         } else if (isAtRightBoundary) {
           // 🎯 用户拖拽到最右边，确保观察窗口覆盖最后几个时间段
           const maxObservationStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
           newStartIndex = maxObservationStartIndex;
-          console.log(`🎯 检测到右边界拖拽：窗口左边缘=${windowLeftEdge.toFixed(1)}, 最大拖拽X=${maxDragX.toFixed(1)}, 显示最老时间段（索引=${newStartIndex}）`);
+          logger.log(_('waterfall_detect_right_boundary_drag', '🎯 检测到右边界拖拽：窗口左边缘={0}, 最大拖拽X={1}, 显示最老时间段（索引={2}）'), windowLeftEdge.toFixed(1), maxDragX.toFixed(1), newStartIndex);
         } else {
           // 🎯 根据拖拽方向确定观察窗口停止位置
           // 向左拖拽：以左边缘对齐时间条带；向右拖拽：以右边缘对齐时间条带
@@ -2655,7 +2638,7 @@ export class WaterfallRenderer implements BaseRenderer {
           
           const isDraggingRight = windowLeftEdge > currentWindowLeftEdge;
           
-          console.log(`🔍 拖拽方向分析: 当前窗口左边缘=${currentWindowLeftEdge.toFixed(1)}, 新位置=${windowLeftEdge.toFixed(1)}, 向右拖拽=${isDraggingRight}`);
+          logger.log(_('waterfall_drag_direction_analysis', '🔍 拖拽方向分析: 当前窗口左边缘={0}, 新位置={1}, 向右拖拽={2}'), currentWindowLeftEdge.toFixed(1), windowLeftEdge.toFixed(1), isDraggingRight);
           
           if (isDraggingRight) {
             // 🎯 向右拖拽：找观察窗口右边缘覆盖的时间条带，让观察窗口右边缘对齐该条带右边缘
@@ -2674,11 +2657,11 @@ export class WaterfallRenderer implements BaseRenderer {
             if (targetSegmentIndex >= 0) {
               // 计算让观察窗口右边缘对齐目标条带右边缘时的起始索引
               newStartIndex = Math.max(0, targetSegmentIndex - layout.normalDisplaySegments.length + 1);
-              console.log(`🎯 向右拖拽: 目标条带=${targetSegmentIndex}, 计算起始索引=${newStartIndex}`);
+              logger.log(_('waterfall_drag_right_target', '🎯 向右拖拽: 目标条带={0}, 计算起始索引={1}'), targetSegmentIndex, newStartIndex);
             } else {
               // 回退到最大索引
               newStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
-              console.log(`🎯 向右拖拽: 未找到合适条带，使用最大索引=${newStartIndex}`);
+              logger.log(_('waterfall_drag_right_no_target', '🎯 向右拖拽: 未找到合适条带，使用最大索引={0}'), newStartIndex);
             }
           } else {
             // 🎯 向左拖拽：找观察窗口左边缘覆盖的时间条带，让观察窗口左边缘对齐该条带左边缘
@@ -2694,11 +2677,11 @@ export class WaterfallRenderer implements BaseRenderer {
             }
             
             newStartIndex = targetSegmentIndex >= 0 ? targetSegmentIndex : 0;
-            console.log(`🎯 向左拖拽: 目标条带=${targetSegmentIndex}, 起始索引=${newStartIndex}`);
+            logger.log(_('waterfall_drag_left', '🎯 向左拖拽: 目标条带={0}, 起始索引={1}'), targetSegmentIndex, newStartIndex);
           }
         }
         
-        console.log('🖱️ 拖动结束，目标起始索引:', newStartIndex, '当前:', self.observationStartIndex);
+  logger.log(_('waterfall_drag_end_target_index', '🖱️ 拖动结束，目标起始索引: {0}, 当前: {1}'), newStartIndex, self.observationStartIndex);
         
         // 🎯 拖动结束后完全重新渲染（确保节点正确显示）
         if (newStartIndex !== self.observationStartIndex) {
@@ -2727,7 +2710,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * 根据新的观察窗口位置重新渲染
    */
   private reRenderWithObservationWindow(observationStartIndex: number): void {
-    console.log('🔄 根据新观察窗口位置重新渲染，起始索引:', observationStartIndex);
+  logger.log(_('waterfall_rerender_for_new_window', '🔄 根据新观察窗口位置重新渲染，起始索引: {0}'), observationStartIndex);
     
     // 🎯 更新当前观察窗口起始索引
     this.observationStartIndex = observationStartIndex;
@@ -2737,7 +2720,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 保存到 localStorage
     const tabId = this.visualizer.tabId || '';
-    console.log(`💾 准备保存观察窗口索引到 localStorage:`, {
+    logger.log(_('waterfall_save_observation_index_prepare', '💾 准备保存观察窗口索引到 localStorage:'), {
       tabId,
       observationStartIndex
     });
@@ -2747,7 +2730,7 @@ export class WaterfallRenderer implements BaseRenderer {
       waterfallObservationIndex: observationStartIndex
     });
     
-    console.log(`✅ 已保存观察窗口索引到 localStorage`);
+  logger.log(_('waterfall_saved_observation_index', '✅ 已保存观察窗口索引到 localStorage'));
     
     // 重新计算布局
     const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
@@ -2884,7 +2867,7 @@ export class WaterfallRenderer implements BaseRenderer {
       
       if (isEntering) {
         // 🎯 进入观察窗口：展开节点显示
-        console.log(`✨ 条带 ${i} 进入观察窗口，展开节点`);
+  logger.log(_('waterfall_strip_entered_observation', '✨ 条带 {0} 进入观察窗口，展开节点'), i);
         if (isFullyExpanded) {
           this.renderSegmentNodesExpanded(segment, strip, layoutSegment);
         } else {
@@ -2893,7 +2876,7 @@ export class WaterfallRenderer implements BaseRenderer {
         }
       } else if (isLeaving) {
         // 🎯 离开观察窗口：压缩为圆点
-        console.log(`💨 条带 ${i} 离开观察窗口，压缩节点`);
+        logger.log(_('waterfall_segment_leaving', '💨 条带 {0} 离开观察窗口，压缩节点'), i);
         this.renderSegmentNodesAsDots(segment, strip, layoutSegment);
       } else if (isInWindow) {
         // 🎯 保持在观察窗口内：根据当前模式更新节点
@@ -3084,7 +3067,7 @@ export class WaterfallRenderer implements BaseRenderer {
    */
   private setupWheelScroll(): void {
     if (!this.svg || !this.currentLayout) {
-      console.warn('⚠️ 无法设置滚轮事件：SVG或布局不存在');
+      logger.warn(_('waterfall_wheel_event_setup_no_svg', '⚠️ 无法设置滚轮事件：SVG或布局不存在'));
       return;
     }
     
@@ -3103,18 +3086,18 @@ export class WaterfallRenderer implements BaseRenderer {
       const wheelEvent = event as WheelEvent;
       
       // 🛡️ 如果正在拖拽观察窗口，禁用滚轮事件（防止Magic Mouse误触）
-      if (self.isDraggingObservationWindow) {
-        wheelEvent.preventDefault();
-        wheelEvent.stopPropagation();
-        console.log('🚫 观察窗口拖拽期间禁用滚轮滚动（防止Magic Mouse误触）');
-        return;
+        if (self.isDraggingObservationWindow) {
+        	wheelEvent.preventDefault();
+        	wheelEvent.stopPropagation();
+        	logger.log(_('waterfall_wheel_disabled_during_observation_drag', '🚫 观察窗口拖拽期间禁用滚轮滚动（防止Magic Mouse误触）'));
+        	return;
       }
       
       // 如果正在拖拽垂直滚动，禁用滚轮事件
       if (self.isDraggingVertical) {
         wheelEvent.preventDefault();
         wheelEvent.stopPropagation();
-        console.log('🚫 拖拽期间禁用滚轮滚动');
+        logger.log(_('waterfall_wheel_disabled_during_vertical_drag', '🚫 拖拽期间禁用滚轮滚动'));
         return;
       }
       
@@ -3130,7 +3113,7 @@ export class WaterfallRenderer implements BaseRenderer {
       }
     });
     
-    console.log('✅ 滚轮滚动已设置（仅垂直滚动），最大垂直滚动:', this.maxVerticalScroll);
+    logger.log(_('waterfall_wheel_scroll_setup_done', '✅ 滚轮滚动已设置（仅垂直滚动），最大垂直滚动: {0}'), this.maxVerticalScroll);
   }
 
   /**
@@ -3139,7 +3122,7 @@ export class WaterfallRenderer implements BaseRenderer {
   private calculateMaxVerticalScroll(): void {
     if (!this.swimlanes || this.swimlanes.length === 0) {
       this.maxVerticalScroll = 0;
-      console.log('🔢 无泳道数据，垂直滚动不可用');
+      logger.log(_('waterfall_no_swimlanes_vertical_scroll', '🔢 无泳道数据，垂直滚动不可用'));
       return;
     }
 
@@ -3155,7 +3138,7 @@ export class WaterfallRenderer implements BaseRenderer {
     // 如果内容高度超过viewport高度，则需要滚动
     this.maxVerticalScroll = Math.max(0, totalContentHeight - viewportHeight);
     
-    console.log(`🔢 垂直滚动计算: 泳道数=${this.swimlanes.length}, 内容总高度=${totalContentHeight}, viewport高度=${viewportHeight}, 最大滚动=${this.maxVerticalScroll}`);
+    logger.log(_('waterfall_vertical_scroll_calc', '🔢 垂直滚动计算: 泳道数={0}, 内容总高度={1}, viewport高度={2}, 最大滚动={3}'), this.swimlanes.length, totalContentHeight, viewportHeight, this.maxVerticalScroll);
   }
 
   /**
@@ -3194,27 +3177,27 @@ export class WaterfallRenderer implements BaseRenderer {
       this.scrollableGroup.attr('transform', transform);
     }
     
-    console.log(`🔄 垂直滚动: ${this.verticalScrollOffset}/${this.maxVerticalScroll}`);
+  logger.log(_('waterfall_vertical_scroll_update', '🔄 垂直滚动: {0}/{1}'), this.verticalScrollOffset, this.maxVerticalScroll);
   }
 
   /**
    * 设置垂直拖拽滚动 - 升级版本：整个泳道区域都可以拖拽
    */
   private setupVerticalDragScroll(): void {
-    console.log('🔍 开始设置垂直拖拽滚动（新的简化架构）...');
-    console.log(`📊 拖拽设置检查: scrollableGroup=${!!this.scrollableGroup}, maxVerticalScroll=${this.maxVerticalScroll}`);
+  logger.log(_('waterfall_setup_vertical_drag_start', '🔍 开始设置垂直拖拽滚动（新的简化架构）...'));
+  logger.log(_('waterfall_setup_vertical_drag_check', '📊 拖拽设置检查: scrollableGroup={0}, maxVerticalScroll={1}'), !!this.scrollableGroup, this.maxVerticalScroll);
     
     if (!this.scrollableGroup) {
-      console.warn('⚠️ scrollableGroup 不存在，无法设置拖拽');
+      logger.warn(_('waterfall_no_scrollable_group', '⚠️ scrollableGroup 不存在，无法设置拖拽'));
       return;
     }
     
     if (this.maxVerticalScroll <= 0) {
-      console.log('🔢 无需设置垂直拖拽：内容未超出可视区域，maxVerticalScroll =', this.maxVerticalScroll);
+      logger.log(_('waterfall_no_vertical_drag_needed', '🔢 无需设置垂直拖拽：内容未超出可视区域，maxVerticalScroll = {0}'), this.maxVerticalScroll);
       return;
     }
 
-    console.log('🖱️ 设置垂直拖拽滚动（简化版：直接在时间条带上拖拽）');
+  logger.log(_('waterfall_setup_vertical_drag_on_strips', '🖱️ 设置垂直拖拽滚动（简化版：直接在时间条带上拖拽）'));
     
     const timeAxisHeight = 100;
     const self = this;
@@ -3226,18 +3209,18 @@ export class WaterfallRenderer implements BaseRenderer {
     const timeStripsGroup = this.scrollableGroup.select('.time-strips-group');
     
     if (timeStripsGroup.empty()) {
-      console.warn('⚠️ 时间条带组不存在，无法设置拖拽');
+      logger.warn(_('waterfall_time_strips_group_missing', '⚠️ 时间条带组不存在，无法设置拖拽'));
       return;
     }
 
     // 🎯 为每个时间条带的背景添加拖拽功能
     const timeStripBackgrounds = timeStripsGroup.selectAll('rect.strip-background');
-    console.log('🔍 找到的时间条带背景数量:', timeStripBackgrounds.size());
+  logger.log(_('waterfall_time_strip_background_count', '🔍 找到的时间条带背景数量: {0}'), timeStripBackgrounds.size());
     
     timeStripBackgrounds.on('mousedown', function(this: SVGElement, event: any, d: any) {
       // 🎯 关键：只有当点击的是时间条带本身时才启动拖拽
       if (event.target === this) {
-        console.log('�️ 在时间条带空白区域开始拖拽');
+        logger.log(_('waterfall_time_strip_blank_start_drag', '🖱️ 在时间条带空白区域开始拖拽'));
         startDrag(event);
       }
     });
@@ -3255,7 +3238,7 @@ export class WaterfallRenderer implements BaseRenderer {
       });
 
     function startDrag(event: any) {
-      console.log('🖱️ 开始拖拽操作');
+      logger.log(_('waterfall_vertical_drag_start', '🖱️ 开始拖拽操作'));
       
       event.preventDefault();
       event.stopPropagation();
@@ -3273,7 +3256,7 @@ export class WaterfallRenderer implements BaseRenderer {
           isDragging = true;
           self.isDraggingVertical = true;
           d3.select('body').style('cursor', 'ns-resize');
-          console.log('🖱️ 开始垂直拖拽滚动');
+          logger.log(_('waterfall_vertical_drag_started', '🖱️ 开始垂直拖拽滚动'));
         }
         
         if (isDragging) {
@@ -3286,7 +3269,7 @@ export class WaterfallRenderer implements BaseRenderer {
       // 鼠标释放事件
       const mouseup = function() {
         if (isDragging) {
-          console.log('🖱️ 结束垂直拖拽滚动');
+          logger.log(_('waterfall_vertical_drag_end', '🖱️ 结束垂直拖拽滚动'));
           isDragging = false;
           self.isDraggingVertical = false;
           d3.select('body').style('cursor', 'default');
@@ -3300,7 +3283,7 @@ export class WaterfallRenderer implements BaseRenderer {
       d3.select(window).on('mouseup.vscroll', mouseup);
     }
 
-    console.log(`✅ 垂直拖拽已设置在时间条带上（简化版）`);
+    logger.log(_('waterfall_vertical_drag_setup_done', '✅ 垂直拖拽已设置在时间条带上（简化版）'));
   }
 
   /**
@@ -3319,11 +3302,11 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 如果索引没有变化，不需要更新
     if (newStartIndex === this.observationStartIndex) {
-      console.log('⚠️ 观察窗口已到达边界，无法继续滚动');
+      logger.warn(_('waterfall_observation_window_at_boundary', '⚠️ 观察窗口已到达边界，无法继续滚动'));
       return;
     }
     
-    console.log(`🖱️ 滚轮滚动观察窗口: ${this.observationStartIndex} -> ${newStartIndex}`);
+  logger.log(_('waterfall_wheel_observation_scroll', '🖱️ 滚轮滚动观察窗口: {0} -> {1}'), this.observationStartIndex, newStartIndex);
     
     // 🎯 滚动过程中：只更新视觉效果（条带宽度和观察窗口位置）
     this.updateObservationWindowVisuals(newStartIndex);
@@ -3334,7 +3317,7 @@ export class WaterfallRenderer implements BaseRenderer {
     }
     
     this.wheelScrollTimeout = window.setTimeout(() => {
-      console.log('⏱️ 滚轮停止，完全重新渲染');
+      logger.log(_('waterfall_wheel_stopped_full_rerender', '⏱️ 滚轮停止，完全重新渲染'));
       this.reRenderWithObservationWindow(newStartIndex);
       this.wheelScrollTimeout = null;
     }, 200); // 200ms 后认为滚动已停止
@@ -3370,14 +3353,14 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 🎯 再更新观察窗口滑块位置（确保在条带更新后）
     const windowRect = this.svg.select('.observation-slider');
-    if (!windowRect.empty()) {
+      if (!windowRect.empty()) {
       windowRect
         .attr('x', observationWindowX)
         .attr('width', observationWindowWidth);
       
-      console.log(`✅ 观察窗口滑块已更新: x=${observationWindowX.toFixed(0)}, width=${observationWindowWidth.toFixed(0)}`);
+      logger.log(_('waterfall_observation_slider_updated', '✅ 观察窗口滑块已更新: x={0}, width={1}'), observationWindowX.toFixed(0), observationWindowWidth.toFixed(0));
     } else {
-      console.warn('⚠️ 未找到观察窗口滑块 .observation-slider');
+      logger.warn(_('waterfall_observation_slider_missing', '⚠️ 未找到观察窗口滑块 .observation-slider'));
     }
     
     // 🎯 实时更新状态栏显示的时间范围
@@ -3394,6 +3377,6 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // TODO: 实现观察窗口移动逻辑
     // 这将重新计算布局并重新渲染
-    console.log('移动观察窗口:', direction);
+    logger.log(_('waterfall_move_observation_window', '移动观察窗口: {0}'), direction);
   }
 }

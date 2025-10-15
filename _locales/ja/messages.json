@@ -4962,5 +4962,515 @@
   "content_observation_time_placeholder": {
     "message": "チェック： -",
     "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
+  },
+  "waterfall_nodes_too_many": {
+    "message": "⚠️ 节点数量过多({0})，限制为{1}个",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_invalid_timestamp_node": {
+    "message": "⚠️ 发现无效时间戳的节点，已过滤:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_restoring_observation_window": {
+    "message": "🔍 开始恢复观察窗口位置检查: tabId={0}, 内存值={1}, 恢复变换={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_analyze_swimlanes_deprecated": {
+    "message": "⚠️ analyzeSwimlanes_deprecated 方法已弃用，请使用新的泳道复用算法",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_create_closure_marker": {
+    "message": "🔴 创建关闭标记: 标签{0}, 时间戳={1}, 泳道={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_can_reuse_lane_ok": {
+    "message": "✅ 泳道可复用检查通过: 新标签 {0} ({1}) 在关闭标记 {2} 之后开始",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_can_reuse_lane_fail": {
+    "message": "❌ 泳道复用检查失败: 新标签 {0} 时间冲突",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_assign_swimlane_positions": {
+    "message": "🏊 分配泳道位置: 起始Y={0}, 泳道数={1}, 总高度={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_swimlane_not_found": {
+    "message": "⚠️ 未找到标签页 {0} 对应的泳道",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_identified_collapsed_groups": {
+    "message": "🎯 识别出 {0} 个折叠节点组",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_segments_generated": {
+    "message": "🎯 时间段生成: 节点时间范围 {0}-{1}, 段时间范围 {2}-{3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_segment_loop_max_iter": {
+    "message": "⚠️ 时间分段循环达到最大迭代次数，强制终止",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_adding_filler_segments": {
+    "message": "🎯 添加 {0} 个空白区段以铺满空间",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_no_compression": {
+    "message": "✅ 无需压缩，{0}个数据段 + {1}个空白段，标准宽度 {2}px",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_created_svg_structure": {
+    "message": "📦 创建SVG结构: viewport高度={0}, 时间轴高度={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_render_swimlane_separators": {
+    "message": "🏊 渲染 {0} 条泳道分隔线和数字标识",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_render_time_axis_start": {
+    "message": "🕐 渲染时间轴（仅横线、箭头、标签）- 清理旧内容",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_time_axis_span": {
+    "message": "🎯 时间轴横贯整个区域: 从 {0} 到 {1} (SVG宽度: {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_time_axis_done": {
+    "message": "✅ 时间轴渲染完成: 横线 ✓, 箭头 ✓, 时间标签 {0} 个",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_render_time_strips": {
+    "message": "🎨 渲染独立的时间条带背景（可滚动）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_time_strips_done": {
+    "message": "✅ 渲染了 {0} 个时间条带背景，创建了 {1} 个strips",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_addTimeLabel_disabled": {
+    "message": "⚠️ addTimeLabelToStrip 已禁用，时间标签由固定时间轴负责",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_render_segment_nodes": {
+    "message": "🎯 渲染段节点，段数量: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_max_nodes_rendered": {
+    "message": "⚠️ 已渲染{0}个节点，跳过剩余段",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_strip_not_found": {
+    "message": "⚠️ 找不到段 {0} 的条带分组",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_total_nodes_rendered": {
+    "message": "✅ 总共渲染了 {0} 个节点",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_render_closure_markers": {
+    "message": "🔴 渲染 {0} 个关闭标记",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_debug": {
+    "message": "❌ 关闭标记调试信息:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_id": {
+    "message": "   标签ID: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_timestamp": {
+    "message": "   时间戳: {0} ({1})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_swimlane_index": {
+    "message": "   泳道索引: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_segment_found": {
+    "message": "   找到的段: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_swimlane_found": {
+    "message": "   找到的泳道: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_total_segments": {
+    "message": "   总段数: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_total_swimlanes": {
+    "message": "   总泳道数: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_segment_range": {
+    "message": "   段时间范围: {0} - {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_segment_range_readable": {
+    "message": "   段时间范围（可读）: {0} - {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_cannot_find_closure_marker": {
+    "message": "⚠️ 无法找到关闭标记 {0} 的对应段或泳道",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_skip_filler_closure": {
+    "message": "⚡ 跳过填充空白段中的关闭标记: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_skip_compressed_closure": {
+    "message": "⚡ 跳过压缩条带中的关闭标记: {0} (模式: {1})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_render_pos": {
+    "message": "🎯 关闭标记 {0} 显示在段中央: X={1}, 段范围=[{2}-{3}]",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_marker_rendered": {
+    "message": "🔴 已渲染关闭标记: {0} at ({1}, {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_findSegment_debug": {
+    "message": "🔍 findSegmentByTimestamp 调试信息:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_findSegment_lookup_ts": {
+    "message": "   查找时间戳: {0} ({1})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_findSegment_total_segments": {
+    "message": "   总段数: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_findSegment_segments_list": {
+    "message": "   段列表:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_findSegment_segment_line": {
+    "message": "     [{0}] {1}-{2} ({3} - {4}) {5} nodes:{6} filler:{7}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_ts_out_of_range_use_last": {
+    "message": "🎯 关闭标记时间戳 {0} 超出范围，使用最后段 [{1}-{2}]",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_closure_ts_found_closest": {
+    "message": "🎯 关闭标记时间戳 {0} 找到最接近段 [{1}-{2}]，距离 {3}秒",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_collapse_badge_clicked": {
+    "message": "🎯 折叠角标被点击: tabId={0}, count={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drawer_wheel_disabled_during_observation_drag": {
+    "message": "🚫 观察窗口拖拽期间禁用抽屉滚轮滚动（防止Magic Mouse误触）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drawer_scroll_intercepted": {
+    "message": "🎯 浮层滚动事件被拦截",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drawer_node_clicked": {
+    "message": "🎯 抽屉节点被点击: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_show_collapsed_drawer": {
+    "message": "🎯 显示抽屉: {0} ({1}个节点, {2})",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_swimlane_node_position_debug": {
+    "message": "🏊 泳道节点定位:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_render_observation_slider": {
+    "message": "🎚️ 渲染观察窗口滑块",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_no_compression": {
+    "message": "✅ 无压缩，观察窗口覆盖所有条带实际宽度",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_has_compression": {
+    "message": "⚠️ 有压缩，观察窗口在时间轴上滑动",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_drag_setup": {
+    "message": "🔍 观察窗口拖拽设置: 总段数={0}, 观察窗口段数={1}, 最大起始索引={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_drag_range_info": {
+    "message": "🔍 拖拽范围段: 从第{0}段 到 第{1}段（允许覆盖所有段）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_boundary_check": {
+    "message": "🔍 拖动边界检查: minX={0}, maxX={1}, targetX={2}, 最后段={3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_reject_right_boundary_snap": {
+    "message": "🚫 拒绝超出右边界的吸附，强制限制在边界内: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_correct_drag_end_pos": {
+    "message": "🎯 修正拖拽结束位置: {0} -> {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_end_analysis": {
+    "message": "🔍 拖拽结束位置分析: 窗口位置=[{0}, {1}], 宽度={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_detect_left_boundary_drag": {
+    "message": "🎯 检测到左边界拖拽：窗口左边缘={0}, 最小拖拽X={1}, 显示最新时间段（索引=0）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_detect_right_boundary_drag": {
+    "message": "🎯 检测到右边界拖拽：窗口左边缘={0}, 最大拖拽X={1}, 显示最老时间段（索引={2}）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_direction_analysis": {
+    "message": "🔍 拖拽方向分析: 当前窗口左边缘={0}, 新位置={1}, 向右拖拽={2}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_right_target": {
+    "message": "🎯 向右拖拽: 目标条带={0}, 计算起始索引={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_right_no_target": {
+    "message": "🎯 向右拖拽: 未找到合适条带，使用最大索引={0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_left": {
+    "message": "🎯 向左拖拽: 目标条带={0}, 起始索引={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_drag_end_target_index": {
+    "message": "🖱️ 拖动结束，目标起始索引: {0}, 当前: {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_rerender_for_new_window": {
+    "message": "🔄 根据新观察窗口位置重新渲染，起始索引: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_save_observation_index_prepare": {
+    "message": "💾 准备保存观察窗口索引到 localStorage:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_saved_observation_index": {
+    "message": "✅ 已保存观察窗口索引到 localStorage",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_strip_entered_observation": {
+    "message": "✨ 条带 {0} 进入观察窗口，展开节点",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_segment_leaving": {
+    "message": "💨 条带 {0} 离开观察窗口，压缩节点",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_wheel_event_setup_no_svg": {
+    "message": "⚠️ 无法设置滚轮事件：SVG或布局不存在",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_wheel_disabled_during_observation_drag": {
+    "message": "🚫 观察窗口拖拽期间禁用滚轮滚动（防止Magic Mouse误触）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_wheel_disabled_during_vertical_drag": {
+    "message": "🚫 拖拽期间禁用滚轮滚动",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_wheel_scroll_setup_done": {
+    "message": "✅ 滚轮滚动已设置（仅垂直滚动），最大垂直滚动: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_no_swimlanes_vertical_scroll": {
+    "message": "🔢 无泳道数据，垂直滚动不可用",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_vertical_scroll_calc": {
+    "message": "🔢 垂直滚动计算: 泳道数={0}, 内容总高度={1}, viewport高度={2}, 最大滚动={3}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_vertical_scroll_update": {
+    "message": "🔄 垂直滚动: {0}/{1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_setup_vertical_drag_start": {
+    "message": "🔍 开始设置垂直拖拽滚动（新的简化架构）...",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_setup_vertical_drag_check": {
+    "message": "📊 拖拽设置检查: scrollableGroup={0}, maxVerticalScroll={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_no_scrollable_group": {
+    "message": "⚠️ scrollableGroup 不存在，无法设置拖拽",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_no_vertical_drag_needed": {
+    "message": "🔢 无需设置垂直拖拽：内容未超出可视区域，maxVerticalScroll = {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_setup_vertical_drag_on_strips": {
+    "message": "🖱️ 设置垂直拖拽滚动（简化版：直接在时间条带上拖拽）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_time_strips_group_missing": {
+    "message": "⚠️ 时间条带组不存在，无法设置拖拽",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_time_strip_background_count": {
+    "message": "🔍 找到的时间条带背景数量: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_time_strip_blank_start_drag": {
+    "message": "🖱️ 在时间条带空白区域开始拖拽",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_vertical_drag_start": {
+    "message": "🖱️ 开始拖拽操作",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_vertical_drag_started": {
+    "message": "🖱️ 开始垂直拖拽滚动",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_vertical_drag_end": {
+    "message": "🖱️ 结束垂直拖拽滚动",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_vertical_drag_setup_done": {
+    "message": "✅ 垂直拖拽已设置在时间条带上（简化版）",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_window_at_boundary": {
+    "message": "⚠️ 观察窗口已到达边界，无法继续滚动",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_wheel_observation_scroll": {
+    "message": "🖱️ 滚轮滚动观察窗口: {0} -> {1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_wheel_stopped_full_rerender": {
+    "message": "⏱️ 滚轮停止，完全重新渲染",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_slider_updated": {
+    "message": "✅ 观察窗口滑块已更新: x={0}, width={1}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_observation_slider_missing": {
+    "message": "⚠️ 未找到观察窗口滑块 .observation-slider",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_move_observation_window": {
+    "message": "移动观察窗口: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "options_waterfall_view_label": {
+    "message": "瀑布流视图",
+    "description": "从TS提取 (_): src/options/options.ts",
+    "_untranslated": true
   }
 }

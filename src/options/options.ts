@@ -1,6 +1,7 @@
 import { Logger } from '../lib/utils/logger.js';
 import { _, _Error } from '../lib/utils/i18n.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
+import type { ViewType } from '../lib/settings/types.js';
 import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { sendMessage, sendToBackground } from '../lib/messaging/index.js';
@@ -101,7 +102,7 @@ function setupEventListeners(): void {
   const viewSelect = document.getElementById('default-view') as HTMLSelectElement;
   if (viewSelect) {
     viewSelect.addEventListener('change', () => {
-      updateViewPreview(viewSelect.value as 'tree' | 'timeline');
+      updateViewPreview(viewSelect.value as ViewType);
     });
   }
   
@@ -257,15 +258,20 @@ function applyThemeToOptionsPage(theme?: 'light' | 'dark' | 'system'): void {
 /**
  * 更新视图预览
  */
-function updateViewPreview(view: 'tree' | 'timeline'): void {
+function updateViewPreview(view: ViewType): void {
   const previewContainer = document.getElementById('view-preview');
   if (previewContainer) {
+    // 直接支持 'waterfall' 作为预览类型（timeline 已废弃）
+    const previewType = view;
+
     // 更新类名
-    previewContainer.className = `preview-box ${view}-preview`;
+    previewContainer.className = `preview-box ${previewType}-preview`;
     
     // 添加数据属性以支持 ::before 伪元素的内容
-    previewContainer.setAttribute('data-view-type', 
-      view === 'tree' ? _('options_tree_view_label', '树形图视图') : _('options_timeline_view_label', '时间线视图'));
+    const label = previewType === 'tree' ? _('options_tree_view_label', '树形图视图') :
+                  (previewType === 'waterfall' ? _('options_waterfall_view_label', '瀑布流视图') : _('options_timeline_view_label', '时间线视图'));
+
+    previewContainer.setAttribute('data-view-type', label);
   }
 }
 

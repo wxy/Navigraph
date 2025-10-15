@@ -119,7 +119,7 @@ export class SessionServiceClient {
         return sessions;
       } else {
         logger.warn(_('session_response_invalid_format', '会话响应格式不正确: {0}'), response);
-        throw new I18nError(response?.error || 'session_list_load_failed');
+        throw new _Error(response?.error || 'session_list_load_failed');
       }
     } catch (error) {
       logger.error(_('session_list_load_failed', '加载会话列表失败: {0}'), error);
@@ -198,7 +198,7 @@ export class SessionServiceClient {
         return session;
       } else {
         logger.error(_('session_details_fetch_failed', '获取会话详情失败, 响应: {0}'), response);
-        throw new I18nError(response && response.error ? response.error : 'session_details_fetch_failed');
+        throw new _Error(response && response.error ? response.error : 'session_details_fetch_failed');
       }
     } catch (error) {
       logger.error(_('session_details_load_failed', '加载会话详情失败: {0}'), error);
