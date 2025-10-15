@@ -4988,7 +4988,7 @@
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_can_reuse_lane_fail": {
-    "message": "❌ 泳道复用检查失败: 新标签 {0} 时间冲突",
+    "message": "泳道复用检查失败: 新标签 {0} 时间冲突",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_assign_swimlane_positions": {
