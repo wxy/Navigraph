@@ -5370,5 +5370,53 @@
   "options_waterfall_view_label": {
     "message": "Wasserfallblick",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "Knoten {0} wird mit der In-Page-Anforderung zusammengeführt, spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "Der Versuch, die SPA-Anforderung zusammenzuführen, ist fehlgeschlagen. Es wird eine reguläre Speicherung durchgeführt: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "Der Versuch, SPA-Anfragen während der Stapelspeicherung zusammenzuführen, ist fehlgeschlagen. Es wird auf die normale Speicherung zurückgegriffen: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "content_spa_request_count": {
+    "message": "Anzahl der Zusammenführungen von SPA-Anfragen",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "Cache konnte nicht aktualisiert werden: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "Knoten konnte nicht gespeichert werden: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "node_tracker_create_save_failed": {
+    "message": "Knoten konnte nicht gespeichert werden: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_db_transaction_aborted": {
+    "message": "Datenbanktransaktion abgebrochen: {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "SPA-Merge-Debugging: Sitzung={0}, Tab={1}, normalisiert={2}, Kandidaten={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "Beispiel für einen SPA-Zusammenführungskandidaten: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "Batch-SPA-Merge-Debugging: Sitzung={0}, Tab={1}, normalisiert={2}, Kandidaten={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "Beispiel für einen Batch-SPA-Zusammenführungskandidaten: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   }
 }

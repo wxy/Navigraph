@@ -325,6 +325,7 @@ export interface NavNode {
 
   children?: NavNode[];      // 子节点列表
   depth?: number;            // 深度
+  spaRequestCount?: number;  // SPA内请求合并计数
 }
 
 /**
@@ -365,6 +366,7 @@ export interface NavDataQueryOptions {
   
   // 分页和排序
   limit?: number;       // 结果数量限制
+  
   offset?: number;      // 结果偏移量
   sortBy?: string;      // 排序字段
   sortOrder?: 'asc' | 'desc'; // 排序顺序

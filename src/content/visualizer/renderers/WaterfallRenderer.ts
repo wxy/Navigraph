@@ -165,6 +165,7 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   initialize(svg: any, container: HTMLElement, width: number, height: number): void {
+    // badge styles are provided by main.css (merged at build time)
     this.svg = svg;
     this.container = container;
     this.width = width;
@@ -955,6 +956,7 @@ export class WaterfallRenderer implements BaseRenderer {
       closureMarkersGroup,
       focusOverlayGroup
     };
+
   }
 
   /**
@@ -1155,7 +1157,7 @@ export class WaterfallRenderer implements BaseRenderer {
       // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
       const isEven = segment.originalIndex % 2 === 0;
       
-      // 竖向条带背景 - 添加微妙的渐变和悬停效果
+  // （已移除）误插入的 appendBadge - badge 应由节点渲染函数内部创建
       const stripBg = group.append('rect')
         .attr('class', `strip-background strip-${segment.originalIndex}`)
         .attr('data-time', new Date(segment.endTime).toISOString())
@@ -1287,7 +1289,7 @@ export class WaterfallRenderer implements BaseRenderer {
           return;
         }
         
-        this.renderSingleNode(nodeGroup, node, segment, index);
+  const createdNodeGroup = this.renderSingleNode(nodeGroup, node, segment, index);
         
         // 🎯 如果这个节点是折叠组的显示节点，渲染折叠角标
         // 但是 dot 模式不需要折叠角标
@@ -1296,7 +1298,9 @@ export class WaterfallRenderer implements BaseRenderer {
             g => g.displayNode.id === node.id
           );
           if (collapsedGroup) {
-            this.renderCollapseBadge(nodeGroup, node, segment, collapsedGroup);
+            // 将折叠角标渲染到具体的 navigation-node 内部，
+            // 以便与节点内的 SPA 角标共享相同的坐标/裁剪上下文
+            this.renderCollapseBadge(createdNodeGroup || nodeGroup, node, segment, collapsedGroup);
           }
         }
         
@@ -1500,78 +1504,146 @@ export class WaterfallRenderer implements BaseRenderer {
     const nodeX = segment.startX + Math.max(0, centerOffset);
     const nodeY = swimlane.y + verticalPadding;
     
-    // 🎯 成组标记：占据节点右侧整个边，右侧圆角吻合节点
+    // 🎯 改为只占据节点右下半高区域，释放右上区域给 SPA 角标使用
     const badgeText = `${collapsedGroup.count}`;
-    const badgeWidth = 22; // 稍微增加宽度
-    
-    const badgeX = nodeX + nodeWidth - badgeWidth; // 节点右侧边
-    const badgeY = nodeY; // 与节点顶部对齐
-    
-    const badgeGroup = group.append('g')
-      .attr('class', 'group-badge')
-      .attr('transform', `translate(${badgeX}, ${badgeY})`)
-      .style('cursor', 'pointer')
-      .attr('data-collapse-group', collapsedGroup.tabId);
-    
-    // 🎯 使用 path 创建右侧圆角的矩形
-    // 左侧直角，右侧圆角（与节点圆角一致）
-    const radius = 4; // 圆角半径，与节点的 rx 一致
-    const path = `
-      M 0,0
-      L ${badgeWidth - radius},0
-      Q ${badgeWidth},0 ${badgeWidth},${radius}
-      L ${badgeWidth},${nodeHeight - radius}
-      Q ${badgeWidth},${nodeHeight} ${badgeWidth - radius},${nodeHeight}
-      L 0,${nodeHeight}
-      Z
-    `;
-    
-    badgeGroup.append('path')
-      .attr('d', path)
-      .attr('fill', '#2c2c2c') // 深黑色背景
-      .attr('opacity', 0.95)
-      .attr('stroke', 'rgba(255,255,255,0.2)') // 微妙的白色边框
-      .attr('stroke-width', 0.5);
-    
-    // 🎯 文字：垂直居中，白色文字
-    badgeGroup.append('text')
-      .attr('class', 'group-badge-text') // 添加特定的CSS类
-      .attr('x', badgeWidth / 2)
-      .attr('y', nodeHeight / 2)
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .attr('fill', '#fff') // 白色文字，与深黑背景形成最佳对比
-      .attr('font-size', '12px')
-      .attr('font-weight', 'bold')
-      .text(badgeText)
-      .style('pointer-events', 'none');
-    
-    // 悬停效果
-    badgeGroup.on('mouseenter', function(this: SVGGElement) {
+    const badgeWidth = 22; // 宽度保持不变
+    const badgeHeight = Math.max(12, Math.floor(nodeHeight / 2)); // 占半高，至少12px
+
+    // 右下角对齐：如果传入的 group 已经是单个节点的 group（navigation-node），
+    // 则使用局部坐标 (相对于 nodeGroup)。否则使用绝对坐标（相对于 svg/contentGroup）。
+    let badgeTransformX: number;
+    let badgeTransformY: number;
+
+    try {
+      const parentEl = (group && typeof group.node === 'function') ? group.node() as Element : null;
+      const parentClass = parentEl && parentEl.getAttribute ? parentEl.getAttribute('class') || '' : '';
+      const isNodeGroup = parentClass.indexOf('navigation-node') !== -1;
+
+      if (isNodeGroup) {
+        // 在 nodeGroup 内使用局部坐标
+        badgeTransformX = nodeWidth - badgeWidth;
+        badgeTransformY = nodeHeight - badgeHeight;
+      } else {
+        // 使用绝对坐标
+        badgeTransformX = nodeX + nodeWidth - badgeWidth;
+        badgeTransformY = nodeY + nodeHeight - badgeHeight;
+      }
+    } catch (err) {
+      // 如果检查失败，回退到绝对坐标
+      badgeTransformX = nodeX + nodeWidth - badgeWidth;
+      badgeTransformY = nodeY + nodeHeight - badgeHeight;
+    }
+
+    // 使用统一的 appendBadge 创建折叠徽章（右下圆角）
+  const collapseBadgeGroup = this.appendBadge(group, badgeTransformX, badgeTransformY, badgeText, { corner: 'bottom', fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
+    collapseBadgeGroup.attr('class', 'group-badge').attr('data-collapse-group', collapsedGroup.tabId).style('cursor', 'pointer');
+
+    // 悬停效果：只改变 path 的样式
+    collapseBadgeGroup.on('mouseenter', function(this: SVGGElement) {
       d3.select(this).select('path')
         .transition()
         .duration(200)
         .attr('opacity', 1)
-        .attr('fill', '#1a1a1a'); // 悬停时更深的黑色
+        .attr('fill', '#1a1a1a');
     }).on('mouseleave', function(this: SVGGElement) {
       d3.select(this).select('path')
         .transition()
         .duration(200)
         .attr('opacity', 0.95)
-        .attr('fill', '#2c2c2c'); // 回到原来的深黑色
+        .attr('fill', '#2c2c2c');
     });
-    
-    // 点击事件 - 显示/隐藏抽屉
-    badgeGroup.on('click', (event: MouseEvent) => {
-      event.stopPropagation(); // 防止触发节点点击事件
+
+      // 如果 node 上记录了 spa badge 的宽度，优先使用它来定位 SPA 徽章，确保两者不重叠
+      try {
+        const spaWidthFromNode = (node as any).__spaBadgeWidth || 0;
+        const gapBetween = 6;
+        if (spaWidthFromNode) {
+          // 对齐到节点右侧：让 SPA badge 的右边贴合节点右边（与 collapse 的右边一致）
+          const spaTargetX = Math.max(4, nodeWidth - spaWidthFromNode);
+          const spaSel = (group && typeof group.select === 'function') ? group.select('.spa-request-badge') : null;
+          if (spaSel && !spaSel.empty()) {
+            // 保留 SPA badge 当前 Y 值，仅更新 X
+            try {
+              const curTransform = spaSel.attr('transform') || '';
+              const m = /translate\(([-0-9.]+),\s*([-0-9.]+)\)/.exec(curTransform);
+              const curY = m ? parseFloat(m[2]) : 0;
+              spaSel.attr('transform', `translate(${spaTargetX}, ${curY})`);
+            } catch (err) {
+              spaSel.attr('transform', `translate(${spaTargetX}, 0)`);
+            }
+          }
+        }
+      } catch (e) {
+        // ignore reposition errors
+      }
+
+    // 点击事件 - 显示/隐藏抽屉（坐标仍使用整个节点的 x/y/width/height）
+    collapseBadgeGroup.on('click', (event: MouseEvent) => {
+      event.stopPropagation();
       event.preventDefault();
-      
+
       logger.log(_('waterfall_collapse_badge_clicked', '🎯 折叠角标被点击: tabId={0}, count={1}'), collapsedGroup.tabId, collapsedGroup.count, collapsedGroup.nodes.map(n => n.title || n.url));
-      
-      // 🎯 显示抽屉
+
       this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight);
     });
 
+  }
+
+  /**
+   * 统一的徽章创建器：在 parent 上创建一个带 path + text 的 badge
+   * 返回创建的 badgeGroup 供外部进一步调整/绑定事件
+   */
+  private appendBadge(parent: any, x: number, y: number, text: string, options?: { corner?: 'top' | 'bottom', minWidth?: number, fixedWidth?: number, minHeight?: number, fontSize?: number }) {
+    const corner = options?.corner || 'top';
+    const minWidth = options?.minWidth || 16;
+    const fixedWidth = options?.fixedWidth;
+    const fontSize = options?.fontSize || 12;
+
+    const paddingX = 6; // 左右内边距
+    const approxCharWidth = (fontSize >= 12) ? 7 : 5; // 粗略估算
+    const estWidth = Math.max(minWidth, paddingX * 2 + approxCharWidth * text.length);
+    const finalWidth = typeof fixedWidth === 'number' ? fixedWidth : estWidth;
+  const estHeight = Math.max(10, Math.min(20, Math.round(fontSize * 1.6)));
+  const finalHeight = Math.max(estHeight, options?.minHeight || 0);
+
+    const badgeGroup = parent.append('g')
+      .attr('class', 'spa-request-badge')
+      .attr('transform', `translate(${x}, ${y})`);
+
+    // 根据 corner 决定哪侧为圆角（top => 右上圆角, bottom => 右下圆角）
+    const radius = Math.min(4, Math.floor(estHeight / 2));
+  // finalHeight already computed above (considering minHeight)
+  const finalW = Math.max(finalWidth, minWidth);
+    let pathD: string;
+    if (corner === 'top') {
+      pathD = `M 0,0 L ${finalW - radius},0 Q ${finalW},0 ${finalW},${radius} L ${finalW},${finalHeight} L 0,${finalHeight} Z`;
+    } else {
+      pathD = `M 0,0 L ${finalW},0 L ${finalW},${finalHeight - radius} Q ${finalW},${finalHeight} ${finalW - radius},${finalHeight} L 0,${finalHeight} Z`;
+    }
+
+    badgeGroup.append('path')
+      .attr('d', pathD)
+      .attr('fill', '#2c2c2c')
+      .attr('opacity', 0.95)
+      .attr('stroke', 'rgba(255,255,255,0.2)')
+      .attr('stroke-width', 0.5);
+
+    badgeGroup.append('text')
+      .attr('class', 'group-badge-text')
+      .attr('x', finalW / 2)
+      .attr('y', finalHeight / 2 + (fontSize >= 12 ? 1 : 0))
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('font-size', `${fontSize}px`)
+      .attr('font-weight', 'bold')
+      .attr('fill', '#ffffff')
+      .text(text)
+      .style('pointer-events', 'none');
+
+    // 标注固定宽高供外部使用（避免内部后置移动引入偏差）
+    badgeGroup.attr('data-badge-width', finalW).attr('data-badge-height', finalHeight);
+
+    return badgeGroup;
   }
 
   /**
@@ -1830,7 +1902,7 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 渲染单个节点
    */
-  private renderSingleNode(group: any, node: NavNode, segment: TimeSegment, index: number): void {
+  private renderSingleNode(group: any, node: NavNode, segment: TimeSegment, index: number): any {
     // 🎯 对于dot模式，使用动态宽度；其他模式使用固定宽度
     let width: number;
     let height: number;
@@ -1917,6 +1989,8 @@ export class WaterfallRenderer implements BaseRenderer {
     } else if (segment.displayMode === 'dot') {
       this.renderDotNode(nodeGroup, node, width, height);
     }
+
+    return nodeGroup;
   }
 
   /**
@@ -2007,20 +2081,85 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // 🎯 标题文本（图标右侧）
     const title = node.title || this.getNodeLabel(node);
-    const textX = iconX + iconSize + 4; // 图标 + 间隔
-    const textWidth = width - textX - 8; // 剩余宽度，留更多右边距
+  const textX = iconX + iconSize + 4; // 图标 + 间隔
+  // 为角标和折叠标记保留少量间距（尽量显示更多标题）
+  const reservedRightSpace = 6;
+  const textWidth = width - textX - 8 - reservedRightSpace; // 剩余宽度
+
+  // 🎯 字符宽度估算（11px 字体约6px/字符），更慷慨以显示更多文本
+  const maxChars = Math.max(1, Math.floor(textWidth / 6));
     
-    // 🎯 更精确的字符数计算：11px字体大约每个字符6.5px宽度
-    const maxChars = Math.max(1, Math.floor(textWidth / 6.5));
-    
-    group.append('text')
+    const titleTextSelection = group.append('text')
       .attr('x', textX)
       .attr('y', height / 2 + 4)
       .attr('font-size', '11px')
       .attr('fill', '#333')
       .text(this.truncateText(title, maxChars))
       .style('pointer-events', 'none');
-    
+
+    // 🎯 SPA 请求合并角标（仅在有合并计数时显示）
+    try {
+      const spaCount = (node as any).spaRequestCount || 0;
+      if (spaCount > 0) {
+        const badgeText = spaCount.toString();
+        // 更宽更高以匹配折叠标记的视觉密度
+        const badgeWidth = 22 + (badgeText.length > 2 ? (badgeText.length - 2) * 6 : 0);
+
+        // collapse badge 的高度（renderCollapseBadge 使用的计算）
+        const collapseBadgeHeight = Math.max(12, Math.floor(height / 2));
+        const collapseY = height - collapseBadgeHeight;
+
+        // 期望的 SPA 徽章高度范围与默认值
+        const spaDesiredH = Math.max(14, Math.min(20, Math.floor(height / 2)));
+        const minSpaH = 8;
+        const spaTopDesired = 4; // 顶部偏移
+        const verticalGap = 4; // SPA 与 collapse 之间的垂直间隙
+
+        // 为了避免重叠，计算允许的最大 SPA 高度（以 spaTopDesired 为基准）
+        const maxSpaHToAvoidOverlap = Math.max(minSpaH, collapseY - verticalGap - spaTopDesired);
+        const spaHeight = Math.max(minSpaH, Math.min(spaDesiredH, maxSpaHToAvoidOverlap));
+
+  // 水平位置（保持之前的确定性逻辑）
+  const collapseBadgeWidthLocal = 22; // 与 renderCollapseBadge 保持一致
+  const gapBetweenLocal = 6; // 两个角标之间的间隙
+  let spaTargetX = width - collapseBadgeWidthLocal - gapBetweenLocal - badgeWidth;
+        if (spaTargetX < 4) spaTargetX = 4;
+
+        // 计算 SPA 顶部 Y，使其以 spaTopDesired 为优先，但尊重计算出的 spaHeight
+        let spaTop = spaTopDesired;
+        // 如果 spaTop + spaHeight + verticalGap 超过 collapseY，则尝试将 spaTop 更靠上
+        if (spaTop + spaHeight + verticalGap > collapseY) {
+          spaTop = Math.max(2, collapseY - verticalGap - spaHeight);
+        }
+
+    // 使用统一的 appendBadge 先绘制并返回 badgeGroup
+  // 默认右对齐到节点右侧（当没有 collapse 时也对齐），并使用 collapse badge 高度作为最小高度
+  const collapseBadgeWidth = 22;
+  const spaGapBetween = 6;
+  const spaFixedWidth = 22;
+  const estX = Math.max(4, width - spaFixedWidth);
+  const created = this.appendBadge(group, estX, 0, badgeText, { corner: 'top', fixedWidth: spaFixedWidth, minHeight: collapseBadgeHeight, fontSize: 7 });
+
+        // 尝试读取真实尺寸并写回 node 上（如果可用）以便 collapse badge 使用
+        try {
+          // 读取 data 属性（appendBadge 已写入 final 尺寸），兼容没有测量环境的情况
+          const wAttr = created.attr('data-badge-width');
+          const hAttr = created.attr('data-badge-height');
+          if (wAttr) (node as any).__spaBadgeWidth = parseFloat(wAttr);
+          else (node as any).__spaBadgeWidth = badgeWidth;
+          if (hAttr) (node as any).__spaBadgeHeight = parseFloat(hAttr);
+          else (node as any).__spaBadgeHeight = spaHeight;
+        } catch (e) {
+          try { (node as any).__spaBadgeWidth = badgeWidth; (node as any).__spaBadgeHeight = spaHeight; } catch(e) {}
+        }
+
+        // 附加 title 提示
+        created.append('title').text(`${spaCount} SPA requests merged`);
+      }
+    } catch (e) {
+      // 不阻塞渲染
+    }
+
     // 🎯 添加点击事件
     group.style('cursor', 'pointer')
       .on('click', () => {
@@ -2096,8 +2235,10 @@ export class WaterfallRenderer implements BaseRenderer {
     });
 
     const label = node.title || this.getNodeLabel(node);
-    // 🎯 更精确的字符数计算：9px字体大约每个字符5px宽度，留边距
-    const maxChars = Math.max(1, Math.floor((width - 8) / 5));
+  // 🎯 更精确的字符数计算：9px字体大约每个字符5px宽度，留边距
+  // 为徽章预留空间（约 20px）以避免覆盖标题
+  const reservedRightSpace = 20;
+  const maxChars = Math.max(1, Math.floor((width - 8 - reservedRightSpace) / 5));
     
     group.append('text')
       .attr('x', width / 2)
@@ -2108,6 +2249,49 @@ export class WaterfallRenderer implements BaseRenderer {
       .text(this.truncateText(label, maxChars))
       .style('pointer-events', 'none');
     
+    // SPA 请求合并角标（短节点） - 确定性放置，使用 path 风格以匹配折叠标记
+    try {
+      const spaCount = (node as any).spaRequestCount || 0;
+      if (spaCount > 0) {
+        const badgeText = spaCount.toString();
+        const badgeHeight = 12;
+        const badgeWidth = 16 + (badgeText.length > 2 ? (badgeText.length - 2) * 6 : 0);
+
+        const collapseBadgeHeight = Math.max(12, Math.floor(height / 2));
+        const collapseY = height - collapseBadgeHeight;
+        const spaTopDesired = 2;
+        const verticalGap = 4;
+        const spaDesiredH = badgeHeight;
+        const minSpaH = 7;
+
+        const maxSpaHToAvoidOverlap = Math.max(minSpaH, collapseY - verticalGap - spaTopDesired);
+        const spaH = Math.max(minSpaH, Math.min(spaDesiredH, maxSpaHToAvoidOverlap));
+
+        const collapseBadgeWidth = 22;
+        const gapBetween = 6;
+        let spaX = width - collapseBadgeWidth - gapBetween - badgeWidth;
+        if (spaX < 4) spaX = 4;
+        let spaY = spaTopDesired;
+        if (spaY + spaH + verticalGap > collapseY) {
+          spaY = Math.max(2, collapseY - verticalGap - spaH);
+        }
+
+  const created = this.appendBadge(group, spaX, 0, badgeText, { corner: 'top', fixedWidth: 22, minHeight: collapseBadgeHeight, fontSize: 7 });
+        try {
+          const wAttr = created.attr('data-badge-width');
+          const hAttr = created.attr('data-badge-height');
+          if (wAttr) (node as any).__spaBadgeWidth = parseFloat(wAttr);
+          else (node as any).__spaBadgeWidth = badgeWidth;
+          if (hAttr) (node as any).__spaBadgeHeight = parseFloat(hAttr);
+          else (node as any).__spaBadgeHeight = spaH;
+        } catch (e) {
+          try { (node as any).__spaBadgeWidth = badgeWidth; (node as any).__spaBadgeHeight = spaH; } catch(e) {}
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
     // 🎯 添加点击事件
     group.style('cursor', 'pointer')
       .on('click', () => {
@@ -3026,7 +3210,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 🎯 使用标准的节点渲染方法
     segment.nodes.forEach((node, index) => {
-      this.renderSingleNode(nodeGroup, node, layoutSegment, index);
+      const createdNodeGroup = this.renderSingleNode(nodeGroup, node, layoutSegment, index);
     });
   }
 
@@ -3043,7 +3227,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 🎯 使用标准的节点渲染方法（根据displayMode自动选择压缩级别）
     segment.nodes.forEach((node, index) => {
-      this.renderSingleNode(nodeGroup, node, layoutSegment, index);
+      const createdNodeGroup = this.renderSingleNode(nodeGroup, node, layoutSegment, index);
     });
   }
 

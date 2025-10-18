@@ -5370,5 +5370,53 @@
   "options_waterfall_view_label": {
     "message": "Вид на водопад",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "Узел {0} объединен с внутристраничным запросом, spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "Попытка объединить запрос SPA не удалась, выполняется обычное сохранение: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "Попытка объединить запросы SPA во время пакетного сохранения не удалась, переход к обычному сохранению: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "content_spa_request_count": {
+    "message": "Количество слияний запросов SPA",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "Не удалось обновить кэш: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "Не удалось сохранить узел: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "node_tracker_create_save_failed": {
+    "message": "Не удалось сохранить узел: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_db_transaction_aborted": {
+    "message": "Транзакция базы данных прервана: {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "Отладка слияния SPA: сеанс={0}, вкладка={1}, нормализовано={2}, кандидаты={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "Пример кандидата на слияние SPA: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "Отладка пакетного слияния SPA: сеанс={0}, вкладка={1}, нормализовано={2}, кандидаты={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "Пример кандидата на пакетное слияние SPA: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   }
 }

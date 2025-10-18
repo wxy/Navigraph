@@ -31,6 +31,24 @@ export class UrlUtils {
     }
   }
 
+    /**
+     * 为存储级别的 SPA 聚合返回归一化 URL（仅 origin + pathname，移除查询参数）
+     * 这样可以把仅修改查询参数的页面内部请求合并到同一页面节点（例如 translate.google.com）
+     */
+    static normalizeUrlForAggregation(url: string): string {
+      try {
+        url = url.split('#')[0];
+        const urlObj = new URL(url);
+        let path = urlObj.pathname;
+        if (path.length > 1 && path.endsWith('/')) {
+          path = path.slice(0, -1);
+        }
+        return `${urlObj.protocol}//${urlObj.host}${path}`;
+      } catch {
+        return url;
+      }
+    }
+
   /**
    * 判断两个 URL 是否匹配 (忽略尾斜杠和锚点)
    * @param url1 第一个 URL

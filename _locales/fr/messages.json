@@ -5370,5 +5370,53 @@
   "options_waterfall_view_label": {
     "message": "Vue sur la cascade",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "Le nœud {0} est fusionné avec la demande sur la page, spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "La tentative de fusion de la demande SPA a échoué, exécution de la sauvegarde normale : {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "La tentative de fusion des requêtes SPA lors de l'enregistrement par lots a échoué, retour à l'enregistrement normal : {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "content_spa_request_count": {
+    "message": "Nombre de fusions de demandes SPA",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "Échec de la mise à jour du cache : {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "Échec de l'enregistrement du nœud : {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "node_tracker_create_save_failed": {
+    "message": "Échec de l'enregistrement du nœud : {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_db_transaction_aborted": {
+    "message": "Transaction de base de données interrompue : {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "Débogage de fusion SPA : session={0}, tab={1}, normalisé={2}, candidats={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "Exemple de candidat à la fusion SPA : {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "Débogage de fusion SPA par lots : session={0}, tab={1}, normalisé={2}, candidats={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "Exemple de candidat à la fusion SPA par lots : {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   }
 }

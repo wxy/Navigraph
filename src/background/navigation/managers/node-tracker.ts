@@ -74,24 +74,8 @@ export class NodeTracker {
         parentFrameId = -1,
       } = options;
 
-      // 生成节点ID
-      const nodeId = IdGenerator.generateNodeId(tabId, url);
-
-      // 记录节点ID到标签页历史
-      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
-
-      // 更新标签页状态
-      this.tabStateManager.updateTabState(tabId, {
-        url: url,
-        lastNodeId: nodeId,
-        lastNavigation: timestamp,
-      });
-
-      // 添加到待更新列表
-      this.addToPendingUpdates(tabId, nodeId);
-
-      // 更新缓存
-      this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
+      // 生成节点ID（作为候选ID；实际存储ID可能不同，saveNode 将返回最终保存的ID）
+      let nodeId = IdGenerator.generateNodeId(tabId, url);
 
       // 获取标签页信息
       let title: string | undefined;
@@ -147,6 +131,13 @@ export class NodeTracker {
    */
   public addTabNodeCache(tabId: number, url: string, nodeId: string): void {
     this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
+    // Also store an aggregation-normalized key (ignore query params) to improve matching for SPA internal requests
+    try {
+      const aggKey = UrlUtils.normalizeUrlForAggregation(url);
+      this.tabNodeIdCache.set(`${tabId}-${aggKey}`, nodeId);
+    } catch (e) {
+      // ignore
+    }
   }
 
   /**
@@ -156,7 +147,20 @@ export class NodeTracker {
    * @returns 节点ID或undefined
    */
   public getTabNodeCache(tabId: number, url: string): string | undefined {
-    return this.tabNodeIdCache.get(`${tabId}-${url}`);
+    // Try exact match first
+    const exact = this.tabNodeIdCache.get(`${tabId}-${url}`);
+    if (exact) return exact;
+
+    // Then try aggregation-normalized key (ignore query params)
+    try {
+      const aggKey = UrlUtils.normalizeUrlForAggregation(url);
+      const agg = this.tabNodeIdCache.get(`${tabId}-${aggKey}`);
+      if (agg) return agg;
+    } catch (e) {
+      // ignore
+    }
+
+    return undefined;
   }
   /**
    * 获取或创建URL对应的节点
@@ -242,10 +246,29 @@ export class NodeTracker {
         parentFrameId: -1,
       };
 
-      // 9. 保存记录
-      await this.navigationStorage.saveNode(record);
+      // 保存记录并获取实际保存的ID（用于处理合并到已有节点的情况）
+      const savedId = await this.navigationStorage.saveNode(record).catch((e) => {
+        logger.error(_('node_tracker_create_save_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
+        return nodeId;
+      });
 
-      return { id: nodeId, isNew: true };
+      // 使用实际保存的 ID 更新历史、状态与缓存（如果合并发生，savedId 可能与生成的 nodeId 不同）
+      const finalId = savedId || nodeId;
+      this.tabStateManager.addToNavigationHistory(tabId, finalId);
+
+      this.tabStateManager.updateTabState(tabId, {
+        url: url,
+        lastNodeId: finalId,
+        lastNavigation: timestamp,
+      });
+
+      this.addToPendingUpdates(tabId, finalId);
+
+      this.tabNodeIdCache.set(`${tabId}-${url}`, finalId);
+
+  // 返回最终ID（并指示是否为新创建）
+  const isNew = finalId !== nodeId; // 如果合并到了已有节点，则 finalId !== 初始生成的 nodeId
+  return { id: finalId, isNew };
     } catch (error) {
       logger.error(_('node_tracker_get_or_create_failed', '获取或创建URL节点失败: {0}'), error);
       return null;
@@ -431,16 +454,16 @@ export class NodeTracker {
     if (!url) return null;
 
     try {
-      // 检查缓存
-      const normalized = UrlUtils.normalizeUrl(url);
+      // Use aggregation-normalized URL for cache/matching (ignore query params)
+      const normalized = UrlUtils.normalizeUrlForAggregation(url);
       const cached = this.urlToNodeCache.get(normalized);
       if (cached && Date.now() - cached.timestamp < 60000) {
         // 1分钟内的缓存有效
         return cached.nodeId;
       }
 
-      // 标准化URL
-      const normalizedUrl = UrlUtils.normalizeUrl(url);
+      // 标准化URL用于匹配（聚合级别）
+      const normalizedUrl = UrlUtils.normalizeUrlForAggregation(url);
 
       // 查询记录
       const records = await this.navigationStorage.queryNodes({
@@ -450,10 +473,10 @@ export class NodeTracker {
       // 首先尝试精确匹配
       let matchingRecord = records.find((r) => r.url === url);
 
-      // 如果没找到，尝试标准化URL匹配
+      // 如果没找到，尝试基于聚合归一化的匹配（忽略查询参数）
       if (!matchingRecord) {
         matchingRecord = records.find(
-          (r) => UrlUtils.normalizeUrl(r.url) === normalizedUrl
+          (r) => UrlUtils.normalizeUrlForAggregation(r.url) === normalizedUrl
         );
       }
 
@@ -480,8 +503,7 @@ export class NodeTracker {
    */
   async getNodeIdForTab(tabId: number, url: string): Promise<string | null> {
     // 1. 首先尝试从缓存获取
-    const cacheKey = `${tabId}-${url}`;
-    const cachedId = this.tabNodeIdCache.get(cacheKey);
+    const cachedId = this.getTabNodeCache(tabId, url);
     if (cachedId) {
       return cachedId;
     }
@@ -522,7 +544,12 @@ export class NodeTracker {
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) return false;
 
-      return UrlUtils.isSameUrl(record.url, url);
+      // Prefer aggregation-normalized comparison (ignore query params)
+      try {
+        return UrlUtils.normalizeUrlForAggregation(record.url) === UrlUtils.normalizeUrlForAggregation(url);
+      } catch (e) {
+        return UrlUtils.isSameUrl(record.url, url);
+      }
     } catch (e) {
       logger.warn(_('node_tracker_check_url_match_failed', '检查节点 {0} URL匹配失败: {1}'), nodeId, e);
       return false;

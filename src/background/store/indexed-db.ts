@@ -37,6 +37,52 @@ export class IndexedDBStorage {
     
     return this.instances.get(key)!;
   }
+
+  /**
+   * 在给定存储上创建一个事务并执行回调，回调可以在事务上下文中发起请求（readwrite/read）
+   * 回调中的请求会随着事务的完成而完成，本方法返回在事务完成时解析的 Promise
+   * @param storeName 存储名
+   * @param mode 事务模式
+   * @param callback 接收 (store, transaction) 的同步回调，用于发起请求
+   */
+  public async transact(
+    storeName: string,
+    mode: IDBTransactionMode,
+    callback: (store: IDBObjectStore, transaction: IDBTransaction) => void
+  ): Promise<void> {
+    const db = await this.getDB();
+
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const transaction = db.transaction(storeName, mode);
+        const store = transaction.objectStore(storeName);
+
+        // 执行用户回调（应在同步上下文中发起 request）
+        try {
+          callback(store, transaction);
+        } catch (cbErr) {
+          // 回调同步抛错时中止事务
+          try {
+            transaction.abort();
+          } catch (_) {}
+          reject(cbErr);
+          return;
+        }
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (ev) => {
+          const err = (ev.target as IDBRequest).error;
+          reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(err)));
+        };
+        transaction.onabort = (ev) => {
+          const err = (ev.target as IDBRequest).error;
+          reject(new _Error('background_db_transaction_aborted', '数据库事务中止: {0}', String(err)));
+        };
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
   
   /**
    * 私有构造函数

@@ -5370,5 +5370,53 @@
   "options_waterfall_view_label": {
     "message": "Waterfall View",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "Node {0} is merged with the in-page request, spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "Attempt to merge SPA request failed, performing regular save: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "Attempt to merge SPA requests during batch save failed, falling back to regular save: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "content_spa_request_count": {
+    "message": "SPA request merge count",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "Failed to update cache: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "Failed to save node: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "node_tracker_create_save_failed": {
+    "message": "Failed to save node: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_db_transaction_aborted": {
+    "message": "Database transaction aborted: {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "SPA merge debugging: session={0}, tab={1}, normalized={2}, candidates={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "SPA merge candidate example: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "Batch SPA merge debugging: session={0}, tab={1}, normalized={2}, candidates={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "Batch SPA merge candidate example: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   }
 }

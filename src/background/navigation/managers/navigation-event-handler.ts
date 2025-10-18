@@ -477,12 +477,41 @@ export class NavigationEventHandler {
       if (existingNodeId) {
         // 更新现有节点的访问时间和计数
         const now = Date.now();
-        await this.navigationStorage.updateNode(existingNodeId, {
-          lastVisit: now,
-          visitCount: await this.nodeTracker.incrementVisitCount(
-            existingNodeId
-          ),
-        });
+        try {
+          // 同时将此类 historyState 更新视为页面内请求，增加 spaRequestCount
+          const existing = await this.navigationStorage.getNode(existingNodeId);
+          const newSpaCount = (existing?.spaRequestCount || 0) + 1;
+
+          // For SPA history updates we treat this as an in-page request: increment spaRequestCount only
+          const updates: any = {
+            lastVisit: now,
+            spaRequestCount: newSpaCount,
+          };
+          if (url && existing && existing.url !== url) {
+            updates.url = url;
+          }
+
+          await this.navigationStorage.updateNode(existingNodeId, updates);
+
+          // Also update tab state and caches so UI reflects the new URL immediately
+          try {
+            this.tabStateManager.updateTabState(tabId, {
+              url: url,
+              lastNodeId: existingNodeId,
+              lastNavigation: now,
+            });
+            this.nodeTracker.addTabNodeCache(tabId, url, existingNodeId);
+          } catch (cacheErr) {
+            // Don't fail the whole flow if cache update fails
+            logger.warn(_('nav_event_handler_cache_update_failed', '更新缓存失败: {0}'), cacheErr instanceof Error ? cacheErr.message : String(cacheErr));
+          }
+        } catch (e) {
+          // 如果更新 spaRequestCount 失败，仍尝试保证 lastVisit 被更新
+          const now2 = Date.now();
+          await this.navigationStorage.updateNode(existingNodeId, {
+            lastVisit: now2,
+          });
+        }
 
         return;
       }
@@ -498,22 +527,6 @@ export class NavigationEventHandler {
       // 创建新节点记录
       const now = Date.now();
       const nodeId = IdGenerator.generateNodeId(tabId, url);
-
-      // 记录节点ID到标签页历史
-      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
-
-      // 更新标签页状态
-      this.tabStateManager.updateTabState(tabId, {
-        url: url,
-        lastNodeId: nodeId,
-        lastNavigation: now,
-      });
-
-      // 添加到待更新列表
-      this.nodeTracker.addToPendingUpdates(tabId, nodeId);
-
-      // 更新缓存
-      this.nodeTracker.addTabNodeCache(tabId, url, nodeId);
 
       // 获取标签页信息
       let title: string | undefined;
@@ -552,13 +565,28 @@ export class NavigationEventHandler {
         parentFrameId: details.parentFrameId ?? -1,
       };
 
-      // 保存记录
-      await this.navigationStorage.saveNode(record);
+      // 保存记录并使用返回的实际ID
+      const savedIdAfter = await this.navigationStorage.saveNode(record).catch((e) => {
+        logger.error(_('nav_event_handler_save_node_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
+        return nodeId;
+      });
+
+      const finalIdAfter = savedIdAfter || nodeId;
+
+      // 使用最终ID更新历史、状态与缓存（若发生合并，finalIdAfter 可能与 nodeId 不同）
+      this.tabStateManager.addToNavigationHistory(tabId, finalIdAfter);
+      this.tabStateManager.updateTabState(tabId, {
+        url: url,
+        lastNodeId: finalIdAfter,
+        lastNavigation: now,
+      });
+      this.nodeTracker.addToPendingUpdates(tabId, finalIdAfter);
+      this.nodeTracker.addTabNodeCache(tabId, url, finalIdAfter);
 
       // 创建边
       await this.edgeTracker.createNavigationEdge({
         sourceId: parentId,
-        targetId: nodeId,
+        targetId: finalIdAfter,
         timestamp: now,
         navigationType: "javascript",
         sessionId: this.currentSessionId,
@@ -733,21 +761,26 @@ export class NavigationEventHandler {
         parentFrameId: -1,
       };
 
-      // 保存记录
-      await this.navigationStorage.saveNode(record);
+      // 保存记录并使用返回的实际ID
+      const savedId = await this.navigationStorage.saveNode(record).catch((e) => {
+        logger.error(_('nav_event_handler_save_node_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
+        return nodeId;
+      });
 
-      // 如果存在父节点，创建边
+      const finalId = savedId || nodeId;
+
+      // 如果存在父节点，创建边（使用最终ID）
       if (parentNodeId) {
         await this.edgeTracker.createNavigationEdge({
           sourceId: parentNodeId,
-          targetId: nodeId,
+          targetId: finalId,
           timestamp: now,
           navigationType: "initial",
           sessionId: this.currentSessionId,
         });
       }
 
-      return nodeId;
+      return finalId;
     } catch (error) {
       logger.error(_('nav_event_handler_initial_nav_failed', '处理初始导航失败: {0}'), error instanceof Error ? error.message : String(error));
       return null;
@@ -894,14 +927,19 @@ export class NavigationEventHandler {
         logger.warn(_('nav_event_handler_get_tab_failed', '获取标签页信息失败: {0}'), e instanceof Error ? e.message : String(e));
       }
 
-      // 13. 保存记录
-      await this.navigationStorage.saveNode(record);
+      // 13. 保存记录并使用返回的实际ID
+      const savedId = await this.navigationStorage.saveNode(record).catch((e) => {
+        logger.error(_('nav_event_handler_save_node_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
+        return nodeId;
+      });
 
-      // 14. 如果存在父节点，创建边
+      const finalId = savedId || nodeId;
+
+      // 14. 如果存在父节点，创建边（使用最终ID）
       if (parentId) {
         await this.edgeTracker.createNavigationEdge({
           sourceId: parentId,
-          targetId: nodeId,
+          targetId: finalId,
           timestamp: now,
           navigationType: navigationType,
           sessionId: this.currentSessionId,

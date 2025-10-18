@@ -1320,7 +1320,7 @@
     "description": "获取边失败时的错误日志，{0}为边ID，{1}为错误详情"
   },
   "nav_storage_nodes_batch_saved": {
-    "message": "{0}개 노드가 일괄적으로 저장됨",
+    "message": "{0}개노드가 진심으로 저장되었습니다",
     "description": "批量保存节点成功时的日志消息，{0}为节点数量"
   },
   "nav_storage_save_nodes_batch_failed": {
@@ -5370,5 +5370,53 @@
   "options_waterfall_view_label": {
     "message": "폭포 전망",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "노드 {0}이 페이지 내 요청과 병합되었습니다. spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "SPA 요청을 병합하려는 시도가 실패했습니다. 일반 저장을 수행합니다: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "일괄 저장 중 SPA 요청을 병합하려는 시도가 실패하여 일반 저장으로 돌아갑니다: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "content_spa_request_count": {
+    "message": "SPA 요청 병합 횟수",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "캐시 업데이트에 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "노드 저장에 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "node_tracker_create_save_failed": {
+    "message": "노드 저장에 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_db_transaction_aborted": {
+    "message": "데이터베이스 트랜잭션이 중단되었습니다: {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "SPA 병합 디버깅: 세션={0}, 탭={1}, 정규화={2}, 후보={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "SPA 병합 후보 예: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "일괄 SPA 병합 디버깅: 세션={0}, 탭={1}, 정규화={2}, 후보={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "배치 SPA 병합 후보 예: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   }
 }
