@@ -85,8 +85,8 @@ export class NodeDetails {
     const table = document.createElement("table");
     table.className = "details-table";
 
-    // 添加基本信息
-    if (node.url) this.addTableRow(table, _('content_url_label', 'URL'), this.formatUrl(node.url));
+  // 添加基本信息
+  if (node.url) this.addUrlRow(table, node.url);
     if (node.type)
       this.addTableRow(table, _('content_type_label', '类型'), this.formatNavigationType(node.type));
     if (node.timestamp)
@@ -111,6 +111,11 @@ export class NodeDetails {
     // 添加打开次数（如果有）
     if (node.visitCount) {
       this.addTableRow(table, _('content_count_label', '次数'), node.visitCount.toString());
+    }
+
+    // 添加 SPA 请求合并计数（显示为简短标签“请求”）
+    if ((node as any).spaRequestCount) {
+      this.addTableRow(table, _('content_spa_request_count', '请求'), (node as any).spaRequestCount.toString());
     }
 
     // 添加技术详情(可折叠)
@@ -188,24 +193,46 @@ export class NodeDetails {
     labelCell.className = "detail-label";
     labelCell.textContent = label;
   
-    const valueCell = document.createElement("td");
-    valueCell.className = "detail-value";
-    // 添加样式确保内容可以换行
-    valueCell.style.wordBreak = "break-word";
-    valueCell.style.maxWidth = "70%"; // 限制宽度防止表格被撑开
+  const valueCell = document.createElement("td");
+  valueCell.className = "detail-value";
   
     // 对于URL，创建可点击链接
     if (label === _('content_url_label', 'URL')) {
-      const link = document.createElement("a");
-      link.href = value;
-      link.target = "_blank";
-      link.textContent = value;
-      link.style.wordBreak = "break-word"; // 确保链接文字换行
-      valueCell.appendChild(link);
+  const link = document.createElement("a");
+  link.href = value;
+  link.target = "_blank";
+  link.textContent = value;
+  valueCell.appendChild(link);
     } else {
       valueCell.textContent = value;
     }
   
+    row.appendChild(labelCell);
+    row.appendChild(valueCell);
+    table.appendChild(row);
+  }
+
+  /**
+   * 为 URL 创建专门的行：显示截断文本，但链接 href 保持完整，鼠标悬停显示完整 URL
+   */
+  private addUrlRow(table: HTMLTableElement, url: string): void {
+    const row = document.createElement("tr");
+    const labelCell = document.createElement("td");
+    labelCell.className = "detail-label";
+    labelCell.textContent = _('content_url_label', 'URL');
+
+  const valueCell = document.createElement("td");
+  valueCell.className = "detail-value break-all";
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noreferrer noopener";
+    link.textContent = this.formatUrl(url); // 显示截断版本
+    link.title = url; // 悬停时显示完整 URL
+    link.style.wordBreak = "break-all";
+
+    valueCell.appendChild(link);
     row.appendChild(labelCell);
     row.appendChild(valueCell);
     table.appendChild(row);

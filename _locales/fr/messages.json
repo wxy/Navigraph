@@ -1321,7 +1321,8 @@
   },
   "nav_storage_nodes_batch_saved": {
     "message": "{0} nœuds enregistrés par lots",
-    "description": "批量保存节点成功时的日志消息，{0}为节点数量"
+    "description": "批量保存节点成功时的日志消息，{0}为节点数量",
+    "_untranslated": true
   },
   "nav_storage_save_nodes_batch_failed": {
     "message": "Échec de l'enregistrement des nœuds par lots : {0}",
@@ -5370,5 +5371,65 @@
   "options_waterfall_view_label": {
     "message": "Vue sur la cascade",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "节点 {0} 与页面内请求合并，spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "尝试合并 SPA 请求失败，执行常规保存: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "批量保存时尝试合并 SPA 请求失败，回退为常规保存: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
+  },
+  "content_spa_request_count": {
+    "message": "SPA 请求合并次数",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts",
+    "_untranslated": true
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "更新缓存失败: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts",
+    "_untranslated": true
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts",
+    "_untranslated": true
+  },
+  "node_tracker_create_save_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts",
+    "_untranslated": true
+  },
+  "background_db_transaction_aborted": {
+    "message": "数据库事务中止: {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts",
+    "_untranslated": true
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "SPA 合并候选样例: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "批量 SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "批量 SPA 合并候选样例: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts",
+    "_untranslated": true
   }
 }

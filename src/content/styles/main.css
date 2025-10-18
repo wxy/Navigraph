@@ -1962,3 +1962,67 @@ svg .node-label {
   font-size: 13px;
   font-weight: 500;
 }
+
+/* Debug overlay class (replaces inline cssText in content/index.ts) */
+.debug-overlay {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 100000;
+}
+
+/* Node Details value cell wrapping and link behavior */
+.node-details .value-cell {
+  word-break: break-word;
+  max-width: 70%;
+}
+
+.node-details .value-cell.break-all {
+  word-break: break-all;
+
+/* 兼容旧类与新类，确保 JS 中添加的 class 可被样式覆盖 */
+.node-details-panel .detail-value,
+.node-details-panel .value-cell,
+.node-details .value-cell {
+  word-break: break-word;
+  max-width: 70%;
+}
+
+.node-details-panel .detail-value.break-all,
+.node-details-panel .value-cell.break-all,
+.node-details .value-cell.break-all {
+  word-break: break-all;
+}
+}
+
+.node-details .value-cell a {
+  word-break: break-word;
+  color: var(--btn-primary);
+  text-decoration: underline;
+}
+
+/* ========== Waterfall SPA request badge styles (merged from waterfall-badge.css) ========== */
+.spa-request-badge {
+  pointer-events: none; /* let clicks pass through to node */
+}
+
+.spa-request-badge rect {
+  fill: var(--badge-bg, #e6e6e6);
+  stroke: var(--badge-border, #cfcfcf);
+  stroke-width: 0.5px;
+  rx: 3px;
+  ry: 3px;
+  opacity: 0.98;
+}
+
+.spa-request-badge text {
+  fill: var(--badge-text, #fff);
+  font-size: var(--badge-font-size, 7px);
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+}

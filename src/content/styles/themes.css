@@ -233,6 +233,11 @@
   --color-border: #e0e0e0;
   --color-accent: #4a6ee0;
   --color-bg-hover: #e9ecef;
+  /* Badge appearance defaults */
+  --badge-bg: #e6e6e6; /* 浅灰背景 */
+  --badge-border: #cfcfcf; /* 边框 */
+  --badge-text: #333333; /* 默认文本色（可被主题覆盖） */
+  --badge-font-size: 7px;
   
   /* 滚动条颜色 */
   --color-scrollbar: rgba(0, 0, 0, 0.2);

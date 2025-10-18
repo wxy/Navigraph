@@ -1320,7 +1320,7 @@
     "description": "获取边失败时的错误日志，{0}为边ID，{1}为错误详情"
   },
   "nav_storage_nodes_batch_saved": {
-    "message": "批量保存了 {0} 个节点",
+    "message": "批量保存了 {0} 个节点（含合并）",
     "description": "批量保存节点成功时的日志消息，{0}为节点数量"
   },
   "nav_storage_save_nodes_batch_failed": {
@@ -5370,5 +5370,53 @@
   "options_waterfall_view_label": {
     "message": "瀑布流视图",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "nav_storage_node_merged_spa": {
+    "message": "节点 {0} 与页面内请求合并，spaRequestCount={1}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed": {
+    "message": "尝试合并 SPA 请求失败，执行常规保存: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_failed_batch": {
+    "message": "批量保存时尝试合并 SPA 请求失败，回退为常规保存: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "content_spa_request_count": {
+    "message": "请求",
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+  },
+  "nav_event_handler_cache_update_failed": {
+    "message": "更新缓存失败: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "nav_event_handler_save_node_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/navigation-event-handler.ts"
+  },
+  "node_tracker_create_save_failed": {
+    "message": "保存节点失败: {0}",
+    "description": "从TS提取 (_): src/background/navigation/managers/node-tracker.ts"
+  },
+  "background_db_transaction_aborted": {
+    "message": "数据库事务中止: {0}",
+    "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
+  },
+  "nav_storage_spa_merge_debug": {
+    "message": "SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample": {
+    "message": "SPA 合并候选样例: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_debug_batch": {
+    "message": "批量 SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "nav_storage_spa_merge_candidates_sample_batch": {
+    "message": "批量 SPA 合并候选样例: {0}",
+    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   }
 }

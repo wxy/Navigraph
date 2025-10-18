@@ -6,6 +6,7 @@ import { Logger } from '../../lib/utils/logger.js';
 import { IndexedDBStorage } from './indexed-db.js';
 import { NavigraphDBSchema } from './storage-schema.js';
 import { NavNode, NavLink, NavDataQueryOptions } from '../../types/session-types.js';
+import { UrlUtils } from '../../lib/utils/url-utils.js';
 import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('NavigationStorage');
@@ -86,12 +87,82 @@ export class NavigationStorage {
   /**
    * 保存导航节点
    */
-  public async saveNode(node: NavNode): Promise<void> {
+  public async saveNode(node: NavNode): Promise<string> {
     await this.ensureInitialized();
     
     try {
-      await this.db.put(this.NODE_STORE, node);
-      logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), node.id);
+      // 页面级 SPA 请求合并逻辑：如果在同一 sessionId 和 tabId 下存在归一化后相同页面的持久化节点，
+      // 则不插入新节点，而是将其视为页面内请求并增加 spaRequestCount（持久化合并计数）。
+      let savedId: string | null = null;
+
+      if (node.sessionId && node.tabId !== undefined) {
+        try {
+          // 在单个 readwrite 事务中先通过索引查询候选，然后在同一事务中写入，以减少竞态条件
+          await this.db.transact(this.NODE_STORE, 'readwrite', (store, tx) => {
+            const index = store.index('sessionId');
+            const request = index.getAll(node.sessionId as any);
+
+            request.onsuccess = () => {
+              try {
+                const candidates = request.result as NavNode[] || [];
+                const normalized = UrlUtils.normalizeUrlForAggregation(node.url);
+                logger.log(_('nav_storage_spa_merge_debug', 'SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}'), node.sessionId, node.tabId, normalized, candidates.length.toString());
+
+                const match = candidates
+                  .filter(c => c.tabId === node.tabId)
+                  .find(c => UrlUtils.normalizeUrlForAggregation(c.url) === normalized);
+
+                if (!match) {
+                  try {
+                    const sample = candidates.slice(0, 5).map(c => UrlUtils.normalizeUrlForAggregation(c.url));
+                    logger.log(_('nav_storage_spa_merge_candidates_sample', 'SPA 合并候选样例: {0}'), JSON.stringify(sample));
+                  } catch (e) {}
+                }
+
+                if (match) {
+                  match.spaRequestCount = (match.spaRequestCount || 0) + 1;
+                  match.lastVisit = node.lastVisit || Date.now();
+                  match.timestamp = node.timestamp || match.timestamp || Date.now();
+                  if (node.url && node.url !== match.url) {
+                    match.url = node.url;
+                  }
+
+                  savedId = match.id;
+                  const putReq = store.put(match);
+                  putReq.onsuccess = () => {
+                    logger.log(_('nav_storage_node_merged_spa', '节点 {0} 与页面内请求合并，spaRequestCount={1}'), match.id, match.spaRequestCount?.toString() || '1');
+                  };
+                } else {
+                  savedId = node.id;
+                  const putReq = store.put(node as any);
+                  putReq.onsuccess = () => {
+                    logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), node.id);
+                  };
+                }
+              } catch (innerErr) {
+                logger.warn(_('nav_storage_spa_merge_failed', '尝试合并 SPA 请求失败，执行常规保存: {0}'), innerErr instanceof Error ? innerErr.message : String(innerErr));
+                try { savedId = node.id; store.put(node as any); } catch (_) {}
+              }
+            };
+
+            request.onerror = () => {
+              // 索引查询失败则在事务内保存节点作为回退
+              try { savedId = node.id; store.put(node as any); } catch (_) {}
+            };
+          });
+        } catch (e) {
+          logger.warn(_('nav_storage_spa_merge_failed', '尝试合并 SPA 请求失败（事务）: {0}'), e instanceof Error ? e.message : String(e));
+        }
+      }
+
+      // 如果事务路径未设置 savedId，则进行普通 put
+      if (!savedId) {
+        const key = await this.db.put(this.NODE_STORE, node);
+        savedId = (typeof key === 'string' || typeof key === 'number') ? String(key) : node.id;
+        logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), savedId);
+      }
+
+      return savedId;
     } catch (error) {
       logger.error(_('nav_storage_save_node_failed', '保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('background_storage_save_node_failed', '保存节点失败: {0}', error instanceof Error ? error.message : String(error)
@@ -295,10 +366,63 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
+      // 对于批量保存，采用与 saveNode 相同的合并逻辑，逐个处理以保持语义一致
       for (const node of nodes) {
-        await this.db.put(this.NODE_STORE, node);
+        // 尝试合并 SPA 请求
+        let merged = false;
+        if (node.sessionId && node.tabId !== undefined) {
+          try {
+            // 使用事务在批量处理中尝试合并：在同一事务内读取候选并写入
+            await this.db.transact(this.NODE_STORE, 'readwrite', (store, tx) => {
+              const index = store.index('sessionId');
+              const request = index.getAll(node.sessionId as any);
+
+              request.onsuccess = () => {
+                try {
+                  const candidates = request.result as NavNode[] || [];
+                  const normalized = UrlUtils.normalizeUrlForAggregation(node.url);
+                  logger.log(_('nav_storage_spa_merge_debug_batch', '批量 SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}'), node.sessionId, node.tabId, normalized, candidates.length.toString());
+
+                  const match = candidates
+                    .filter(c => c.tabId === node.tabId)
+                    .find(c => UrlUtils.normalizeUrlForAggregation(c.url) === normalized);
+
+                  if (!match) {
+                    try {
+                      const sample = candidates.slice(0, 5).map(c => UrlUtils.normalizeUrlForAggregation(c.url));
+                      logger.log(_('nav_storage_spa_merge_candidates_sample_batch', '批量 SPA 合并候选样例: {0}'), JSON.stringify(sample));
+                    } catch (e) {}
+                  }
+
+                  if (match) {
+                    match.spaRequestCount = (match.spaRequestCount || 0) + 1;
+                    match.lastVisit = node.lastVisit || Date.now();
+                    match.timestamp = node.timestamp || match.timestamp || Date.now();
+                    if (node.url && node.url !== match.url) {
+                      match.url = node.url;
+                    }
+
+                    store.put(match);
+                    merged = true;
+                  } else {
+                    store.put(node as any);
+                  }
+                } catch (inner) {
+                  logger.warn(_('nav_storage_spa_merge_failed_batch', '批量保存时尝试合并 SPA 请求失败，回退为常规保存: {0}'), inner instanceof Error ? inner.message : String(inner));
+                  try { store.put(node as any); } catch (_) {}
+                }
+              };
+
+              request.onerror = () => {
+                try { store.put(node as any); } catch (_) {}
+              };
+            });
+          } catch (e) {
+            logger.warn(_('nav_storage_spa_merge_failed_batch', '批量保存时尝试合并 SPA 请求失败（事务）: {0}'), e instanceof Error ? e.message : String(e));
+          }
+        }
       }
-      logger.log(_('nav_storage_nodes_batch_saved', '批量保存了 {0} 个节点'), nodes.length.toString());
+      logger.log(_('nav_storage_nodes_batch_saved', '批量保存了 {0} 个节点（含合并）'), nodes.length.toString());
     } catch (error) {
       logger.error(_('nav_storage_save_nodes_batch_failed', '批量保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('background_storage_save_nodes_batch_failed', '批量保存节点失败: {0}', error instanceof Error ? error.message : String(error)
