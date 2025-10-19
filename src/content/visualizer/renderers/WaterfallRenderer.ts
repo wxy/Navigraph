@@ -156,12 +156,321 @@ export class WaterfallRenderer implements BaseRenderer {
   private closureMarkers: ClosureMarker[] = []; // 关闭标记列表
   private collapsedGroups: CollapsedNodeGroup[] = []; // 折叠的节点组
   private laneAllocation: LaneAllocation | null = null; // 泳道分配结果
+  // 当前打开的抽屉状态
+  private currentOpenCollapseId: string | null = null;
+  private currentOpenDrawerSel: any = null;
+  // 抽屉动画互斥标志，防止重复打开/关闭导致的竞态
+  private drawerTransitioning: boolean = false;
+  // 文档级捕获点击处理器（用于点击外部关闭抽屉）
+  private documentClickHandler: ((e: Event) => void) | null = null;
 
   // 时间段常量（10分钟）
   private readonly TIME_SEGMENT_DURATION = 10 * 60 * 1000; // 10分钟（毫秒）
 
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
+  }
+
+  // 关闭指定 drawer sel（安全地收起）
+  private closeDrawerSel(drawerSel: any): void {
+    try {
+      if (!drawerSel || drawerSel.empty()) return;
+      const body = drawerSel.select('.drawer-body');
+      const bg = body.select('.drawer-bg');
+      const items = body.selectAll('.drawer-item');
+
+      // 快速收起（不做复杂动画）
+      try { items.attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
+      try { bg.attr('height', 0); } catch(e) {}
+      try { body.attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
+      try { drawerSel.attr('data-open', 'false'); } catch(e) {}
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  private closeCurrentDrawer(): void {
+    try {
+      if (this.currentOpenDrawerSel && !this.currentOpenDrawerSel.empty()) {
+        this.closeDrawerSel(this.currentOpenDrawerSel);
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      this.currentOpenCollapseId = null;
+      this.currentOpenDrawerSel = null;
+      try { this.svg.on('click.drawer', null); } catch(e) {}
+      // 移除文档级捕获点击
+      try { this.unbindDocumentClickToClose(); } catch (e) {}
+      // 结束任何正在进行的互斥状态
+      this.drawerTransitioning = false;
+    }
+  }
+
+  // 绑定文档级捕获阶段点击，用于检测“外部点击”并关闭当前抽屉
+  private bindDocumentClickToClose(): void {
+    try {
+      if (this.documentClickHandler) return; // already bound
+      this.documentClickHandler = (e: Event) => {
+        try {
+          const drawerNode = this.currentOpenDrawerSel ? this.currentOpenDrawerSel.node() : null;
+          if (!drawerNode) {
+            this.closeCurrentDrawer();
+            return;
+          }
+
+          // 使用 composedPath 优先判断（支持 Shadow DOM），否则回退到父链遍历
+          const path: any[] = (e as any).composedPath ? (e as any).composedPath() : ((e as any).path || []);
+          let clickedInside = false;
+          if (path && path.length) {
+            for (const p of path) {
+              if (p === drawerNode) { clickedInside = true; break; }
+            }
+          } else {
+            // fallback: walk up from target
+            let node = e.target as Node | null;
+            while (node) {
+              if (node === drawerNode) { clickedInside = true; break; }
+              node = node.parentNode;
+            }
+          }
+
+          if (!clickedInside) {
+            this.closeCurrentDrawer();
+          }
+        } catch (err) {
+          // 保守策略：遇到错误直接关闭
+          this.closeCurrentDrawer();
+        }
+      };
+
+      document.addEventListener('click', this.documentClickHandler, true); // capture phase
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  private unbindDocumentClickToClose(): void {
+    try {
+      if (!this.documentClickHandler) return;
+      document.removeEventListener('click', this.documentClickHandler, true);
+      this.documentClickHandler = null;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  /**
+   * Toggle a prebuilt collapsed drawer (basic show/hide with simple animation)
+   */
+  private togglePrebuiltDrawer(
+    collapsedGroup: CollapsedNodeGroup,
+    segment: TimeSegment,
+    nodeX: number,
+    nodeY: number,
+    nodeWidth: number,
+    nodeHeight: number
+  ): void {
+    try {
+      const mount = this.scrollableGroup || this.svg;
+      const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapsedGroup.tabId}"]`);
+      if (drawerSel.empty()) return;
+
+      const itemsGroup = drawerSel.select('.drawer-items');
+      // use data-open attr + opacity/pointer-events instead of display:none so that
+      // the contained display node remains visible (drawer contains the display node)
+      const isOpen = drawerSel.attr('data-open') === 'true';
+
+      if (!isOpen) {
+        // 如果正在进行动画，则忽略重复打开请求
+        if (this.drawerTransitioning) return;
+        this.drawerTransitioning = true;
+        // if another drawer is open, normalize its z-order then close it first
+        try {
+          if (this.currentOpenDrawerSel && !this.currentOpenDrawerSel.empty()) {
+            try {
+              const overlay = this.scrollableGroup || this.svg;
+              const overlayNode = overlay.node() as any;
+              const prevNode = this.currentOpenDrawerSel.node() as any;
+              if (overlayNode && prevNode) try { overlayNode.appendChild(prevNode); } catch(e) {}
+            } catch(e) {}
+            this.closeCurrentDrawer();
+          }
+        } catch(e) {}
+
+  // open: do down-direction expand animation (background stretch + per-item move)
+        drawerSel.attr('data-open', 'true')
+          .style('pointer-events', 'auto');
+
+        // find the body and bg
+        const body = drawerSel.select('.drawer-body');
+        const bg = body.select('.drawer-bg');
+
+        // ensure drawer is rendered on top within the same scrolling coordinate system
+        try {
+          const overlay = this.scrollableGroup || this.svg; // prefer same coordinate system to avoid visual shift
+          const overlayNode = overlay.node() as any;
+          const drawerNode = drawerSel.node() as any;
+          if (overlayNode && drawerNode) {
+            // always append to bring to end (top of z-order)
+            try { overlayNode.appendChild(drawerNode); } catch(e) {}
+            // ensure the display node inside the drawer is the last child so it's on top within the drawer
+            try {
+              const displayNode = drawerSel.select('.navigation-node').node() as any;
+              if (displayNode) drawerNode.appendChild(displayNode);
+            } catch (e) {}
+          }
+        } catch (e) {
+          // ignore move errors
+        }
+
+        // compute item targets
+  const items = body.selectAll('.drawer-item');
+        const itemNodes = items.nodes();
+        if (itemNodes.length === 0) {
+          // nothing to animate, just fade in body
+          body.transition().duration(180).style('opacity', 1 as any).on('end', () => {
+            try { body.style('pointer-events', 'all'); } catch(e) {}
+            // 绑定文档点击关闭
+            try { this.bindDocumentClickToClose(); } catch(e) {}
+            this.drawerTransitioning = false;
+          });
+        } else {
+          // prevent wheel events inside drawer from bubbling to svg (which would close drawer)
+          try {
+            body.on('wheel', function(event: WheelEvent) {
+              try { event.stopPropagation(); event.preventDefault(); } catch(e) {}
+            });
+          } catch(e) {}
+
+          // use the known nodeX/nodeY/nodeHeight to compute base positions (more reliable)
+          const baseX = nodeX;
+          const baseY = nodeY;
+
+          // compute target positions for each item (downwards stacked)
+          const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
+            // try to read height from first item's child rect if available
+            try {
+              const firstChildRect = d3.select(itemNodes[0]).select('rect');
+              if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0;
+            } catch(e) {}
+            return 0;
+          })() : 0);
+
+          // read drawer spacing from constants
+          const nodeGap = this.SWIMLANE_HEIGHT - (nodeHeightLocal || 0);
+          const firstNodeGap = nodeGap;
+
+          // compute overall drawer height
+          const drawerHeight = firstNodeGap + itemNodes.length * ((nodeHeightLocal || 0) + nodeGap);
+
+          // animate bg height from nodeHeight -> drawerHeight and fade in body
+            try {
+              // 在过渡开始时先禁止 body 内交互，动画结束后恢复
+              body.style('pointer-events', 'none');
+              body.attr('opacity', 1);
+              bg.transition().duration(200)
+                .attr('y', baseY)
+                .attr('height', drawerHeight);
+            } catch(e) {
+            // ignore
+          }
+
+          // animate items: from baseY to targetY with stagger
+          const itemDuration = 180;
+          const stagger = 40;
+          items.each(function(this: any, d: any, i: number) {
+            // target position: just below the display node (nodeY + nodeHeight) plus spacing
+            const gapBetween = 4; // small visual gap
+            const targetY = baseY + (nodeHeightLocal || nodeHeight) + gapBetween + i * ((nodeHeightLocal || nodeHeight) + nodeGap);
+            d3.select(this)
+              .style('pointer-events', 'none')
+              .attr('opacity', 0)
+              .transition()
+              .delay(i * stagger)
+              .duration(itemDuration)
+              .attr('transform', `translate(${baseX}, ${targetY})`)
+              .attr('opacity', 1)
+              .on('end', function(this: any) {
+                try { d3.select(this).style('pointer-events', 'all'); } catch(e) {}
+              });
+
+            // prevent clicks on item from bubbling to svg (which would close the drawer)
+            try {
+              d3.select(this).on('click', function(event: MouseEvent) {
+                try { event.stopPropagation(); } catch(e) {}
+              });
+            } catch(e) {}
+          });
+
+          // ensure body pointer-events enabled after all transitions
+          const totalAnim = 200 + itemNodes.length * stagger + itemDuration;
+          setTimeout(() => {
+            try { body.style('pointer-events', 'all'); } catch(e) {}
+            // mark as current open drawer
+            this.currentOpenCollapseId = collapsedGroup.tabId;
+            this.currentOpenDrawerSel = drawerSel;
+            // 绑定文档点击关闭
+            try { this.bindDocumentClickToClose(); } catch(e) {}
+            this.drawerTransitioning = false;
+          }, totalAnim);
+        }
+      } else {
+        // close: reverse animation - collapse items to base position then shrink bg and hide
+    if (this.drawerTransitioning) return; // ignore close while transitioning
+    this.drawerTransitioning = true;
+        const body = drawerSel.select('.drawer-body');
+        const bg = body.select('.drawer-bg');
+  const items = body.selectAll('.drawer-item');
+        const itemNodes = items.nodes();
+
+        // compute base pos from first item's current transform (or bg y)
+  // compute base pos: use provided nodeX/nodeY
+  const baseX = nodeX;
+  const baseY = nodeY;
+
+        const itemDuration = 140;
+        const stagger = 30;
+        // animate items back to baseY and fade out
+        items.each(function(this: any, d: any, i: number) {
+          d3.select(this)
+            .style('pointer-events', 'none')
+            .transition()
+            .delay(i * stagger)
+            .duration(itemDuration)
+            .attr('transform', `translate(${baseX}, ${baseY})`)
+            .attr('opacity', 0);
+        });
+
+        // after items collapsed, shrink bg and hide body
+        const totalAnim = itemNodes.length * stagger + itemDuration + 40;
+        setTimeout(() => {
+            try {
+            bg.transition().duration(160).attr('height', parseFloat(bg.attr('height')) ? parseFloat(bg.attr('height')) * 0 : 0).on('end', () => {
+              try { body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none'); } catch(e) {}
+              // cleanup currentOpen if this was the current
+              if (this.currentOpenCollapseId === collapsedGroup.tabId) {
+                this.currentOpenCollapseId = null;
+                this.currentOpenDrawerSel = null;
+              }
+              // 取消文档点击绑定
+              try { this.unbindDocumentClickToClose(); } catch(e) {}
+              this.drawerTransitioning = false;
+            });
+          } catch(e) {
+            body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
+            if (this.currentOpenCollapseId === collapsedGroup.tabId) {
+              this.currentOpenCollapseId = null;
+              this.currentOpenDrawerSel = null;
+            }
+            try { this.unbindDocumentClickToClose(); } catch(e) {}
+            this.drawerTransitioning = false;
+          }
+        }, totalAnim);
+      }
+    } catch (e) {
+      logger.log('togglePrebuiltDrawer error', e);
+    }
   }
 
   initialize(svg: any, container: HTMLElement, width: number, height: number): void {
@@ -1297,10 +1606,98 @@ export class WaterfallRenderer implements BaseRenderer {
           const collapsedGroup = collapsedGroupsInSegment.find(
             g => g.displayNode.id === node.id
           );
-          if (collapsedGroup) {
-            // 将折叠角标渲染到具体的 navigation-node 内部，
-            // 以便与节点内的 SPA 角标共享相同的坐标/裁剪上下文
-            this.renderCollapseBadge(createdNodeGroup || nodeGroup, node, segment, collapsedGroup);
+          // 无论是否有折叠组，都在节点处预建一个 collapsed-drawer 容器（默认为空/隐藏）
+          try {
+            const parentSel = d3.select(nodeGroup.node());
+            // Prebuild drawer container but keep it visible (data-open=false)
+            // Items/background are placed inside .drawer-body which will be toggled.
+            const drawerSel = parentSel.insert('g', () => (createdNodeGroup && createdNodeGroup.node()) as any)
+              .attr('class', 'collapsed-drawer')
+              .attr('data-collapse-group', collapsedGroup ? collapsedGroup.tabId : `none-${node.id}`)
+              .attr('data-open', 'false')
+              .style('pointer-events', 'none');
+
+            // 创建 drawer-body（包含背景与 items），默认隐藏（opacity 0 和 pointer-events none）
+            const bodyGroup = drawerSel.append('g')
+              .attr('class', 'drawer-body')
+              .style('pointer-events', 'none')
+              .attr('opacity', 0);
+
+            // 背景矩形（在后面计算 nodeX/nodeY 后创建）
+
+            // 将当前的 navigation-node 移入 drawer 容器内并确保它在最上层（append 到 drawerSel 末尾）
+            try {
+              const nodeEl = (createdNodeGroup && createdNodeGroup.node()) || (nodeGroup && nodeGroup.node());
+              const drawerNode = drawerSel.node();
+              if (nodeEl && drawerNode && nodeEl.parentNode !== drawerNode) {
+                // append to ensure it's rendered on top of drawer-body
+                drawerNode.appendChild(nodeEl);
+              }
+            } catch (e) {
+              // ignore move errors
+            }
+
+            // 如果存在折叠组则填充 drawer-items，否则保持空
+            if (collapsedGroup) {
+              this.renderCollapseBadge(createdNodeGroup || nodeGroup, node, segment, collapsedGroup);
+
+              const nodeWidth = this.NODE_WIDTHS[segment.displayMode];
+              const nodeHeight = this.NODE_HEIGHTS[segment.displayMode];
+              const verticalPadding = (this.SWIMLANE_HEIGHT - nodeHeight) / 2;
+              const centerOffset = (segment.allocatedWidth - nodeWidth) / 2;
+              const nodeX = segment.startX + Math.max(0, centerOffset);
+              const nodeY = (this.getSwimlaneForNode(node)?.y || 0) + verticalPadding;
+
+                // 背景矩形（初始化为与 display node 同高，展开时再伸展）
+                const bgRect = bodyGroup.append('rect')
+                  .attr('class', 'drawer-bg')
+                  .attr('x', nodeX)
+                  .attr('y', nodeY)
+                  .attr('width', nodeWidth)
+                  .attr('height', nodeHeight)
+                  .attr('fill', 'rgb(230, 242, 255)')
+                  .attr('stroke', 'rgba(74, 144, 226, 0.35)')
+                  .attr('stroke-width', 1)
+                  .style('pointer-events', 'none');
+
+                const itemsGroup = bodyGroup.append('g').attr('class', 'drawer-items');
+
+              // 其他节点按顺序创建（不包含 displayNode），初始都重叠在 displayNode 位置并不可交互
+              const otherNodes = collapsedGroup.nodes.filter(n => n.id !== node.id);
+              otherNodes.forEach((childNode) => {
+                const item = itemsGroup.append('g')
+                  .attr('class', 'drawer-item')
+                  .attr('data-node-id', childNode.id)
+                  .attr('transform', `translate(${nodeX}, ${nodeY})`)
+                  .style('pointer-events', 'none')
+                  .attr('opacity', 0);
+
+                if (segment.displayMode === 'full') {
+                  this.renderFullNode(item, childNode, nodeWidth, nodeHeight);
+                } else if (segment.displayMode === 'short') {
+                  this.renderShortNode(item, childNode, nodeWidth, nodeHeight);
+                } else if (segment.displayMode === 'icon') {
+                  this.renderIconNode(item, childNode, 20, 20);
+                } else if (segment.displayMode === 'dot') {
+                  this.renderDotNode(item, childNode, nodeWidth, nodeHeight);
+                }
+              });
+
+              // 绑定折叠角标点击到切换预建抽屉
+              try {
+                const badgeSel = (createdNodeGroup || nodeGroup).select('.group-badge');
+                if (!badgeSel.empty()) {
+                  badgeSel.on('click', (event: MouseEvent) => {
+                    event.stopPropagation();
+                    this.togglePrebuiltDrawer(collapsedGroup, segment, nodeX, nodeY, nodeWidth, nodeHeight);
+                  });
+                }
+              } catch (e) {
+                // ignore
+              }
+            }
+          } catch (e) {
+            logger.log('prebuild drawer error', e);
           }
         }
         
@@ -1536,7 +1933,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // 使用统一的 appendBadge 创建折叠徽章（右下圆角）
   const collapseBadgeGroup = this.appendBadge(group, badgeTransformX, badgeTransformY, badgeText, { corner: 'bottom', fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
-    collapseBadgeGroup.attr('class', 'group-badge').attr('data-collapse-group', collapsedGroup.tabId).style('cursor', 'pointer');
+    collapseBadgeGroup.attr('class', 'group-badge').attr('data-collapse-group', collapsedGroup.tabId).style('cursor', 'pointer').style('pointer-events', 'all');
 
     // 悬停效果：只改变 path 的样式
     collapseBadgeGroup.on('mouseenter', function(this: SVGGElement) {
@@ -1577,14 +1974,19 @@ export class WaterfallRenderer implements BaseRenderer {
         // ignore reposition errors
       }
 
-    // 点击事件 - 显示/隐藏抽屉（坐标仍使用整个节点的 x/y/width/height）
+    // 点击事件 - 切换预建抽屉（使用统一的 toggle 实现）
     collapseBadgeGroup.on('click', (event: MouseEvent) => {
       event.stopPropagation();
       event.preventDefault();
 
       logger.log(_('waterfall_collapse_badge_clicked', '🎯 折叠角标被点击: tabId={0}, count={1}'), collapsedGroup.tabId, collapsedGroup.count, collapsedGroup.nodes.map(n => n.title || n.url));
 
-      this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight);
+      try {
+        this.togglePrebuiltDrawer(collapsedGroup, segment, nodeX, nodeY, nodeWidth, nodeHeight);
+      } catch (e) {
+        // fallback
+        try { this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight); } catch(e) {}
+      }
     });
 
   }
