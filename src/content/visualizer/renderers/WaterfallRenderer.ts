@@ -392,6 +392,8 @@ export class WaterfallRenderer implements BaseRenderer {
           try {
             body.style('pointer-events', 'none');
             body.attr('opacity', 1);
+            // ensure bg is fully opaque and marked for debug
+            try { bg.attr('fill-opacity', 1).attr('data-debug-bg', '1'); } catch(e) {}
             bg.transition().duration(200).attr('y', drawerTop).attr('height', actualDrawerHeight);
           } catch(e) {}
 
@@ -402,6 +404,22 @@ export class WaterfallRenderer implements BaseRenderer {
             const slotCenter = slotTop + slotHeight / 2;
             slotYs.push(slotCenter);
           }
+
+          // render time-diff labels between slots (centered horizontally on bg)
+          try {
+            // remove any existing labels group
+            body.selectAll('.drawer-labels').remove();
+            const labelsGroup = body.append('g').attr('class', 'drawer-labels');
+            const otherNodes = collapsedGroup.nodes.filter(n => n.id !== collapsedGroup.displayNode.id);
+            // labels between display slot (slot 0) and each child slot
+            for (let j = 0; j < otherNodes.length; j++) {
+              const slotA = slotYs[j];
+              const slotB = slotYs[j + 1] || slotYs[slotYs.length - 1];
+              const labelY = Math.round((slotA + slotB) / 2);
+              const timeDiff = Math.abs(otherNodes[j].timestamp - (collapsedGroup.displayNode.timestamp || 0));
+              this.renderTimeDiffLabel(labelsGroup, bg.attr && parseFloat(bg.attr('x')) || (nodeX), labelY, (bg.attr && parseFloat(bg.attr('width')) ) || nodeWidth, timeDiff);
+            }
+          } catch(e) {}
 
           // animate items into their slots (children occupy slot 1..N-1)
           const itemDuration = 180;
