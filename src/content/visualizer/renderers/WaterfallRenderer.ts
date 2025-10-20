@@ -2140,66 +2140,72 @@ export class WaterfallRenderer implements BaseRenderer {
     let scrollOffset = 0;
     const maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
 
-    const drawer = this.svg.append('g')
-      .attr('class', 'collapsed-nodes-drawer')
-      .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
-      .style('pointer-events', 'none');
+    // Try to mount the drawer into the scrollable drag layer (above swimlane separators)
+    let drawer: any;
+    try {
+      const scrollable = this.scrollableGroup || this.svg;
+      const dragLayerSel = (scrollable && typeof scrollable.select === 'function') ? scrollable.select('.drag-layer-group') : null;
+      if (dragLayerSel && !dragLayerSel.empty()) {
+        drawer = dragLayerSel.append('g')
+          .attr('class', 'collapsed-nodes-drawer')
+          .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
+          .style('pointer-events', 'none');
+      } else {
+        drawer = this.svg.append('g')
+          .attr('class', 'collapsed-nodes-drawer')
+          .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
+          .style('pointer-events', 'none');
+      }
+    } catch (e) {
+      drawer = this.svg.append('g')
+        .attr('class', 'collapsed-nodes-drawer')
+        .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
+        .style('pointer-events', 'none');
+    }
 
     // 背景矩形在水平上扩展，以便左右超出节点
     const bgX = Math.max(0, nodeX - horizontalPadding);
     const bgWidth = nodeWidth + horizontalPadding * 2;
 
     try { console.log('DEBUG: showCollapsedNodesDrawer called for', collapsedGroup.tabId); } catch(e) {}
+
+    // 背景矩形初始化为与 display node 同高，稍后可扩展至 full height
     const bgRect = drawer.append('rect')
+      .attr('class', 'drawer-bg')
       .attr('x', bgX)
-      .attr('y', drawerTop)
+      .attr('y', nodeY)
       .attr('width', bgWidth)
-      .attr('height', actualDrawerHeight)
+      .attr('height', nodeHeight)
       .attr('fill', '#e6f2ff')
-      .attr('data-debug-bg', '1')
       .attr('fill-opacity', 1)
+      .attr('data-debug-bg', '1')
       .attr('stroke', 'rgba(74, 144, 226, 0.6)')
       .attr('stroke-width', 1)
-      .style('pointer-events', 'all')
-      .style('cursor', 'default');
+      .style('pointer-events', 'none');
 
-    const nodesContainer = drawer.append('g')
-      .attr('class', 'drawer-nodes-container')
-      .attr('transform', `translate(0, 0)`);
-    
-    // 🎯 在背景矩形上直接处理滚动事件（nodesContainer已创建，可以使用）
-    bgRect.on('wheel', (event: WheelEvent) => {
-      // 🛡️ 如果正在拖拽观察窗口，禁用抽屉内滚轮事件（防止Magic Mouse误触）
-      if (this.isDraggingObservationWindow) {
-        event.preventDefault();
-        event.stopPropagation();
-        logger.log(_('waterfall_drawer_wheel_disabled_during_observation_drag', '🚫 观察窗口拖拽期间禁用抽屉滚轮滚动（防止Magic Mouse误触）'));
-        return;
-      }
-      
-      event.preventDefault();
-      event.stopPropagation();
-      
-  logger.log(_('waterfall_drawer_scroll_intercepted', '🎯 浮层滚动事件被拦截'));
-      
-      if (maxScroll > 0) {
-        // 需要滚动：处理滚动
-        const delta = event.deltaY;
-        scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + delta * 0.5));
-        nodesContainer.attr('transform', `translate(0, ${-scrollOffset})`);
-        
-        // 更新箭头可见性
-        const arrow = drawer.select('.scroll-arrow');
-        if (!arrow.empty()) {
-          if (scrollOffset >= maxScroll - 5) {
-            arrow.attr('opacity', 0);
+    // container for rendered nodes
+    const nodesContainer = drawer.append('g').attr('class', 'drawer-nodes').style('pointer-events', 'none');
+
+    // Ensure the drawer group is mounted into the drag-layer-group (if present)
+    try {
+      const overlay = this.scrollableGroup || this.svg;
+      const overlayNode = overlay.node() as any;
+      const drawerNode = drawer.node() as any;
+      if (overlayNode && drawerNode) {
+        try {
+          const dragLayer = overlayNode.querySelector && overlayNode.querySelector('.drag-layer-group');
+          if (dragLayer) {
+            try { dragLayer.appendChild(drawerNode); } catch (e) { /* ignore */ }
           } else {
-            arrow.attr('opacity', 1);
+            try { overlayNode.appendChild(drawerNode); } catch (e) { /* ignore */ }
           }
+        } catch (e) {
+          try { overlayNode.appendChild(drawerNode); } catch (e) { /* ignore */ }
         }
       }
-      // 如果不需要滚动，仅阻止事件传播（已在上面处理）
-    });
+    } catch (e) {
+      // ignore move errors
+    }
     
     // 🎯 按槽位渲染所有节点（包含 display node 占 slot 0）
     const slotsCount = slots; // collapsedGroup.nodes.length
