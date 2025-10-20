@@ -1266,12 +1266,14 @@ export class WaterfallRenderer implements BaseRenderer {
     // 保存引用
     this.scrollableGroup = contentGroup;
     
-    // 在内容组内创建各个子组（所有内容都完整渲染）
-    const timeStripsGroup = contentGroup.append('g').attr('class', 'time-strips-group');
-    const swimlaneSeperatorsGroup = contentGroup.append('g').attr('class', 'swimlane-separators-group');
+  // 在内容组内创建各个子组（所有内容都完整渲染）
+  // NOTE: swimlane separators should be created early so they render behind nodes and
+  // any drag-layer overlays (drawers). Place separators first to lock their z-order.
+  const swimlaneSeperatorsGroup = contentGroup.append('g').attr('class', 'swimlane-separators-group');
+  const timeStripsGroup = contentGroup.append('g').attr('class', 'time-strips-group');
     
-    const nodesGroup = contentGroup.append('g').attr('class', 'nodes-group');
-    const closureMarkersGroup = contentGroup.append('g').attr('class', 'closure-markers-group');
+  const nodesGroup = contentGroup.append('g').attr('class', 'nodes-group');
+  const closureMarkersGroup = contentGroup.append('g').attr('class', 'closure-markers-group');
     
     // 🎯 重新设计：拖拽层放在节点层之后，这样节点可以直接接收点击事件
     const dragLayerGroup = contentGroup.append('g').attr('class', 'drag-layer-group');
