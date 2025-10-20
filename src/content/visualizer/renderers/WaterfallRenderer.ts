@@ -896,7 +896,7 @@ export class WaterfallRenderer implements BaseRenderer {
           swimlaneIndex: assignedLaneIndex
         };
         closureMarkers.push(marker);
-        logger.log(_('waterfall_create_closure_marker', '🔴 创建关闭标记: 标签{0}, 时间戳={1}, 泳道={2}'), marker.tabId, marker.timestamp, marker.swimlaneIndex);
+        //logger.log(_('waterfall_create_closure_marker', '🔴 创建关闭标记: 标签{0}, 时间戳={1}, 泳道={2}'), marker.tabId, marker.timestamp, marker.swimlaneIndex);
       }
     });
 
@@ -921,11 +921,11 @@ export class WaterfallRenderer implements BaseRenderer {
     // 这确保了关闭标记和新节点不会重合
     const canReuse = newLifecycle.startTime >= lastLifecycle.closureMarkerTime + this.TIME_SEGMENT_DURATION;
     
-    if (canReuse) {
+    /*if (canReuse) {
       logger.log(_('waterfall_can_reuse_lane_ok', '✅ 泳道可复用检查通过: 新标签 {0} ({1}) 在关闭标记 {2} 之后开始'), newLifecycle.tabId, new Date(newLifecycle.startTime).toLocaleTimeString(), new Date(lastLifecycle.closureMarkerTime).toLocaleTimeString());
     } else {
       logger.log(_('waterfall_can_reuse_lane_fail', '泳道复用检查失败: 新标签 {0} 时间冲突'), newLifecycle.tabId);
-    }
+    }*/
     
     return canReuse;
   }
@@ -1496,7 +1496,7 @@ export class WaterfallRenderer implements BaseRenderer {
       // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
       const isEven = segment.originalIndex % 2 === 0;
       
-  // （已移除）误插入的 appendBadge - badge 应由节点渲染函数内部创建
+      // （已移除）误插入的 appendBadge - badge 应由节点渲染函数内部创建
       const stripBg = group.append('rect')
         .attr('class', `strip-background strip-${segment.originalIndex}`)
         .attr('data-time', new Date(segment.endTime).toISOString())
@@ -1505,8 +1505,8 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
         .attr('height', stripHeight)
-  .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
-  .attr('opacity', 0.6)
+        .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
+        .attr('opacity', 0.6)
         .style('transition', 'opacity 0.2s ease');
       
       // 不要在 hover 时改变条带透明度，保持稳定视觉（避免覆盖抽屉）
@@ -1540,7 +1540,7 @@ export class WaterfallRenderer implements BaseRenderer {
    */
   private addTimeLabelToStrip(strip: any, segment: TimeSegment, timeAxisY: number = 80): void {
     // 方法已禁用，时间标签由固定时间轴负责
-  logger.warn(_('waterfall_addTimeLabel_disabled', '⚠️ addTimeLabelToStrip 已禁用，时间标签由固定时间轴负责'));
+    //logger.warn(_('waterfall_addTimeLabel_disabled', '⚠️ addTimeLabelToStrip 已禁用，时间标签由固定时间轴负责'));
     return;
     
     /* 原代码已注释
@@ -1576,21 +1576,21 @@ export class WaterfallRenderer implements BaseRenderer {
    * 按段渲染节点
    */
   private renderSegmentNodes(group: any, layout: LayoutResult): void {
-  logger.log(_('waterfall_render_segment_nodes', '🎯 渲染段节点，段数量: {0}'), layout.segments.length);
+    //logger.log(_('waterfall_render_segment_nodes', '🎯 渲染段节点，段数量: {0}'), layout.segments.length);
 
     let totalNodesRendered = 0;
     const MAX_NODES_TO_RENDER = 500; // 防止渲染过多节点
 
     layout.segments.forEach((segment, segIndex) => {
       if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
-  logger.warn(_('waterfall_max_nodes_rendered', '⚠️ 已渲染{0}个节点，跳过剩余段'), totalNodesRendered);
+        //logger.warn(_('waterfall_max_nodes_rendered', '⚠️ 已渲染{0}个节点，跳过剩余段'), totalNodesRendered);
         return;
       }
 
       // 🎯 使用strips数组中对应的条带分组
       const strip = this.strips[segIndex];
       if (!strip) {
-  logger.warn(_('waterfall_strip_not_found', '⚠️ 找不到段 {0} 的条带分组'), segIndex);
+        //logger.warn(_('waterfall_strip_not_found', '⚠️ 找不到段 {0} 的条带分组'), segIndex);
         return;
       }
       
@@ -1738,7 +1738,7 @@ export class WaterfallRenderer implements BaseRenderer {
       });
     });
 
-  logger.log(_('waterfall_total_nodes_rendered', '✅ 总共渲染了 {0} 个节点'), totalNodesRendered);
+    //logger.log(_('waterfall_total_nodes_rendered', '✅ 总共渲染了 {0} 个节点'), totalNodesRendered);
   }
 
   /**
@@ -1751,7 +1751,7 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-  logger.log(_('waterfall_render_closure_markers', '🔴 渲染 {0} 个关闭标记'), this.closureMarkers.length);
+    //logger.log(_('waterfall_render_closure_markers', '🔴 渲染 {0} 个关闭标记'), this.closureMarkers.length);
 
     // 创建关闭标记分组
     const markerGroup = group.append('g').attr('class', 'closure-markers');
@@ -1772,15 +1772,15 @@ export class WaterfallRenderer implements BaseRenderer {
       const swimlane = this.swimlanes[marker.swimlaneIndex];
       
       if (!segment || !swimlane) {
-  logger.error(_('waterfall_closure_marker_debug', '❌ 关闭标记调试信息:'));
-  logger.error(_('waterfall_closure_marker_id', '   标签ID: {0}'), marker.tabId);
-  logger.error(_('waterfall_closure_marker_timestamp', '   时间戳: {0} ({1})'), marker.timestamp, new Date(marker.timestamp).toLocaleString());
-  logger.error(_('waterfall_closure_marker_swimlane_index', '   泳道索引: {0}'), marker.swimlaneIndex);
-  logger.error(_('waterfall_closure_marker_segment_found', '   找到的段: {0}'), segment ? '是' : '否');
-  logger.error(_('waterfall_closure_marker_swimlane_found', '   找到的泳道: {0}'), swimlane ? '是' : '否');
-  logger.error(_('waterfall_closure_marker_total_segments', '   总段数: {0}'), layout.segments.length);
-  logger.error(_('waterfall_closure_marker_total_swimlanes', '   总泳道数: {0}'), this.swimlanes.length);
-        
+        /*logger.error(_('waterfall_closure_marker_debug', '❌ 关闭标记调试信息:'));
+        logger.error(_('waterfall_closure_marker_id', '   标签ID: {0}'), marker.tabId);
+        logger.error(_('waterfall_closure_marker_timestamp', '   时间戳: {0} ({1})'), marker.timestamp, new Date(marker.timestamp).toLocaleString());
+        logger.error(_('waterfall_closure_marker_swimlane_index', '   泳道索引: {0}'), marker.swimlaneIndex);
+        logger.error(_('waterfall_closure_marker_segment_found', '   找到的段: {0}'), segment ? '是' : '否');
+        logger.error(_('waterfall_closure_marker_swimlane_found', '   找到的泳道: {0}'), swimlane ? '是' : '否');
+        logger.error(_('waterfall_closure_marker_total_segments', '   总段数: {0}'), layout.segments.length);
+        logger.error(_('waterfall_closure_marker_total_swimlanes', '   总泳道数: {0}'), this.swimlanes.length);
+        */
         if (layout.segments.length > 0) {
           const firstSegment = layout.segments[0];
           const lastSegment = layout.segments[layout.segments.length - 1];
@@ -1788,18 +1788,18 @@ export class WaterfallRenderer implements BaseRenderer {
           logger.error(_('waterfall_closure_marker_segment_range_readable', '   段时间范围（可读）: {0} - {1}'), new Date(firstSegment.startTime).toLocaleString(), new Date(lastSegment.endTime).toLocaleString());
         }
         
-  logger.warn(_('waterfall_cannot_find_closure_marker', '⚠️ 无法找到关闭标记 {0} 的对应段或泳道'), marker.tabId);
+        //logger.warn(_('waterfall_cannot_find_closure_marker', '⚠️ 无法找到关闭标记 {0} 的对应段或泳道'), marker.tabId);
         return;
       }
 
       // 🎯 只跳过填充的空白段中的关闭标记，但允许在数据空段中显示
       if (segment.isFiller) {
-  logger.log(_('waterfall_skip_filler_closure', '⚡ 跳过填充空白段中的关闭标记: {0}'), marker.tabId);
+        //logger.log(_('waterfall_skip_filler_closure', '⚡ 跳过填充空白段中的关闭标记: {0}'), marker.tabId);
         return;
       }
       
       if (segment.displayMode === 'dot' || segment.displayMode === 'icon') {
-  logger.log(_('waterfall_skip_compressed_closure', '⚡ 跳过压缩条带中的关闭标记: {0} (模式: {1})'), marker.tabId, segment.displayMode);
+        //logger.log(_('waterfall_skip_compressed_closure', '⚡ 跳过压缩条带中的关闭标记: {0} (模式: {1})'), marker.tabId, segment.displayMode);
         return;
       }
 
@@ -1808,7 +1808,7 @@ export class WaterfallRenderer implements BaseRenderer {
       const markerX = segment.startX + (segment.allocatedWidth / 2);
       const markerY = swimlane.y + (this.SWIMLANE_HEIGHT / 2); // 泳道中央
       
-  logger.log(_('waterfall_closure_marker_render_pos', '🎯 关闭标记 {0} 显示在段中央: X={1}, 段范围=[{2}-{3}]'), marker.tabId, markerX.toFixed(1), segment.startTime, segment.endTime);
+      //logger.log(_('waterfall_closure_marker_render_pos', '🎯 关闭标记 {0} 显示在段中央: X={1}, 段范围=[{2}-{3}]'), marker.tabId, markerX.toFixed(1), segment.startTime, segment.endTime);
       
       // 🎯 日本麻将立直棒样式设计
       const stickHeight = this.SWIMLANE_HEIGHT * 0.6; // 棒子高度（稍小一些）
@@ -3056,8 +3056,8 @@ export class WaterfallRenderer implements BaseRenderer {
     // 🎯 计算最大可拖动的起始索引（确保最后几个段也能被观察）
     const maxObservationStartIndex = Math.max(0, this.allSegments.length - layout.normalDisplaySegments.length);
     
-  logger.log(_('waterfall_observation_drag_setup', '🔍 观察窗口拖拽设置: 总段数={0}, 观察窗口段数={1}, 最大起始索引={2}'), this.allSegments.length, layout.normalDisplaySegments.length, maxObservationStartIndex);
-  logger.log(_('waterfall_observation_drag_range_info', '🔍 拖拽范围段: 从第{0}段 到 第{1}段（允许覆盖所有段）'), 0, this.allSegments.length - 1);
+    //logger.log(_('waterfall_observation_drag_setup', '🔍 观察窗口拖拽设置: 总段数={0}, 观察窗口段数={1}, 最大起始索引={2}'), this.allSegments.length, layout.normalDisplaySegments.length, maxObservationStartIndex);
+    //logger.log(_('waterfall_observation_drag_range_info', '🔍 拖拽范围段: 从第{0}段 到 第{1}段（允许覆盖所有段）'), 0, this.allSegments.length - 1);
 
     const drag = d3.drag()
       .on('start', function(event: any) {
@@ -3157,14 +3157,14 @@ export class WaterfallRenderer implements BaseRenderer {
           (lastSegment.startX + lastSegment.allocatedWidth - observationWindowWidth) : 
           layout.timeAxisData.startX;
         
-  logger.log(_('waterfall_drag_boundary_check', '🔍 拖动边界检查: minX={0}, maxX={1}, targetX={2}, 最后段={3}'), minX, maxX, targetX, lastSegment ? `${lastSegment.startX}-${lastSegment.startX + lastSegment.allocatedWidth}` : 'N/A');
+        //logger.log(_('waterfall_drag_boundary_check', '🔍 拖动边界检查: minX={0}, maxX={1}, targetX={2}, 最后段={3}'), minX, maxX, targetX, lastSegment ? `${lastSegment.startX}-${lastSegment.startX + lastSegment.allocatedWidth}` : 'N/A');
         
         // 🎯 修复右边界问题：严格限制边界，不允许超出
         // 如果吸附位置超出边界，优先保证边界限制，放弃吸附
         if (targetX > maxX) {
           targetX = maxX;
           self.lastDragSnapped = false; // 取消吸附状态
-          logger.log(_('waterfall_reject_right_boundary_snap', '🚫 拒绝超出右边界的吸附，强制限制在边界内: {0}'), targetX);
+          //logger.log(_('waterfall_reject_right_boundary_snap', '🚫 拒绝超出右边界的吸附，强制限制在边界内: {0}'), targetX);
         }
         
         const clampedX = Math.max(minX, Math.min(maxX, targetX));
@@ -3205,7 +3205,7 @@ export class WaterfallRenderer implements BaseRenderer {
         // 如果当前位置超出边界，强制回到边界内
         const correctedX = Math.max(minX, Math.min(maxX, currentX));
         if (Math.abs(correctedX - currentX) > 0.1) {
-          logger.log(_('waterfall_correct_drag_end_pos', '🎯 修正拖拽结束位置: {0} -> {1}'), currentX.toFixed(1), correctedX.toFixed(1));
+          //logger.log(_('waterfall_correct_drag_end_pos', '🎯 修正拖拽结束位置: {0} -> {1}'), currentX.toFixed(1), correctedX.toFixed(1));
           rect.attr('x', correctedX);
         }
         
@@ -3214,7 +3214,7 @@ export class WaterfallRenderer implements BaseRenderer {
         const windowLeftEdge = finalX;
         const windowRightEdge = finalX + observationWindowWidth;
         
-  logger.log(_('waterfall_drag_end_analysis', '🔍 拖拽结束位置分析: 窗口位置=[{0}, {1}], 宽度={2}'), windowLeftEdge.toFixed(1), windowRightEdge.toFixed(1), observationWindowWidth.toFixed(1));
+        //logger.log(_('waterfall_drag_end_analysis', '🔍 拖拽结束位置分析: 窗口位置=[{0}, {1}], 宽度={2}'), windowLeftEdge.toFixed(1), windowRightEdge.toFixed(1), observationWindowWidth.toFixed(1));
         
         // 计算每个条带的覆盖比例
         const stripCoverages = self.allSegments.map((segment, i) => {
@@ -3248,12 +3248,12 @@ export class WaterfallRenderer implements BaseRenderer {
         if (isAtLeftBoundary) {
           // 用户拖拽到最左边，显示最新的时间段（从索引0开始）
           newStartIndex = 0;
-          logger.log(_('waterfall_detect_left_boundary_drag', '🎯 检测到左边界拖拽：窗口左边缘={0}, 最小拖拽X={1}, 显示最新时间段（索引=0）'), windowLeftEdge.toFixed(1), minDragX.toFixed(1));
+          //logger.log(_('waterfall_detect_left_boundary_drag', '🎯 检测到左边界拖拽：窗口左边缘={0}, 最小拖拽X={1}, 显示最新时间段（索引=0）'), windowLeftEdge.toFixed(1), minDragX.toFixed(1));
         } else if (isAtRightBoundary) {
           // 🎯 用户拖拽到最右边，确保观察窗口覆盖最后几个时间段
           const maxObservationStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
           newStartIndex = maxObservationStartIndex;
-          logger.log(_('waterfall_detect_right_boundary_drag', '🎯 检测到右边界拖拽：窗口左边缘={0}, 最大拖拽X={1}, 显示最老时间段（索引={2}）'), windowLeftEdge.toFixed(1), maxDragX.toFixed(1), newStartIndex);
+          //logger.log(_('waterfall_detect_right_boundary_drag', '🎯 检测到右边界拖拽：窗口左边缘={0}, 最大拖拽X={1}, 显示最老时间段（索引={2}）'), windowLeftEdge.toFixed(1), maxDragX.toFixed(1), newStartIndex);
         } else {
           // 🎯 根据拖拽方向确定观察窗口停止位置
           // 向左拖拽：以左边缘对齐时间条带；向右拖拽：以右边缘对齐时间条带
@@ -3264,7 +3264,7 @@ export class WaterfallRenderer implements BaseRenderer {
           
           const isDraggingRight = windowLeftEdge > currentWindowLeftEdge;
           
-          logger.log(_('waterfall_drag_direction_analysis', '🔍 拖拽方向分析: 当前窗口左边缘={0}, 新位置={1}, 向右拖拽={2}'), currentWindowLeftEdge.toFixed(1), windowLeftEdge.toFixed(1), isDraggingRight);
+          //logger.log(_('waterfall_drag_direction_analysis', '🔍 拖拽方向分析: 当前窗口左边缘={0}, 新位置={1}, 向右拖拽={2}'), currentWindowLeftEdge.toFixed(1), windowLeftEdge.toFixed(1), isDraggingRight);
           
           if (isDraggingRight) {
             // 🎯 向右拖拽：找观察窗口右边缘覆盖的时间条带，让观察窗口右边缘对齐该条带右边缘
@@ -3283,11 +3283,11 @@ export class WaterfallRenderer implements BaseRenderer {
             if (targetSegmentIndex >= 0) {
               // 计算让观察窗口右边缘对齐目标条带右边缘时的起始索引
               newStartIndex = Math.max(0, targetSegmentIndex - layout.normalDisplaySegments.length + 1);
-              logger.log(_('waterfall_drag_right_target', '🎯 向右拖拽: 目标条带={0}, 计算起始索引={1}'), targetSegmentIndex, newStartIndex);
+              //logger.log(_('waterfall_drag_right_target', '🎯 向右拖拽: 目标条带={0}, 计算起始索引={1}'), targetSegmentIndex, newStartIndex);
             } else {
               // 回退到最大索引
               newStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
-              logger.log(_('waterfall_drag_right_no_target', '🎯 向右拖拽: 未找到合适条带，使用最大索引={0}'), newStartIndex);
+              //logger.log(_('waterfall_drag_right_no_target', '🎯 向右拖拽: 未找到合适条带，使用最大索引={0}'), newStartIndex);
             }
           } else {
             // 🎯 向左拖拽：找观察窗口左边缘覆盖的时间条带，让观察窗口左边缘对齐该条带左边缘
@@ -3303,11 +3303,11 @@ export class WaterfallRenderer implements BaseRenderer {
             }
             
             newStartIndex = targetSegmentIndex >= 0 ? targetSegmentIndex : 0;
-            logger.log(_('waterfall_drag_left', '🎯 向左拖拽: 目标条带={0}, 起始索引={1}'), targetSegmentIndex, newStartIndex);
+            //logger.log(_('waterfall_drag_left', '🎯 向左拖拽: 目标条带={0}, 起始索引={1}'), targetSegmentIndex, newStartIndex);
           }
         }
         
-  logger.log(_('waterfall_drag_end_target_index', '🖱️ 拖动结束，目标起始索引: {0}, 当前: {1}'), newStartIndex, self.observationStartIndex);
+        //logger.log(_('waterfall_drag_end_target_index', '🖱️ 拖动结束，目标起始索引: {0}, 当前: {1}'), newStartIndex, self.observationStartIndex);
         
         // 🎯 拖动结束后完全重新渲染（确保节点正确显示）
         if (newStartIndex !== self.observationStartIndex) {
@@ -3336,7 +3336,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * 根据新的观察窗口位置重新渲染
    */
   private reRenderWithObservationWindow(observationStartIndex: number): void {
-  logger.log(_('waterfall_rerender_for_new_window', '🔄 根据新观察窗口位置重新渲染，起始索引: {0}'), observationStartIndex);
+    //logger.log(_('waterfall_rerender_for_new_window', '🔄 根据新观察窗口位置重新渲染，起始索引: {0}'), observationStartIndex);
     
     // 🎯 更新当前观察窗口起始索引
     this.observationStartIndex = observationStartIndex;
@@ -3346,17 +3346,14 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 保存到 localStorage
     const tabId = this.visualizer.tabId || '';
-    logger.log(_('waterfall_save_observation_index_prepare', '💾 准备保存观察窗口索引到 localStorage:'), {
-      tabId,
-      observationStartIndex
-    });
+    //logger.log(_('waterfall_save_observation_index_prepare', '💾 准备保存观察窗口索引到 localStorage:'), {tabId,observationStartIndex});
     
     saveViewState(tabId, {
       viewType: 'waterfall',
       waterfallObservationIndex: observationStartIndex
     });
     
-  logger.log(_('waterfall_saved_observation_index', '✅ 已保存观察窗口索引到 localStorage'));
+    //logger.log(_('waterfall_saved_observation_index', '✅ 已保存观察窗口索引到 localStorage'));
     
     // 重新计算布局
     const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
@@ -3493,7 +3490,7 @@ export class WaterfallRenderer implements BaseRenderer {
       
       if (isEntering) {
         // 🎯 进入观察窗口：展开节点显示
-  logger.log(_('waterfall_strip_entered_observation', '✨ 条带 {0} 进入观察窗口，展开节点'), i);
+        //logger.log(_('waterfall_strip_entered_observation', '✨ 条带 {0} 进入观察窗口，展开节点'), i);
         if (isFullyExpanded) {
           this.renderSegmentNodesExpanded(segment, strip, layoutSegment);
         } else {
@@ -3502,7 +3499,7 @@ export class WaterfallRenderer implements BaseRenderer {
         }
       } else if (isLeaving) {
         // 🎯 离开观察窗口：压缩为圆点
-        logger.log(_('waterfall_segment_leaving', '💨 条带 {0} 离开观察窗口，压缩节点'), i);
+        //logger.log(_('waterfall_segment_leaving', '💨 条带 {0} 离开观察窗口，压缩节点'), i);
         this.renderSegmentNodesAsDots(segment, strip, layoutSegment);
       } else if (isInWindow) {
         // 🎯 保持在观察窗口内：根据当前模式更新节点
