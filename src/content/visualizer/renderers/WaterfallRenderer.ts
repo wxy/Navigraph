@@ -122,7 +122,7 @@ export class WaterfallRenderer implements BaseRenderer {
   private readonly SWIMLANE_HEIGHT = 50; // 每个泳道的高度（包含间距）
   private readonly SWIMLANE_NODE_HEIGHT = 40; // 泳道内节点的实际高度
   private readonly SWIMLANE_SEPARATOR_DASH = '5,3'; // 虚线样式
-  private readonly SWIMLANE_SEPARATOR_COLOR = '#555'; // 虚线颜色
+  private readonly SWIMLANE_SEPARATOR_COLOR = '#333333'; // 虚线颜色（加深以免被抽屉遮挡时不清晰）
   private readonly MAX_SWIMLANES = 20; // 最大泳道数量（防止过多标签页导致布局溢出）
   private readonly COLLAPSE_THRESHOLD = 2; // 折叠阈值：>=2个节点时折叠
 
@@ -273,7 +273,7 @@ export class WaterfallRenderer implements BaseRenderer {
   ): void {
     try {
   logger.log(_('waterfall_toggle_prebuilt_drawer_called', '🔔 togglePrebuiltDrawer called for {0}'), collapsedGroup.tabId);
-  try { console.log('DEBUG: togglePrebuiltDrawer called for', collapsedGroup.tabId); } catch(e) {}
+        // debug console removed
       const mount = this.scrollableGroup || this.svg;
       const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapsedGroup.tabId}"]`);
       if (drawerSel.empty()) return;
@@ -392,8 +392,8 @@ export class WaterfallRenderer implements BaseRenderer {
           try {
             body.style('pointer-events', 'none');
             body.attr('opacity', 1);
-            // ensure bg is fully opaque and marked for debug
-            try { bg.attr('fill-opacity', 1).attr('data-debug-bg', '1'); } catch(e) {}
+            // ensure bg is fully opaque
+            try { bg.attr('fill-opacity', 1); } catch(e) {}
             bg.transition().duration(200).attr('y', drawerTop).attr('height', actualDrawerHeight);
           } catch(e) {}
 
@@ -1339,7 +1339,7 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('font-weight', 'bold')
         .attr('font-style', 'italic') // 🎯 添加斜体样式
         .attr('fill', '#666666')
-        .attr('opacity', 0.4) // 半透明效果
+  .attr('opacity', 0.75) // 增加可见性
         .text(index + 1); // 显示1、2、3...
 
       // 绘制泳道底部的分隔线（除了最后一条）
@@ -1355,7 +1355,7 @@ export class WaterfallRenderer implements BaseRenderer {
           .attr('stroke', this.SWIMLANE_SEPARATOR_COLOR)
           .attr('stroke-width', 1)
           .attr('stroke-dasharray', this.SWIMLANE_SEPARATOR_DASH)
-          .attr('opacity', 0.5);
+    .attr('opacity', 0.9);
       }
     });
   }
@@ -1505,16 +1505,11 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('y', stripTop)
         .attr('width', segment.allocatedWidth)
         .attr('height', stripHeight)
-        .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
-        .attr('opacity', 0.9)
+  .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
+  .attr('opacity', 0.6)
         .style('transition', 'opacity 0.2s ease');
       
-      // 添加悬停效果
-      stripBg.on('mouseenter', function(this: SVGRectElement) {
-        d3.select(this).attr('opacity', 1);
-      }).on('mouseleave', function(this: SVGRectElement) {
-        d3.select(this).attr('opacity', 0.9);
-      });
+      // 不要在 hover 时改变条带透明度，保持稳定视觉（避免覆盖抽屉）
       
       // 🎯 为兼容现有系统，创建虚拟的strip组
       // 这样现有的节点渲染逻辑可以继续工作
@@ -1694,7 +1689,6 @@ export class WaterfallRenderer implements BaseRenderer {
                   .attr('height', nodeHeight)
                   .attr('fill', '#e6f2ff')
                   .attr('fill-opacity', 1)
-                  .attr('data-debug-bg', '1')
                   .attr('stroke', 'rgba(74, 144, 226, 0.6)')
                   .attr('stroke-width', 1)
                   .style('pointer-events', 'none');
@@ -2169,7 +2163,7 @@ export class WaterfallRenderer implements BaseRenderer {
     const bgX = Math.max(0, nodeX - horizontalPadding);
     const bgWidth = nodeWidth + horizontalPadding * 2;
 
-    try { console.log('DEBUG: showCollapsedNodesDrawer called for', collapsedGroup.tabId); } catch(e) {}
+  // debug console removed
 
     // 背景矩形初始化为与 display node 同高，稍后可扩展至 full height
     const bgRect = drawer.append('rect')
@@ -2180,7 +2174,6 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', nodeHeight)
       .attr('fill', '#e6f2ff')
       .attr('fill-opacity', 1)
-      .attr('data-debug-bg', '1')
       .attr('stroke', 'rgba(74, 144, 226, 0.6)')
       .attr('stroke-width', 1)
       .style('pointer-events', 'none');
