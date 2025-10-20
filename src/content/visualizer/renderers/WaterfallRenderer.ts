@@ -299,8 +299,11 @@ export class WaterfallRenderer implements BaseRenderer {
         } catch(e) {}
 
   // open: do down-direction expand animation (background stretch + per-item move)
+        // keep the outer drawer container non-interactive so it doesn't block
+        // clicks to sibling nodes; the inner body/items will be enabled
+        // for pointer events after the open animation completes.
         drawerSel.attr('data-open', 'true')
-          .style('pointer-events', 'auto');
+          .style('pointer-events', 'none');
 
         // find the body and bg
         const body = drawerSel.select('.drawer-body');
@@ -312,13 +315,33 @@ export class WaterfallRenderer implements BaseRenderer {
           const overlayNode = overlay.node() as any;
           const drawerNode = drawerSel.node() as any;
           if (overlayNode && drawerNode) {
-            // always append to bring to end (top of z-order)
-            try { overlayNode.appendChild(drawerNode); } catch(e) {}
-            // ensure the display node inside the drawer is the last child so it's on top within the drawer
-            try {
-              const displayNode = drawerSel.select('.navigation-node').node() as any;
-              if (displayNode) drawerNode.appendChild(displayNode);
-            } catch (e) {}
+              // raise the swimlane group containing this drawer to the end of its time-strip
+              try {
+                const laneIndexAttr = drawerSel.attr('data-lane-index');
+                const laneIndex = laneIndexAttr ? parseInt(laneIndexAttr, 10) : null;
+                // find nearest time-strip ancestor
+                let timeStrip = drawerNode.closest && drawerNode.closest('.time-strip');
+                if (!timeStrip) {
+                  // fallback: use mount selection's time-strips-group
+                  timeStrip = (overlayNode.querySelector && overlayNode.querySelector('.time-strip')) || null;
+                }
+                if (timeStrip && laneIndex !== null) {
+                  const swimlaneSelector = `.swimlane-${laneIndex}`;
+                  const swimlaneGroup = timeStrip.querySelector(swimlaneSelector) as any;
+                  if (swimlaneGroup) {
+                    try { timeStrip.appendChild(swimlaneGroup); } catch(e) {}
+                  } else {
+                    // if no swimlaneGroup found, as fallback append drawer itself to overlay
+                    try { overlayNode.appendChild(drawerNode); } catch(e) {}
+                  }
+                } else {
+                  try { overlayNode.appendChild(drawerNode); } catch(e) {}
+                }
+              } catch(e) {
+                try { overlayNode.appendChild(drawerNode); } catch(e) {}
+              }
+            // NOTE: 不要尝试把 display node append 到 drawer 内（我们不 reparent）。
+            // 画面层级控制改为在同一父容器内进行 append/raise（如果需要）。
           }
         } catch (e) {
           // ignore move errors
@@ -379,7 +402,7 @@ export class WaterfallRenderer implements BaseRenderer {
           // animate items: from baseY to targetY with stagger
           const itemDuration = 180;
           const stagger = 40;
-          items.each(function(this: any, d: any, i: number) {
+            items.each(function(this: any, d: any, i: number) {
             // target position: just below the display node (nodeY + nodeHeight) plus spacing
             const gapBetween = 4; // small visual gap
             const targetY = baseY + (nodeHeightLocal || nodeHeight) + gapBetween + i * ((nodeHeightLocal || nodeHeight) + nodeGap);
@@ -396,11 +419,12 @@ export class WaterfallRenderer implements BaseRenderer {
               });
 
             // prevent clicks on item from bubbling to svg (which would close the drawer)
-            try {
-              d3.select(this).on('click', function(event: MouseEvent) {
-                try { event.stopPropagation(); } catch(e) {}
-              });
-            } catch(e) {}
+              try {
+                // 使用命名空间绑定，避免覆盖其他 click 处理器
+                d3.select(this).on('click.drawerItem', function(event: MouseEvent) {
+                  try { event.stopPropagation(); } catch(e) {}
+                });
+              } catch(e) {}
           });
 
           // ensure body pointer-events enabled after all transitions
@@ -1598,7 +1622,19 @@ export class WaterfallRenderer implements BaseRenderer {
           return;
         }
         
-  const createdNodeGroup = this.renderSingleNode(nodeGroup, node, segment, index);
+        // Ensure nodes are grouped by swimlane inside the strip so we can z-order per-swimlane
+        const swimlane = this.getSwimlaneForNode(node);
+        const laneIndex = swimlane ? swimlane.laneIndex : 0;
+
+        // find or create swimlane subgroup under nodeGroup
+        let swimlaneGroup = nodeGroup.select(`g.swimlane-${laneIndex}`);
+        if (swimlaneGroup.empty()) {
+          swimlaneGroup = nodeGroup.append('g')
+            .attr('class', `swimlane-group swimlane-${laneIndex}`)
+            .attr('data-lane-index', laneIndex);
+        }
+
+        const createdNodeGroup = this.renderSingleNode(swimlaneGroup, node, segment, index);
         
         // 🎯 如果这个节点是折叠组的显示节点，渲染折叠角标
         // 但是 dot 模式不需要折叠角标
@@ -1608,13 +1644,14 @@ export class WaterfallRenderer implements BaseRenderer {
           );
           // 无论是否有折叠组，都在节点处预建一个 collapsed-drawer 容器（默认为空/隐藏）
           try {
-            const parentSel = d3.select(nodeGroup.node());
-            // Prebuild drawer container but keep it visible (data-open=false)
-            // Items/background are placed inside .drawer-body which will be toggled.
+            // Prebuild drawer container as a child of the swimlane group so we can
+            // raise the entire swimlane to control z-order when opening.
+            const parentSel = d3.select((swimlaneGroup && swimlaneGroup.node()) || nodeGroup.node());
             const drawerSel = parentSel.insert('g', () => (createdNodeGroup && createdNodeGroup.node()) as any)
               .attr('class', 'collapsed-drawer')
               .attr('data-collapse-group', collapsedGroup ? collapsedGroup.tabId : `none-${node.id}`)
               .attr('data-open', 'false')
+              .attr('data-lane-index', laneIndex)
               .style('pointer-events', 'none');
 
             // 创建 drawer-body（包含背景与 items），默认隐藏（opacity 0 和 pointer-events none）
@@ -1625,17 +1662,11 @@ export class WaterfallRenderer implements BaseRenderer {
 
             // 背景矩形（在后面计算 nodeX/nodeY 后创建）
 
-            // 将当前的 navigation-node 移入 drawer 容器内并确保它在最上层（append 到 drawerSel 末尾）
-            try {
-              const nodeEl = (createdNodeGroup && createdNodeGroup.node()) || (nodeGroup && nodeGroup.node());
-              const drawerNode = drawerSel.node();
-              if (nodeEl && drawerNode && nodeEl.parentNode !== drawerNode) {
-                // append to ensure it's rendered on top of drawer-body
-                drawerNode.appendChild(nodeEl);
-              }
-            } catch (e) {
-              // ignore move errors
-            }
+            // NOTE: 不要把 navigation-node 移入 drawer 容器。
+            // 把节点移动到 drawer 会导致当 drawer 的外层容器设置
+            // pointer-events: none 时，节点也变得不可点击（SVG group 的 pointer-events
+            // 会使子元素不可交互）。为避免此副作用，保持节点原位，不在此处 reparent。
+            // 如果需要提升 z-order，请在打开抽屉时在同一父容器内做 append/raise（而不是把节点移动到 drawer 内）。
 
             // 如果存在折叠组则填充 drawer-items，否则保持空
             if (collapsedGroup) {
