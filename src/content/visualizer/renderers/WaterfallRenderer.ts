@@ -272,6 +272,8 @@ export class WaterfallRenderer implements BaseRenderer {
     nodeHeight: number
   ): void {
     try {
+  logger.log(_('waterfall_toggle_prebuilt_drawer_called', '🔔 togglePrebuiltDrawer called for {0}'), collapsedGroup.tabId);
+  try { console.log('DEBUG: togglePrebuiltDrawer called for', collapsedGroup.tabId); } catch(e) {}
       const mount = this.scrollableGroup || this.svg;
       const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapsedGroup.tabId}"]`);
       if (drawerSel.empty()) return;
@@ -1671,6 +1673,8 @@ export class WaterfallRenderer implements BaseRenderer {
                   .attr('width', nodeWidth)
                   .attr('height', nodeHeight)
                   .attr('fill', '#e6f2ff')
+                  .attr('fill-opacity', 1)
+                  .attr('data-debug-bg', '1')
                   .attr('stroke', 'rgba(74, 144, 226, 0.6)')
                   .attr('stroke-width', 1)
                   .style('pointer-events', 'none');
@@ -2086,7 +2090,8 @@ export class WaterfallRenderer implements BaseRenderer {
     const otherNodes = collapsedGroup.nodes.filter(n => n.id !== firstNode.id);
     if (otherNodes.length === 0) return;
 
-    // 抽屉布局规则：
+  logger.log(_('waterfall_show_collapsed_drawer_called', '🔔 showCollapsedNodesDrawer called for {0}'), collapsedGroup.tabId);
+  // 抽屉布局规则：
     // - 顶部从显示节点泳道上缘开始（drawerTop = swimlane.y）
     // - 抽屉左右比节点宽，左右各有 horizontalPadding
     // - 抽屉高度为 slots * SWIMLANE_HEIGHT + paddingAround*2
@@ -2126,12 +2131,15 @@ export class WaterfallRenderer implements BaseRenderer {
     const bgX = Math.max(0, nodeX - horizontalPadding);
     const bgWidth = nodeWidth + horizontalPadding * 2;
 
+    try { console.log('DEBUG: showCollapsedNodesDrawer called for', collapsedGroup.tabId); } catch(e) {}
     const bgRect = drawer.append('rect')
       .attr('x', bgX)
       .attr('y', drawerTop)
       .attr('width', bgWidth)
       .attr('height', actualDrawerHeight)
       .attr('fill', '#e6f2ff')
+      .attr('data-debug-bg', '1')
+      .attr('fill-opacity', 1)
       .attr('stroke', 'rgba(74, 144, 226, 0.6)')
       .attr('stroke-width', 1)
       .style('pointer-events', 'all')
@@ -2306,10 +2314,10 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y', y + 1) // 向下偏移1px
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
-      .attr('fill', '#999')
+      .attr('fill', '#666')
       .attr('font-size', '7px')
       .attr('font-style', 'italic')
-      .attr('opacity', 0.7)
+      .attr('opacity', 0.85)
       .text(`+${timeDiffText}`)
       .style('pointer-events', 'none');
   }
