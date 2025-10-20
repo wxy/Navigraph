@@ -347,94 +347,78 @@ export class WaterfallRenderer implements BaseRenderer {
           // ignore move errors
         }
 
-        // compute item targets
+        // compute item targets using slot-based layout anchored at swimlane top
   const items = body.selectAll('.drawer-item');
         const itemNodes = items.nodes();
         if (itemNodes.length === 0) {
-          // nothing to animate, just fade in body
-          body.transition().duration(180).style('opacity', 1 as any).on('end', () => {
+          body.transition().duration(120).style('opacity', 1 as any).on('end', () => {
             try { body.style('pointer-events', 'all'); } catch(e) {}
-            // 绑定文档点击关闭
             try { this.bindDocumentClickToClose(); } catch(e) {}
             this.drawerTransitioning = false;
           });
         } else {
-          // prevent wheel events inside drawer from bubbling to svg (which would close drawer)
-          try {
-            body.on('wheel', function(event: WheelEvent) {
-              try { event.stopPropagation(); event.preventDefault(); } catch(e) {}
-            });
-          } catch(e) {}
+          try { body.on('wheel', function(event: WheelEvent) { try { event.stopPropagation(); event.preventDefault(); } catch(e) {} }); } catch(e) {}
 
-          // use the known nodeX/nodeY/nodeHeight to compute base positions (more reliable)
           const baseX = nodeX;
-          const baseY = nodeY;
 
-          // compute target positions for each item (downwards stacked)
           const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
-            // try to read height from first item's child rect if available
-            try {
-              const firstChildRect = d3.select(itemNodes[0]).select('rect');
-              if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0;
-            } catch(e) {}
-            return 0;
-          })() : 0);
+            try { const firstChildRect = d3.select(itemNodes[0]).select('rect'); if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0; } catch(e) {}
+            return nodeHeight || 0;
+          })() : nodeHeight || 0);
 
-          // read drawer spacing from constants
-          const nodeGap = this.SWIMLANE_HEIGHT - (nodeHeightLocal || 0);
-          const firstNodeGap = nodeGap;
+          // slot layout params
+          const slots = collapsedGroup.nodes.length;
+          const slotHeight = this.SWIMLANE_HEIGHT;
+          const paddingAround = 0; // no vertical padding to align to swimlane boundaries
+          const preferredTop = collapsedGroup.swimlaneY || (drawerSel.attr('data-lane-index') ? (this.swimlanes[parseInt(drawerSel.attr('data-lane-index'), 10)]?.y || 0) : 0);
 
-          // compute overall drawer height
-          const drawerHeight = firstNodeGap + itemNodes.length * ((nodeHeightLocal || 0) + nodeGap);
-
-          // animate bg height from nodeHeight -> drawerHeight and fade in body
-            try {
-              // 在过渡开始时先禁止 body 内交互，动画结束后恢复
-              body.style('pointer-events', 'none');
-              body.attr('opacity', 1);
-              bg.transition().duration(200)
-                .attr('y', baseY)
-                .attr('height', drawerHeight);
-            } catch(e) {
-            // ignore
+          const drawerFullHeight = slots * slotHeight + paddingAround * 2;
+          const svgHeight = this.height;
+          const availableDownSpace = svgHeight - preferredTop;
+          const availableUpSpace = preferredTop;
+          let expandUp = false;
+          let drawerTop = preferredTop;
+          if (availableDownSpace < drawerFullHeight && availableUpSpace >= drawerFullHeight) {
+            expandUp = true;
+            drawerTop = preferredTop - (drawerFullHeight - slotHeight);
           }
 
-          // animate items: from baseY to targetY with stagger
+          const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
+          const maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
+
+          // animate bg to cover full slot area (horizontally bg x/width already set when prebuilt)
+          try {
+            body.style('pointer-events', 'none');
+            body.attr('opacity', 1);
+            bg.transition().duration(200).attr('y', drawerTop).attr('height', actualDrawerHeight);
+          } catch(e) {}
+
+          // compute slot centers without vertical padding: center of each swimlane slot
+          const slotYs: number[] = [];
+          for (let i = 0; i < slots; i++) {
+            const slotTop = drawerTop + i * slotHeight;
+            const slotCenter = slotTop + slotHeight / 2;
+            slotYs.push(slotCenter);
+          }
+
+          // animate items into their slots (children occupy slot 1..N-1)
           const itemDuration = 180;
           const stagger = 40;
-            items.each(function(this: any, d: any, i: number) {
-            // target position: just below the display node (nodeY + nodeHeight) plus spacing
-            const gapBetween = 4; // small visual gap
-            const targetY = baseY + (nodeHeightLocal || nodeHeight) + gapBetween + i * ((nodeHeightLocal || nodeHeight) + nodeGap);
-            d3.select(this)
-              .style('pointer-events', 'none')
-              .attr('opacity', 0)
-              .transition()
-              .delay(i * stagger)
-              .duration(itemDuration)
-              .attr('transform', `translate(${baseX}, ${targetY})`)
-              .attr('opacity', 1)
-              .on('end', function(this: any) {
-                try { d3.select(this).style('pointer-events', 'all'); } catch(e) {}
-              });
-
-            // prevent clicks on item from bubbling to svg (which would close the drawer)
-              try {
-                // 使用命名空间绑定，避免覆盖其他 click 处理器
-                d3.select(this).on('click.drawerItem', function(event: MouseEvent) {
-                  try { event.stopPropagation(); } catch(e) {}
-                });
-              } catch(e) {}
+          items.each(function(this: any, d: any, i: number) {
+            try {
+              const slotIndex = Math.min(i + 1, slotYs.length - 1);
+              const targetCenter = slotYs[slotIndex];
+              const targetTop = targetCenter - (nodeHeightLocal / 2);
+              d3.select(this).style('pointer-events', 'none').attr('opacity', 0).transition().delay(i * stagger).duration(itemDuration).attr('transform', `translate(${baseX}, ${targetTop})`).attr('opacity', 1).on('end', function(this: any) { try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
+              d3.select(this).on('click.drawerItem', function(event: MouseEvent) { try { event.stopPropagation(); } catch(e) {} });
+            } catch(e) {}
           });
 
-          // ensure body pointer-events enabled after all transitions
-          const totalAnim = 200 + itemNodes.length * stagger + itemDuration;
+          const totalAnim = 220 + itemNodes.length * stagger + itemDuration;
           setTimeout(() => {
             try { body.style('pointer-events', 'all'); } catch(e) {}
-            // mark as current open drawer
             this.currentOpenCollapseId = collapsedGroup.tabId;
             this.currentOpenDrawerSel = drawerSel;
-            // 绑定文档点击关闭
             try { this.bindDocumentClickToClose(); } catch(e) {}
             this.drawerTransitioning = false;
           }, totalAnim);
@@ -1686,8 +1670,8 @@ export class WaterfallRenderer implements BaseRenderer {
                   .attr('y', nodeY)
                   .attr('width', nodeWidth)
                   .attr('height', nodeHeight)
-                  .attr('fill', 'rgb(230, 242, 255)')
-                  .attr('stroke', 'rgba(74, 144, 226, 0.35)')
+                  .attr('fill', '#e6f2ff')
+                  .attr('stroke', 'rgba(74, 144, 226, 0.6)')
                   .attr('stroke-width', 1)
                   .style('pointer-events', 'none');
 
@@ -2101,69 +2085,61 @@ export class WaterfallRenderer implements BaseRenderer {
     // 计算其他节点（排除第一个显示的节点）
     const otherNodes = collapsedGroup.nodes.filter(n => n.id !== firstNode.id);
     if (otherNodes.length === 0) return;
-    
-    // 🎯 节点间距：与泳道之间的垂直距离一致
-    const nodeGap = this.SWIMLANE_HEIGHT - nodeHeight; // 泳道间的垂直距离
-    
-    // 🎯 第一个节点和展开节点之间的间隙
-    const firstNodeGap = nodeGap;
-    
-    // 计算总高度（包含第一个间隙）
-    const drawerHeight = firstNodeGap + otherNodes.length * (nodeHeight + nodeGap);
-    
-    // 检查空间：优先向下延伸，如果空间不够向上延伸
+
+    // 抽屉布局规则：
+    // - 顶部从显示节点泳道上缘开始（drawerTop = swimlane.y）
+    // - 抽屉左右比节点宽，左右各有 horizontalPadding
+    // - 抽屉高度为 slots * SWIMLANE_HEIGHT + paddingAround*2
+    // - 每个槽高度为 SWIMLANE_HEIGHT，节点垂直居中于槽
+    const slots = collapsedGroup.nodes.length; // 包含 display node
+  const slotHeight = this.SWIMLANE_HEIGHT;
+  const paddingAround = 0; // 不在垂直方向增加额外留白，确保抽屉底部在下一泳道线
+    const horizontalPadding = Math.max(8, Math.round(nodeWidth * 0.15)); // 左右扩展，使抽屉比节点宽
+
+    const preferredTop = swimlane.y; // 从泳道上缘开始
+  const drawerFullHeight = slots * slotHeight; // 精确占用 N 个泳道高度
+
     const svgHeight = this.height;
-    const availableDownSpace = svgHeight - (nodeY + nodeHeight);
-    const availableUpSpace = nodeY;
-    
-    // 🎯 浮层重叠到原位节点，越过圆角（4px）
-    const overlapAmount = 4; // 节点的圆角半径
-    let drawerY = nodeY + nodeHeight - overlapAmount; // 向上重叠4px
-    let expandDirection: 'down' | 'up' = 'down';
-    
-    if (drawerHeight > availableDownSpace && availableUpSpace > availableDownSpace) {
-      // 向上展开：浮层下边界重叠原位节点上边界
-      expandDirection = 'up';
-      drawerY = nodeY - drawerHeight + overlapAmount; // 向下重叠4px
+    const availableDownSpace = svgHeight - preferredTop;
+    const availableUpSpace = preferredTop;
+
+    // 决定展开方向：优先向下；若下方空间不足且上方足够则向上
+    let drawerTop = preferredTop;
+    let expandUp = false;
+    if (availableDownSpace < drawerFullHeight && availableUpSpace >= drawerFullHeight) {
+      expandUp = true;
+      // 使槽0（display node 的槽）位于泳道上缘
+      drawerTop = swimlane.y - (drawerFullHeight - slotHeight);
     }
-    
-    // 🎯 滚动偏移量（提前声明，供全局处理器使用）
+
+    // 实际可见高度（当空间不足时会剪裁并启用滚动）
+    const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
     let scrollOffset = 0;
-    const maxScroll = Math.max(0, drawerHeight - (expandDirection === 'down' ? availableDownSpace : availableUpSpace));
-    
-    // 🎯 创建抽屉容器 - 使用 append 正常添加，但设置 pointer-events: none
-    // 让鼠标事件穿透到下层，保证原位节点和成组标记可以被点击
+    const maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
+
     const drawer = this.svg.append('g')
       .attr('class', 'collapsed-nodes-drawer')
       .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
-      .style('pointer-events', 'none'); // 🎯 让鼠标事件穿透
-    
-    // 🎯 浮层区域的边界（用于检测鼠标是否在浮层内）
-    const actualDrawerHeight = Math.min(drawerHeight, expandDirection === 'down' ? availableDownSpace : availableUpSpace);
-    const drawerBounds = {
-      x: nodeX,
-      y: drawerY,
-      width: nodeWidth,
-      height: actualDrawerHeight
-    };
-    
-    // 🎯 背景矩形（不透明蓝色背景，避免与泳道线重叠）
-    // 边框 1px 细线，直角无圆角
-    // 🎯 恢复 pointer-events，可以捕获滚动和点击事件
+      .style('pointer-events', 'none');
+
+    // 背景矩形在水平上扩展，以便左右超出节点
+    const bgX = Math.max(0, nodeX - horizontalPadding);
+    const bgWidth = nodeWidth + horizontalPadding * 2;
+
     const bgRect = drawer.append('rect')
-      .attr('x', nodeX)
-      .attr('y', expandDirection === 'down' ? drawerY : drawerY)
-      .attr('width', nodeWidth)
+      .attr('x', bgX)
+      .attr('y', drawerTop)
+      .attr('width', bgWidth)
       .attr('height', actualDrawerHeight)
-      .attr('fill', 'rgb(230, 242, 255)') // 不透明的浅蓝色背景
-      .attr('stroke', 'rgba(74, 144, 226, 0.5)') // 稍微深一点的边框
-      .attr('stroke-width', 1) // 细线
-      .style('pointer-events', 'all') // 🎯 恢复鼠标事件
+      .attr('fill', '#e6f2ff')
+      .attr('stroke', 'rgba(74, 144, 226, 0.6)')
+      .attr('stroke-width', 1)
+      .style('pointer-events', 'all')
       .style('cursor', 'default');
-    
-    // 🎯 创建可滚动的节点容器（在背景矩形之后，确保节点在背景上方）
+
     const nodesContainer = drawer.append('g')
-      .attr('class', 'drawer-nodes-container');
+      .attr('class', 'drawer-nodes-container')
+      .attr('transform', `translate(0, 0)`);
     
     // 🎯 在背景矩形上直接处理滚动事件（nodesContainer已创建，可以使用）
     bgRect.on('wheel', (event: WheelEvent) => {
@@ -2199,56 +2175,61 @@ export class WaterfallRenderer implements BaseRenderer {
       // 如果不需要滚动，仅阻止事件传播（已在上面处理）
     });
     
-    // 🎯 渲染其他节点（从第一个间隙之后开始）
-    otherNodes.forEach((node, index) => {
-      const currentNodeY = expandDirection === 'down' 
-        ? drawerY + firstNodeGap + index * (nodeHeight + nodeGap)
-        : drawerY + firstNodeGap + index * (nodeHeight + nodeGap);
-      
-      // 🎯 在间隙中显示时间差标签
-      if (index === 0) {
-        // 第一个节点：显示与原位节点的时间差
-        const timeDiff = Math.abs(node.timestamp - firstNode.timestamp);
-        this.renderTimeDiffLabel(nodesContainer, nodeX, currentNodeY - firstNodeGap / 2, nodeWidth, timeDiff);
+    // 🎯 按槽位渲染所有节点（包含 display node 占 slot 0）
+    const slotsCount = slots; // collapsedGroup.nodes.length
+    const slotPad = (slotHeight - nodeHeight) / 2;
+
+    // compute center Y for each slot (no vertical padding)
+    const slotYs: number[] = [];
+    for (let i = 0; i < slotsCount; i++) {
+      const slotTop = drawerTop + i * slotHeight;
+      const slotCenter = slotTop + slotHeight / 2;
+      slotYs.push(slotCenter);
+    }
+
+    // children occupy slot 1..N-1 (slot 0 is display node)
+    otherNodes.forEach((childNode, idx) => {
+      const slotIndex = Math.min(idx + 1, slotYs.length - 1);
+  const currentNodeY = slotYs[slotIndex];
+
+      // 时间差标签放在相邻槽中心之间（标签居中于背景宽度）
+      if (idx === 0) {
+        const timeDiff = Math.abs(childNode.timestamp - firstNode.timestamp);
+        const labelY = Math.round((slotYs[0] + currentNodeY) / 2);
+        this.renderTimeDiffLabel(nodesContainer, bgX + bgWidth / 2, labelY, bgWidth, timeDiff);
       } else {
-        // 后续节点：显示与前一个节点的时间差
-        const prevNode = otherNodes[index - 1];
-        const timeDiff = Math.abs(node.timestamp - prevNode.timestamp);
-        this.renderTimeDiffLabel(nodesContainer, nodeX, currentNodeY - nodeGap / 2, nodeWidth, timeDiff);
+        const prevY = slotYs[slotIndex - 1];
+        const timeDiff = Math.abs(childNode.timestamp - otherNodes[idx - 1].timestamp);
+        const labelY = Math.round((prevY + currentNodeY) / 2);
+        this.renderTimeDiffLabel(nodesContainer, bgX + bgWidth / 2, labelY, bgWidth, timeDiff);
       }
-      
+
       const nodeGroup = nodesContainer.append('g')
         .attr('class', 'drawer-node')
-        .attr('data-node-id', node.id)
-        .attr('transform', `translate(${nodeX}, ${currentNodeY})`)
+        .attr('data-node-id', childNode.id)
+        .attr('transform', `translate(${nodeX}, ${currentNodeY - nodeHeight / 2})`)
         .style('cursor', 'pointer')
-        .style('pointer-events', 'all'); // 🎯 恢复鼠标事件，可以点击
-      
-      // 根据显示模式渲染节点（不需要传X,Y坐标，已通过transform定位）
+        .style('pointer-events', 'all');
+
       if (firstSegment.displayMode === 'full') {
-        this.renderFullNode(nodeGroup, node, nodeWidth, nodeHeight);
+        this.renderFullNode(nodeGroup, childNode, nodeWidth, nodeHeight);
       } else if (firstSegment.displayMode === 'short') {
-        this.renderShortNode(nodeGroup, node, nodeWidth, nodeHeight);
+        this.renderShortNode(nodeGroup, childNode, nodeWidth, nodeHeight);
       } else if (firstSegment.displayMode === 'icon') {
-        this.renderIconNode(nodeGroup, node, 20, 20);
+        this.renderIconNode(nodeGroup, childNode, 20, 20);
       }
-      
-      // 🎯 点击节点触发详情显示
+
       nodeGroup.on('click', (event: MouseEvent) => {
         event.stopPropagation();
-        logger.log(_('waterfall_drawer_node_clicked', '🎯 抽屉节点被点击: {0}'), node.title || node.url);
-        
-        // 触发节点详情显示
-        this.visualizer.showNodeDetails(node);
-        
-        // 不关闭抽屉，允许连续查看多个节点
+        logger.log(_('waterfall_drawer_node_clicked', '🎯 抽屉节点被点击: {0}'), childNode.title || childNode.url);
+        this.visualizer.showNodeDetails(childNode);
       });
     });
     
     // 🎯 如果需要滚动，创建滚动指示箭头
     if (maxScroll > 0) {
-      const arrowY = drawerY + actualDrawerHeight - 12; // 距离底部12px
-      const arrowX = nodeX + nodeWidth / 2;
+      const arrowY = drawerTop + actualDrawerHeight - 12; // 距离底部12px
+      const arrowX = bgX + bgWidth / 2;
       
       const scrollArrow = drawer.append('g')
         .attr('class', 'scroll-arrow')
@@ -2284,7 +2265,8 @@ export class WaterfallRenderer implements BaseRenderer {
       event.stopPropagation();
     });
     
-  logger.log(_('waterfall_show_collapsed_drawer', '🎯 显示抽屉: {0} ({1}个节点, {2})'), collapsedGroup.tabId, otherNodes.length, expandDirection);
+  const dir = (availableDownSpace >= drawerFullHeight) ? 'down' : 'up';
+  logger.log(_('waterfall_show_collapsed_drawer', '🎯 显示抽屉: {0} ({1}个节点, {2})'), collapsedGroup.tabId, otherNodes.length, dir);
   }
 
   /**
@@ -2325,7 +2307,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('fill', '#999')
-      .attr('font-size', '8px')
+      .attr('font-size', '7px')
       .attr('font-style', 'italic')
       .attr('opacity', 0.7)
       .text(`+${timeDiffText}`)
