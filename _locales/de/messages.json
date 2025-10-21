@@ -4974,9 +4974,8 @@
     "_untranslated": true
   },
   "waterfall_swimlane_not_found": {
-    "message": "⚠️ Keine Swimlane für Registerkarte {0} gefunden",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️ Keine Swimlane für die Registerkarte {0} gefunden",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ Die Zeitsegmentschleife erreicht die maximale Anzahl von Iterationen und wird zum Beenden gezwungen",
@@ -5178,35 +5177,16 @@
     "message": "Datenbanktransaktion abgebrochen: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "SPA-Merge-Debugging: Sitzung={0}, Tab={1}, normalisiert={2}, Kandidaten={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "Beispiel für einen SPA-Zusammenführungskandidaten: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "Batch-SPA-Merge-Debugging: Sitzung={0}, Tab={1}, normalisiert={2}, Kandidaten={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "Beispiel für einen Batch-SPA-Zusammenführungskandidaten: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
   "waterfall_no_nodes": {
-    "message": "没有节点数据可渲染",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "Keine Knotendaten zum Rendern",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_no_nodes_after_filter": {
-    "message": "筛选后没有可显示的节点",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "Nach dem Filtern sind keine Knoten zum Anzeigen vorhanden",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_prebuild_drawer_error": {
-    "message": "预构建抽屉错误",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "Fehler beim Vorbauen der Schublade",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

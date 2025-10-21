@@ -4964,14 +4964,12 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "waterfall_nodes_too_many": {
-    "message": "⚠️ 노드가 너무 많습니다({0}). 한도는 {1}입니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️ 개인이 너무 많아({0}). 한도는 {1}입니다.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_invalid_timestamp_node": {
-    "message": "⚠️ 잘못된 타임스탬프가 있는 노드가 발견되어 필터링되었습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️ 쓸모없는 타임스탬프가 있는 누군가가 발견되었습니다.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ 탭 {0}에 대한 수영로를 찾을 수 없습니다.",
@@ -5178,35 +5176,16 @@
     "message": "데이터베이스 트랜잭션이 중단되었습니다: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "SPA 병합 디버깅: 세션={0}, 탭={1}, 정규화={2}, 후보={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "SPA 병합 후보 예: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "일괄 SPA 병합 디버깅: 세션={0}, 탭={1}, 정규화={2}, 후보={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "배치 SPA 병합 후보 예: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
   "waterfall_no_nodes": {
-    "message": "没有节点数据可渲染",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "렌더링할 노드 데이터가 없습니다",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_no_nodes_after_filter": {
-    "message": "筛选后没有可显示的节点",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "필터링 후 표시할 노드가 없습니다.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_prebuild_drawer_error": {
-    "message": "预构建抽屉错误",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "사전 빌드 서랍 오류",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

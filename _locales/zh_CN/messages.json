@@ -5175,22 +5175,6 @@
     "message": "数据库事务中止: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "SPA 合并候选样例: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "批量 SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "批量 SPA 合并候选样例: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
   "waterfall_no_nodes": {
     "message": "没有节点数据可渲染",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"

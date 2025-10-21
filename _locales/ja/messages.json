@@ -4964,19 +4964,16 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "waterfall_nodes_too_many": {
-    "message": "⚠️ ノードが多すぎます ({0})。制限は {1} です",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️ノードが多すぎます({0})。制限 {1} です",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_invalid_timestamp_node": {
-    "message": "⚠️ 無効なタイムスタンプを持つノードが見つかり、フィルタリングされました:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️ 無効なタイムスタンプをホールドします つのノードが见つかり、フィルタリングされました:",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
-    "message": "⚠️ タブ {0} のスイムレーンが見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️タブ{0}のスイムレーンがわかりません",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ 時間セグメントループが最大反復回数に達し、強制的に終了する",
@@ -5178,35 +5175,16 @@
     "message": "データベース トランザクションが中止されました: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "SPA マージ デバッグ: セッション = {0}、タブ = {1}、正規化 = {2}、候補 = {3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "SPA マージ候補の例: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "バッチ SPA マージ デバッグ: セッション = {0}、タブ = {1}、正規化 = {2}、候補 = {3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "バッチ SPA マージ候補の例: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
   "waterfall_no_nodes": {
-    "message": "没有节点数据可渲染",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "レンダリングするノードデータがありません",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_no_nodes_after_filter": {
-    "message": "筛选后没有可显示的节点",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "フィルタリング後に表示するノードがありません",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_prebuild_drawer_error": {
-    "message": "预构建抽屉错误",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "事前構築引き出しエラー",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

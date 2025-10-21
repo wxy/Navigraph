@@ -5178,35 +5178,16 @@
     "message": "資料庫事務中止: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "SPA 合併除錯: session={0}, tab={1}, normalized={2}, candidates={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "SPA 合併候選範例: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "批量 SPA 合併調試: session={0}, tab={1}, normalized={2}, candidates={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "批量 SPA 合併候選樣例: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
   "waterfall_no_nodes": {
-    "message": "没有节点数据可渲染",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "沒有節點資料可渲染",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_no_nodes_after_filter": {
-    "message": "筛选后没有可显示的节点",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "篩選後沒有可顯示的節點",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_prebuild_drawer_error": {
-    "message": "预构建抽屉错误",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "預建抽屜錯誤",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

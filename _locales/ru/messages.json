@@ -4974,9 +4974,8 @@
     "_untranslated": true
   },
   "waterfall_swimlane_not_found": {
-    "message": "⚠️ Для вкладки {0} не найдена дорожка.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "⚠️ Дорожка для вкладки {0} не найдена.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ Цикл сегмента времени достигает максимального числа итераций и принудительно завершается.",
@@ -5178,35 +5177,16 @@
     "message": "Транзакция базы данных прервана: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "Отладка слияния SPA: сеанс={0}, вкладка={1}, нормализовано={2}, кандидаты={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "Пример кандидата на слияние SPA: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "Отладка пакетного слияния SPA: сеанс={0}, вкладка={1}, нормализовано={2}, кандидаты={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "Пример кандидата на пакетное слияние SPA: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
   "waterfall_no_nodes": {
-    "message": "没有节点数据可渲染",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "Нет данных узла для рендеринга",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_no_nodes_after_filter": {
-    "message": "筛选后没有可显示的节点",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "После фильтрации нет узлов для отображения.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_prebuild_drawer_error": {
-    "message": "预构建抽屉错误",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "message": "Ошибка ящика предварительной сборки",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }
