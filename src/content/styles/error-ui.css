@@ -18,6 +18,8 @@
   max-width: 90%;
   max-height: 90%;
   overflow: auto;
+  overscroll-behavior: contain; /* 防止滚动链到页面 */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 错误标题栏 */
@@ -69,6 +71,8 @@
   white-space: pre-wrap;
   border-radius: 4px;
   margin: 10px 0;
+  overscroll-behavior: contain; /* 避免在触控设备上滚动穿透 */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 操作按钮 */

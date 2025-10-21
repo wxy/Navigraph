@@ -4965,102 +4965,20 @@
   },
   "waterfall_nodes_too_many": {
     "message": "⚠️ Trop de nœuds ({0}), la limite est {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_invalid_timestamp_node": {
-    "message": "⚠️ Nœuds avec horodatages non valides trouvés, filtrés :",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_restoring_observation_window": {
-    "message": "🔍 Démarrer la restauration de la vérification de la position de la fenêtre d'observation : tabId={0}, valeur mémoire={1}, restaurer la transformation={2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_analyze_swimlanes_deprecated": {
-    "message": "⚠️ La méthode analyzeSwimlanes_deprecated est obsolète, veuillez utiliser le nouvel algorithme de réutilisation des voies",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_create_closure_marker": {
-    "message": "🔴 Créer une balise de fermeture : label {0}, timestamp={1}, lane={2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_can_reuse_lane_ok": {
-    "message": "✅ Vérification de réutilisabilité du couloir réussie : la nouvelle balise {0} ({1}) démarre après la fermeture de la balise {2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_can_reuse_lane_fail": {
-    "message": "❌ Échec de la vérification de réutilisation des voies : la nouvelle étiquette {0} présente un conflit d'horaire",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_assign_swimlane_positions": {
-    "message": "🏊 Attribuer les positions des voies : Départ Y = {0}, Nombre de voies = {1}, Hauteur totale = {2}",
+    "message": "⚠️ Nœuds avec horodatages non valides trouvés, filtrés :",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ Aucun couloir trouvé pour l'onglet {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_identified_collapsed_groups": {
-    "message": "🎯 {0} groupes de nœuds réduits identifiés",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_segments_generated": {
-    "message": "🎯 Génération de période : plage de temps du nœud {0}-{1}, plage de temps du segment {2}-{3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ La boucle du segment temporel atteint le nombre maximal d'itérations et est forcée de se terminer",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_adding_filler_segments": {
-    "message": "🎯 Ajoutez {0} sections vides pour remplir l'espace",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_compression": {
-    "message": "✅ Aucune compression requise, {0} segments de données + {1} segments vides, largeur standard {2}px",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_created_svg_structure": {
-    "message": "📦 Créer une structure SVG : hauteur de la fenêtre d'affichage = {0}, hauteur de la chronologie = {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_swimlane_separators": {
-    "message": "🏊 Afficher les séparateurs de voies et les étiquettes numérotées {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_time_axis_start": {
-    "message": "🕐 Chronologie du rendu (uniquement les lignes horizontales, les flèches, les étiquettes) - nettoyer l'ancien contenu",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_axis_span": {
-    "message": "🎯 La chronologie s'étend sur toute la zone : de {0} à {1} (largeur SVG : {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_axis_done": {
-    "message": "✅ Rendu de la chronologie terminé : ligne horizontale ✓, flèche ✓, étiquette temporelle {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_time_strips": {
-    "message": "🎨 Rendre un arrière-plan de bande temporelle indépendant (déroulable)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_strips_done": {
-    "message": "✅ {0} arrière-plans de bandes temporelles rendus, {1} bandes créées",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_addTimeLabel_disabled": {
-    "message": "⚠️ addTimeLabelToStrip est désactivé, les étiquettes temporelles sont gérées par des chronologies fixes",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_segment_nodes": {
-    "message": "🎯 Nœud de segment de rendu, nombre de segments : {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_max_nodes_rendered": {
-    "message": "⚠️ {0} nœuds rendus, en ignorant les segments restants",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_strip_not_found": {
-    "message": "⚠️ Impossible de trouver le groupe de bandes pour le segment {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_total_nodes_rendered": {
@@ -5127,72 +5045,8 @@
     "message": "🎯 Le marqueur de fermeture {0} s'affiche au centre du segment : X={1}, plage de segments=[{2}-{3}]",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_closure_marker_rendered": {
-    "message": "🔴 Balise de fermeture rendue : {0} à ({1}, {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_debug": {
-    "message": "🔍 informations de débogage findSegmentByTimestamp :",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_lookup_ts": {
-    "message": "Trouver l'horodatage : {0} ({1})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_total_segments": {
-    "message": "Nombre total de segments : {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_segments_list": {
-    "message": "Liste des segments :",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_findSegment_segment_line": {
     "message": "[{0}] {1}-{2} ({3} - {4}) {5} nœuds : {6} remplissage : {7}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_closure_ts_out_of_range_use_last": {
-    "message": "🎯 Horodatage du marqueur de fermeture {0} hors plage, utilisant le dernier segment [{1}-{2}]",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_closure_ts_found_closest": {
-    "message": "🎯 Horodatage du marqueur de fermeture {0} trouvé segment le plus proche [{1}-{2}], distance {3} secondes",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_collapse_badge_clicked": {
-    "message": "🎯 Icône de pliage cliquée : tabId={0}, count={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_wheel_disabled_during_observation_drag": {
-    "message": "🚫 Désactiver le défilement de la molette du tiroir pendant le déplacement de la fenêtre (pour éviter les contacts accidentels avec la Magic Mouse)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_scroll_intercepted": {
-    "message": "🎯 L'événement de défilement flottant est intercepté",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_node_clicked": {
-    "message": "🎯 Nœud de tiroir cliqué : {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_show_collapsed_drawer": {
-    "message": "🎯 Afficher le tiroir : {0} ({1} nœuds, {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_swimlane_node_position_debug": {
-    "message": "🏊 Positionnement des nœuds de couloir :",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_observation_slider": {
-    "message": "🎚️ Curseurs de la fenêtre de surveillance du rendu",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_no_compression": {
-    "message": "✅ Aucune compression, la fenêtre d'observation couvre la largeur réelle de toutes les bandes",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_has_compression": {
-    "message": "⚠️ Avec la compression, la fenêtre d'observation glisse sur la timeline",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_observation_drag_setup": {
@@ -5271,100 +5125,20 @@
     "message": "⚠️ Impossible de définir l'événement de la molette de défilement : le SVG ou la mise en page n'existe pas",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_wheel_disabled_during_observation_drag": {
-    "message": "🚫 Désactiver le défilement de la molette pendant le déplacement de la fenêtre (pour éviter les contacts accidentels avec la Magic Mouse)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_disabled_during_vertical_drag": {
-    "message": "🚫 Désactiver le défilement par molette pendant le glissement",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_scroll_setup_done": {
-    "message": "✅ Le défilement par molette est défini (défilement vertical uniquement), défilement vertical maximal : {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_swimlanes_vertical_scroll": {
-    "message": "🔢 Aucune donnée de couloir, le défilement vertical n'est pas disponible",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_scroll_calc": {
-    "message": "🔢 Calcul du défilement vertical : nombre de voies = {0}, hauteur totale du contenu = {1}, hauteur de la fenêtre d'affichage = {2}, défilement maximal = {3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_scroll_update": {
-    "message": "🔄 Défilement vertical : {0}/{1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_start": {
-    "message": "🔍 Début de la configuration du défilement vertical par glisser-déposer (nouvelle architecture simplifiée)...",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_check": {
-    "message": "📊 Vérification des paramètres de glissement : scrollableGroup={0}, maxVerticalScroll={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_no_scrollable_group": {
     "message": "⚠️ scrollableGroup n'existe pas, le glissement ne peut pas être défini",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_vertical_drag_needed": {
-    "message": "🔢 Pas besoin de définir de glissement vertical : le contenu ne dépasse pas la zone visible, maxVerticalScroll = {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_on_strips": {
-    "message": "🖱️ Définir le défilement vertical par glissement (version simplifiée : glisser directement sur la bande temporelle)",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_time_strips_group_missing": {
     "message": "⚠️ Le groupe de bandes horaires n'existe pas et le glissement ne peut pas être défini",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_time_strip_background_count": {
-    "message": "🔍 Nombre d'arrière-plans de bandes temporelles trouvés : {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_strip_blank_start_drag": {
-    "message": "🖱️ Commencez à faire glisser la zone vide de la bande temporelle",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_start": {
-    "message": "🖱️ Commencez à faire glisser",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_started": {
-    "message": "🖱️ Démarrer le défilement vertical par glissement",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_end": {
-    "message": "🖱️ Mettre fin au défilement vertical par glissement",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_setup_done": {
-    "message": "✅ Le glissement vertical est désormais défini sur la bande temporelle (version simplifiée)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_observation_window_at_boundary": {
     "message": "⚠️ La fenêtre d'observation a atteint la limite et ne peut plus défiler",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_wheel_observation_scroll": {
-    "message": "🖱️ Molette de défilement pour afficher la fenêtre : {0} -> {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_stopped_full_rerender": {
-    "message": "⏱️ Molette de défilement arrêtée, rendu complet",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_slider_updated": {
-    "message": "✅ Curseur de la fenêtre d'observation mis à jour : x={0}, largeur={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_observation_slider_missing": {
     "message": "⚠️ Curseur de fenêtre d'observation .observation-slider introuvable",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_move_observation_window": {
-    "message": "Fenêtre de visualisation mobile : {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "options_waterfall_view_label": {
@@ -5403,20 +5177,16 @@
     "message": "Transaction de base de données interrompue : {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "Débogage de fusion SPA : session={0}, tab={1}, normalisé={2}, candidats={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  "waterfall_no_nodes": {
+    "message": "Aucune donnée de nœud à restituer",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "Exemple de candidat à la fusion SPA : {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  "waterfall_no_nodes_after_filter": {
+    "message": "Il n'y a aucun nœud à afficher après le filtrage",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "Débogage de fusion SPA par lots : session={0}, tab={1}, normalisé={2}, candidats={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "Exemple de candidat à la fusion SPA par lots : {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  "waterfall_prebuild_drawer_error": {
+    "message": "Erreur de tiroir de pré-construction",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

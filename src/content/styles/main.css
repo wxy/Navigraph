@@ -238,6 +238,31 @@ body.loading-session #visualization-container::before {
   transition: all 0.2s ease;
 }
 
+/* 折叠组抽屉：阻止滚动链到父容器，优先使用 CSS 来避免非被动 wheel 监听警告 */
+.collapsed-nodes-drawer .drawer-body {
+  overscroll-behavior: contain; /* 阻止滚动链到父容器/页面 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 通用：为常见的可滚动/拖拽层和抽屉元素添加 overscroll-behavior
+   优先用 CSS 隔离滚动链，减少对 JS preventDefault 的依赖，从而消除浏览器关于非被动监听器的警告 */
+.drag-layer-group,
+.time-strips-group,
+.node-group,
+.drawer-items,
+.scrollable,
+.scroll-container {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch; /* 移动端平滑滚动优化 */
+}
+
+/* 模态/覆盖层：通常完全拦截交互，阻止页面滚动 */
+.modal,
+.overlay {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 /* 日期数字 */
 .day-number {
   font-size: 14px;

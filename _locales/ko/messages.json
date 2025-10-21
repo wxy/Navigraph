@@ -4964,103 +4964,20 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/StatusBar.ts"
   },
   "waterfall_nodes_too_many": {
-    "message": "⚠️ 노드가 너무 많습니다({0}). 한도는 {1}입니다.",
+    "message": "⚠️ 개인이 너무 많아({0}). 한도는 {1}입니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_invalid_timestamp_node": {
-    "message": "⚠️ 잘못된 타임스탬프가 있는 노드가 발견되어 필터링되었습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_restoring_observation_window": {
-    "message": "🔍 관찰 창 위치 확인 복원 시작: tabId={0}, 메모리 값={1}, 변환 복원={2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_analyze_swimlanes_deprecated": {
-    "message": "⚠️ analyzeSwimlanes_deprecated 메서드는 더 이상 사용되지 않습니다. 새로운 레인 재사용 알고리즘을 사용하세요.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_create_closure_marker": {
-    "message": "🔴 닫는 태그를 만듭니다: 라벨 {0}, 타임스탬프={1}, 레인={2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_can_reuse_lane_ok": {
-    "message": "✅ 수영로 재사용성 검사 통과: 새 태그 {0} ({1})이 태그 {2}를 닫은 후에 시작됩니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_can_reuse_lane_fail": {
-    "message": "❌ 차선 재사용 확인에 실패했습니다. 새 레이블 {0}에 시간 충돌이 있습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_assign_swimlane_positions": {
-    "message": "🏊 차선 위치 지정: 시작 Y={0}, 차선 수={1}, 총 높이={2}",
+    "message": "⚠️ 쓸모없는 타임스탬프가 있는 누군가가 발견되었습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ 탭 {0}에 대한 수영로를 찾을 수 없습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_identified_collapsed_groups": {
-    "message": "🎯 {0}개의 축소된 노드 그룹이 식별되었습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_segments_generated": {
-    "message": "🎯 시간 기간 생성: 노드 시간 범위 {0}-{1}, 세그먼트 시간 범위 {2}-{3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ 시간 세그먼트 루프가 최대 반복 횟수에 도달하여 강제로 종료됩니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_adding_filler_segments": {
-    "message": "🎯 공간을 채우려면 {0}개의 빈 섹션을 추가하세요.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_compression": {
-    "message": "✅ 압축 필요 없음, {0} 데이터 세그먼트 + {1} 빈 세그먼트, 표준 너비 {2}px",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_created_svg_structure": {
-    "message": "📦 SVG 구조 생성: 뷰포트 높이 = {0}, 타임라인 높이 = {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_swimlane_separators": {
-    "message": "🏊 {0} 차선 구분선 및 번호 라벨을 렌더링합니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_time_axis_start": {
-    "message": "🕐 타임라인 렌더링(수평선, 화살표, 레이블만) - 기존 콘텐츠 정리",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_axis_span": {
-    "message": "🎯 타임라인은 {0}부터 {1}까지 전체 영역을 포괄합니다(SVG 너비: {2}).",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_axis_done": {
-    "message": "✅ 타임라인 렌더링 완료: 수평선 ✓, 화살표 ✓, 시간 레이블 {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_time_strips": {
-    "message": "🎨 독립적인 시간 스트립 배경을 렌더링합니다(스크롤 가능)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_strips_done": {
-    "message": "✅ {0} 시간 스트립 배경을 렌더링하고 {1} 스트립을 생성했습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_addTimeLabel_disabled": {
-    "message": "⚠️ addTimeLabelToStrip이 비활성화되어 시간 레이블이 고정된 타임라인에 의해 처리됩니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_segment_nodes": {
-    "message": "🎯 렌더 세그먼트 노드, 세그먼트 수: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_max_nodes_rendered": {
-    "message": "⚠️ {0} 노드를 렌더링하고 나머지 세그먼트를 건너뜁니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_strip_not_found": {
-    "message": "⚠️ 세그먼트 {0}에 대한 스트라이프 그룹을 찾을 수 없습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_total_nodes_rendered": {
@@ -5127,72 +5044,8 @@
     "message": "🎯 닫기 마커 {0}가 세그먼트 중앙에 표시됩니다: X={1}, 세그먼트 범위=[{2}-{3}]",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_closure_marker_rendered": {
-    "message": "🔴 렌더링된 닫는 태그: {0} at ({1}, {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_debug": {
-    "message": "🔍 findSegmentByTimestamp 디버그 정보:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_lookup_ts": {
-    "message": "타임스탬프 찾기: {0} ({1})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_total_segments": {
-    "message": "세그먼트 총 수: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_segments_list": {
-    "message": "세그먼트 목록:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_findSegment_segment_line": {
     "message": "[{0}] {1}-{2} ({3} - {4}) {5} 노드:{6} 필러:{7}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_closure_ts_out_of_range_use_last": {
-    "message": "🎯 범위를 벗어난 마커 타임스탬프 {0}을 닫습니다. 마지막 세그먼트 [{1}-{2}]을 사용합니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_closure_ts_found_closest": {
-    "message": "🎯 닫기 마커 타임스탬프 {0}에서 가장 가까운 세그먼트 [{1}-{2}], 거리 {3}초를 찾았습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_collapse_badge_clicked": {
-    "message": "🎯 접는 아이콘 클릭: tabId={0}, count={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_wheel_disabled_during_observation_drag": {
-    "message": "🚫 창을 끌 때 서랍 휠 스크롤을 비활성화합니다(마법 마우스가 실수로 터치되는 것을 방지하기 위해)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_scroll_intercepted": {
-    "message": "🎯 플로팅 스크롤 이벤트가 가로채졌습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_node_clicked": {
-    "message": "🎯 서랍 노드 클릭: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_show_collapsed_drawer": {
-    "message": "🎯 서랍 표시: {0} ({1}개 노드, {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_swimlane_node_position_debug": {
-    "message": "🏊 수영로 노드 위치 지정:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_observation_slider": {
-    "message": "🎚️ 감시 창 슬라이더 렌더링",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_no_compression": {
-    "message": "✅ 압축 없음, 관찰 창은 모든 스트립의 실제 너비를 덮습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_has_compression": {
-    "message": "⚠️ 압축을 사용하면 관찰 창이 타임라인에서 슬라이드됩니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_observation_drag_setup": {
@@ -5271,100 +5124,20 @@
     "message": "⚠️ 스크롤 휠 이벤트를 설정할 수 없습니다: SVG 또는 레이아웃이 존재하지 않습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_wheel_disabled_during_observation_drag": {
-    "message": "🚫 창을 끌 때 휠 스크롤을 비활성화합니다(마법 마우스가 실수로 터치되는 것을 방지하기 위해)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_disabled_during_vertical_drag": {
-    "message": "🚫 드래그하는 동안 휠 스크롤을 비활성화합니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_scroll_setup_done": {
-    "message": "✅ 휠 스크롤이 설정됨(수직 스크롤만 가능), 최대 수직 스크롤: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_swimlanes_vertical_scroll": {
-    "message": "🔢 수영 레인 데이터가 없으므로 수직 스크롤이 불가능합니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_scroll_calc": {
-    "message": "🔢 수직 스크롤 계산: 레인 수 = {0}, 총 콘텐츠 높이 = {1}, 뷰포트 높이 = {2}, 최대 스크롤 = {3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_scroll_update": {
-    "message": "🔄 세로 스크롤: {0}/{1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_start": {
-    "message": "🔍 수직 드래그 스크롤링(새로운 단순화된 아키텍처)을 설정하기 시작했습니다...",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_check": {
-    "message": "📊 드래그 설정 확인: scrollableGroup={0}, maxVerticalScroll={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_no_scrollable_group": {
     "message": "⚠️ scrollableGroup이 존재하지 않아 드래그를 설정할 수 없습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_vertical_drag_needed": {
-    "message": "🔢 수직 드래그를 설정할 필요가 없습니다. 콘텐츠가 표시 영역을 초과하지 않습니다. maxVerticalScroll = {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_on_strips": {
-    "message": "🖱️ 수직 드래그 스크롤 설정(간단한 버전: 시간 스트립에서 직접 드래그)",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_time_strips_group_missing": {
     "message": "⚠️ 타임 스트립 그룹이 존재하지 않아 드래그를 설정할 수 없습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_time_strip_background_count": {
-    "message": "🔍 발견된 시간 스트립 배경 수: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_strip_blank_start_drag": {
-    "message": "🖱️ 시간 스트립의 빈 영역에서 드래그를 시작하세요",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_start": {
-    "message": "🖱️ 드래그를 시작하세요",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_started": {
-    "message": "🖱️ 수직 드래그 스크롤 시작",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_end": {
-    "message": "🖱️ 수직 드래그 스크롤 종료",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_setup_done": {
-    "message": "✅ 수직 드래그가 이제 시간 스트립에 설정되었습니다(간소화된 버전)",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_observation_window_at_boundary": {
     "message": "⚠️ 관찰창이 경계에 도달하여 더 이상 스크롤할 수 없습니다.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_wheel_observation_scroll": {
-    "message": "🖱️ 창을 보려면 스크롤 휠을 사용하세요: {0} -> {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_stopped_full_rerender": {
-    "message": "⏱️ 스크롤 휠이 멈췄고 전체가 다시 렌더링되었습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_slider_updated": {
-    "message": "✅ 관찰 창 슬라이더가 업데이트되었습니다: x={0}, 너비={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_observation_slider_missing": {
     "message": "⚠️ 관찰 창 슬라이더 .observation-slider를 찾을 수 없습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_move_observation_window": {
-    "message": "모바일 보기 창: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "options_waterfall_view_label": {
@@ -5403,20 +5176,16 @@
     "message": "데이터베이스 트랜잭션이 중단되었습니다: {0}",
     "description": "从TS提取 (_Error): src/background/store/indexed-db.ts"
   },
-  "nav_storage_spa_merge_debug": {
-    "message": "SPA 병합 디버깅: 세션={0}, 탭={1}, 정규화={2}, 후보={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  "waterfall_no_nodes": {
+    "message": "렌더링할 노드 데이터가 없습니다",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "nav_storage_spa_merge_candidates_sample": {
-    "message": "SPA 병합 후보 예: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  "waterfall_no_nodes_after_filter": {
+    "message": "필터링 후 표시할 노드가 없습니다.",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "nav_storage_spa_merge_debug_batch": {
-    "message": "일괄 SPA 병합 디버깅: 세션={0}, 탭={1}, 정규화={2}, 후보={3}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
-  },
-  "nav_storage_spa_merge_candidates_sample_batch": {
-    "message": "배치 SPA 병합 후보 예: {0}",
-    "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  "waterfall_prebuild_drawer_error": {
+    "message": "사전 빌드 서랍 오류",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }
