@@ -459,60 +459,113 @@ function getSimpleTimestamp(): string {
  */
 function getCallerInfo(): string {
   if (!config.showFileInfo) return '';
-  
+
   try {
     const err = new Error();
-    const stackLines = err.stack?.split('\n') || [];
-    
-    // 查找非logger相关的调用
-    for (let i = 0; i < stackLines.length; i++) {
-      const line = stackLines[i];
-      
-      // 跳过logger相关的行
-      if (i === 0 || 
-          line.includes('/logger.') || 
-          line.includes('at Logger.') || 
-          !line.trim()) {
+    const stack = (err.stack || '').split('\n').map(s => s.trim()).filter(Boolean);
+
+  const skipPatterns = [/logger\.ts/i, /logger\.js/i, /src_lib_utils_logger/i, /src[\\\/]lib[\\\/]utils[\\\/]logger/i, /at Logger\b/, /node_modules/i, /\(internal/i];
+
+    for (let i = 0; i < stack.length; i++) {
+      const line = stack[i];
+      if (!line || i === 0) continue; // 第一行通常是错误消息
+      if (skipPatterns.some(r => r.test(line))) continue;
+
+      // 支持三种常见格式： (path:line:col) | at path:line:col | func@path:line:col
+      const m = line.match(/\(([^)]+):(\d+):\d+\)/) || line.match(/at\s+([^()\s]+):(\d+):\d+/) || line.match(/@(.+?):(\d+):\d+/);
+      if (!m) continue;
+
+      const filePathRaw = m[1];
+      const lineNumber = m[2];
+
+      // 如果调用路径看起来仍然属于 logger 本身（打包名或路径包含 logger），跳过此帧
+      if (/\blogger\b/i.test(filePathRaw) || /logger[_\-\.]?ts/i.test(filePathRaw) || /src[_]lib[_]utils[_]logger/i.test(filePathRaw)) {
         continue;
       }
-      
-      // 提取文件名和行号
-      const match = line.match(/\(([^)]+):(\d+):\d+\)/) || 
-                   line.match(/at\s+([^(]+):(\d+):\d+/);
-      
-    if (match) {
-      const [, filePath, lineNumber] = match;
 
-      // 根据配置决定展示路径还是仅文件名
-      if (config.showModulePath) {
-        // 分割路径
-        const pathSegments = filePath.split(/[\/\\]/);
+      // 1) 移除前缀 scheme（webpack:/// file:// 等）
+      let p = String(filePathRaw).replace(/^webpack:\/\/{3}/, '').replace(/^webpack:\/\//, '').replace(/^file:\/\//, '');
 
-        // 取最后几段（包含文件名）
-        const segments = pathSegments.slice(-1 - config.maxPathSegments);
+      // 2) 移除任何中间出现的 extension scheme（如 chrome-extension:, moz-extension:）
+      p = p.replace(/(chrome-extension|moz-extension|safari-extension|extension):\/\//ig, '');
+      p = p.replace(/(chrome-extension|moz-extension|safari-extension|extension):/ig, '');
 
-        // 构建简短路径
-        let shortPath = segments.join("/");
+      // 3) 将路径切分为段，移除纯粹的扩展 id 片段
+      const rawParts = p.split(/[\/\\]/).filter(Boolean).filter(part => {
+        if (/^[a-z0-9]{16,64}$/i.test(part) && !part.includes('.')) return false; // 很可能是 id
+        if (/^[a-z0-9-]+:$/i.test(part)) return false; // 像 'chrome-extension:' 残留
+        return true;
+      });
 
-        // 将.js替换为.ts
-        if (shortPath.endsWith(".js")) {
-          shortPath = shortPath.replace(/\.js$/, ".ts");
+      // 4) 对每个段进行下划线展开尝试：如果段中包含已知提示词，则把 '_' 视为 '/'
+      const hintRe = /(src|content|core|navigation|visualizer|renderers|lib|utils|background|options|ui|state)/i;
+      const rebuilt: string[] = [];
+
+      for (const seg of rawParts) {
+        // 先提取显式扩展名（如 .ts/.js），以便在处理后重新附加
+        const extMatch = seg.match(/(\.(ts|js|jsx|tsx|vue|html))$/i);
+        const explicitExt = extMatch ? extMatch[1] : '';
+        const baseSeg = explicitExt ? seg.slice(0, -explicitExt.length) : seg;
+
+        if (baseSeg.includes('_')) {
+          const tokens = baseSeg.split('_').filter(Boolean);
+          if (tokens.some(t => hintRe.test(t))) {
+            // 如果最后一个 token 是语言标识（ts/js），把它作为扩展名附加到前一个 token
+            const lastToken = (tokens[tokens.length - 1] || '').toLowerCase();
+            if (/^(ts|js|jsx|tsx|vue|html)$/.test(lastToken) && tokens.length > 1) {
+              tokens.pop();
+              tokens[tokens.length - 1] = tokens[tokens.length - 1] + '.' + lastToken;
+            }
+
+            // 将 tokens 扩展开来
+            rebuilt.push(...tokens);
+
+            // 如果原始段有显式扩展名，且最后一段还没有扩展名，则附加它
+            if (explicitExt) {
+              if (!rebuilt[rebuilt.length - 1].endsWith(explicitExt)) {
+                rebuilt[rebuilt.length - 1] = rebuilt[rebuilt.length - 1] + explicitExt;
+              }
+            }
+            continue;
+          }
+
+          // 处理像 foo_ts 或 foo_js 的情况（无显式扩展名）
+          if (/(_ts|_js)$/.test(baseSeg)) {
+            rebuilt.push(baseSeg.replace(/_ts$/, '.ts').replace(/_js$/, '.js'));
+            continue;
+          }
         }
 
-        return `${shortPath}:${lineNumber}`;
-      } else {
-        // 仅提取文件名的原始逻辑
-        let fileName = filePath.split(/[\/\\]/).pop() || "unknown";
-        if (fileName.endsWith(".js")) {
-          fileName = fileName.replace(/\.js$/, ".ts");
-        }
-        return `${fileName}:${lineNumber}`;
+        // 非下划线展开的段：把显式扩展名重新附加，并修正重复后缀 foo_ts.ts -> foo.ts
+        let finalSeg = baseSeg + explicitExt;
+        finalSeg = finalSeg.replace(/_ts\.ts$/, '.ts').replace(/_js\.js$/, '.js');
+        rebuilt.push(finalSeg);
       }
+
+      let normalized = rebuilt.join('/');
+
+      // 折叠重复的扩展名（例如 .ts.ts, .js.js）为单一 .ts
+      normalized = normalized.replace(/(\.ts|\.js){2,}$/i, match => {
+        // 总是以 .ts 作为最终显示
+        return '.ts';
+      });
+
+      // 根据配置返回短路径或文件名
+      if (config.showModulePath) {
+        const segs = normalized.split('/').filter(Boolean);
+        const visibleParents = Math.max(1, config.maxPathSegments || 1);
+        const visible = segs.slice(-visibleParents - 0);
+        const shouldElide = segs.length > (visibleParents + 1) || normalized.length > 60;
+        const short = (shouldElide ? '.../' : '') + visible.join('/');
+        return `${short}:${lineNumber}`;
+      }
+
+      const fileName = normalized.split(/[\/\\]/).pop() || 'unknown';
+      return `${fileName.replace(/\.js$/, '.ts')}:${lineNumber}`;
     }
-    }
-    
+
     return 'unknown';
-  } catch (error) {
+  } catch (e) {
     return 'error';
   }
 }
