@@ -100,7 +100,7 @@ export class SessionServiceClient {
         factor: 1.5,             // 较小的退避因子
         defaultValue: { sessions: [] }  // 重试失败后默认返回空数组        
       });
-      logger.log(_('session_list_response_received', '收到会话列表响应: {0}'), response);
+      //logger.log(_('session_list_response_received', '收到会话列表响应: {0}'), response);
 
       if (response && response.success === true && Array.isArray(response.sessions)) {
         const sessions = response.sessions;
@@ -168,7 +168,7 @@ export class SessionServiceClient {
         defaultValue: { SessionDetails: null }  // 重试失败后默认返回空对象        
       });
 
-      logger.log(_('session_details_response', 'getSessionDetails响应: {0}'), response);
+      //logger.log(_('session_details_response', 'getSessionDetails响应: {0}'), response);
 
       if (response && response.success && response.session) {
         logger.log(_('session_data_fetch_success', '会话数据获取成功, 节点数: {0}'), 

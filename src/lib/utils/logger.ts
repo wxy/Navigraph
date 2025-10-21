@@ -101,14 +101,38 @@ export class Logger {
     // 按类型分组所有后续参数
     const placeholderParams: any[] = []; // 用于替换的占位符参数
     const metaParams: any[] = [];      // 其他元数据参数
-    
-    args.slice(1).forEach(param => {
-      // 字符串和数字类型都应该用于占位符替换
-      if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
-        placeholderParams.push(param); // 字符串和数字参数加入占位符组
-      } else {
-        metaParams.push(param);      // 非基本类型参数保留为元数据
+
+    // 安全序列化对象以用于占位符（处理循环引用）
+    function safeStringify(obj: any): string {
+      try {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, function (k, v) {
+          if (v && typeof v === 'object') {
+            if (seen.has(v)) return '[Circular]';
+            seen.add(v);
+          }
+          return v;
+        });
+      } catch (e) {
+        try { return String(obj); } catch { return '[unserializable]'; }
       }
+    }
+
+    args.slice(1).forEach(param => {
+      // 原始的字符串/数字/布尔直接作为占位符
+      if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
+        placeholderParams.push(param);
+        return;
+      }
+
+      // 对象类型：将其序列化为字符串以用于占位符替换
+      if (param && typeof param === 'object') {
+        placeholderParams.push(safeStringify(param));
+        return;
+      }
+
+      // 函数或其他无法序列化的项保留在 metaParams，作为额外参数传给 console
+      metaParams.push(param);
     });
 
     // 进行占位符替换处理

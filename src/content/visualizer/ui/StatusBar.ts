@@ -138,7 +138,7 @@ export class StatusBar {
     if (!this.statusBarElement) return;
 
     // 在处理前添加更详细的日志，帮助定位问题
-    logger.debug(_('status_bar_update_start', '开始更新状态栏'));
+    //logger.debug(_('status_bar_update_start', '开始更新状态栏'));
 
     try {
       // 获取当前状态数据 - 使用可视化器的属性
@@ -152,13 +152,13 @@ export class StatusBar {
       const allNodesCount = visualizer.allNodes?.length || 0;
 
       // 打印详细日志以帮助诊断问题
-      logger.debug(_('status_bar_data_retrieved', '状态栏数据获取: {0}'), {
+      /*logger.debug(_('status_bar_data_retrieved', '状态栏数据获取: {0}'), {
         session: currentSession ? "retrieved" : "not_retrieved",
         nodeCount,
         edgeCount,
         allNodesCount,
         viewType: currentView,
-      });
+      });*/
 
       // 更新节点计数
       const nodeCountElement = document.getElementById("status-nodes");
@@ -234,7 +234,7 @@ export class StatusBar {
         }
         zoomElement.style.display = "";
       }
-      logger.debug(_('status_bar_update_complete', '状态栏更新完成'));
+      //logger.debug(_('status_bar_update_complete', '状态栏更新完成'));
     } catch (error) {
       logger.error(_('status_bar_update_failed', '状态栏更新过程中出错: {0}'), error);
     }
