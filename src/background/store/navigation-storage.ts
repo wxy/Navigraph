@@ -106,18 +106,13 @@ export class NavigationStorage {
               try {
                 const candidates = request.result as NavNode[] || [];
                 const normalized = UrlUtils.normalizeUrlForAggregation(node.url);
-                logger.log(_('nav_storage_spa_merge_debug', 'SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}'), node.sessionId, node.tabId, normalized, candidates.length.toString());
+                // SPA 合并调试日志已移除
 
                 const match = candidates
                   .filter(c => c.tabId === node.tabId)
                   .find(c => UrlUtils.normalizeUrlForAggregation(c.url) === normalized);
 
-                if (!match) {
-                  try {
-                    const sample = candidates.slice(0, 5).map(c => UrlUtils.normalizeUrlForAggregation(c.url));
-                    logger.log(_('nav_storage_spa_merge_candidates_sample', 'SPA 合并候选样例: {0}'), JSON.stringify(sample));
-                  } catch (e) {}
-                }
+
 
                 if (match) {
                   match.spaRequestCount = (match.spaRequestCount || 0) + 1;
@@ -381,17 +376,14 @@ export class NavigationStorage {
                 try {
                   const candidates = request.result as NavNode[] || [];
                   const normalized = UrlUtils.normalizeUrlForAggregation(node.url);
-                  logger.log(_('nav_storage_spa_merge_debug_batch', '批量 SPA 合并调试: session={0}, tab={1}, normalized={2}, candidates={3}'), node.sessionId, node.tabId, normalized, candidates.length.toString());
+                  // 批量 SPA 合并调试日志已移除
 
                   const match = candidates
                     .filter(c => c.tabId === node.tabId)
                     .find(c => UrlUtils.normalizeUrlForAggregation(c.url) === normalized);
 
                   if (!match) {
-                    try {
-                      const sample = candidates.slice(0, 5).map(c => UrlUtils.normalizeUrlForAggregation(c.url));
-                      logger.log(_('nav_storage_spa_merge_candidates_sample_batch', '批量 SPA 合并候选样例: {0}'), JSON.stringify(sample));
-                    } catch (e) {}
+                    // 批量 SPA 合并候选样例日志已移除
                   }
 
                   if (match) {
