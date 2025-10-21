@@ -4965,102 +4965,21 @@
   },
   "waterfall_nodes_too_many": {
     "message": "⚠️ ノードが多すぎます ({0})。制限は {1} です",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_invalid_timestamp_node": {
     "message": "⚠️ 無効なタイムスタンプを持つノードが見つかり、フィルタリングされました:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_restoring_observation_window": {
-    "message": "🔍 観測ウィンドウの位置チェックの復元を開始します: tabId={0}、メモリ値={1}、復元変換={2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_analyze_swimlanes_deprecated": {
-    "message": "⚠️ analyzeSwimlanes_deprecated メソッドは非推奨になりました。新しいレーン再利用アルゴリズムを使用してください。",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_create_closure_marker": {
-    "message": "🔴 終了タグを作成: ラベル {0}、タイムスタンプ={1}、レーン={2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_can_reuse_lane_ok": {
-    "message": "✅ スイムレーンの再利用性チェックに合格しました: 新しいタグ {0} ({1}) は終了タグ {2} の後に開始されます",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_can_reuse_lane_fail": {
-    "message": "❌ 車線再利用チェックに失敗しました: 新しいラベル {0} に時間の競合があります",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_assign_swimlane_positions": {
-    "message": "🏊 車線位置を割り当てます: 開始 Y = {0}、車線数 = {1}、全体の高さ = {2}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ タブ {0} のスイムレーンが見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_identified_collapsed_groups": {
-    "message": "🎯 {0} 個の折りたたまれたノード グループが特定されました",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_segments_generated": {
-    "message": "🎯 期間生成: ノード時間範囲 {0}-{1}、セグメント時間範囲 {2}-{3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ 時間セグメントループが最大反復回数に達し、強制的に終了する",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_adding_filler_segments": {
-    "message": "🎯 スペースを埋めるために{0}個の空白セクションを追加します",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_compression": {
-    "message": "✅ 圧縮は不要、{0} データ セグメント + {1} 空白セグメント、標準幅 {2} ピクセル",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_created_svg_structure": {
-    "message": "📦 SVG 構造を作成: ビューポートの高さ = {0}、タイムラインの高さ = {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_swimlane_separators": {
-    "message": "🏊 {0} 車線区切りと番号付きラベルをレンダリングします",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_time_axis_start": {
-    "message": "🕐 タイムラインをレンダリング（水平線、矢印、ラベルのみ） - 古いコンテンツをクリーンアップ",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_axis_span": {
-    "message": "🎯 タイムラインは、{0} から {1} までの領域全体に広がります (SVG 幅: {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_axis_done": {
-    "message": "✅ タイムラインのレンダリングが完了しました: 水平線 ✓、矢印 ✓、時間ラベル {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_time_strips": {
-    "message": "🎨 独立したタイムストリップの背景をレンダリングする（スクロール可能）",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_strips_done": {
-    "message": "✅ {0} 個のタイムストリップ背景をレンダリングし、{1} 個のストリップを作成しました",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_addTimeLabel_disabled": {
-    "message": "⚠️ addTimeLabelToStrip は無効になっており、時間ラベルは固定タイムラインによって処理されます",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_segment_nodes": {
-    "message": "🎯 レンダリング セグメント ノード、セグメント数: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_max_nodes_rendered": {
-    "message": "⚠️ {0} ノードをレンダリングし、残りのセグメントをスキップしました",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_strip_not_found": {
-    "message": "⚠️ セグメント {0} のストライプ グループが見つかりません",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_total_nodes_rendered": {
@@ -5127,72 +5046,8 @@
     "message": "🎯 セグメントの中央にクローズマーカー {0} が表示されます: X={1}、セグメント範囲=[{2}-{3}]",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_closure_marker_rendered": {
-    "message": "🔴 レンダリングされた終了タグ: {0} at ({1}, {2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_debug": {
-    "message": "🔍 findSegmentByTimestamp デバッグ情報:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_lookup_ts": {
-    "message": "検索タイムスタンプ: {0} ({1})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_total_segments": {
-    "message": "セグメントの合計数: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_findSegment_segments_list": {
-    "message": "セグメントリスト:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_findSegment_segment_line": {
     "message": "[{0}] {1}-{2} ({3} - {4}) {5} ノード:{6} フィラー:{7}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_closure_ts_out_of_range_use_last": {
-    "message": "🎯 クローズマーカーのタイムスタンプ {0} が範囲外です。最後のセグメント [{1}-{2}] を使用します。",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_closure_ts_found_closest": {
-    "message": "🎯 クローズマーカーのタイムスタンプ {0} で最も近いセグメント [{1}-{2}] が見つかりました。距離は {3} 秒です",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_collapse_badge_clicked": {
-    "message": "🎯 折りたたみアイコンがクリックされました: tabId={0}、count={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_wheel_disabled_during_observation_drag": {
-    "message": "🚫 ウィンドウのドラッグ中にドロワーホイールのスクロールを無効にする（マジックマウスの誤タッチを防ぐため）",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_scroll_intercepted": {
-    "message": "🎯 フローティングスクロールイベントがインターセプトされる",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_drawer_node_clicked": {
-    "message": "🎯 ドロワーノードがクリックされました: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_show_collapsed_drawer": {
-    "message": "🎯 ドロワーを表示: {0} ({1} ノード、{2})",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_swimlane_node_position_debug": {
-    "message": "🏊 スイムレーンノードの配置:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_render_observation_slider": {
-    "message": "🎚️ ウォッチウィンドウのスライダーをレンダリングする",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_no_compression": {
-    "message": "✅ 圧縮なし、観察ウィンドウはすべてのストリップの実際の幅をカバーします",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_has_compression": {
-    "message": "⚠️ 圧縮すると、観察ウィンドウがタイムライン上でスライドします",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_observation_drag_setup": {
@@ -5271,100 +5126,20 @@
     "message": "⚠️ スクロールホイールイベントを設定できません: SVG またはレイアウトが存在しません",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_wheel_disabled_during_observation_drag": {
-    "message": "🚫 ウィンドウのドラッグ中にホイールスクロールを無効にする（マジックマウスの誤タッチを防ぐため）",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_disabled_during_vertical_drag": {
-    "message": "🚫 ドラッグ中のホイールスクロールを無効にする",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_scroll_setup_done": {
-    "message": "✅ ホイールスクロールが設定されています（垂直スクロールのみ）、最大垂直スクロール：{0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_swimlanes_vertical_scroll": {
-    "message": "🔢 スイムレーンデータがなく、垂直スクロールは利用できません",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_scroll_calc": {
-    "message": "🔢 垂直スクロールの計算: レーン数 = {0}、コンテンツの合計高さ = {1}、ビューポートの高さ = {2}、最大スクロール = {3}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_scroll_update": {
-    "message": "🔄垂直スクロール: {0}/{1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_start": {
-    "message": "🔍 垂直ドラッグスクロールの設定を開始しています（新しい簡素化されたアーキテクチャ）...",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_check": {
-    "message": "📊 ドラッグ設定のチェック: scrollableGroup={0}、maxVerticalScroll={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_no_scrollable_group": {
     "message": "⚠️ scrollableGroup が存在しないため、ドラッグを設定できません",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_no_vertical_drag_needed": {
-    "message": "🔢 垂直ドラッグを設定する必要はありません。コンテンツは表示領域を超えません。maxVerticalScroll = {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_setup_vertical_drag_on_strips": {
-    "message": "🖱️ 垂直ドラッグスクロールを設定する（簡易版：タイムストリップ上で直接ドラッグ）",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_time_strips_group_missing": {
     "message": "⚠️ タイムストリップグループが存在しないため、ドラッグを設定できません",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_time_strip_background_count": {
-    "message": "🔍 見つかったタイムストリップの背景の数: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_time_strip_blank_start_drag": {
-    "message": "🖱️ タイムストリップの空白領域でドラッグを開始します",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_start": {
-    "message": "🖱️ ドラッグ開始",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_started": {
-    "message": "🖱️ 垂直ドラッグスクロールを開始",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_end": {
-    "message": "🖱️ 垂直ドラッグスクロールを終了",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_vertical_drag_setup_done": {
-    "message": "✅ 垂直ドラッグがタイムストリップに設定されるようになりました（簡易版）",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_observation_window_at_boundary": {
     "message": "⚠️ 観察ウィンドウが境界に達したため、これ以上スクロールできません",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "waterfall_wheel_observation_scroll": {
-    "message": "🖱️ ホイールをスクロールしてウィンドウを表示します: {0} -> {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_wheel_stopped_full_rerender": {
-    "message": "⏱️ スクロールホイールが停止し、完全に再レンダリングされました",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_observation_slider_updated": {
-    "message": "✅ 観察ウィンドウのスライダーが更新されました: x={0}、幅={1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
   "waterfall_observation_slider_missing": {
     "message": "⚠️ 観察ウィンドウスライダー .observation-slider が見つかりません",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
-  },
-  "waterfall_move_observation_window": {
-    "message": "モバイル表示ウィンドウ: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "options_waterfall_view_label": {
@@ -5418,5 +5193,20 @@
   "nav_storage_spa_merge_candidates_sample_batch": {
     "message": "バッチ SPA マージ候補の例: {0}",
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
+  },
+  "waterfall_no_nodes": {
+    "message": "没有节点数据可渲染",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_no_nodes_after_filter": {
+    "message": "筛选后没有可显示的节点",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
+  },
+  "waterfall_prebuild_drawer_error": {
+    "message": "预构建抽屉错误",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
+    "_untranslated": true
   }
 }
