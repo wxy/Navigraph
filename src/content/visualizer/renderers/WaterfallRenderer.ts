@@ -194,6 +194,28 @@ export class WaterfallRenderer implements BaseRenderer {
       try { bg.attr('height', 0); } catch(e) {}
       try { body.attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
       try { drawerSel.attr('data-open', 'false'); } catch(e) {}
+      // restore display node's badge count if applicable
+      try {
+        const groupId = drawerSel.attr && drawerSel.attr('data-collapse-group');
+        if (groupId) {
+          const badgeSel = this.svg && this.svg.select ? this.svg.select(`.group-badge[data-collapse-group="${groupId}"]`) : null;
+          if (badgeSel && !badgeSel.empty()) {
+            try {
+              // prefer original saved badge text if present on the element
+              const orig = badgeSel.attr && badgeSel.attr('data-original-badge');
+              if (orig != null && String(orig) !== '') {
+                try { badgeSel.select('text').text(String(orig)); } catch(e) {}
+                try { badgeSel.attr('data-original-badge', null); } catch(e) {}
+              } else {
+                // find collapsedGroup count if available in memory
+                const cg = this.collapsedGroups ? this.collapsedGroups.find(g => g.tabId === groupId) : null;
+                const txt = cg ? String(cg.count) : (badgeSel.select('text').text() || '0');
+                try { badgeSel.select('text').text(txt); } catch(e) {}
+              }
+            } catch(e) {}
+          }
+        }
+      } catch(e) {}
     } catch (e) {
       // ignore
     }
@@ -295,6 +317,24 @@ export class WaterfallRenderer implements BaseRenderer {
         // 如果正在进行动画，则忽略重复打开请求
         if (this.drawerTransitioning) return;
         this.drawerTransitioning = true;
+        // Defensive cleanup: remove any leftover handlers from previous openings
+        try {
+          const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
+          if (containerNode) {
+            try {
+              if ((containerNode as any).__drawerWheelContainerHandler) {
+                try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
+                try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
+              }
+            } catch(e) {}
+            try {
+              if ((containerNode as any).__drawerDebugDocHandler) {
+                try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
+                try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
+              }
+            } catch(e) {}
+          }
+        } catch(e) {}
         // if another drawer is open, normalize its z-order then close it first
         try {
           if (this.currentOpenDrawerSel && !this.currentOpenDrawerSel.empty()) {
@@ -317,6 +357,18 @@ export class WaterfallRenderer implements BaseRenderer {
         // find the body and bg
         const body = drawerSel.select('.drawer-body');
         const bg = body.select('.drawer-bg');
+        // defensive: remove any leftover body-level handlers/state from previous openings
+        try {
+          const bodyNodeAny: any = body.node && body.node();
+          if (bodyNodeAny) {
+            try { if (bodyNodeAny.__drawerWheelHandler) { bodyNodeAny.removeEventListener && bodyNodeAny.removeEventListener('wheel', bodyNodeAny.__drawerWheelHandler); } } catch(e) {}
+            try { delete bodyNodeAny.__drawerWheelHandler; } catch(e) {}
+            try { bodyNodeAny.__drawerWheelAccum = 0; } catch(e) {}
+            try { bodyNodeAny.__drawerWheelRaf = null; } catch(e) {}
+            try { bodyNodeAny.__drawerAnim = null; } catch(e) {}
+            try { bodyNodeAny.__drawerTarget = 0; } catch(e) {}
+          }
+        } catch(e) {}
 
         // bring drawer to front within its current parent (avoid reparenting)
         try {
@@ -369,7 +421,18 @@ export class WaterfallRenderer implements BaseRenderer {
           }
 
           const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
-          const maxScroll = Math.max(0, (slots * slotHeight + paddingAround * 2) - actualDrawerHeight);
+          let maxScroll = Math.max(0, (slots * slotHeight + paddingAround * 2) - actualDrawerHeight);
+          // Edge-case guard: if there are hidden slots but computed maxScroll is 0 due to rounding/space constraints,
+          // ensure scrolling is possible for the hidden items.
+          try {
+            const hiddenCountLocal = Math.max(0, slots - visibleSlots);
+            if (hiddenCountLocal > 0 && maxScroll === 0) {
+              maxScroll = hiddenCountLocal * slotHeight;
+              try { logger.log(`drawer ${collapsedGroup.tabId} adjusted maxScroll fallback=${maxScroll}`); } catch(e) {}
+            }
+          } catch(e) {}
+          // local scroll offset for this drawer instance
+          let drawerScrollOffset = 0;
 
           // animate bg to cover full slot area (horizontally bg x/width already set when prebuilt)
           try {
@@ -425,10 +488,12 @@ export class WaterfallRenderer implements BaseRenderer {
           const slotYs = fullSlotYs.slice(0, visibleSlots);
 
           // render time-diff labels between slots (centered horizontally on bg)
-          try {
+            try {
             // remove any existing labels group
             body.selectAll('.drawer-labels').remove();
-            const labelsGroup = body.append('g').attr('class', 'drawer-labels');
+            // Prefer placing labels inside the scroll group so they translate with items
+            const scrollGroupForLabels = body.select && body.select('.drawer-scroll') ? body.select('.drawer-scroll') : null;
+            const labelsGroup = (scrollGroupForLabels && !scrollGroupForLabels.empty()) ? scrollGroupForLabels.append('g').attr('class', 'drawer-labels') : body.append('g').attr('class', 'drawer-labels');
             const otherNodes = collapsedGroup.nodes.filter(n => n.id !== collapsedGroup.displayNode.id);
             // labels between display slot (slot 0) and each child slot — use fullSlotYs so labels for offscreen slots are still computed
             for (let j = 0; j < otherNodes.length; j++) {
@@ -539,9 +604,319 @@ export class WaterfallRenderer implements BaseRenderer {
           const totalAnim = 220 + itemNodes.length * stagger + itemDuration;
           setTimeout(() => {
             try { body.style('pointer-events', 'all'); } catch(e) {}
+            // set the display node's collapse badge text to 0 while drawer is open
+            try {
+              const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapsedGroup.tabId}"]`) : null;
+              if (badgeSel && !badgeSel.empty()) {
+                try {
+                  // save original badge text so we can restore it reliably on close
+                  try {
+                    const textSel = badgeSel.select('text');
+                    const origTxt = (textSel && !textSel.empty()) ? String(textSel.text()) : '';
+                    if (origTxt !== '') {
+                      try { badgeSel.attr('data-original-badge', origTxt); } catch(e) {}
+                    }
+                  } catch(e) {}
+                  try { badgeSel.select('text').text('0'); } catch(e) {}
+                } catch(e) {}
+              }
+            } catch(e) {}
             this.currentOpenCollapseId = collapsedGroup.tabId;
             this.currentOpenDrawerSel = drawerSel;
             try { this.bindDocumentClickToClose(); } catch(e) {}
+
+            // setup local wheel handler to perform internal scroll by translating .drawer-scroll
+            try {
+              const scrollGroupSel = body.select('.drawer-scroll');
+              if (scrollGroupSel && !scrollGroupSel.empty() && maxScroll > 0) {
+                // ensure initial transform
+                try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
+                const bodyNode: any = body.node();
+                // accumulator + rAF to combine small fractional deltas (Magic Mouse)
+                try { (bodyNode as any).__drawerWheelAccum = 0; } catch(e) {}
+                try { (bodyNode as any).__drawerWheelRaf = null; } catch(e) {}
+                const WHEEL_SCALE = 6; // amplify small deltas (tuned)
+                const DRAWER_DEBUG = false; // default: debug off; enable locally when needed
+
+                const applyAccumulated = () => {
+                  try {
+                    const accum: number = (bodyNode as any).__drawerWheelAccum || 0;
+                    if (accum === 0) { (bodyNode as any).__drawerWheelRaf = null; return; }
+                    // apply scaled delta
+                    const delta = accum * WHEEL_SCALE;
+                    (bodyNode as any).__drawerWheelAccum = 0;
+                    const before = drawerScrollOffset;
+                    if (DRAWER_DEBUG) {
+                      try {
+                        // Print compact snapshot of key variables to diagnose centering/clamping issues
+                        const slotsCount = fullSlotYs ? fullSlotYs.length : 0;
+                        const sampleSlots = (fullSlotYs && fullSlotYs.length > 0) ? fullSlotYs.slice(0, 50) : fullSlotYs;
+                        console.debug(`drawer-debug-vars tab=${collapsedGroup.tabId} slots=${slotsCount} slotHeight=${slotHeight} nodeHeightLocal=${nodeHeightLocal} swimlaneY=${collapsedGroup.swimlaneY} drawerTop=${drawerTop} actualDrawerHeight=${actualDrawerHeight} drawerScrollOffset=${drawerScrollOffset} maxScroll=${maxScroll} accum=${accum} delta=${delta} before=${before} sampleFullSlotYs=${JSON.stringify(sampleSlots)}`);
+                      } catch(e) {}
+                    }
+                    // Step-based: snap target to slot boundaries (one swimlane per step)
+                    try {
+                      const tentative = drawerScrollOffset + delta;
+                      // desired screen center is the swimlane middle (fallback to drawer center)
+                      const desiredScreenCenter = (collapsedGroup && typeof collapsedGroup.swimlaneY === 'number') ? (collapsedGroup.swimlaneY + (this.SWIMLANE_HEIGHT / 2)) : (drawerTop + (actualDrawerHeight / 2));
+                      // determine current slot using direct index math to avoid noisy per-item loops
+                      // map drawerScrollOffset -> index: compute the distance from slot0 center
+                      // to the desiredScreenCenter, then translate offset into slot steps.
+                      let currentSlot = 0;
+                      try {
+                        const baseCenter = fullSlotYs && fullSlotYs.length > 0 ? fullSlotYs[0] : 0; // center of slot 0
+                        // when drawerScrollOffset == 0, slot0 is centered; increasing drawerScrollOffset moves to higher index
+                        const relative = (drawerScrollOffset + desiredScreenCenter) - baseCenter; // px distance from slot0 center
+                        const idx = Math.round(relative / slotHeight);
+                        currentSlot = Math.max(0, Math.min((fullSlotYs ? fullSlotYs.length - 1 : 0), idx));
+                      } catch(e) { currentSlot = 0; }
+
+                      // compute step count from delta; prefer a conservative 1-slot-per-gesture
+                      const direction = delta > 0 ? 1 : (delta < 0 ? -1 : 0);
+                      let stepCount = 1; // default at least one slot
+                      // if delta magnitude suggests multiple slots, scale it
+                      if (Math.abs(delta) > slotHeight * 1.5) {
+                        stepCount = Math.max(1, Math.round(Math.abs(delta) / slotHeight));
+                      }
+                      let desiredSlot = currentSlot + direction * stepCount;
+                      // nudge when there is no movement due to rounding or epsilon issues
+                      if (desiredSlot === currentSlot && direction !== 0) {
+                        desiredSlot = currentSlot + direction;
+                      }
+                      desiredSlot = Math.max(0, Math.min(fullSlotYs.length - 1, desiredSlot));
+                      const boundedSlot = desiredSlot;
+                      // compute centered target aligning slot center to swimlane center
+                      // compute centered target (slot center aligned to swimlane center)
+                      const centeredTarget = fullSlotYs[boundedSlot] - desiredScreenCenter;
+                      // avoid destructive rounding: allow sub-pixel target and use epsilon when comparing
+                      const EPS = 0.5;
+                      let target = centeredTarget;
+                      if (Math.abs(target) < EPS) target = 0;
+                      // clamp to scrollable range
+                      target = Math.max(0, Math.min(maxScroll, Math.round(target)));
+                      if (DRAWER_DEBUG) {
+                        try { console.debug(`drawer-debug tab=${collapsedGroup.tabId} currentSlot=${currentSlot} desiredSlot=${desiredSlot} centeredTarget=${centeredTarget} slot=${boundedSlot} target=${target} before=${before} max=${maxScroll}`); } catch(e) {}
+                      }
+
+                      // helper to update visibility of items based on current drawerScrollOffset
+                      const updateVisibility = () => {
+                        try {
+                          const itemsSel = scrollGroupSel.selectAll('.drawer-item');
+                          const visibleTop = drawerTop + drawerScrollOffset;
+                          const visibleBottom = drawerTop + drawerScrollOffset + actualDrawerHeight;
+                          itemsSel.each(function(this: any, d: any, i: number) {
+                            try {
+                              const childIndex = i;
+                              const slotIndex = Math.min(childIndex + 1, fullSlotYs.length - 1);
+                              const originalCenter = fullSlotYs[slotIndex];
+                              const originalTop = originalCenter - (nodeHeightLocal / 2);
+                              const originalBottom = originalTop + nodeHeightLocal;
+                              const isVisible = (originalBottom > visibleTop) && (originalTop < visibleBottom);
+                              const sel = d3.select(this);
+                              if (isVisible) {
+                                sel.attr('opacity', 1).style('pointer-events', 'all');
+                              } else {
+                                sel.attr('opacity', 0).style('pointer-events', 'none');
+                              }
+                            } catch(e) {}
+                          });
+                        } catch(e) {}
+                      };
+
+                      // animate towards target with per-frame max step to reduce jitter
+                      try {
+                        (bodyNode as any).__drawerTarget = target;
+                        // If the user produced a large delta, apply an immediate jump to the
+                        // computed target (avoids waiting on rAF smoothing and helps
+                        // validate target semantics). Use slotHeight as natural scale.
+                        if (Math.abs(delta) > (slotHeight * 0.5)) {
+                          try {
+                            drawerScrollOffset = target;
+                            try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
+                            try { updateVisibility(); } catch(e) {}
+                            if (DRAWER_DEBUG) try { console.debug(`drawer-debug immediate jump tab=${collapsedGroup.tabId} to=${target} delta=${delta}`); } catch(e) {}
+                          } catch(e) {}
+                          // do not schedule animation loop for this gesture
+                          return;
+                        }
+                        // always (re)schedule the per-frame step loop to ensure animation starts
+                        const MAX_STEP = 32; // px per frame max (allow larger per-frame move)
+                        const STEP_FACTOR_DOWN = 0.75; // fraction for moving down (faster)
+                        const STEP_FACTOR_UP = 0.35; // fraction for moving up (slower) - reduced to slow upward motion
+                        const stepLoop = () => {
+                          try {
+                            const cur = drawerScrollOffset;
+                            const tgt = (bodyNode as any).__drawerTarget || cur;
+                            const diff = tgt - cur;
+                            if (Math.abs(diff) < 0.5) {
+                              drawerScrollOffset = tgt;
+                              try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
+                              try { updateVisibility(); } catch(e) {}
+                              (bodyNode as any).__drawerAnim = null;
+                              return;
+                            }
+                            const proportional = diff * (diff > 0 ? STEP_FACTOR_DOWN : STEP_FACTOR_UP);
+                            const step = Math.sign(proportional) * Math.min(Math.abs(proportional), MAX_STEP);
+                            const newOffset = Math.max(0, Math.min(maxScroll, cur + step));
+                            drawerScrollOffset = newOffset;
+                            try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
+                            try { updateVisibility(); } catch(e) {}
+                            if (DRAWER_DEBUG) {
+                              try { console.debug(`drawer-frame tab=${collapsedGroup.tabId} cur=${cur.toFixed(2)} tgt=${tgt.toFixed(2)} diff=${diff.toFixed(2)} proportional=${proportional.toFixed(2)} step=${step.toFixed(2)} newOffset=${newOffset.toFixed(2)}`); } catch(e) {}
+                              try { console.debug(`drawer-frame-transform ${scrollGroupSel.attr && scrollGroupSel.attr('transform')}`); } catch(e) {}
+                            }
+                          } catch(e) {}
+                          (bodyNode as any).__drawerAnim = requestAnimationFrame(stepLoop);
+                        };
+                        try {
+                          if ((bodyNode as any).__drawerAnim) {
+                            try { cancelAnimationFrame((bodyNode as any).__drawerAnim); } catch(e) {}
+                            (bodyNode as any).__drawerAnim = null;
+                          }
+                        } catch(e) {}
+                        try {
+                          (bodyNode as any).__drawerAnim = requestAnimationFrame(stepLoop);
+                          if (DRAWER_DEBUG) try { console.debug(`drawer-debug scheduled stepLoop tab=${collapsedGroup.tabId}`); } catch(e) {}
+                        } catch(e) {
+                          // fallback: best-effort
+                          try { console.debug && console.debug(`drawer-debug failed to schedule rAF tab=${collapsedGroup.tabId}`); } catch(e) {}
+                        }
+                      } catch(e) {}
+                    } catch(e) {
+                      if (DRAWER_DEBUG) try { logger.error(`drawer ${collapsedGroup.tabId} rAF schedule error ${String(e)}`); } catch(e) {}
+                    }
+
+                    
+                  } catch(e) {
+                    try { logger.error(`drawer ${collapsedGroup.tabId} rAF apply error ${String(e)}`); } catch(e) {}
+                  } finally {
+                    (bodyNode as any).__drawerWheelRaf = null;
+                  }
+                };
+
+                const onWheel = (ev: WheelEvent) => {
+                  try {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                  } catch(e) {}
+                  try {
+                    const rawDelta = ev.deltaY || 0;
+                    // accumulate
+                    try { (bodyNode as any).__drawerWheelAccum = ((bodyNode as any).__drawerWheelAccum || 0) + rawDelta; } catch(e) {}
+                    if (DRAWER_DEBUG) {
+                      try { console.debug(`drawer-debug wheel tab=${collapsedGroup.tabId} rawDelta=${rawDelta} accumulated=${(bodyNode as any).__drawerWheelAccum}`); } catch(e) {}
+                    }
+                    // schedule rAF
+                    try {
+                      if (!(bodyNode as any).__drawerWheelRaf) {
+                        (bodyNode as any).__drawerWheelRaf = requestAnimationFrame(() => applyAccumulated());
+                      }
+                    } catch(e) {
+                      // fallback: immediate apply
+                      try { applyAccumulated(); } catch(e) {}
+                    }
+                  } catch(e) {
+                    try { logger.error(`drawer ${collapsedGroup.tabId} wheel handler error ${String(e)}`); } catch(e) {}
+                  }
+                };
+
+                try {
+                    if (bodyNode && bodyNode.addEventListener) {
+                      // passive:false so we can call preventDefault(); use capture to get events earlier
+                      try {
+                        // avoid double-binding
+                        if (!(bodyNode as any).__drawerWheelHandler) {
+                          try { bodyNode.addEventListener('wheel', onWheel, { passive: false, capture: true }); } catch(e) { try { bodyNode.addEventListener('wheel', onWheel, true); } catch(e) {} }
+                          // store reference for cleanup
+                          (bodyNode as any).__drawerWheelHandler = onWheel;
+                          if (DRAWER_DEBUG) try { console.debug(`drawer-debug bound wheel handler tab=${collapsedGroup.tabId} maxScroll=${maxScroll} node=${(bodyNode && bodyNode.tagName) || String(bodyNode)}`); } catch(e) {}
+                        }
+                      } catch(e) {}
+                    }
+
+                    // also bind a container-level handler that forwards wheel events when the event path contains the drawer node
+                    try {
+                      const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
+                      const drawerNode: any = drawerSel && drawerSel.node && drawerSel.node();
+                      if (containerNode && containerNode.addEventListener && drawerNode) {
+                        const onWheelContainer = (ev: WheelEvent) => {
+                          try {
+                            // Prefer geometric hit test: if the wheel event's clientX/Y falls within the drawer bg rect,
+                            // treat it as targeting the drawer (this handles gaps where the pointer is over transparent area).
+                            let shouldForward = false;
+                            try {
+                              const bgNode: any = body.select && body.select('.drawer-bg') && body.select('.drawer-bg').node && body.select('.drawer-bg').node();
+                              if (bgNode && bgNode.getBoundingClientRect) {
+                                const r = bgNode.getBoundingClientRect();
+                                const cx = (ev as any).clientX;
+                                const cy = (ev as any).clientY;
+                                if (typeof cx === 'number' && typeof cy === 'number') {
+                                  if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) shouldForward = true;
+                                }
+                              }
+                            } catch(e) {}
+
+                            // fallback: see if event path contains drawer (shadow DOM or normal)
+                            if (!shouldForward) {
+                              try {
+                                const path = (ev as any).composedPath ? (ev as any).composedPath() : (ev as any).path || [];
+                                if (path && path.length) {
+                                  for (let i = 0; i < path.length; i++) { if (path[i] === drawerNode) { shouldForward = true; break; } }
+                                }
+                                if (!shouldForward) {
+                                  let n: any = ev.target as any;
+                                  while (n) { if (n === drawerNode) { shouldForward = true; break; } n = n.parentNode; }
+                                }
+                              } catch(e) {}
+                            }
+
+                            if (shouldForward) {
+                              onWheel(ev);
+                            }
+                          } catch(e) {}
+                        };
+
+                        try {
+                          if (!(containerNode as any).__drawerWheelContainerHandler) {
+                            try { containerNode.addEventListener('wheel', onWheelContainer, { passive: false, capture: true }); } catch(e) { try { containerNode.addEventListener('wheel', onWheelContainer, true); } catch(e) {} }
+                            (containerNode as any).__drawerWheelContainerHandler = onWheelContainer;
+                            if (DRAWER_DEBUG) try { logger.log(_('waterfall_drawer_wheel_bound_container', 'drawer %s bound container wheel handler'), collapsedGroup.tabId); } catch(e) {}
+                          }
+                        } catch(e) {}
+
+                        // debug: also install a document-level capture listener (passive) to observe raw wheel events
+                        try {
+                          const debugDocHandler = (ev: WheelEvent) => {
+                            try {
+                              const delta = ev.deltaY || 0;
+                              let pathContains = false;
+                              try {
+                                const path = (ev as any).composedPath ? (ev as any).composedPath() : (ev as any).path || [];
+                                if (path && path.length) {
+                                  for (let i = 0; i < path.length; i++) { if (path[i] === drawerNode) { pathContains = true; break; } }
+                                }
+                              } catch(e) {}
+                              if (!pathContains) {
+                                let n: any = ev.target as any;
+                                while (n) { if (n === drawerNode) { pathContains = true; break; } n = n.parentNode; }
+                              }
+                              // suppressed noisy debug doc logging
+                            } catch(e) {}
+                          };
+                          try {
+                            if (!(containerNode as any).__drawerDebugDocHandler) {
+                              try { document.addEventListener('wheel', debugDocHandler, { capture: true, passive: true }); } catch(e) { try { document.addEventListener('wheel', debugDocHandler, true); } catch(e) {} }
+                              (containerNode as any).__drawerDebugDocHandler = debugDocHandler;
+                              if (DRAWER_DEBUG) try { logger.log(_('waterfall_drawer_wheel_debugdoc_bound', 'drawer %s bound debug document wheel listener'), collapsedGroup.tabId); } catch(e) {}
+                            }
+                          } catch(e) {}
+                        } catch(e) {}
+                      }
+                    } catch(e) {}
+                } catch(e) {}
+              }
+            } catch(e) {}
+
             this.drawerTransitioning = false;
           }, totalAnim);
         }
@@ -577,7 +952,65 @@ export class WaterfallRenderer implements BaseRenderer {
         setTimeout(() => {
             try {
             bg.transition().duration(160).attr('height', parseFloat(bg.attr('height')) ? parseFloat(bg.attr('height')) * 0 : 0).on('end', () => {
-              try { body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none'); } catch(e) {}
+              try {
+                // remove any local wheel handler attached to the body
+                try {
+                  const bodyNode: any = body.node && body.node();
+                  if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
+                    try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler); } catch(e) {}
+                    try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
+                  }
+                } catch(e) {}
+                // reset scroll transform and animation state
+                try {
+                  const scrollGroupSel = body.select && body.select('.drawer-scroll');
+                  if (scrollGroupSel && !scrollGroupSel.empty()) {
+                    try { scrollGroupSel.attr('transform', `translate(0, 0)`); } catch(e) {}
+                  }
+                } catch(e) {}
+                try {
+                  const bodyNode: any = body.node && body.node();
+                  if (bodyNode) {
+                    try { if ((bodyNode as any).__drawerAnim) { cancelAnimationFrame((bodyNode as any).__drawerAnim); } } catch(e) {}
+                    try { (bodyNode as any).__drawerAnim = null; } catch(e) {}
+                    try { (bodyNode as any).__drawerTarget = 0; } catch(e) {}
+                    try { (bodyNode as any).__drawerWheelAccum = 0; } catch(e) {}
+                    try { (bodyNode as any).__drawerWheelRaf = null; } catch(e) {}
+                  }
+                } catch(e) {}
+                // also remove container/document handlers if present
+                try {
+                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
+                  if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
+                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
+                    try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
+                  }
+                } catch(e) {}
+                try {
+                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
+                  if (containerNode && (containerNode as any).__drawerDebugDocHandler) {
+                    try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
+                    try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
+                  }
+                } catch(e) {}
+                  body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
+                  // restore the display node's collapse badge text
+                  try {
+                    const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapsedGroup.tabId}"]`) : null;
+                    if (badgeSel && !badgeSel.empty()) {
+                      try {
+                        // prefer original saved text if present
+                        const orig = badgeSel.attr && badgeSel.attr('data-original-badge');
+                        if (orig != null && String(orig) !== '') {
+                          try { badgeSel.select('text').text(String(orig)); } catch(e) {}
+                          try { badgeSel.attr('data-original-badge', null); } catch(e) {}
+                        } else {
+                          try { badgeSel.select('text').text(String(collapsedGroup.count)); } catch(e) {}
+                        }
+                      } catch(e) {}
+                    }
+                  } catch(e) {}
+              } catch(e) {}
               // cleanup currentOpen if this was the current
               if (this.currentOpenCollapseId === collapsedGroup.tabId) {
                 this.currentOpenCollapseId = null;
@@ -596,6 +1029,46 @@ export class WaterfallRenderer implements BaseRenderer {
               this.drawerTransitioning = false;
             });
           } catch(e) {
+            try {
+              // remove any local wheel handler attached to the body
+              try {
+                const bodyNode: any = body.node && body.node();
+                if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
+                  try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler); } catch(e) {}
+                  try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
+                  try { logger.log(`drawer ${collapsedGroup.tabId} unbound wheel handler`); } catch(e) {}
+                }
+
+                // cancel any pending rAF and clear accumulator
+                try {
+                  if (bodyNode) {
+                    try { if ((bodyNode as any).__drawerWheelRaf) { cancelAnimationFrame((bodyNode as any).__drawerWheelRaf); } } catch(e) {}
+                    try { (bodyNode as any).__drawerWheelRaf = null; } catch(e) {}
+                    try { (bodyNode as any).__drawerWheelAccum = 0; } catch(e) {}
+                  }
+                } catch(e) {}
+
+                // remove container-level forwarder if present
+                try {
+                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
+                  if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
+                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
+                    try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
+                    try { logger.log(_('waterfall_drawer_wheel_unbound_container', 'drawer %s unbound container wheel handler'), collapsedGroup.tabId); } catch(e) {}
+                  }
+                } catch(e) {}
+
+                // remove debug document-level handler if present
+                try {
+                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
+                  if (containerNode && (containerNode as any).__drawerDebugDocHandler) {
+                    try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
+                    try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
+                    try { logger.log(_('waterfall_drawer_wheel_debugdoc_unbound', 'drawer %s unbound debug document wheel listener'), collapsedGroup.tabId); } catch(e) {}
+                  }
+                } catch(e) {}
+              } catch(e) {}
+            } catch(e) {}
             body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
             if (this.currentOpenCollapseId === collapsedGroup.tabId) {
               this.currentOpenCollapseId = null;
@@ -1720,11 +2193,13 @@ export class WaterfallRenderer implements BaseRenderer {
                   .attr('stroke-width', 1)
                   .style('pointer-events', 'none');
 
-                const itemsGroup = bodyGroup.append('g').attr('class', 'drawer-items');
+                // wrap items in a scrollable group so we can translate it for internal scrolling
+                const scrollGroup = bodyGroup.append('g').attr('class', 'drawer-scroll');
+                const itemsGroup = scrollGroup.append('g').attr('class', 'drawer-items');
 
               // 其他节点按顺序创建（不包含 displayNode），初始都重叠在 displayNode 位置并不可交互
               const otherNodes = collapsedGroup.nodes.filter(n => n.id !== node.id);
-              otherNodes.forEach((childNode) => {
+              otherNodes.forEach((childNode, idx) => {
                 const item = itemsGroup.append('g')
                   .attr('class', 'drawer-item')
                   .attr('data-node-id', childNode.id)
@@ -1741,6 +2216,15 @@ export class WaterfallRenderer implements BaseRenderer {
                 } else if (segment.displayMode === 'dot') {
                   this.renderDotNode(item, childNode, nodeWidth, nodeHeight);
                 }
+                // add a small right-bottom index badge on each folded child (1..n-1)
+                try {
+                  const badgeText = String(idx + 1);
+                  // Use same sizing as collapse badge for visual consistency
+                  const badgeWidth = 22;
+                  const badgeHeight = Math.max(12, Math.floor(nodeHeight / 2));
+                  const badgeGroup = this.appendBadge(item, nodeWidth - badgeWidth, nodeHeight - badgeHeight, badgeText, { corner: 'bottom', fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
+                  badgeGroup.attr('class', 'drawer-item-index-badge').style('pointer-events', 'none');
+                } catch(e) {}
               });
 
               // 绑定折叠角标点击到切换预建抽屉
@@ -2156,7 +2640,16 @@ export class WaterfallRenderer implements BaseRenderer {
     // 实际可见高度（当空间不足时会剪裁并启用滚动）
     const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
     let scrollOffset = 0;
-    const maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
+    let maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
+    // Edge-case guard: if there are hidden slots but computed maxScroll is 0 due to rounding/space constraints,
+    // ensure scrolling is possible for the hidden items.
+    try {
+      const hiddenCountLocal = Math.max(0, slots - Math.floor(actualDrawerHeight / slotHeight));
+      if (hiddenCountLocal > 0 && maxScroll === 0) {
+        maxScroll = hiddenCountLocal * slotHeight;
+        try { logger.log(`drawer fallback maxScroll=${maxScroll} hiddenCount=${hiddenCountLocal}`); } catch(e) {}
+      }
+    } catch(e) {}
 
     // Try to mount the drawer into the scrollable drag layer (above swimlane separators)
     let drawer: any;
