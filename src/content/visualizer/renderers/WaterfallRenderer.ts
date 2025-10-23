@@ -299,10 +299,9 @@ export class WaterfallRenderer implements BaseRenderer {
         try {
           if (this.currentOpenDrawerSel && !this.currentOpenDrawerSel.empty()) {
             try {
-              const overlay = this.scrollableGroup || this.svg;
-              const overlayNode = overlay.node() as any;
+              // Bring previous drawer/swimlane to front without reparenting
               const prevNode = this.currentOpenDrawerSel.node() as any;
-              if (overlayNode && prevNode) try { overlayNode.appendChild(prevNode); } catch(e) {}
+              try { d3.select(prevNode).raise(); } catch (e) {}
             } catch(e) {}
             this.closeCurrentDrawer();
           }
@@ -319,43 +318,10 @@ export class WaterfallRenderer implements BaseRenderer {
         const body = drawerSel.select('.drawer-body');
         const bg = body.select('.drawer-bg');
 
-        // ensure drawer is rendered on top within the same scrolling coordinate system
+        // bring drawer to front within its current parent (avoid reparenting)
         try {
-          const overlay = this.scrollableGroup || this.svg; // prefer same coordinate system to avoid visual shift
-          const overlayNode = overlay.node() as any;
-          const drawerNode = drawerSel.node() as any;
-          if (overlayNode && drawerNode) {
-              // raise the swimlane group containing this drawer to the end of its time-strip
-              try {
-                const laneIndexAttr = drawerSel.attr('data-lane-index');
-                const laneIndex = laneIndexAttr ? parseInt(laneIndexAttr, 10) : null;
-                // find nearest time-strip ancestor
-                let timeStrip = drawerNode.closest && drawerNode.closest('.time-strip');
-                if (!timeStrip) {
-                  // fallback: use mount selection's time-strips-group
-                  timeStrip = (overlayNode.querySelector && overlayNode.querySelector('.time-strip')) || null;
-                }
-                if (timeStrip && laneIndex !== null) {
-                  const swimlaneSelector = `.swimlane-${laneIndex}`;
-                  const swimlaneGroup = timeStrip.querySelector(swimlaneSelector) as any;
-                  if (swimlaneGroup) {
-                    try { timeStrip.appendChild(swimlaneGroup); } catch(e) {}
-                  } else {
-                    // if no swimlaneGroup found, as fallback append drawer itself to overlay
-                    try { overlayNode.appendChild(drawerNode); } catch(e) {}
-                  }
-                } else {
-                  try { overlayNode.appendChild(drawerNode); } catch(e) {}
-                }
-              } catch(e) {
-                try { overlayNode.appendChild(drawerNode); } catch(e) {}
-              }
-            // NOTE: 不要尝试把 display node append 到 drawer 内（我们不 reparent）。
-            // 画面层级控制改为在同一父容器内进行 append/raise（如果需要）。
-          }
-        } catch (e) {
-          // ignore move errors
-        }
+          try { drawerSel.raise(); } catch (e) {}
+        } catch (e) {}
 
         // compute item targets using slot-based layout anchored at swimlane top
   const items = body.selectAll('.drawer-item');
@@ -367,19 +333,14 @@ export class WaterfallRenderer implements BaseRenderer {
             this.drawerTransitioning = false;
           });
         } else {
-          try {
-            const bodyNode = body.node && body.node();
-            if (bodyNode) {
-              const bodyWheelHandler = function(ev: WheelEvent) {
-                try { ev.stopPropagation(); ev.preventDefault(); } catch(e) {}
-              };
-              try { bodyNode.addEventListener('wheel', bodyWheelHandler, { capture: true, passive: false }); } catch(e) { try { bodyNode.addEventListener('wheel', bodyWheelHandler, true); } catch(e) {} }
-              // store ref for cleanup
-              try { (bodyNode as any).__navigraph_wheel_handler = bodyWheelHandler; } catch(e) {}
-            }
-          } catch(e) {}
+          // Prefer CSS-based scroll isolation (overscroll-behavior). Do not attach non-passive wheel handlers here.
+          // If needed later, a carefully added passive:false handler can be introduced in a later step.
+          try { /* no-op: CSS should handle scroll isolation */ } catch(e) {}
 
-          const baseX = nodeX;
+          // ensure x alignment with swimlane nodes by using same centerOffset calculation
+          const nodeWidthLocal = this.NODE_WIDTHS[segment.displayMode];
+          const centerOffset = (segment.allocatedWidth - nodeWidthLocal) / 2;
+          const baseX = segment.startX + Math.max(0, centerOffset);
 
           const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
             try { const firstChildRect = d3.select(itemNodes[0]).select('rect'); if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0; } catch(e) {}
@@ -388,11 +349,15 @@ export class WaterfallRenderer implements BaseRenderer {
 
           // slot layout params
           const slots = collapsedGroup.nodes.length;
+          // VISIBLE_FOLDED_CHILDREN_LIMIT represents how many folded children we want
+          // to show in addition to the display node. Per Option B we show display + up to 5 children.
+          const VISIBLE_FOLDED_CHILDREN_LIMIT = 5;
+          const visibleSlots = Math.min(slots, 1 + VISIBLE_FOLDED_CHILDREN_LIMIT); // include display slot
           const slotHeight = this.SWIMLANE_HEIGHT;
           const paddingAround = 0; // no vertical padding to align to swimlane boundaries
           const preferredTop = collapsedGroup.swimlaneY || (drawerSel.attr('data-lane-index') ? (this.swimlanes[parseInt(drawerSel.attr('data-lane-index'), 10)]?.y || 0) : 0);
 
-          const drawerFullHeight = slots * slotHeight + paddingAround * 2;
+          const drawerFullHeight = visibleSlots * slotHeight + paddingAround * 2; // cap visible height
           const svgHeight = this.height;
           const availableDownSpace = svgHeight - preferredTop;
           const availableUpSpace = preferredTop;
@@ -404,7 +369,7 @@ export class WaterfallRenderer implements BaseRenderer {
           }
 
           const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
-          const maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
+          const maxScroll = Math.max(0, (slots * slotHeight + paddingAround * 2) - actualDrawerHeight);
 
           // animate bg to cover full slot area (horizontally bg x/width already set when prebuilt)
           try {
@@ -412,16 +377,52 @@ export class WaterfallRenderer implements BaseRenderer {
             body.attr('opacity', 1);
             // ensure bg is fully opaque
             try { bg.attr('fill-opacity', 1); } catch(e) {}
+            // create a clipPath for the visible drawer area so labels/items outside are masked
+            try {
+              const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
+              const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+              if (defsSel && !defsSel.empty && !defsSel.empty()) {
+                try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
+                try {
+                  defsSel.append('clipPath')
+                    .attr('id', clipId)
+                    .attr('clipPathUnits', 'userSpaceOnUse')
+                    .append('rect')
+                    .attr('x', parseFloat(bg.attr('x')) || nodeX)
+                    .attr('y', drawerTop)
+                    .attr('width', parseFloat(bg.attr('width')) || nodeWidth)
+                    .attr('height', actualDrawerHeight);
+                } catch(e) {}
+                try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
+              } else if (this.svg.append) {
+                // create defs if missing
+                try {
+                  const newDefs = this.svg.append('defs');
+                  newDefs.append('clipPath')
+                    .attr('id', clipId)
+                    .attr('clipPathUnits', 'userSpaceOnUse')
+                    .append('rect')
+                    .attr('x', parseFloat(bg.attr('x')) || nodeX)
+                    .attr('y', drawerTop)
+                    .attr('width', parseFloat(bg.attr('width')) || nodeWidth)
+                    .attr('height', actualDrawerHeight);
+                  try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
+                } catch(e) {}
+              }
+            } catch(e) {}
             bg.transition().duration(200).attr('y', drawerTop).attr('height', actualDrawerHeight);
           } catch(e) {}
 
-          // compute slot centers without vertical padding: center of each swimlane slot
-          const slotYs: number[] = [];
+          // compute slot centers for all slots (we want to position all hidden nodes
+          // at their target slots so a future internal scroll can reveal them)
+          const fullSlotYs: number[] = [];
           for (let i = 0; i < slots; i++) {
             const slotTop = drawerTop + i * slotHeight;
             const slotCenter = slotTop + slotHeight / 2;
-            slotYs.push(slotCenter);
+            fullSlotYs.push(slotCenter);
           }
+          // visible slot centers (first visibleSlots entries)
+          const slotYs = fullSlotYs.slice(0, visibleSlots);
 
           // render time-diff labels between slots (centered horizontally on bg)
           try {
@@ -429,10 +430,10 @@ export class WaterfallRenderer implements BaseRenderer {
             body.selectAll('.drawer-labels').remove();
             const labelsGroup = body.append('g').attr('class', 'drawer-labels');
             const otherNodes = collapsedGroup.nodes.filter(n => n.id !== collapsedGroup.displayNode.id);
-            // labels between display slot (slot 0) and each child slot
+            // labels between display slot (slot 0) and each child slot — use fullSlotYs so labels for offscreen slots are still computed
             for (let j = 0; j < otherNodes.length; j++) {
-              const slotA = slotYs[j];
-              const slotB = slotYs[j + 1] || slotYs[slotYs.length - 1];
+              const slotA = fullSlotYs[j];
+              const slotB = fullSlotYs[j + 1] || fullSlotYs[fullSlotYs.length - 1];
               const labelY = Math.round((slotA + slotB) / 2);
               const timeDiff = Math.abs(otherNodes[j].timestamp - (collapsedGroup.displayNode.timestamp || 0));
               this.renderTimeDiffLabel(labelsGroup, bg.attr && parseFloat(bg.attr('x')) || (nodeX), labelY, (bg.attr && parseFloat(bg.attr('width')) ) || nodeWidth, timeDiff);
@@ -442,13 +443,96 @@ export class WaterfallRenderer implements BaseRenderer {
           // animate items into their slots (children occupy slot 1..N-1)
           const itemDuration = 180;
           const stagger = 40;
+          // Only animate up to visibleSlots-1 children into visible slots (slot 0 is display); keep extras hidden
+          const maxVisibleChildren = Math.max(0, visibleSlots - 1);
+          // Before animating, try to elevate the swimlane-group (so drawer items aren't occluded)
+          try {
+            const laneIndexAttr = drawerSel.attr && drawerSel.attr('data-lane-index');
+            if (laneIndexAttr != null) {
+              const laneIndex = parseInt(laneIndexAttr, 10);
+              // find the swimlane-group within the same time-strip that matches this lane
+              try {
+                const swimlaneSelector = `.swimlane-${laneIndex}`;
+                // locate swimlane group node relative to drawerSel
+                let swimlaneNode: any = null;
+                try {
+                  swimlaneNode = (drawerSel.node && drawerSel.node().parentNode) ? drawerSel.node().parentNode.querySelector(swimlaneSelector) : null;
+                } catch (e) {
+                  swimlaneNode = null;
+                }
+                // fallback: search up to nearest .time-strip ancestor and then query inside it
+                if (!swimlaneNode) {
+                  let parent: any = drawerSel.node && drawerSel.node().parentNode;
+                  while (parent && parent !== document && !parent.classList.contains('time-strip')) {
+                    parent = parent.parentNode;
+                  }
+                  if (parent && parent.classList && parent.classList.contains('time-strip')) {
+                    try { swimlaneNode = parent.querySelector(swimlaneSelector); } catch(e) { swimlaneNode = null; }
+                  }
+                }
+
+                if (swimlaneNode) {
+                  // append swimlaneNode to its time-strip parent to bring it to front within same coordinate system
+                  const timeStrip = swimlaneNode.parentNode;
+                  try {
+                    if (timeStrip && timeStrip.appendChild) {
+                      timeStrip.appendChild(swimlaneNode);
+                      // also try to append the display node element (if present) to the swimlane so it sits above the drawer
+                      try {
+                        const displayNodeId = collapsedGroup && collapsedGroup.displayNode && collapsedGroup.displayNode.id;
+                        if (displayNodeId) {
+                          const displaySelector = `.navigation-node[data-node-id="${displayNodeId}"]`;
+                          let displayNodeEl: any = null;
+                          try { displayNodeEl = timeStrip.querySelector(displaySelector); } catch(e) { displayNodeEl = null; }
+                          // if not found directly under timeStrip, try within swimlaneNode
+                          if (!displayNodeEl) {
+                            try { displayNodeEl = swimlaneNode.querySelector(displaySelector); } catch(e) { displayNodeEl = null; }
+                          }
+                          if (displayNodeEl && swimlaneNode.appendChild) {
+                            try { swimlaneNode.appendChild(displayNodeEl); } catch(e) { /* ignore */ }
+                          }
+                        }
+                      } catch(e) { /* ignore */ }
+                    } else {
+                      // fallback to d3.raise if appendChild not possible
+                      try { d3.select(swimlaneNode).raise(); } catch(e) {}
+                    }
+                  } catch (e) {
+                    try { d3.select(swimlaneNode).raise(); } catch(e) {}
+                  }
+                } else {
+                  // final fallback: try to raise the drawer itself
+                  try { drawerSel.raise(); } catch(e) {}
+                }
+              } catch (e) {
+                try { drawerSel.raise(); } catch(e) {}
+              }
+            }
+          } catch (e) {}
+
           items.each(function(this: any, d: any, i: number) {
             try {
-              const slotIndex = Math.min(i + 1, slotYs.length - 1);
-              const targetCenter = slotYs[slotIndex];
+              const childIndex = i; // order corresponds to otherNodes
+              // target slot index for this child (slot 0 is display node)
+              const slotIndex = Math.min(childIndex + 1, fullSlotYs.length - 1);
+              const targetCenter = fullSlotYs[slotIndex];
               const targetTop = targetCenter - (nodeHeightLocal / 2);
-              d3.select(this).style('pointer-events', 'none').attr('opacity', 0).transition().delay(i * stagger).duration(itemDuration).attr('transform', `translate(${baseX}, ${targetTop})`).attr('opacity', 1).on('end', function(this: any) { try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
-              d3.select(this).on('click.drawerItem', function(event: MouseEvent) { try { event.stopPropagation(); } catch(e) {} });
+              if (childIndex < maxVisibleChildren) {
+                // animate visible children into place
+                d3.select(this)
+                  .style('pointer-events', 'none')
+                  .attr('opacity', 0)
+                  .transition()
+                  .delay(i * stagger)
+                  .duration(itemDuration)
+                  .attr('transform', `translate(${baseX}, ${targetTop})`)
+                  .attr('opacity', 1)
+                  .on('end', function(this: any) { try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
+                d3.select(this).on('click.drawerItem', function(event: MouseEvent) { try { event.stopPropagation(); } catch(e) {} });
+              } else {
+                // position offscreen/hidden children at their target slots so they can be revealed by scrolling later
+                try { d3.select(this).attr('transform', `translate(${baseX}, ${targetTop})`).attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
+              }
             } catch(e) {}
           });
 
@@ -501,6 +585,14 @@ export class WaterfallRenderer implements BaseRenderer {
               }
               // 取消文档点击绑定
               try { this.unbindDocumentClickToClose(); } catch(e) {}
+              // remove clipPath associated with this drawer to avoid accumulating defs
+              try {
+                const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+                const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
+                if (defsSel && !defsSel.empty && !defsSel.empty()) {
+                  try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
+                }
+              } catch(e) {}
               this.drawerTransitioning = false;
             });
           } catch(e) {
@@ -510,6 +602,14 @@ export class WaterfallRenderer implements BaseRenderer {
               this.currentOpenDrawerSel = null;
             }
             try { this.unbindDocumentClickToClose(); } catch(e) {}
+            // try to remove clipPath even on error
+            try {
+              const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+              const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
+              if (defsSel && !defsSel.empty && !defsSel.empty()) {
+                try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
+              }
+            } catch(e) {}
             this.drawerTransitioning = false;
           }
         }, totalAnim);
@@ -2332,6 +2432,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     const nodeGroup = group.append('g')
       .attr('class', 'navigation-node')
+      .attr('data-node-id', node.id)
       .attr('transform', `translate(${nodeX}, ${nodeY})`);
 
     // 根据显示模式渲染不同的节点样式
