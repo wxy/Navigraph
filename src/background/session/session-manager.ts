@@ -410,8 +410,25 @@ export class SessionManager {
         this.sessionCreationLock = false;
       }
     } catch (error) {
-      logger.error(_('background_session_create_failed', '创建会话失败: {0}'), error);
-      throw new _Error('background_session_create_failed', '创建会话失败: {0}', error instanceof Error ? error.message : String(error));
+      // 如果是已知的本地化 _Error（例如锁定或冷却），将其视为提醒/警告而不是严重错误
+      try {
+        if (error instanceof _Error) {
+          const mid = (error as any).messageId;
+          if (mid === 'session_creation_locked' || mid === 'session_creation_cooldown_error') {
+            // 记录为 warn，以提示但不把它当作严重运行时错误
+            logger.warn(_('background_session_create_warn', '会话创建受限: {0}'), error.message);
+            // 仍然向上抛出以便调用方能感知到创建未完成
+            throw error;
+          }
+        }
+      } catch (e) {
+        // 如果上面的处理有任何错误，回退到通用错误处理
+      }
+
+      // 默认的严重错误记录：使用 error.message 来避免序列化为对象（例如只显示 messageId）
+      const errMsg = error instanceof Error ? (error.message || String(error)) : String(error);
+      logger.error(_('background_session_create_failed', '创建会话失败: {0}'), errMsg);
+      throw new _Error('background_session_create_failed', '创建会话失败: {0}', errMsg);
     }
   }
   
