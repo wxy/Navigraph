@@ -242,13 +242,13 @@ export class RenderingManager {
       .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
     // 添加节点外圈
-    sessionNode
+    const circle = sessionNode
       .append("circle")
       .attr("r", 40)
       .attr("class", "node-circle empty-node-circle");
 
     // 添加会话图标
-    sessionNode
+    const icon = sessionNode
       .append("image")
       .attr("class", "empty-node-icon")
       .attr("x", -16) // 图标宽度的一半的负值，使其居中
@@ -291,6 +291,7 @@ export class RenderingManager {
     // 如果有隐藏节点，添加一个交互提示 - 本地化
     if (currentSession?.records && 
       Object.values(currentSession.records).some(node => node.isClosed === true)) {
+      // 添加可点击提示，点击时切换显示已关闭的页面过滤器
       sessionNode
         .append("text")
         .attr("class", "empty-data-hint")
@@ -298,11 +299,44 @@ export class RenderingManager {
         .attr("text-anchor", "middle")
         .attr("font-size", "12px")
         .attr("fill", "#4285f4")
-        .text(_('content_filter_show_closed_hint', '点击此处显示已关闭的页面'));
+        .style("cursor", "pointer")
+        .text(_('content_filter_show_closed_hint', '点击此处显示已关闭的页面'))
+        .on("click", (event: any) => {
+          // 阻止事件冒泡以避免触发外层 sessionNode 的 click
+          if (event && typeof event.stopPropagation === 'function') {
+            event.stopPropagation();
+          }
+          try {
+            // Visualizer 类型未必声明该方法，运行时可用时强制调用
+            (this.visualizer as any).toggleClosedFilter();
+          } catch (e) {
+            logger.warn(_('toggle_closed_filter_failed', '切换已关闭页面过滤器失败：{0}'), e instanceof Error ? e.message : String(e));
+          }
+        });
     }
     
     // 为空会话节点添加闪烁动画
     this.addEmptySessionAnimation(sessionNode);
+
+    // 让图标和外圈也能点击以切换已关闭页面过滤器（与提示行为一致）
+    // 点击时阻止冒泡以避免触发父层的 sessionNode click（显示会话选择器）
+    try {
+      icon.style("cursor", "pointer").on("click", (event: any) => {
+        if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+        try { (this.visualizer as any).toggleClosedFilter(); } catch (e) { logger.warn(_('toggle_closed_filter_failed', '切换已关闭页面过滤器失败：{0}'), e instanceof Error ? e.message : String(e)); }
+      });
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      circle.style("cursor", "pointer").on("click", (event: any) => {
+        if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+        try { (this.visualizer as any).toggleClosedFilter(); } catch (e) { logger.warn(_('toggle_closed_filter_failed', '切换已关闭页面过滤器失败：{0}'), e instanceof Error ? e.message : String(e)); }
+      });
+    } catch (e) {
+      // ignore
+    }
 
     // 为会话节点添加点击事件，显示创建新会话选项
     sessionNode.on("click", () => {
