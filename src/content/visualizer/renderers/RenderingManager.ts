@@ -291,6 +291,7 @@ export class RenderingManager {
     // 如果有隐藏节点，添加一个交互提示 - 本地化
     if (currentSession?.records && 
       Object.values(currentSession.records).some(node => node.isClosed === true)) {
+      // 添加可点击提示，点击时切换显示已关闭的页面过滤器
       sessionNode
         .append("text")
         .attr("class", "empty-data-hint")
@@ -298,7 +299,20 @@ export class RenderingManager {
         .attr("text-anchor", "middle")
         .attr("font-size", "12px")
         .attr("fill", "#4285f4")
-        .text(_('content_filter_show_closed_hint', '点击此处显示已关闭的页面'));
+        .style("cursor", "pointer")
+        .text(_('content_filter_show_closed_hint', '点击此处显示已关闭的页面'))
+        .on("click", (event: any) => {
+          // 阻止事件冒泡以避免触发外层 sessionNode 的 click
+          if (event && typeof event.stopPropagation === 'function') {
+            event.stopPropagation();
+          }
+          try {
+            // Visualizer 类型未必声明该方法，运行时可用时强制调用
+            (this.visualizer as any).toggleClosedFilter();
+          } catch (e) {
+            logger.warn(_('toggle_closed_filter_failed', '切换已关闭页面过滤器失败：{0}'), e instanceof Error ? e.message : String(e));
+          }
+        });
     }
     
     // 为空会话节点添加闪烁动画
