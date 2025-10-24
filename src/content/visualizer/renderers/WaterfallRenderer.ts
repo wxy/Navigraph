@@ -304,6 +304,8 @@ export class WaterfallRenderer implements BaseRenderer {
     nodeHeight: number
   ): void {
     try {
+      // Global debug flag for this function scope. 开发时打开，排查完成请改回 false。
+      const DRAWER_DEBUG = true;
       const mount = this.scrollableGroup || this.svg;
       const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapsedGroup.tabId}"]`);
       if (drawerSel.empty()) return;
@@ -394,7 +396,7 @@ export class WaterfallRenderer implements BaseRenderer {
           const centerOffset = (segment.allocatedWidth - nodeWidthLocal) / 2;
           const baseX = segment.startX + Math.max(0, centerOffset);
 
-          const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
+                const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
             try { const firstChildRect = d3.select(itemNodes[0]).select('rect'); if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0; } catch(e) {}
             return nodeHeight || 0;
           })() : nodeHeight || 0);
@@ -444,6 +446,22 @@ export class WaterfallRenderer implements BaseRenderer {
             try {
               const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
               const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+                if (DRAWER_DEBUG) {
+                  try {
+                    const dbg = {
+                      tabId: collapsedGroup.tabId,
+                      nodeX: nodeX,
+                      nodeY: nodeY,
+                      nodeWidth: nodeWidth,
+                      drawerTop: drawerTop,
+                      actualDrawerHeight: actualDrawerHeight,
+                      slots: slots,
+                      slotHeight: slotHeight,
+                      preferredTop: preferredTop
+                    };
+                    console.debug('drawer-debug-open-preclip', dbg);
+                  } catch(e) {}
+                }
               if (defsSel && !defsSel.empty && !defsSel.empty()) {
                 try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
                 try {
@@ -457,6 +475,14 @@ export class WaterfallRenderer implements BaseRenderer {
                     .attr('height', actualDrawerHeight);
                 } catch(e) {}
                 try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
+                  if (DRAWER_DEBUG) {
+                    try {
+                      const bgNode: any = body.select && body.select('.drawer-bg') && body.select('.drawer-bg').node && body.select('.drawer-bg').node();
+                      if (bgNode && bgNode.getBBox) console.debug('drawer-debug-bg-bbox', collapsedGroup.tabId, bgNode.getBBox());
+                      const pnode = drawerSel.node && drawerSel.node().parentNode;
+                      if (pnode && pnode.getCTM) console.debug('drawer-debug-parent-ctm', collapsedGroup.tabId, pnode.getCTM());
+                    } catch(e) {}
+                  }
               } else if (this.svg.append) {
                 // create defs if missing
                 try {
@@ -486,6 +512,15 @@ export class WaterfallRenderer implements BaseRenderer {
           }
           // visible slot centers (first visibleSlots entries)
           const slotYs = fullSlotYs.slice(0, visibleSlots);
+
+          if (DRAWER_DEBUG) {
+            try {
+              const itemInitialTransforms = itemNodes.map((n: any) => {
+                try { return d3.select(n).attr('transform'); } catch(e) { return null; }
+              });
+              console.debug('drawer-debug-slot-centers', { tab: collapsedGroup.tabId, baseX, fullSlotYs: fullSlotYs.slice(0, 20), slotYs, itemInitialTransforms });
+            } catch(e) {}
+          }
 
           // render time-diff labels between slots (centered horizontally on bg)
             try {
@@ -635,8 +670,9 @@ export class WaterfallRenderer implements BaseRenderer {
                 // accumulator + rAF to combine small fractional deltas (Magic Mouse)
                 try { (bodyNode as any).__drawerWheelAccum = 0; } catch(e) {}
                 try { (bodyNode as any).__drawerWheelRaf = null; } catch(e) {}
-                const WHEEL_SCALE = 6; // amplify small deltas (tuned)
-                const DRAWER_DEBUG = false; // default: debug off; enable locally when needed
+            const WHEEL_SCALE = 6; // amplify small deltas (tuned)
+              // DEBUG: 打开以收集抽屉定位/插槽/父坐标系信息
+              const DRAWER_DEBUG = true; // <<< 临时调试开关 — 调试完成后请改回 false
 
                 const applyAccumulated = () => {
                   try {
