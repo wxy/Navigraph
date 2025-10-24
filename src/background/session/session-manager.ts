@@ -100,7 +100,7 @@ export class SessionManager {
       
       logger.log(_('session_manager_init_complete', '会话管理器初始化完成'));
     } catch (error) {
-      logger.error(_('session_manager_init_failed', '会话管理器初始化失败: {0}'), error);
+      logger.error(_('session_manager_init_failed', '会话管理器初始化失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_init_failed', '会话管理器初始化失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
@@ -226,7 +226,7 @@ export class SessionManager {
         skipCooldown: true
       }, true);
     } catch (error) {
-      logger.error(_('session_manager_load_active_failed', '加载活跃会话失败: {0}'), error);
+      logger.error(_('session_manager_load_active_failed', '加载活跃会话失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_load_active_failed', '加载活跃会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
@@ -241,7 +241,7 @@ export class SessionManager {
       const sessions = await this.storage.getSessions(options);
       return sessions;
     } catch (error) {
-      logger.error(_('session_manager_get_list_failed', '获取会话列表失败: {0}'), error);
+      logger.error(_('session_manager_get_list_failed', '获取会话列表失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_get_list_failed', '获取会话列表失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
@@ -266,7 +266,7 @@ export class SessionManager {
       // 添加导航数据
       return this.enrichSessionWithNavigationData(session);
     } catch (error) {
-      logger.error(_('session_manager_get_session_failed', '获取会话失败: {0}, 错误: {1}'), sessionId, error);
+      logger.error(_('session_manager_get_session_failed', '获取会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_get_session_failed', '获取会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
@@ -290,7 +290,7 @@ export class SessionManager {
 
       return fullSession;
     } catch (error) {
-      logger.error(_('session_navigation_data_failed', '获取会话{0}的导航数据失败: {1}'), session.id, error);
+      logger.error(_('session_navigation_data_failed', '获取会话{0}的导航数据失败: {1}'), session.id, error instanceof Error ? error.message : String(error));
       // 失败时仍返回基本会话，但带有空导航数据
       return {
         ...session,
@@ -344,7 +344,7 @@ export class SessionManager {
         rootIds,
       };
     } catch (error) {
-      logger.error(_('session_manager_get_navigation_failed', '获取会话导航数据失败: {0}, 错误: {1}'), sessionId, error);
+      logger.error(_('session_manager_get_navigation_failed', '获取会话导航数据失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
       // 出错时返回空数据，而不是终止整个流程
       return {
         records: {},
@@ -498,7 +498,7 @@ export class SessionManager {
         updateCurrent: true
       });
     } catch (error) {
-      logger.error(_('session_manager_create_activate_failed', '创建并激活会话失败: {0}'), error);
+      logger.error(_('session_manager_create_activate_failed', '创建并激活会话失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_create_activate_failed', '创建并激活会话失败: {0}', error instanceof Error ? error.message : String(error));
     }
   }
@@ -535,7 +535,7 @@ export class SessionManager {
       
       return updatedSession;
     } catch (error) {
-      logger.error(_('session_manager_update_failed', '更新会话失败: {0}, 错误: {1}'), sessionId, error);
+      logger.error(_('session_manager_update_failed', '更新会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_update_failed', '更新会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error)
       );
     }
@@ -674,7 +674,7 @@ export class SessionManager {
       
       return updatedSession;
     } catch (error) {
-      logger.error(_('session_manager_end_failed', '结束会话失败: {0}, 错误: {1}'), sessionId, error);
+      logger.error(_('session_manager_end_failed', '结束会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_end_failed', '结束会话失败: {0}, 错误: {1}', sessionId, error instanceof Error ? error.message : String(error));
     }
   }
@@ -835,7 +835,7 @@ export class SessionManager {
       
       return session;
     } catch (error) {
-      logger.error(_('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}'), sessionId, error);
+      logger.error(_('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}'), sessionId, error instanceof Error ? error.message : String(error));
       throw new _Error('session_manager_set_latest_failed', '设置最新会话失败: {0}, 错误: {1}', error instanceof Error ? error.message : String(error));
     }
   }
@@ -861,7 +861,7 @@ export class SessionManager {
       
       return await this.setLatestSession(this.currentSessionId);
     } catch (error) {
-      logger.error(_('sync_current_to_latest_failed', '同步当前会话到最新会话失败: {0}'), error);
+      logger.error(_('sync_current_to_latest_failed', '同步当前会话到最新会话失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('sync_current_to_latest_failed_message', '同步当前会话到最新会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
@@ -881,7 +881,7 @@ export class SessionManager {
       
       return await this.setCurrentSession(this.latestSessionId);
     } catch (error) {
-      logger.error(_('sync_latest_to_current_failed', '同步最新会话到当前会话失败: {0}'), error);
+      logger.error(_('sync_latest_to_current_failed', '同步最新会话到当前会话失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('sync_latest_to_current_failed_message', '同步最新会话到当前会话失败: {0}', error instanceof Error ? error.message : String(error)
       );
     }
@@ -926,7 +926,7 @@ export class SessionManager {
         }
       }
     } catch (error) {
-      logger.error(_('date_transition_check_failed', '检查日期转换失败: {0}'), error);
+      logger.error(_('date_transition_check_failed', '检查日期转换失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -977,7 +977,7 @@ export class SessionManager {
         });
       }
     } catch (error) {
-      logger.error(_('session_activity_mark_failed', '会话活动标记失败: {0}'), error);
+      logger.error(_('session_activity_mark_failed', '会话活动标记失败: {0}'), error instanceof Error ? error.message : String(error));
     }
   }
 
