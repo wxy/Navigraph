@@ -42,7 +42,7 @@ export class NodeDetails {
    * @param node 要显示的节点
    */
   public show(node: NavNode): void {
-    logger.log(_('node_details_showing', '显示节点详情: {0}'), node);
+    //logger.log(_('node_details_showing', '显示节点详情: {0}'), node);
 
     // 隐藏之前的面板
     this.hide();

@@ -179,7 +179,7 @@ export class FilterPanel {
   public updateUI(filters: any): void {
     if (!filters) return;
 
-    logger.log(_('filter_ui_updating', '更新筛选器UI状态'));
+    logger.groupCollapsed(_('filter_ui_updating', '更新筛选器UI状态'));
     
     // 映射筛选器ID
     const idMappings: Record<string, string> = {
@@ -209,5 +209,6 @@ export class FilterPanel {
         }
       }
     });
+    logger.groupEnd();
   }
 }
