@@ -118,6 +118,9 @@ export class Logger {
       }
     }
 
+    // 检查原始消息是否包含占位符（如 {0}）
+    const hasPlaceholders = /\{\d+\}/.test(rawMsg);
+
     args.slice(1).forEach(param => {
       // 原始的字符串/数字/布尔直接作为占位符
       if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
@@ -125,9 +128,25 @@ export class Logger {
         return;
       }
 
+      // Error 实例：如果消息包含占位符，就使用 error.message 作为替换；
+      // 否则把 Error 对象放到 metaParams，交由 console 以原生 Error 展示（含堆栈）
+      if (param instanceof Error) {
+        if (hasPlaceholders) {
+          placeholderParams.push(param.message);
+        } else {
+          metaParams.push(param);
+        }
+        return;
+      }
+
       // 对象类型：将其序列化为字符串以用于占位符替换
       if (param && typeof param === 'object') {
-        placeholderParams.push(safeStringify(param));
+        // 若消息没有占位符，则作为元数据保留（以便 console 能打印对象），否则序列化用于占位符替换
+        if (hasPlaceholders) {
+          placeholderParams.push(safeStringify(param));
+        } else {
+          metaParams.push(param);
+        }
         return;
       }
 
