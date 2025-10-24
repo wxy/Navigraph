@@ -13,6 +13,8 @@ export class NodeDetails {
   private detailsContainer: HTMLElement | null = null;
   private panelVisible: boolean = false;
   private currentNode: NavNode | null = null;
+  // 外部点击处理器引用（用于在点击面板外部时关闭面板）
+  private outsideClickHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(visualizer: Visualizer) {
     this.visualizer = visualizer;
@@ -153,6 +155,22 @@ export class NodeDetails {
     // 设置初始位置
     this.setInitialPosition();
 
+    // 添加点击面板外部关闭的处理器
+    this.outsideClickHandler = (e: MouseEvent) => {
+      try {
+        if (!this.detailsContainer) return;
+        const target = e.target as Node;
+        if (!this.detailsContainer.contains(target)) {
+          // 点击在面板外部，关闭面板
+          this.hide();
+        }
+      } catch (err) {
+        // 忽略任何错误
+      }
+    };
+    // 使用捕获阶段以确保在其他处理器之前生效
+    document.addEventListener('mousedown', this.outsideClickHandler, true);
+
     // 添加拖拽功能
     this.makeDraggable(this.detailsContainer, titleBar);
 
@@ -174,6 +192,12 @@ export class NodeDetails {
       this.detailsContainer = null;
       this.panelVisible = false; // 使用正确的变量名
       this.currentNode = null;
+
+      // 移除外部点击处理器
+      if (this.outsideClickHandler) {
+        try { document.removeEventListener('mousedown', this.outsideClickHandler, true); } catch (e) {}
+        this.outsideClickHandler = null;
+      }
 
       logger.log(_('node_details_hidden', '隐藏节点详情面板'));
     }
