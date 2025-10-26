@@ -207,8 +207,8 @@ export class WaterfallRenderer implements BaseRenderer {
                 try { badgeSel.select('text').text(String(orig)); } catch(e) {}
                 try { badgeSel.attr('data-original-badge', null); } catch(e) {}
               } else {
-                // find collapsedGroup count if available in memory
-                const cg = this.collapsedGroups ? this.collapsedGroups.find(g => g.tabId === groupId) : null;
+                // find collapsedGroup count if available in memory; support both new (displayNode.id) and old (tabId) keys
+                const cg = this.collapsedGroups ? this.collapsedGroups.find(g => (g.displayNode && g.displayNode.id === groupId) || g.tabId === groupId) : null;
                 const txt = cg ? String(cg.count) : (badgeSel.select('text').text() || '0');
                 try { badgeSel.select('text').text(txt); } catch(e) {}
               }
@@ -304,10 +304,13 @@ export class WaterfallRenderer implements BaseRenderer {
     nodeHeight: number
   ): void {
     try {
-      // Global debug flag for this function scope. 开发时打开，排查完成请改回 false。
-      const DRAWER_DEBUG = true;
-      const mount = this.scrollableGroup || this.svg;
-      const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapsedGroup.tabId}"]`);
+  // Global debug flag for this function scope. 开发时打开，排查完成请改回 false。
+  const DRAWER_DEBUG = true;
+  const mount = this.scrollableGroup || this.svg;
+  // Use a per-display-node key to identify the prebuilt drawer. Using tabId
+  // caused collisions when the same tab had folded groups across multiple segments.
+  const collapseKey = (collapsedGroup && collapsedGroup.displayNode && collapsedGroup.displayNode.id) ? collapsedGroup.displayNode.id : (collapsedGroup && collapsedGroup.tabId) || '';
+  const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapseKey}"]`);
       if (drawerSel.empty()) return;
 
       const itemsGroup = drawerSel.select('.drawer-items');
@@ -426,13 +429,13 @@ export class WaterfallRenderer implements BaseRenderer {
           let maxScroll = Math.max(0, (slots * slotHeight + paddingAround * 2) - actualDrawerHeight);
           // Edge-case guard: if there are hidden slots but computed maxScroll is 0 due to rounding/space constraints,
           // ensure scrolling is possible for the hidden items.
-          try {
-            const hiddenCountLocal = Math.max(0, slots - visibleSlots);
-            if (hiddenCountLocal > 0 && maxScroll === 0) {
-              maxScroll = hiddenCountLocal * slotHeight;
-              try { logger.log(`drawer ${collapsedGroup.tabId} adjusted maxScroll fallback=${maxScroll}`); } catch(e) {}
-            }
-          } catch(e) {}
+              try {
+                const hiddenCountLocal = Math.max(0, slots - visibleSlots);
+                if (hiddenCountLocal > 0 && maxScroll === 0) {
+                  maxScroll = hiddenCountLocal * slotHeight;
+                  try { logger.log(`drawer ${collapseKey} adjusted maxScroll fallback=${maxScroll}`); } catch(e) {}
+                }
+              } catch(e) {}
           // local scroll offset for this drawer instance
           let drawerScrollOffset = 0;
 
@@ -445,11 +448,11 @@ export class WaterfallRenderer implements BaseRenderer {
             // create a clipPath for the visible drawer area so labels/items outside are masked
             try {
               const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-              const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+              const clipId = `drawer-clip-${collapseKey}`;
                 if (DRAWER_DEBUG) {
                   try {
                     const dbg = {
-                      tabId: collapsedGroup.tabId,
+                      tabId: collapseKey,
                       nodeX: nodeX,
                       nodeY: nodeY,
                       nodeWidth: nodeWidth,
@@ -478,9 +481,9 @@ export class WaterfallRenderer implements BaseRenderer {
                   if (DRAWER_DEBUG) {
                     try {
                       const bgNode: any = body.select && body.select('.drawer-bg') && body.select('.drawer-bg').node && body.select('.drawer-bg').node();
-                      if (bgNode && bgNode.getBBox) console.debug('drawer-debug-bg-bbox', collapsedGroup.tabId, bgNode.getBBox());
+                      if (bgNode && bgNode.getBBox) console.debug('drawer-debug-bg-bbox', collapseKey, bgNode.getBBox());
                       const pnode = drawerSel.node && drawerSel.node().parentNode;
-                      if (pnode && pnode.getCTM) console.debug('drawer-debug-parent-ctm', collapsedGroup.tabId, pnode.getCTM());
+                      if (pnode && pnode.getCTM) console.debug('drawer-debug-parent-ctm', collapseKey, pnode.getCTM());
                     } catch(e) {}
                   }
               } else if (this.svg.append) {
@@ -518,7 +521,7 @@ export class WaterfallRenderer implements BaseRenderer {
               const itemInitialTransforms = itemNodes.map((n: any) => {
                 try { return d3.select(n).attr('transform'); } catch(e) { return null; }
               });
-              console.debug('drawer-debug-slot-centers', { tab: collapsedGroup.tabId, baseX, fullSlotYs: fullSlotYs.slice(0, 20), slotYs, itemInitialTransforms });
+              console.debug('drawer-debug-slot-centers', { tab: collapseKey, baseX, fullSlotYs: fullSlotYs.slice(0, 20), slotYs, itemInitialTransforms });
             } catch(e) {}
           }
 
@@ -641,7 +644,7 @@ export class WaterfallRenderer implements BaseRenderer {
             try { body.style('pointer-events', 'all'); } catch(e) {}
             // set the display node's collapse badge text to 0 while drawer is open
             try {
-              const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapsedGroup.tabId}"]`) : null;
+              const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapseKey}"]`) : null;
               if (badgeSel && !badgeSel.empty()) {
                 try {
                   // save original badge text so we can restore it reliably on close
@@ -656,7 +659,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 } catch(e) {}
               }
             } catch(e) {}
-            this.currentOpenCollapseId = collapsedGroup.tabId;
+            this.currentOpenCollapseId = collapseKey;
             this.currentOpenDrawerSel = drawerSel;
             try { this.bindDocumentClickToClose(); } catch(e) {}
 
@@ -687,7 +690,7 @@ export class WaterfallRenderer implements BaseRenderer {
                         // Print compact snapshot of key variables to diagnose centering/clamping issues
                         const slotsCount = fullSlotYs ? fullSlotYs.length : 0;
                         const sampleSlots = (fullSlotYs && fullSlotYs.length > 0) ? fullSlotYs.slice(0, 50) : fullSlotYs;
-                        console.debug(`drawer-debug-vars tab=${collapsedGroup.tabId} slots=${slotsCount} slotHeight=${slotHeight} nodeHeightLocal=${nodeHeightLocal} swimlaneY=${collapsedGroup.swimlaneY} drawerTop=${drawerTop} actualDrawerHeight=${actualDrawerHeight} drawerScrollOffset=${drawerScrollOffset} maxScroll=${maxScroll} accum=${accum} delta=${delta} before=${before} sampleFullSlotYs=${JSON.stringify(sampleSlots)}`);
+                        console.debug(`drawer-debug-vars tab=${collapseKey} slots=${slotsCount} slotHeight=${slotHeight} nodeHeightLocal=${nodeHeightLocal} swimlaneY=${collapsedGroup.swimlaneY} drawerTop=${drawerTop} actualDrawerHeight=${actualDrawerHeight} drawerScrollOffset=${drawerScrollOffset} maxScroll=${maxScroll} accum=${accum} delta=${delta} before=${before} sampleFullSlotYs=${JSON.stringify(sampleSlots)}`);
                       } catch(e) {}
                     }
                     // Step-based: snap target to slot boundaries (one swimlane per step)
@@ -731,7 +734,7 @@ export class WaterfallRenderer implements BaseRenderer {
                       // clamp to scrollable range
                       target = Math.max(0, Math.min(maxScroll, Math.round(target)));
                       if (DRAWER_DEBUG) {
-                        try { console.debug(`drawer-debug tab=${collapsedGroup.tabId} currentSlot=${currentSlot} desiredSlot=${desiredSlot} centeredTarget=${centeredTarget} slot=${boundedSlot} target=${target} before=${before} max=${maxScroll}`); } catch(e) {}
+                        try { console.debug(`drawer-debug tab=${collapseKey} currentSlot=${currentSlot} desiredSlot=${desiredSlot} centeredTarget=${centeredTarget} slot=${boundedSlot} target=${target} before=${before} max=${maxScroll}`); } catch(e) {}
                       }
 
                       // helper to update visibility of items based on current drawerScrollOffset
@@ -770,7 +773,7 @@ export class WaterfallRenderer implements BaseRenderer {
                             drawerScrollOffset = target;
                             try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
                             try { updateVisibility(); } catch(e) {}
-                            if (DRAWER_DEBUG) try { console.debug(`drawer-debug immediate jump tab=${collapsedGroup.tabId} to=${target} delta=${delta}`); } catch(e) {}
+                            if (DRAWER_DEBUG) try { console.debug(`drawer-debug immediate jump tab=${collapseKey} to=${target} delta=${delta}`); } catch(e) {}
                           } catch(e) {}
                           // do not schedule animation loop for this gesture
                           return;
@@ -798,7 +801,7 @@ export class WaterfallRenderer implements BaseRenderer {
                             try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
                             try { updateVisibility(); } catch(e) {}
                             if (DRAWER_DEBUG) {
-                              try { console.debug(`drawer-frame tab=${collapsedGroup.tabId} cur=${cur.toFixed(2)} tgt=${tgt.toFixed(2)} diff=${diff.toFixed(2)} proportional=${proportional.toFixed(2)} step=${step.toFixed(2)} newOffset=${newOffset.toFixed(2)}`); } catch(e) {}
+                              try { console.debug(`drawer-frame tab=${collapseKey} cur=${cur.toFixed(2)} tgt=${tgt.toFixed(2)} diff=${diff.toFixed(2)} proportional=${proportional.toFixed(2)} step=${step.toFixed(2)} newOffset=${newOffset.toFixed(2)}`); } catch(e) {}
                               try { console.debug(`drawer-frame-transform ${scrollGroupSel.attr && scrollGroupSel.attr('transform')}`); } catch(e) {}
                             }
                           } catch(e) {}
@@ -812,19 +815,19 @@ export class WaterfallRenderer implements BaseRenderer {
                         } catch(e) {}
                         try {
                           (bodyNode as any).__drawerAnim = requestAnimationFrame(stepLoop);
-                          if (DRAWER_DEBUG) try { console.debug(`drawer-debug scheduled stepLoop tab=${collapsedGroup.tabId}`); } catch(e) {}
+                          if (DRAWER_DEBUG) try { console.debug(`drawer-debug scheduled stepLoop tab=${collapseKey}`); } catch(e) {}
                         } catch(e) {
                           // fallback: best-effort
-                          try { console.debug && console.debug(`drawer-debug failed to schedule rAF tab=${collapsedGroup.tabId}`); } catch(e) {}
+                          try { console.debug && console.debug(`drawer-debug failed to schedule rAF tab=${collapseKey}`); } catch(e) {}
                         }
                       } catch(e) {}
                     } catch(e) {
-                      if (DRAWER_DEBUG) try { logger.error(`drawer ${collapsedGroup.tabId} rAF schedule error ${String(e)}`); } catch(e) {}
+                      if (DRAWER_DEBUG) try { logger.error(`drawer ${collapseKey} rAF schedule error ${String(e)}`); } catch(e) {}
                     }
 
                     
                   } catch(e) {
-                    try { logger.error(`drawer ${collapsedGroup.tabId} rAF apply error ${String(e)}`); } catch(e) {}
+                    try { logger.error(`drawer ${collapseKey} rAF apply error ${String(e)}`); } catch(e) {}
                   } finally {
                     (bodyNode as any).__drawerWheelRaf = null;
                   }
@@ -840,7 +843,7 @@ export class WaterfallRenderer implements BaseRenderer {
                     // accumulate
                     try { (bodyNode as any).__drawerWheelAccum = ((bodyNode as any).__drawerWheelAccum || 0) + rawDelta; } catch(e) {}
                     if (DRAWER_DEBUG) {
-                      try { console.debug(`drawer-debug wheel tab=${collapsedGroup.tabId} rawDelta=${rawDelta} accumulated=${(bodyNode as any).__drawerWheelAccum}`); } catch(e) {}
+                      try { console.debug(`drawer-debug wheel tab=${collapseKey} rawDelta=${rawDelta} accumulated=${(bodyNode as any).__drawerWheelAccum}`); } catch(e) {}
                     }
                     // schedule rAF
                     try {
@@ -852,7 +855,7 @@ export class WaterfallRenderer implements BaseRenderer {
                       try { applyAccumulated(); } catch(e) {}
                     }
                   } catch(e) {
-                    try { logger.error(`drawer ${collapsedGroup.tabId} wheel handler error ${String(e)}`); } catch(e) {}
+                    try { logger.error(`drawer ${collapseKey} wheel handler error ${String(e)}`); } catch(e) {}
                   }
                 };
 
@@ -865,7 +868,7 @@ export class WaterfallRenderer implements BaseRenderer {
                           try { bodyNode.addEventListener('wheel', onWheel, { passive: false, capture: true }); } catch(e) { try { bodyNode.addEventListener('wheel', onWheel, true); } catch(e) {} }
                           // store reference for cleanup
                           (bodyNode as any).__drawerWheelHandler = onWheel;
-                          if (DRAWER_DEBUG) try { console.debug(`drawer-debug bound wheel handler tab=${collapsedGroup.tabId} maxScroll=${maxScroll} node=${(bodyNode && bodyNode.tagName) || String(bodyNode)}`); } catch(e) {}
+                          if (DRAWER_DEBUG) try { console.debug(`drawer-debug bound wheel handler tab=${collapseKey} maxScroll=${maxScroll} node=${(bodyNode && bodyNode.tagName) || String(bodyNode)}`); } catch(e) {}
                         }
                       } catch(e) {}
                     }
@@ -916,7 +919,7 @@ export class WaterfallRenderer implements BaseRenderer {
                           if (!(containerNode as any).__drawerWheelContainerHandler) {
                             try { containerNode.addEventListener('wheel', onWheelContainer, { passive: false, capture: true }); } catch(e) { try { containerNode.addEventListener('wheel', onWheelContainer, true); } catch(e) {} }
                             (containerNode as any).__drawerWheelContainerHandler = onWheelContainer;
-                            if (DRAWER_DEBUG) try { logger.log(_('waterfall_drawer_wheel_bound_container', 'drawer %s bound container wheel handler'), collapsedGroup.tabId); } catch(e) {}
+                            if (DRAWER_DEBUG) try { logger.log(_('waterfall_drawer_wheel_bound_container', 'drawer %s bound container wheel handler'), collapseKey); } catch(e) {}
                           }
                         } catch(e) {}
 
@@ -943,7 +946,7 @@ export class WaterfallRenderer implements BaseRenderer {
                             if (!(containerNode as any).__drawerDebugDocHandler) {
                               try { document.addEventListener('wheel', debugDocHandler, { capture: true, passive: true }); } catch(e) { try { document.addEventListener('wheel', debugDocHandler, true); } catch(e) {} }
                               (containerNode as any).__drawerDebugDocHandler = debugDocHandler;
-                              if (DRAWER_DEBUG) try { logger.log(_('waterfall_drawer_wheel_debugdoc_bound', 'drawer %s bound debug document wheel listener'), collapsedGroup.tabId); } catch(e) {}
+                              if (DRAWER_DEBUG) try { logger.log(_('waterfall_drawer_wheel_debugdoc_bound', 'drawer %s bound debug document wheel listener'), collapseKey); } catch(e) {}
                             }
                           } catch(e) {}
                         } catch(e) {}
@@ -1032,7 +1035,7 @@ export class WaterfallRenderer implements BaseRenderer {
                   body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
                   // restore the display node's collapse badge text
                   try {
-                    const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapsedGroup.tabId}"]`) : null;
+                    const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapseKey}"]`) : null;
                     if (badgeSel && !badgeSel.empty()) {
                       try {
                         // prefer original saved text if present
@@ -1048,7 +1051,7 @@ export class WaterfallRenderer implements BaseRenderer {
                   } catch(e) {}
               } catch(e) {}
               // cleanup currentOpen if this was the current
-              if (this.currentOpenCollapseId === collapsedGroup.tabId) {
+              if (this.currentOpenCollapseId === collapseKey) {
                 this.currentOpenCollapseId = null;
                 this.currentOpenDrawerSel = null;
               }
@@ -1056,7 +1059,7 @@ export class WaterfallRenderer implements BaseRenderer {
               try { this.unbindDocumentClickToClose(); } catch(e) {}
               // remove clipPath associated with this drawer to avoid accumulating defs
               try {
-                const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+                const clipId = `drawer-clip-${collapseKey}`;
                 const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
                 if (defsSel && !defsSel.empty && !defsSel.empty()) {
                   try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
@@ -1072,7 +1075,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
                   try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler); } catch(e) {}
                   try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
-                  try { logger.log(`drawer ${collapsedGroup.tabId} unbound wheel handler`); } catch(e) {}
+                  try { logger.log(`drawer ${collapseKey} unbound wheel handler`); } catch(e) {}
                 }
 
                 // cancel any pending rAF and clear accumulator
@@ -1090,7 +1093,7 @@ export class WaterfallRenderer implements BaseRenderer {
                   if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
                     try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
                     try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
-                    try { logger.log(_('waterfall_drawer_wheel_unbound_container', 'drawer %s unbound container wheel handler'), collapsedGroup.tabId); } catch(e) {}
+                    try { logger.log(_('waterfall_drawer_wheel_unbound_container', 'drawer %s unbound container wheel handler'), collapseKey); } catch(e) {}
                   }
                 } catch(e) {}
 
@@ -1100,20 +1103,20 @@ export class WaterfallRenderer implements BaseRenderer {
                   if (containerNode && (containerNode as any).__drawerDebugDocHandler) {
                     try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
                     try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
-                    try { logger.log(_('waterfall_drawer_wheel_debugdoc_unbound', 'drawer %s unbound debug document wheel listener'), collapsedGroup.tabId); } catch(e) {}
+                    try { logger.log(_('waterfall_drawer_wheel_debugdoc_unbound', 'drawer %s unbound debug document wheel listener'), collapseKey); } catch(e) {}
                   }
                 } catch(e) {}
               } catch(e) {}
             } catch(e) {}
             body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
-            if (this.currentOpenCollapseId === collapsedGroup.tabId) {
+            if (this.currentOpenCollapseId === collapseKey) {
               this.currentOpenCollapseId = null;
               this.currentOpenDrawerSel = null;
             }
             try { this.unbindDocumentClickToClose(); } catch(e) {}
             // try to remove clipPath even on error
             try {
-              const clipId = `drawer-clip-${collapsedGroup.tabId}`;
+              const clipId = `drawer-clip-${collapseKey}`;
               const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
               if (defsSel && !defsSel.empty && !defsSel.empty()) {
                 try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
@@ -2181,12 +2184,24 @@ export class WaterfallRenderer implements BaseRenderer {
           );
           // 无论是否有折叠组，都在节点处预建一个 collapsed-drawer 容器（默认为空/隐藏）
           try {
-            // Prebuild drawer container as a child of the swimlane group so we can
-            // raise the entire swimlane to control z-order when opening.
-            const parentSel = d3.select((swimlaneGroup && swimlaneGroup.node()) || nodeGroup.node());
-            const drawerSel = parentSel.insert('g', () => (createdNodeGroup && createdNodeGroup.node()) as any)
+            // Prefer placing prebuilt drawers into the drag-layer so they render above
+            // closure markers / sticks. Fallback to swimlane group when drag-layer is missing.
+            let parentSel: any = null;
+            try {
+              if (this.scrollableGroup && this.scrollableGroup.select) {
+                const dl = this.scrollableGroup.select('.drag-layer-group');
+                if (dl && !dl.empty && !dl.empty()) parentSel = dl;
+              }
+            } catch (e) { parentSel = null; }
+            if (!parentSel) parentSel = d3.select((swimlaneGroup && swimlaneGroup.node()) || nodeGroup.node());
+
+            // when inserting into drag-layer we append; when inserting into swimlaneGroup we keep relative insert
+            const drawerSel = (parentSel && parentSel.attr && (parentSel.attr('class') || '').indexOf('drag-layer-group') !== -1)
+              ? parentSel.append('g')
+              : parentSel.insert('g', () => (createdNodeGroup && createdNodeGroup.node()) as any);
+            drawerSel
               .attr('class', 'collapsed-drawer')
-              .attr('data-collapse-group', collapsedGroup ? collapsedGroup.tabId : `none-${node.id}`)
+              .attr('data-collapse-group', collapsedGroup ? (collapsedGroup.displayNode && collapsedGroup.displayNode.id ? collapsedGroup.displayNode.id : collapsedGroup.tabId) : `none-${node.id}`)
               .attr('data-open', 'false')
               .attr('data-lane-index', laneIndex)
               .style('pointer-events', 'none');
@@ -2507,23 +2522,33 @@ export class WaterfallRenderer implements BaseRenderer {
     }
 
     // 使用统一的 appendBadge 创建折叠徽章（右下圆角）
-  const collapseBadgeGroup = this.appendBadge(group, badgeTransformX, badgeTransformY, badgeText, { corner: 'bottom', fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
-    collapseBadgeGroup.attr('class', 'group-badge').attr('data-collapse-group', collapsedGroup.tabId).style('cursor', 'pointer').style('pointer-events', 'all');
+  // For icon displayMode we show a non-interactive badge (cannot open drawer). For other modes make it interactive.
+  const badgeCornerOption = (segment.displayMode === 'icon') ? 'bottom-both' : 'bottom';
+  const collapseBadgeGroup = this.appendBadge(group, badgeTransformX, badgeTransformY, badgeText, { corner: badgeCornerOption as any, fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
+  collapseBadgeGroup.attr('class', 'group-badge').attr('data-collapse-group', (collapsedGroup.displayNode && collapsedGroup.displayNode.id) ? collapsedGroup.displayNode.id : collapsedGroup.tabId);
+  if (segment.displayMode === 'icon') {
+    // show but not interactive
+    collapseBadgeGroup.style('cursor', 'default').style('pointer-events', 'none');
+  } else {
+    collapseBadgeGroup.style('cursor', 'pointer').style('pointer-events', 'all');
+  }
 
-    // 悬停效果：只改变 path 的样式
-    collapseBadgeGroup.on('mouseenter', function(this: SVGGElement) {
-      d3.select(this).select('path')
-        .transition()
-        .duration(200)
-        .attr('opacity', 1)
-        .attr('fill', '#1a1a1a');
-    }).on('mouseleave', function(this: SVGGElement) {
-      d3.select(this).select('path')
-        .transition()
-        .duration(200)
-        .attr('opacity', 0.95)
-        .attr('fill', '#2c2c2c');
-    });
+    // 悬停效果：只对可交互的徽章生效
+    if (segment.displayMode !== 'icon') {
+      collapseBadgeGroup.on('mouseenter', function(this: SVGGElement) {
+        d3.select(this).select('path')
+          .transition()
+          .duration(200)
+          .attr('opacity', 1)
+          .attr('fill', '#1a1a1a');
+      }).on('mouseleave', function(this: SVGGElement) {
+        d3.select(this).select('path')
+          .transition()
+          .duration(200)
+          .attr('opacity', 0.95)
+          .attr('fill', '#2c2c2c');
+      });
+    }
 
       // 如果 node 上记录了 spa badge 的宽度，优先使用它来定位 SPA 徽章，确保两者不重叠
       try {
@@ -2549,20 +2574,19 @@ export class WaterfallRenderer implements BaseRenderer {
         // ignore reposition errors
       }
 
-    // 点击事件 - 切换预建抽屉（使用统一的 toggle 实现）
-    collapseBadgeGroup.on('click', (event: MouseEvent) => {
-      event.stopPropagation();
-      event.preventDefault();
-
-      
-
-      try {
-        this.togglePrebuiltDrawer(collapsedGroup, segment, nodeX, nodeY, nodeWidth, nodeHeight);
-      } catch (e) {
-        // fallback
-        try { this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight); } catch(e) {}
-      }
-    });
+    // 点击事件 - 仅对非-icon 模式启用（dot 模式已在外层被排除）
+    if (segment.displayMode !== 'icon') {
+      collapseBadgeGroup.on('click', (event: MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        try {
+          this.togglePrebuiltDrawer(collapsedGroup, segment, nodeX, nodeY, nodeWidth, nodeHeight);
+        } catch (e) {
+          // fallback
+          try { this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight); } catch(e) {}
+        }
+      });
+    }
 
   }
 
@@ -2570,7 +2594,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * 统一的徽章创建器：在 parent 上创建一个带 path + text 的 badge
    * 返回创建的 badgeGroup 供外部进一步调整/绑定事件
    */
-  private appendBadge(parent: any, x: number, y: number, text: string, options?: { corner?: 'top' | 'bottom', minWidth?: number, fixedWidth?: number, minHeight?: number, fontSize?: number }) {
+  private appendBadge(parent: any, x: number, y: number, text: string, options?: { corner?: 'top' | 'bottom' | 'bottom-both', minWidth?: number, fixedWidth?: number, minHeight?: number, fontSize?: number }) {
     const corner = options?.corner || 'top';
     const minWidth = options?.minWidth || 16;
     const fixedWidth = options?.fixedWidth;
@@ -2594,6 +2618,11 @@ export class WaterfallRenderer implements BaseRenderer {
     let pathD: string;
     if (corner === 'top') {
       pathD = `M 0,0 L ${finalW - radius},0 Q ${finalW},0 ${finalW},${radius} L ${finalW},${finalHeight} L 0,${finalHeight} Z`;
+    } else if (corner === 'bottom-both') {
+      // Round both bottom corners (left & right)
+      // M 0,0 -> top-left; L finalW,0 -> top-right; L finalW,finalHeight-radius -> arc to finalW-radius,finalHeight
+      // L radius,finalHeight -> arc to 0,finalHeight-radius -> back to 0,0
+      pathD = `M 0,0 L ${finalW},0 L ${finalW},${finalHeight - radius} Q ${finalW},${finalHeight} ${finalW - radius},${finalHeight} L ${radius},${finalHeight} Q 0,${finalHeight} 0,${finalHeight - radius} Z`;
     } else {
       pathD = `M 0,0 L ${finalW},0 L ${finalW},${finalHeight - radius} Q ${finalW},${finalHeight} ${finalW - radius},${finalHeight} L 0,${finalHeight} Z`;
     }
