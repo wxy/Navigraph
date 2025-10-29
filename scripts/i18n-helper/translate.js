@@ -4,6 +4,49 @@ const path = require('path');
 const { existsSync, readFileSync } = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '.env') });  // 加载 .env 文件
 
+// Helpers: normalize text and handle HTML entities
+function unescapeHtml(str) {
+  if (!str || typeof str !== 'string') return str;
+  return str.replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function normalizeTextForCompare(s) {
+  if (s == null) return s;
+  // convert to string, trim, collapse whitespace and unescape basic HTML entities
+  let t = String(s);
+  t = unescapeHtml(t);
+  // normalize line endings and collapse multiple whitespace
+  t = t.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t;
+}
+
+// Extract placeholders: %s, %d, %1$s, {name}, {0}, $1
+function extractPlaceholders(s) {
+  if (s == null) return [];
+  const str = String(s);
+  const placeholders = new Set();
+
+  // %1$s or %s or %d
+  const rePercent = /%\d*\$?[sd]/g;
+  let m;
+  while ((m = rePercent.exec(str)) !== null) placeholders.add(m[0]);
+
+  // $1 style
+  const reDollar = /\$\d+/g;
+  while ((m = reDollar.exec(str)) !== null) placeholders.add(m[0]);
+
+  // {name} or {0}
+  const reBrace = /\{\s*[^\}]+\s*\}/g;
+  while ((m = reBrace.exec(str)) !== null) placeholders.add(m[0].replace(/\s+/g, ''));
+
+  return Array.from(placeholders).sort();
+}
+
 // 从环境变量加载API密钥
 async function loadApiKey() {
   try {
@@ -202,36 +245,64 @@ async function processFile(filePath, apiKey) {
     console.log(`翻译完成: ${successful}/${translations.length} 成功`);
     
     // 将翻译结果写回JSON对象
+    // 支持：--dry-run 模式（仅打印将要修改的内容，不实际写回文件）
+    const isDryRun = process.argv.includes('--dry-run');
+
     let modifiedCount = 0;
     for (let i = 0; i < pathMap.length; i++) {
       const { path, parentPath, originalValue } = pathMap[i];
       const translation = translations[i];
-      
-      if (translation && translation !== originalValue) {
-        // 更新翻译
-        const pathParts = path.split('.');
-        let current = jsonObj;
-        
-        for (let j = 0; j < pathParts.length - 1; j++) {
-          current = current[pathParts[j]];
+
+      // translation 为 null 表示该批次翻译失败（占位符），跳过
+      if (translation == null) continue;
+
+      // 占位符安全检查
+      const originalPlaceholders = extractPlaceholders(originalValue);
+      const translationPlaceholders = extractPlaceholders(translation);
+      const phEqual = JSON.stringify(originalPlaceholders) === JSON.stringify(translationPlaceholders);
+      if (!phEqual) {
+        console.warn(`[i18n-helper] 占位符不匹配，跳过该条目： ${path}\n  原占位符: ${JSON.stringify(originalPlaceholders)}\n  翻译占位符: ${JSON.stringify(translationPlaceholders)}`);
+        // 跳过对该条目的写回与_untranslated 清除，保留原样
+        continue;
+      }
+
+      // 比较时使用规范化文本以避免 HTML 实体/空白导致的无谓差异
+      const normOrig = normalizeTextForCompare(originalValue);
+      const normTrans = normalizeTextForCompare(translation);
+
+      // 更新翻译字段（仅当翻译或规范化后不同，或强制清除_untranslated 时）
+      const pathParts = path.split('.');
+      let current = jsonObj;
+      for (let j = 0; j < pathParts.length - 1; j++) {
+        current = current[pathParts[j]];
+      }
+      const lastKey = pathParts[pathParts.length - 1];
+
+      const willOverwrite = current[lastKey] !== translation && normOrig !== normTrans;
+      if (willOverwrite) {
+        if (isDryRun) {
+          console.log(`[dry-run] 将覆盖 ${path}: "${current[lastKey]}" -> "${translation}"`);
+        } else {
+          current[lastKey] = translation;
         }
-        
-        const lastKey = pathParts[pathParts.length - 1];
-        current[lastKey] = translation;
-        
-        // 移除_untranslated标记
-        const parentParts = parentPath.split('.');
-        let parent = jsonObj;
-        
-        for (const part of parentParts) {
-          if (part) parent = parent[part];
-        }
-        
-        // 只有成功翻译后才移除未翻译标记
-        if (parent && parent._untranslated) {
+      }
+
+      // 移除_untranslated 标记：只要翻译 API 返回有效结果且占位符匹配，就认为已翻译
+      const parentParts = parentPath.split('.');
+      let parent = jsonObj;
+      for (const part of parentParts) {
+        if (part) parent = parent[part];
+      }
+
+      if (parent && parent._untranslated) {
+        if (isDryRun) {
+          console.log(`[dry-run] 将清除 ${parentPath}._untranslated`);
+        } else {
           parent._untranslated = false;
-          modifiedCount++;
         }
+        modifiedCount++;
+      } else if (willOverwrite) {
+        modifiedCount++;
       }
     }
     
