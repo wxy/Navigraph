@@ -4340,12 +4340,14 @@
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
   },
   "options_tree_view_label": {
-    "message": "Baumansicht",
-    "description": "树形图视图标签"
+    "message": "Baum",
+    "description": "Label for tree view (short)",
+    "_untranslated": true
   },
   "options_timeline_view_label": {
     "message": "Zeitleistenansicht",
-    "description": "时间线视图标签"
+    "description": "时间线视图标签",
+    "_untranslated": true
   },
   "options_load_failed": {
     "message": "Die Einstellungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -5140,8 +5142,8 @@
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "options_waterfall_view_label": {
-    "message": "Wasserfallblick",
-    "description": "从TS提取 (_): src/options/options.ts"
+    "message": "Wasserfall",
+    "description": "Label for waterfall view (short)"
   },
   "nav_storage_node_merged_spa": {
     "message": "Knoten {0} wird mit der In-Page-Anforderung zusammengeführt, spaRequestCount={1}",
@@ -5210,5 +5212,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "Schublade %s ungebundenes Debug-Dokument Rad-Listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "Fehler beim Sprachwechsel: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "Speichern der erzwungenen Sprache fehlgeschlagen: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "Wasserfall",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "Obligatorische Sprachverwendung:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "Folgen Sie dem System",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "Wenn Sie diese Option auswählen, wird die Optionsseite gezwungen, diese Sprache zu verwenden; wenn Sie „System folgen“ auswählen, wird die Browsersprache verwendet.",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

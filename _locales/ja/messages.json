@@ -4340,12 +4340,14 @@
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
   },
   "options_tree_view_label": {
-    "message": "ツリーマップビュー",
-    "description": "树形图视图标签"
+    "message": "ツリー",
+    "description": "Label for tree view (short)",
+    "_untranslated": true
   },
   "options_timeline_view_label": {
-    "message": "タイムラインビュー",
-    "description": "时间线视图标签"
+    "message": "タイムライン",
+    "description": "Label for timeline view (short)",
+    "_untranslated": true
   },
   "options_load_failed": {
     "message": "設定を読み込めませんでした。もう一度お試しください。",
@@ -5210,5 +5212,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "ドロワー %s 未バインドデバッグドキュメントホイールリスナー",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "言語の切り替えエラー: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "強制言語の保存に失敗しました: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "ウォーターフォール",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "必須言語の使用:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "システムに従う",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "このオプションを選択すると、オプション ページでこの言語が強制的に使用されます。「システムに従う」を選択すると、ブラウザの言語が使用されます。",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

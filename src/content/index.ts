@@ -11,7 +11,7 @@
 
   // 集中导入所有需要的模块
   const { Logger } = await import('../lib/utils/logger.js');
-  const { _, _Error, i18n } = await import('../lib/utils/i18n.js');
+  const { _, _Error, i18n, I18n } = await import('../lib/utils/i18n.js');
   const { showErrorMessage, showDetailedErrorMessage } = await import('./utils/error-ui-manager.js');
   const { getSettingsService } = await import('../lib/settings/service.js');
   const { setupMessageService } = await import('./messaging/content-message-service.js');
@@ -35,6 +35,19 @@
         const settingsService = getSettingsService();
         await settingsService.initialize();
         window.navigraphSettings = settingsService.getSettings();
+        // 如果用户在设置中强制了语言，应用到 i18n（使主视图在刷新后也使用该语言）
+        try {
+          const forced = window.navigraphSettings?.forcedLocale;
+          if (forced && forced !== 'system') {
+            await I18n.getInstance().setLocale(forced);
+            logger.log(_('content_forced_locale_applied', '已应用强制语言: {0}'), forced);
+          } else if (forced === 'system') {
+            // 明确跟随系统/浏览器
+            await I18n.getInstance().setLocale(null);
+          }
+        } catch (e) {
+          logger.warn(_('content_apply_forced_locale_failed', '应用强制语言失败: {0}'), String(e));
+        }
         // 全局设置已加载
         logger.log(_('content_settings_loaded', '设置已加载: {0}'), JSON.stringify(window.navigraphSettings));
       } catch (error) {

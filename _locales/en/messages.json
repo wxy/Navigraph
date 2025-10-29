@@ -4340,12 +4340,14 @@
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
   },
   "options_tree_view_label": {
-    "message": "Treemap View",
-    "description": "树形图视图标签"
+    "message": "Tree",
+    "description": "Label for tree view (short)",
+    "_untranslated": true
   },
   "options_timeline_view_label": {
     "message": "Timeline View",
-    "description": "时间线视图标签"
+    "description": "时间线视图标签",
+    "_untranslated": true
   },
   "options_load_failed": {
     "message": "Failed to load settings, please try again",
@@ -5140,8 +5142,8 @@
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "options_waterfall_view_label": {
-    "message": "Waterfall View",
-    "description": "从TS提取 (_): src/options/options.ts"
+    "message": "Waterfall",
+    "description": "Label for waterfall view (short)"
   },
   "nav_storage_node_merged_spa": {
     "message": "Node {0} is merged with the in-page request, spaRequestCount={1}",
@@ -5210,5 +5212,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "drawer %s unbound debug document wheel listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "Error switching language: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "Failed to save forced language: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "Waterfall",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_label_force_language": {
+    "message": "Mandatory language use:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "Follow the system",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "Selecting this option will force the options page to use this language; selecting \"Follow System\" will use the browser language.",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

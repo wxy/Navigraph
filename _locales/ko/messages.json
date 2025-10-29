@@ -4340,12 +4340,14 @@
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
   },
   "options_tree_view_label": {
-    "message": "트리 뷰 보기",
-    "description": "树形图视图标签"
+    "message": "트리",
+    "description": "Label for tree view (short)",
+    "_untranslated": true
   },
   "options_timeline_view_label": {
-    "message": "타임라인 보기",
-    "description": "时间线视图标签"
+    "message": "타임라인",
+    "description": "Label for timeline view (short)",
+    "_untranslated": true
   },
   "options_load_failed": {
     "message": "설정을 불러오지 못했습니다. 다시 시도해 주세요.",
@@ -5210,5 +5212,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "서랍 %s 바인딩되지 않은 디버그 문서 휠 리스너",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "언어 전환 중 오류 발생: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "강제 언어 저장에 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "워터폴",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "필수 언어 사용:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "시스템을 따르세요",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "이 옵션을 선택하면 옵션 페이지에서 이 언어를 사용하게 되고, \"시스템 따르기\"를 선택하면 브라우저 언어를 사용하게 됩니다.",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

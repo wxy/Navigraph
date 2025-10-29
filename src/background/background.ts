@@ -2,7 +2,7 @@
  * 主要的后台脚本，负责初始化和协调各个组件
  */
 import { Logger } from '../lib/utils/logger.js';
-import { _, _Error } from '../lib/utils/i18n.js';
+import { _, _Error, I18n } from '../lib/utils/i18n.js';
 import { NavigationManager, setNavigationManager } from './navigation/navigation-manager.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { setupEventListeners } from './lib/event-listeners.js';
@@ -43,6 +43,17 @@ async function initialize(): Promise<void> {
     logger.log(_('background_settings_service_init_start', '初始化设置服务...'));
     settingsService = getSettingsService();
     await settingsService.initialize();
+    // 如果管理员/用户通过设置强制了语言，应用到后台上下文（有助于后台消息或调试输出的一致性）
+    try {
+      const forced = settingsService.getSetting('forcedLocale') as string | undefined;
+      if (forced && forced !== 'system') {
+        await I18n.getInstance().setLocale(forced);
+      } else if (forced === 'system') {
+        await I18n.getInstance().setLocale(null);
+      }
+    } catch (e) {
+      logger.debug(_('background_apply_forced_locale_failed', '后台应用强制语言失败: {0}'), String(e));
+    }
         
     // 4. 会话管理器
     logger.log(_('background_session_manager_init_start', '初始化会话管理器...'));

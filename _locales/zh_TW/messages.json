@@ -4340,12 +4340,14 @@
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
   },
   "options_tree_view_label": {
-    "message": "樹狀圖視圖",
-    "description": "树形图视图标签"
+    "message": "樹形圖",
+    "description": "Label for tree view (short)",
+    "_untranslated": true
   },
   "options_timeline_view_label": {
-    "message": "時間軸視圖",
-    "description": "时间线视图标签"
+    "message": "時間軸",
+    "description": "Label for timeline view (short)",
+    "_untranslated": true
   },
   "options_load_failed": {
     "message": "載入設定失敗，請重試",
@@ -5210,5 +5212,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "drawer %s unbound debug document wheel listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "切換語言時發生錯誤: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "儲存強制語言失敗: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "瀑布圖",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_label_force_language": {
+    "message": "強制使用語言：",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "跟隨系統",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "選擇後將強制選項頁使用該語言；選擇「跟隨系統」則使用瀏覽器語言。",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

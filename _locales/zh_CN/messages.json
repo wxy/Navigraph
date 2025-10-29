@@ -4341,11 +4341,11 @@
   },
   "options_tree_view_label": {
     "message": "树形图视图",
-    "description": "树形图视图标签"
+    "description": "Label for tree view (short)"
   },
   "options_timeline_view_label": {
     "message": "时间线视图",
-    "description": "时间线视图标签"
+    "description": "Label for timeline view (short)"
   },
   "options_load_failed": {
     "message": "加载设置失败，请重试",
@@ -5210,5 +5210,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "drawer %s unbound debug document wheel listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "切换语言时出错: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "保存强制语言失败: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "瀑布图",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_label_force_language": {
+    "message": "强制使用语言：",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "跟随系统",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "选择后将强制选项页使用该语言；选择“跟随系统”则使用浏览器语言。",
+    "description": "从HTML提取: src/options/index.html"
   }
 }

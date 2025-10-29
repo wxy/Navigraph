@@ -78,13 +78,10 @@ export class I18n {
    * 该方法可以安全地多次调用，只会执行一次初始化和应用
    */
   public async apply(): Promise<void> {
-    // 如果已经初始化过，不再重复执行
-    if (this.hasInitialized) {
-      console.debug('[i18n-utils] I18n already initialized, skipping');
-      return;
+    // apply 可能被多次调用（页面可能需要重复应用），但 init 逻辑应该只运行一次。
+    if (!this.hasInitialized) {
+      this.hasInitialized = true;
     }
-    
-    this.hasInitialized = true;
     
     // 获取 URL 查询参数中的本地化设置
     try {
@@ -116,6 +113,42 @@ export class I18n {
         // DOM已就绪，立即应用
         this.applyToPage();
       }
+    }
+  }
+
+  /**
+   * 动态设置强制语言（null 或 'system' 表示跟随系统 / 浏览器）
+   * 立即加载对应的消息文件并应用到页面。
+   */
+  public async setLocale(locale: string | null): Promise<void> {
+    try {
+      if (!locale || locale === 'system') {
+        // 取消强制语言，回退到浏览器 i18n
+        this.forcedLocale = null;
+        this.loadedMessages = {};
+        // 立即应用（页面元素会使用 chrome.i18n 或回退文本）
+        this.applyToPage();
+        return;
+      }
+
+      // 设定 forcedLocale 并尝试加载对应的 messages.json
+      this.forcedLocale = locale.replace(/-/g, '_');
+      try {
+        const response = await fetch(`../_locales/${this.forcedLocale}/messages.json`);
+        if (!response.ok) throw new Error(`Failed to load ${this.forcedLocale} messages: ${response.status}`);
+        this.loadedMessages = await response.json();
+        console.log(`[i18n-utils] Loaded ${Object.keys(this.loadedMessages).length} messages for ${this.forcedLocale}`);
+      } catch (err) {
+        console.error('[i18n-utils] setLocale load failed', err);
+        // 如果加载失败，清空强制并回退
+        this.forcedLocale = null;
+        this.loadedMessages = {};
+      }
+
+      // 将新语言应用到页面
+      this.applyToPage();
+    } catch (error) {
+      console.error('[i18n-utils] setLocale error:', error);
     }
   }
 

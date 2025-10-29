@@ -4340,12 +4340,14 @@
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
   },
   "options_tree_view_label": {
-    "message": "Vue arborescente",
-    "description": "树形图视图标签"
+    "message": "Arbre",
+    "description": "Label for tree view (short)",
+    "_untranslated": true
   },
   "options_timeline_view_label": {
-    "message": "Vue chronologique",
-    "description": "时间线视图标签"
+    "message": "Chronologie",
+    "description": "Label for timeline view (short)",
+    "_untranslated": true
   },
   "options_load_failed": {
     "message": "Échec du chargement des paramètres, veuillez réessayer",
@@ -5210,5 +5212,29 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "tiroir %s document de débogage non lié écouteur de roue",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "Erreur lors du changement de langue : {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "Échec de l'enregistrement de la langue forcée : {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "Cascade",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "Utilisation obligatoire de la langue :",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "Suivez le système",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "Sélectionner cette option forcera la page d'options à utiliser cette langue ; sélectionner « Suivre le système » utilisera la langue du navigateur.",
+    "description": "从HTML提取: src/options/index.html"
   }
 }
