@@ -4965,13 +4965,11 @@
   },
   "waterfall_nodes_too_many": {
     "message": "⚠️ Zu viele Knoten ({0}), Limit ist {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_invalid_timestamp_node": {
     "message": "⚠️ Knoten mit ungültigen Zeitstempeln gefunden, gefiltert:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ Keine Swimlane für die Registerkarte {0} gefunden",
@@ -5187,6 +5185,30 @@
   },
   "waterfall_prebuild_drawer_error": {
     "message": "Fehler beim Vorbauen der Schublade",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "background_session_create_info": {
+    "message": "Die Sitzungserstellung ist gleichzeitig gesperrt; gibt eine bestehende Sitzung zurück: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_fallback_failed": {
+    "message": "Beim Wiederherstellen einer bestehenden Sitzung ist ein Fehler aufgetreten: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_warn": {
+    "message": "Sitzungserstellung eingeschränkt: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "toggle_closed_filter_failed": {
+    "message": "Fehler beim Umschalten der Filter für geschlossene Seiten: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "waterfall_drawer_wheel_unbound_container": {
+    "message": "Schublade %s ungebundener Container Radgriff",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_wheel_debugdoc_unbound": {
+    "message": "Schublade %s ungebundenes Debug-Dokument Rad-Listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

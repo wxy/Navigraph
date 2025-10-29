@@ -4965,18 +4965,15 @@
   },
   "waterfall_nodes_too_many": {
     "message": "⚠️ 節點數量過多({0})，限制為{1}個",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_invalid_timestamp_node": {
     "message": "⚠️ 發現無效時間戳記的節點，已過濾:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ 未找到標籤頁 {0} 對應的泳道",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ 時間分段循環達到最大迭代次數，強制終止",
@@ -5188,6 +5185,30 @@
   },
   "waterfall_prebuild_drawer_error": {
     "message": "預建抽屜錯誤",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "background_session_create_info": {
+    "message": "會話建立被並發鎖定，回傳已存在會話: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_fallback_failed": {
+    "message": "在回退到已存在會話時發生錯誤: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_warn": {
+    "message": "會話建立受限: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "toggle_closed_filter_failed": {
+    "message": "切換已關閉頁面過濾器失敗：{0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "waterfall_drawer_wheel_unbound_container": {
+    "message": "drawer %s unbound container wheel handler",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_wheel_debugdoc_unbound": {
+    "message": "drawer %s unbound debug document wheel listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

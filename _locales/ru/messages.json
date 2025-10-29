@@ -4965,13 +4965,11 @@
   },
   "waterfall_nodes_too_many": {
     "message": "⚠️ Слишком много узлов ({0}), ограничение — {1}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_invalid_timestamp_node": {
     "message": "⚠️ Обнаружены и отфильтрованы узлы с недействительными временными метками:",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ Дорожка для вкладки {0} не найдена.",
@@ -5187,6 +5185,30 @@
   },
   "waterfall_prebuild_drawer_error": {
     "message": "Ошибка ящика предварительной сборки",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "background_session_create_info": {
+    "message": "Создание сеанса одновременно заблокировано; возвращает существующий сеанс: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_fallback_failed": {
+    "message": "Произошла ошибка при возврате к существующему сеансу: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_warn": {
+    "message": "Создание сеанса ограничено: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "toggle_closed_filter_failed": {
+    "message": "Не удалось переключить фильтры закрытой страницы: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "waterfall_drawer_wheel_unbound_container": {
+    "message": "ящик %s несвязанный контейнер колесный манипулятор",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_wheel_debugdoc_unbound": {
+    "message": "ящик %s несвязанный отладочный документ колесо прослушивателя",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

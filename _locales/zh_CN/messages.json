@@ -5186,5 +5186,29 @@
   "waterfall_prebuild_drawer_error": {
     "message": "预构建抽屉错误",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "background_session_create_info": {
+    "message": "会话创建被并发锁定，返回已存在会话: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_fallback_failed": {
+    "message": "在回退到已存在会话时发生错误: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_warn": {
+    "message": "会话创建受限: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "toggle_closed_filter_failed": {
+    "message": "切换已关闭页面过滤器失败：{0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "waterfall_drawer_wheel_unbound_container": {
+    "message": "drawer %s unbound container wheel handler",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_wheel_debugdoc_unbound": {
+    "message": "drawer %s unbound debug document wheel listener",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }

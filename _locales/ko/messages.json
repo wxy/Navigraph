@@ -4973,8 +4973,7 @@
   },
   "waterfall_swimlane_not_found": {
     "message": "⚠️ 탭 {0}에 대한 수영로를 찾을 수 없습니다.",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
   "waterfall_segment_loop_max_iter": {
     "message": "⚠️ 시간 세그먼트 루프가 최대 반복 횟수에 도달하여 강제로 종료됩니다.",
@@ -5186,6 +5185,30 @@
   },
   "waterfall_prebuild_drawer_error": {
     "message": "사전 빌드 서랍 오류",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "background_session_create_info": {
+    "message": "세션 생성이 동시에 잠겨 있습니다. 기존 세션을 반환합니다: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_fallback_failed": {
+    "message": "기존 세션으로 되돌리는 동안 오류가 발생했습니다: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "background_session_create_warn": {
+    "message": "세션 생성이 제한됨: {0}",
+    "description": "从TS提取 (_): src/background/session/session-manager.ts"
+  },
+  "toggle_closed_filter_failed": {
+    "message": "닫힌 페이지 필터를 전환하지 못했습니다: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/RenderingManager.ts"
+  },
+  "waterfall_drawer_wheel_unbound_container": {
+    "message": "서랍 %s 바인딩되지 않은 컨테이너 휠 핸들러",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "waterfall_drawer_wheel_debugdoc_unbound": {
+    "message": "서랍 %s 바인딩되지 않은 디버그 문서 휠 리스너",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   }
 }
