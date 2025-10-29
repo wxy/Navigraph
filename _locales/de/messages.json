@@ -3352,7 +3352,7 @@
     "description": "日历选择器资源清理日志"
   },
   "calendar_month_year": {
-    "message": "{0}, {1}",
+    "message": "{1} {0}",
     "description": "年月格式"
   },
   "calendar_month_jan": {
@@ -4341,13 +4341,11 @@
   },
   "options_tree_view_label": {
     "message": "Baum",
-    "description": "Label for tree view (short)",
-    "_untranslated": true
+    "description": "Label for tree view (short)"
   },
   "options_timeline_view_label": {
     "message": "Zeitleistenansicht",
-    "description": "时间线视图标签",
-    "_untranslated": true
+    "description": "时间线视图标签"
   },
   "options_load_failed": {
     "message": "Die Einstellungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -4582,31 +4580,31 @@
     "description": "从TS提取: src/content/visualizer/state/SessionViewController.ts"
   },
   "calendar_sunday": {
-    "message": "Tag",
+    "message": "So",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
-    "message": "eins",
+    "message": "Mo",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
-    "message": "zwei",
+    "message": "Di",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
-    "message": "drei",
+    "message": "Mi",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
-    "message": "Vier",
+    "message": "Do",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
-    "message": "fünf",
+    "message": "Fr",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
-    "message": "sechs",
+    "message": "Sa",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {

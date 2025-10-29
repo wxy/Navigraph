@@ -4341,13 +4341,11 @@
   },
   "options_tree_view_label": {
     "message": "Дерево",
-    "description": "Label for tree view (short)",
-    "_untranslated": true
+    "description": "Label for tree view (short)"
   },
   "options_timeline_view_label": {
     "message": "Лента",
-    "description": "Label for timeline view (short)",
-    "_untranslated": true
+    "description": "Label for timeline view (short)"
   },
   "options_load_failed": {
     "message": "Не удалось загрузить настройки, попробуйте еще раз",

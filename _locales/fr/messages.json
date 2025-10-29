@@ -4341,13 +4341,11 @@
   },
   "options_tree_view_label": {
     "message": "Arbre",
-    "description": "Label for tree view (short)",
-    "_untranslated": true
+    "description": "Label for tree view (short)"
   },
   "options_timeline_view_label": {
     "message": "Chronologie",
-    "description": "Label for timeline view (short)",
-    "_untranslated": true
+    "description": "Label for timeline view (short)"
   },
   "options_load_failed": {
     "message": "Échec du chargement des paramètres, veuillez réessayer",
@@ -4582,31 +4580,31 @@
     "description": "从TS提取: src/content/visualizer/state/SessionViewController.ts"
   },
   "calendar_sunday": {
-    "message": "jour",
+    "message": "Dim",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
-    "message": "un",
+    "message": "Lun",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
-    "message": "deux",
+    "message": "Mar",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
-    "message": "trois",
+    "message": "Mer",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
-    "message": "Quatre",
+    "message": "Jeu",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
-    "message": "cinq",
+    "message": "Ven",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
-    "message": "six",
+    "message": "Sam",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {

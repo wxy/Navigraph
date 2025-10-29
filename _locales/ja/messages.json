@@ -4341,13 +4341,11 @@
   },
   "options_tree_view_label": {
     "message": "ツリー",
-    "description": "Label for tree view (short)",
-    "_untranslated": true
+    "description": "Label for tree view (short)"
   },
   "options_timeline_view_label": {
     "message": "タイムライン",
-    "description": "Label for timeline view (short)",
-    "_untranslated": true
+    "description": "Label for timeline view (short)"
   },
   "options_load_failed": {
     "message": "設定を読み込めませんでした。もう一度お試しください。",
@@ -4586,27 +4584,27 @@
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
-    "message": "1つ",
+    "message": "月",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
-    "message": "二",
+    "message": "火",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
-    "message": "三つ",
+    "message": "水",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
-    "message": "4つ",
+    "message": "木",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
-    "message": "五",
+    "message": "金",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
-    "message": "六",
+    "message": "土",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {

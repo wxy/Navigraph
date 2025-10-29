@@ -1996,27 +1996,27 @@
     "description": "星期一"
   },
   "content_tuesday": {
-    "message": "화",
+    "message": "일",
     "description": "星期二"
   },
   "content_wednesday": {
-    "message": "수",
+    "message": "월",
     "description": "星期三"
   },
   "content_thursday": {
-    "message": "목",
+    "message": "화",
     "description": "星期四"
   },
   "content_friday": {
-    "message": "금",
+    "message": "수",
     "description": "星期五"
   },
   "content_saturday": {
-    "message": "토",
+    "message": "목",
     "description": "星期六"
   },
   "content_select_session": {
-    "message": "세션 선택",
+    "message": "금",
     "description": "选择会话标题"
   },
   "content_filters": {
@@ -4341,13 +4341,11 @@
   },
   "options_tree_view_label": {
     "message": "트리",
-    "description": "Label for tree view (short)",
-    "_untranslated": true
+    "description": "Label for tree view (short)"
   },
   "options_timeline_view_label": {
     "message": "타임라인",
-    "description": "Label for timeline view (short)",
-    "_untranslated": true
+    "description": "Label for timeline view (short)"
   },
   "options_load_failed": {
     "message": "설정을 불러오지 못했습니다. 다시 시도해 주세요.",
