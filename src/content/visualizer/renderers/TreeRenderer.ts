@@ -740,28 +740,26 @@ function renderTreeLayout(
           mmddText = `${mm}${dd}`;
         }
 
-        // 年 (上行)
+        // 年 (上行) — 轻微上移以实现更好的垂直平衡
         g.append('text')
           .attr('class', 'session-year')
           .attr('text-anchor', 'middle')
-          .attr('y', -6)
+          .attr('y', -8)
           .text(yearText);
 
-        // 分隔线（位于两行文字之间，向下微调以确保可见）
+        // 分隔线（由 CSS 控制颜色/宽度，位置稍微靠上以保证在深色圆内可见）
         g.append('line')
           .attr('class', 'session-separator')
-          .attr('x1', -radius * 0.7)
-          .attr('x2', radius * 0.7)
-          .attr('y1', 4)
-          .attr('y2', 4)
-          .attr('stroke-width', 1)
-          .attr('stroke', '#999');
+          .attr('x1', -radius * 0.65)
+          .attr('x2', radius * 0.65)
+          .attr('y1', 2)
+          .attr('y2', 2);
 
-        // MMDD (下行)
+        // MMDD (下行) — 上移一点以靠近分隔线，整体向上微调以居中
         g.append('text')
           .attr('class', 'session-mmdd')
           .attr('text-anchor', 'middle')
-          .attr('y', 18)
+          .attr('y', 10)
           .text(mmddText);
       });
     
@@ -872,7 +870,7 @@ function renderTreeLayout(
             .attr('class', 'spa-badge-text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'middle')
-            .attr('dy', '-0.05em') /* 微调向上，修正数字略偏下的问题 */
+            .attr('dy', '0em') /* 使用更中性的 dy 值使数字更居中 */
             .text(String(badgeCount));
 
           badge.append('title')

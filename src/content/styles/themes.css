@@ -744,13 +744,14 @@ svg text.group-badge-text {
 
 /* 会话根节点分隔线样式，主题相关颜色 */
 [data-theme="dark"] .session-separator {
-  stroke: rgba(230, 237, 243, 0.6); /* 深色主题下更明显 */
-  stroke-width: 1.4;
+  /* 使用更高对比度以确保在深色根圆上可见 */
+  stroke: rgba(230, 237, 243, 0.95);
+  stroke-width: 1.2;
 }
 
 [data-theme="light"] .session-separator {
-  stroke: rgba(0, 0, 0, 0.25); /* 亮色主题下使用深色分隔线 */
-  stroke-width: 1.4;
+  stroke: rgba(0, 0, 0, 0.35); /* 亮色主题下使用深色分隔线，保证可见性 */
+  stroke-width: 1.2;
 }
 
 /* 回退默认样式（中性） */
