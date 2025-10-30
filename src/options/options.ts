@@ -1,5 +1,5 @@
 import { Logger } from '../lib/utils/logger.js';
-import { _, _Error } from '../lib/utils/i18n.js';
+import { _, _Error, I18n } from '../lib/utils/i18n.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
 import type { ViewType } from '../lib/settings/types.js';
 import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
@@ -103,6 +103,24 @@ function setupEventListeners(): void {
   if (viewSelect) {
     viewSelect.addEventListener('change', () => {
       updateViewPreview(viewSelect.value as ViewType);
+    });
+  }
+
+  // 强制语言选择（立即生效于选项页）
+  const forceLangSelect = document.getElementById('force-language') as HTMLSelectElement;
+  if (forceLangSelect) {
+    forceLangSelect.addEventListener('change', async () => {
+      const locale = forceLangSelect.value || 'system';
+      // 立即应用到当前选项页
+      try {
+        await I18n.getInstance().setLocale(locale === 'system' ? null : locale);
+      } catch (e) {
+        logger.error(_('options_force_language_error', '切换语言时出错: {0}'), e);
+      }
+
+      // 将首选项保存在设置中（后台/后续页面可读取）
+      settingsService.updateSettings({ forcedLocale: locale })
+        .catch(err => logger.error(_('options_save_force_language_failed', '保存强制语言失败: {0}'), err));
     });
   }
   
@@ -267,11 +285,75 @@ function updateViewPreview(view: ViewType): void {
     // 更新类名
     previewContainer.className = `preview-box ${previewType}-preview`;
     
-    // 添加数据属性以支持 ::before 伪元素的内容
-    const label = previewType === 'tree' ? _('options_tree_view_label', '树形图视图') :
-                  (previewType === 'waterfall' ? _('options_waterfall_view_label', '瀑布流视图') : _('options_timeline_view_label', '时间线视图'));
+  // 不再在预览中显示视图名称标签，避免为其做国际化处理
+    // 插入内联 SVG 示意图（waterfall 与 tree），以便更灵活地美化示意
+    // 插入内联 SVG：根据预览类型渲染更加丰富的示意图
+    if (previewType === 'waterfall') {
+      // 瀑布图：每条泳道节点数量与宽度可变，颜色与大小体现不同重要性
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 150" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+          <rect x="0" y="0" width="260" height="150" fill="transparent" />
+          <!-- lanes -->
+          <rect x="14" y="16" width="232" height="26" rx="6" fill="#f5f7ff" stroke="#e8eefc" />
+          <rect x="14" y="58" width="232" height="26" rx="6" fill="#fbfbff" stroke="#eef3fb" />
+          <rect x="14" y="100" width="232" height="26" rx="6" fill="#f6f8ff" stroke="#eef3fb" />
 
-    previewContainer.setAttribute('data-view-type', label);
+          <!-- lane 1: 4 medium nodes -->
+          <rect x="24" y="20" width="36" height="18" rx="4" fill="#4a6ee0" />
+          <rect x="68" y="20" width="52" height="18" rx="4" fill="#7aa2ff" />
+          <rect x="126" y="20" width="24" height="18" rx="4" fill="#4a6ee0" />
+          <rect x="156" y="20" width="60" height="18" rx="4" fill="#34a853" />
+
+          <!-- lane 2: 2 larger nodes -->
+          <rect x="30" y="62" width="90" height="18" rx="4" fill="#ffb703" />
+          <rect x="126" y="62" width="70" height="18" rx="4" fill="#ff6b6b" />
+
+          <!-- lane 3: many small nodes -->
+          <rect x="22" y="104" width="18" height="14" rx="3" fill="#9b59b6" />
+          <rect x="46" y="104" width="26" height="14" rx="3" fill="#00aaff" />
+          <rect x="78" y="104" width="36" height="14" rx="3" fill="#34a853" />
+          <rect x="118" y="104" width="20" height="14" rx="3" fill="#ff7f50" />
+          <rect x="144" y="104" width="56" height="14" rx="3" fill="#4a6ee0" />
+
+          <!-- subtle separators -->
+          <line x1="14" y1="44" x2="246" y2="44" stroke="#ffffff" stroke-opacity="0.6" />
+          <line x1="14" y1="86" x2="246" y2="86" stroke="#ffffff" stroke-opacity="0.6" />
+        </svg>
+      `;
+
+      previewContainer.innerHTML = svg;
+    } else if (previewType === 'tree') {
+      // 左右平衡树：根节点在中间，左右对称展开，颜色分组
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+          <rect x="0" y="0" width="240" height="140" fill="transparent" />
+          <!-- center root -->
+          <circle cx="120" cy="28" r="12" fill="#4a6ee0" stroke="#fff" stroke-width="2" />
+
+          <!-- left branch -->
+          <path d="M120 36 C100 46 88 62 68 76" stroke="#d0d7ef" stroke-width="2" fill="none" />
+          <circle cx="72" cy="78" r="10" fill="#ff6b6b" stroke="#fff" stroke-width="2" />
+          <path d="M72 88 C60 98 52 110 40 120" stroke="#e9eef8" stroke-width="1.5" fill="none" />
+          <circle cx="44" cy="120" r="7" fill="#fbbc05" stroke="#fff" stroke-width="1.5" />
+          <circle cx="56" cy="106" r="7" fill="#9b59b6" stroke="#fff" stroke-width="1.5" />
+
+          <!-- right branch (mirror) -->
+          <path d="M120 36 C140 46 152 62 172 76" stroke="#d0d7ef" stroke-width="2" fill="none" />
+          <circle cx="168" cy="78" r="10" fill="#34a853" stroke="#fff" stroke-width="2" />
+          <path d="M168 88 C180 98 188 110 200 120" stroke="#e9eef8" stroke-width="1.5" fill="none" />
+          <circle cx="196" cy="120" r="7" fill="#00aaff" stroke="#fff" stroke-width="1.5" />
+          <circle cx="184" cy="106" r="7" fill="#ff7f50" stroke="#fff" stroke-width="1.5" />
+
+          <!-- subtle connectors near root -->
+          <line x1="96" y1="48" x2="104" y2="56" stroke="#dfe8fb" stroke-width="1.5" />
+          <line x1="136" y1="56" x2="144" y2="48" stroke="#dfe8fb" stroke-width="1.5" />
+        </svg>
+      `;
+
+      previewContainer.innerHTML = svg;
+    } else {
+      previewContainer.innerHTML = '';
+    }
   }
 }
 
@@ -309,6 +391,22 @@ function applySettingsToUI(): void {
     viewSelect.value = currentSettings.defaultView || 'tree';
     updateViewPreview(currentSettings.defaultView || 'tree');
   }
+
+  // 强制语言 UI
+  const forceLangSelect = document.getElementById('force-language') as HTMLSelectElement;
+  if (forceLangSelect) {
+    // 设置UI值，后端使用 'system' 表示跟随系统
+    forceLangSelect.value = (currentSettings.forcedLocale || 'system');
+    // 在加载设置时立即应用强制语言（如果有），以确保选项页在刷新后仍使用该语言
+    try {
+      const forced = currentSettings.forcedLocale;
+      // 非阻塞地应用语言，失败时记录警告
+      I18n.getInstance().setLocale(forced && forced !== 'system' ? forced : null)
+        .catch(err => logger.warn(_('options_apply_forced_locale_failed', '应用强制语言失败: {0}'), String(err)));
+    } catch (e) {
+      logger.warn(_('options_apply_forced_locale_failed', '应用强制语言失败: {0}'), String(e));
+    }
+  }
   
   // 会话模式
   const sessionModeSelect = document.getElementById('session-mode') as HTMLSelectElement;
@@ -343,8 +441,8 @@ function collectSettingsFromUI(): NavigraphSettings {
   // 主题
   const theme = (document.getElementById('theme') as HTMLSelectElement)?.value as 'light' | 'dark' | 'system' || 'system';
   
-  // 默认视图
-  const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'timeline' || 'tree';
+  // 默认视图（仅支持 tree 与 waterfall）
+  const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'waterfall' || 'tree';
   
   // 会话模式 - 限制为 'daily' 或 'manual'
   const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'manual' || 'daily';
@@ -362,6 +460,7 @@ function collectSettingsFromUI(): NavigraphSettings {
   return {
     theme,
     defaultView,
+    forcedLocale: (document.getElementById('force-language') as HTMLSelectElement)?.value || 'system',
     sessionMode,
     dataRetention,
     idleTimeout, // 添加空闲超时设置

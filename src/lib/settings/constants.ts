@@ -6,7 +6,10 @@ import { NavigraphSettings } from './types.js';
 export const DEFAULT_SETTINGS: NavigraphSettings = {
   // 界面设置
   theme: 'system',
-  defaultView: 'tree',
+  // 将默认视图改为瀑布图（waterfall）
+  defaultView: 'waterfall',
+  // 跟随系统为默认语言策略
+  forcedLocale: 'system',
   
   // 会话管理
   // 会话设置默认值

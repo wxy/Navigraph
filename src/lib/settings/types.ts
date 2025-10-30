@@ -21,6 +21,8 @@ export interface NavigraphSettings {
   // 界面设置
   theme: Theme;
   defaultView: ViewType;
+  // 如果为 'system' 表示跟随系统；否则使用对应的本地化目录名（如 'en', 'zh_CN'）
+  forcedLocale?: string | null;
   
   // 会话管理
   sessionMode: SessionMode;

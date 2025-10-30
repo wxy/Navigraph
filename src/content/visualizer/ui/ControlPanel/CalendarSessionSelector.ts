@@ -105,7 +105,7 @@ export class CalendarSessionSelector {
     // 创建月份标题
     const monthTitle = document.createElement('h3');
     monthTitle.className = 'current-month';
-    monthTitle.textContent = _('calendar_month_year', '{0}年{1}', `${this.currentYear}`, this.getMonthNames()[this.currentMonth]);
+  monthTitle.textContent = _('calendar_month_year', '{0}年{1}月', `${this.currentYear}`, `${this.currentMonth + 1}`);
     calendarHeader.appendChild(monthTitle);
     
     // 创建下个月按钮
@@ -271,7 +271,7 @@ export class CalendarSessionSelector {
     // 更新月份标题
     const monthHeader = this.container?.querySelector('.current-month');
     if (monthHeader) {
-      monthHeader.textContent = _('calendar_month_year', '{0}年{1}', `${this.currentYear}`, this.getMonthNames()[this.currentMonth]);
+      monthHeader.textContent = _('calendar_month_year', '{0}年{1}月', `${this.currentYear}`, `${this.currentMonth + 1}`);
     }
     
     // 移除旧的日期单元格

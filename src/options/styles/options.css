@@ -277,41 +277,21 @@ input[type="range"]::-webkit-slider-thumb {
   transition: background-color var(--transition-speed); /* 添加过渡效果 */
 }
 
-/* 添加预览标签 */
+/* 取消在预览框中显示视图名称标签，避免为该标签做国际化 */
+/* 之前使用 ::before 来显示 data-view-type，这里禁用该行为 */
 .preview-box::before {
-  content: attr(data-view-type);
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  font-size: 10px;
-  padding: 2px 6px;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 3px;
-  opacity: 0.8;
-  text-transform: capitalize;
-}
-
-.preview-box.tree-preview::before {
-  content: "树形图视图";
-}
-
-.preview-box.timeline-preview::before {
-  content: "时间线视图";
+  display: none !important;
 }
 
 .preview-box.tree-preview {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100"><defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="%234a6ee0"/></marker></defs><path d="M40,50 C70,50 90,30 120,30" stroke="%234a6ee0" fill="none" stroke-width="2" marker-end="url(%23arrowhead)"/><path d="M40,50 C70,50 90,50 120,50" stroke="%234a6ee0" fill="none" stroke-width="2" marker-end="url(%23arrowhead)"/><path d="M40,50 C70,50 90,70 120,70" stroke="%234a6ee0" fill="none" stroke-width="2" marker-end="url(%23arrowhead)"/><circle cx="40" cy="50" r="12" fill="%234a6ee0" stroke="white" stroke-width="2"/><circle cx="120" cy="30" r="10" fill="white" stroke="%234a6ee0" stroke-width="2"/><circle cx="120" cy="50" r="10" fill="white" stroke="%234a6ee0" stroke-width="2"/><circle cx="120" cy="70" r="10" fill="white" stroke="%234a6ee0" stroke-width="2"/><text x="40" y="50" font-family="Arial" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle"></text></svg>');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
+  /* 使用内联 SVG 渲染树形预览（由 JS 注入），因此禁用 CSS 背景 */
+  background-image: none;
 }
 
-.preview-box.timeline-preview {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100"><rect x="10" y="10" width="180" height="20" rx="3" fill="%23eaeaea" stroke="%23cccccc"/><line x1="20" y1="25" x2="180" y2="25" stroke="%234a6ee0" stroke-width="1"/><text x="20" y="20" font-family="Arial" font-size="6" fill="%23666666" dominant-baseline="middle">00:00</text><text x="180" y="20" font-family="Arial" font-size="6" fill="%23666666" text-anchor="end" dominant-baseline="middle">03:00</text><line x1="40" y1="30" x2="40" y2="45" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><line x1="80" y1="30" x2="80" y2="65" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><line x1="120" y1="30" x2="120" y2="50" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><line x1="160" y1="30" x2="160" y2="70" stroke="%23cccccc" stroke-width="1" stroke-dasharray="2,2"/><circle cx="40" cy="45" r="8" fill="%234285f4"/><circle cx="80" cy="65" r="8" fill="%2334a853"/><circle cx="120" cy="50" r="8" fill="%23fbbc05"/><circle cx="160" cy="70" r="8" fill="%23ea4335"/><path d="M40,45 L80,65 L120,50 L160,70" stroke="%23999999" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/></svg>');
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
+
+.preview-box.waterfall-preview {
+  /* 使用内联 SVG 渲染瀑布预览，CSS 背景保持空 */
+  background-image: none;
 }
 
 .preview-hint {

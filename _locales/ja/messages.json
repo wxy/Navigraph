@@ -3352,7 +3352,7 @@
     "description": "日历选择器资源清理日志"
   },
   "calendar_month_year": {
-    "message": "{0}年{1}",
+    "message": "{0}年{1}月",
     "description": "年月格式"
   },
   "calendar_month_jan": {
@@ -4219,10 +4219,6 @@
     "message": "ツリービュー",
     "description": "下拉选项文本 <option> 文本"
   },
-  "options_option_timeline": {
-    "message": "タイムライン",
-    "description": "下拉选项文本 <option> 文本"
-  },
   "options_session_group_title": {
     "message": "セッション管理",
     "description": "分组标题 <h2> 文本"
@@ -4338,14 +4334,6 @@
   "settings_handlers_save_settings": {
     "message": "設定を保存: {0}",
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
-  },
-  "options_tree_view_label": {
-    "message": "ツリーマップビュー",
-    "description": "树形图视图标签"
-  },
-  "options_timeline_view_label": {
-    "message": "タイムラインビュー",
-    "description": "时间线视图标签"
   },
   "options_load_failed": {
     "message": "設定を読み込めませんでした。もう一度お試しください。",
@@ -4584,27 +4572,27 @@
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
-    "message": "1つ",
+    "message": "月",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
-    "message": "二",
+    "message": "火",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
-    "message": "三つ",
+    "message": "水",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
-    "message": "4つ",
+    "message": "木",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
-    "message": "五",
+    "message": "金",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
-    "message": "六",
+    "message": "土",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {
@@ -5139,10 +5127,6 @@
     "message": "⚠️ 観察ウィンドウスライダー .observation-slider が見つかりません",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "options_waterfall_view_label": {
-    "message": "滝の眺め",
-    "description": "从TS提取 (_): src/options/options.ts"
-  },
   "nav_storage_node_merged_spa": {
     "message": "ノード {0} はページ内リクエストとマージされました。spaRequestCount={1}",
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
@@ -5156,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "SPAリクエストのマージ数",
+    "message": "モルディブ",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
@@ -5210,5 +5194,45 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "ドロワー %s 未バインドデバッグドキュメントホイールリスナー",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "言語の切り替えエラー: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "強制言語の保存に失敗しました: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "ウォーターフォール",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "必須言語の使用:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "システムに従う",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "このオプションを選択すると、オプション ページでこの言語が強制的に使用されます。「システムに従う」を選択すると、ブラウザの言語が使用されます。",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "background_apply_forced_locale_failed": {
+    "message": "バックグラウンド アプリケーション言語が強制されました: {0}",
+    "description": "从TS提取 (_): src/background/background.ts"
+  },
+  "content_forced_locale_applied": {
+    "message": "強制言語が適用されました: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
+  },
+  "content_apply_forced_locale_failed": {
+    "message": "アプリケーションの強制言語が失敗しました: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
+  },
+  "options_apply_forced_locale_failed": {
+    "message": "アプリケーションの強制言語が失敗しました: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
   }
 }

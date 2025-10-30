@@ -3352,7 +3352,7 @@
     "description": "日历选择器资源清理日志"
   },
   "calendar_month_year": {
-    "message": "{0}, {1}",
+    "message": "{1}.{0}",
     "description": "年月格式"
   },
   "calendar_month_jan": {
@@ -4219,10 +4219,6 @@
     "message": "Baumansicht",
     "description": "下拉选项文本 <option> 文本"
   },
-  "options_option_timeline": {
-    "message": "Zeitleiste",
-    "description": "下拉选项文本 <option> 文本"
-  },
   "options_session_group_title": {
     "message": "Sitzungsverwaltung",
     "description": "分组标题 <h2> 文本"
@@ -4338,14 +4334,6 @@
   "settings_handlers_save_settings": {
     "message": "Einstellungen speichern: {0}",
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
-  },
-  "options_tree_view_label": {
-    "message": "Baumansicht",
-    "description": "树形图视图标签"
-  },
-  "options_timeline_view_label": {
-    "message": "Zeitleistenansicht",
-    "description": "时间线视图标签"
   },
   "options_load_failed": {
     "message": "Die Einstellungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -4580,31 +4568,31 @@
     "description": "从TS提取: src/content/visualizer/state/SessionViewController.ts"
   },
   "calendar_sunday": {
-    "message": "Tag",
+    "message": "So",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
-    "message": "eins",
+    "message": "Mo",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
-    "message": "zwei",
+    "message": "Di",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
-    "message": "drei",
+    "message": "Mi",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
-    "message": "Vier",
+    "message": "Do",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
-    "message": "fünf",
+    "message": "Fr",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
-    "message": "sechs",
+    "message": "Sa",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {
@@ -5139,10 +5127,6 @@
     "message": "⚠️ Beobachtungsfenster-Schieberegler .observation-slider nicht gefunden",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "options_waterfall_view_label": {
-    "message": "Wasserfallblick",
-    "description": "从TS提取 (_): src/options/options.ts"
-  },
   "nav_storage_node_merged_spa": {
     "message": "Knoten {0} wird mit der In-Page-Anforderung zusammengeführt, spaRequestCount={1}",
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
@@ -5156,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "Anzahl der Zusammenführungen von SPA-Anfragen",
+    "message": "Zusammenführungen",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
@@ -5210,5 +5194,45 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "Schublade %s ungebundenes Debug-Dokument Rad-Listener",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "Fehler beim Sprachwechsel: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "Speichern der erzwungenen Sprache fehlgeschlagen: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "Wasserfall",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "Obligatorische Sprachverwendung:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "Folgen Sie dem System",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "Wenn Sie diese Option auswählen, wird die Optionsseite gezwungen, diese Sprache zu verwenden; wenn Sie „System folgen“ auswählen, wird die Browsersprache verwendet.",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "background_apply_forced_locale_failed": {
+    "message": "Hintergrundanwendungssprache erzwungen: {0}",
+    "description": "从TS提取 (_): src/background/background.ts"
+  },
+  "content_forced_locale_applied": {
+    "message": "Es wurde eine erzwungene Sprache angewendet: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
+  },
+  "content_apply_forced_locale_failed": {
+    "message": "Die Anwendung erzwingt keine Sprache: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
+  },
+  "options_apply_forced_locale_failed": {
+    "message": "Die Anwendung erzwingt keine Sprache: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
   }
 }

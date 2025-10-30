@@ -3352,7 +3352,7 @@
     "description": "日历选择器资源清理日志"
   },
   "calendar_month_year": {
-    "message": "{1} {0} г.",
+    "message": "{1}.{0} г.",
     "description": "年月格式"
   },
   "calendar_month_jan": {
@@ -4219,10 +4219,6 @@
     "message": "Древовидное представление",
     "description": "下拉选项文本 <option> 文本"
   },
-  "options_option_timeline": {
-    "message": "Временная шкала",
-    "description": "下拉选项文本 <option> 文本"
-  },
   "options_session_group_title": {
     "message": "Управление сеансом",
     "description": "分组标题 <h2> 文本"
@@ -4338,14 +4334,6 @@
   "settings_handlers_save_settings": {
     "message": "Сохранить настройки: {0}",
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
-  },
-  "options_tree_view_label": {
-    "message": "Вид древовидной карты",
-    "description": "树形图视图标签"
-  },
-  "options_timeline_view_label": {
-    "message": "Вид временной шкалы",
-    "description": "时间线视图标签"
   },
   "options_load_failed": {
     "message": "Не удалось загрузить настройки, попробуйте еще раз",
@@ -4580,31 +4568,31 @@
     "description": "从TS提取: src/content/visualizer/state/SessionViewController.ts"
   },
   "calendar_sunday": {
-    "message": "день",
+    "message": "Вс",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_monday": {
-    "message": "один",
+    "message": "Пн",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_tuesday": {
-    "message": "два",
+    "message": "Вт",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_wednesday": {
-    "message": "три",
+    "message": "Ср",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_thursday": {
-    "message": "Четыре",
+    "message": "Чт",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_friday": {
-    "message": "пять",
+    "message": "Пт",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "calendar_saturday": {
-    "message": "шесть",
+    "message": "Сб",
     "description": "从TS提取: src/content/visualizer/ui/ControlPanel/CalendarSessionSelector.ts"
   },
   "options_help_load_failed": {
@@ -5139,10 +5127,6 @@
     "message": "⚠️ Ползунок окна наблюдения. Ползунок наблюдения не найден.",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "options_waterfall_view_label": {
-    "message": "Вид на водопад",
-    "description": "从TS提取 (_): src/options/options.ts"
-  },
   "nav_storage_node_merged_spa": {
     "message": "Узел {0} объединен с внутристраничным запросом, spaRequestCount={1}",
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
@@ -5156,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "Количество слияний запросов SPA",
+    "message": "Слияния",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
@@ -5210,5 +5194,45 @@
   "waterfall_drawer_wheel_debugdoc_unbound": {
     "message": "ящик %s несвязанный отладочный документ колесо прослушивателя",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
+  },
+  "options_force_language_error": {
+    "message": "Ошибка переключения языка: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_save_force_language_failed": {
+    "message": "Не удалось сохранить принудительный язык: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "options_option_waterfall": {
+    "message": "Водопад",
+    "description": "Translation of 'Waterfall' for options dropdown"
+  },
+  "options_label_force_language": {
+    "message": "Обязательное использование языка:",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_option_follow_system": {
+    "message": "Следуйте системе",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "options_desc_force_language": {
+    "message": "Выбор этого параметра принудительно применит этот язык на странице параметров; выбор «Следовать системе» приведет к использованию языка браузера.",
+    "description": "从HTML提取: src/options/index.html"
+  },
+  "background_apply_forced_locale_failed": {
+    "message": "Принудительный язык фонового приложения: {0}",
+    "description": "从TS提取 (_): src/background/background.ts"
+  },
+  "content_forced_locale_applied": {
+    "message": "Применен принудительный язык: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
+  },
+  "content_apply_forced_locale_failed": {
+    "message": "Ошибка принудительного выбора языка приложения: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
+  },
+  "options_apply_forced_locale_failed": {
+    "message": "Ошибка принудительного выбора языка приложения: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
   }
 }
