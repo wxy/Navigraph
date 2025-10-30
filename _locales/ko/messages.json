@@ -3353,8 +3353,7 @@
   },
   "calendar_month_year": {
     "message": "{0}년{1}월",
-    "description": "年月格式",
-    "_untranslated": true
+    "description": "年月格式"
   },
   "calendar_month_jan": {
     "message": "1월",
@@ -5141,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "병합",
+    "message": "공업",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
@@ -5221,23 +5220,19 @@
     "description": "从HTML提取: src/options/index.html"
   },
   "background_apply_forced_locale_failed": {
-    "message": "后台应用强制语言失败: {0}",
-    "description": "从TS提取 (_): src/background/background.ts",
-    "_untranslated": true
+    "message": "백그라운드 애플리케이션 언어 강제 적용: {0}",
+    "description": "从TS提取 (_): src/background/background.ts"
   },
   "content_forced_locale_applied": {
-    "message": "已应用强制语言: {0}",
-    "description": "从TS提取 (_): src/content/index.ts",
-    "_untranslated": true
+    "message": "강제 언어가 적용되었습니다: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
   },
   "content_apply_forced_locale_failed": {
-    "message": "应用强制语言失败: {0}",
-    "description": "从TS提取 (_): src/content/index.ts",
-    "_untranslated": true
+    "message": "응용 프로그램 강제 언어가 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
   },
   "options_apply_forced_locale_failed": {
-    "message": "应用强制语言失败: {0}",
-    "description": "从TS提取 (_): src/options/options.ts",
-    "_untranslated": true
+    "message": "응용 프로그램 강제 언어가 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
   }
 }

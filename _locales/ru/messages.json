@@ -3353,8 +3353,7 @@
   },
   "calendar_month_year": {
     "message": "{1}.{0} г.",
-    "description": "年月格式",
-    "_untranslated": true
+    "description": "年月格式"
   },
   "calendar_month_jan": {
     "message": "январь",
@@ -5221,23 +5220,19 @@
     "description": "从HTML提取: src/options/index.html"
   },
   "background_apply_forced_locale_failed": {
-    "message": "后台应用强制语言失败: {0}",
-    "description": "从TS提取 (_): src/background/background.ts",
-    "_untranslated": true
+    "message": "Принудительный язык фонового приложения: {0}",
+    "description": "从TS提取 (_): src/background/background.ts"
   },
   "content_forced_locale_applied": {
-    "message": "已应用强制语言: {0}",
-    "description": "从TS提取 (_): src/content/index.ts",
-    "_untranslated": true
+    "message": "Применен принудительный язык: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
   },
   "content_apply_forced_locale_failed": {
-    "message": "应用强制语言失败: {0}",
-    "description": "从TS提取 (_): src/content/index.ts",
-    "_untranslated": true
+    "message": "Ошибка принудительного выбора языка приложения: {0}",
+    "description": "从TS提取 (_): src/content/index.ts"
   },
   "options_apply_forced_locale_failed": {
-    "message": "应用强制语言失败: {0}",
-    "description": "从TS提取 (_): src/options/options.ts",
-    "_untranslated": true
+    "message": "Ошибка принудительного выбора языка приложения: {0}",
+    "description": "从TS提取 (_): src/options/options.ts"
   }
 }
