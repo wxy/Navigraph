@@ -717,13 +717,11 @@ function renderTreeLayout(
       })
       .attr('transform', (d: D3TreeNode) => `translate(${d.y},${d.x})`);
     
-    // 会话节点特殊处理
+    // 会话节点特殊处理 - 改为圆形以更美观地展示会话日期（适配两行显示）
     node.filter((d: D3TreeNode) => d.data.id === 'session-root')
-      .append('rect')
-      .attr('width', 120)
-      .attr('height', 40)
-      .attr('x', -60)
-      .attr('y', -20);
+      .append('circle')
+      .attr('r', 30)
+      .attr('class', 'session-root-circle');
     
     // 普通节点
     node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
@@ -750,15 +748,57 @@ function renderTreeLayout(
     node.append('title')
       .text((d: D3TreeNode) => d.data.title || d.data.url || _('unnamed_node', '未命名节点'));
     
-    // 为会话节点添加文字标签
+    // 为会话节点添加两行文字标签（年 / 月日），居中显示在圆内
     node.filter((d: D3TreeNode) => d.data.id === 'session-root')
-      .append('text')
-      .text((d: D3TreeNode) => {
-        if (visualizer.currentSession) {
-          const date = new Date(visualizer.currentSession.startTime);
-          return date.toLocaleDateString();
+      .each(function(this: SVGGElement, d: D3TreeNode) {
+        const g = d3.select(this);
+        try {
+          if (visualizer && visualizer.currentSession) {
+            const date = new Date(visualizer.currentSession.startTime);
+            const yyyy = String(date.getFullYear());
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mmdd = `${mm}${dd}`;
+
+            // 年份（上行）
+            g.append('text')
+              .attr('class', 'session-root-text session-year')
+              .attr('text-anchor', 'middle')
+              .attr('x', 0)
+              .attr('y', -6)
+              .attr('font-size', '12px')
+              .attr('font-weight', '700')
+              .text(yyyy);
+
+            // 月日（下行）
+            g.append('text')
+              .attr('class', 'session-root-text session-mmdd')
+              .attr('text-anchor', 'middle')
+              .attr('x', 0)
+              .attr('y', 10)
+              .attr('font-size', '11px')
+              .attr('font-weight', '600')
+              .text(mmdd);
+          } else {
+            // 回退到单行显示文本
+            g.append('text')
+              .attr('class', 'session-root-text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'central')
+              .attr('font-size', '12px')
+              .attr('font-weight', '600')
+              .text(_('current_session', '当前会话'));
+          }
+        } catch (e) {
+          // 兜底显示
+          g.append('text')
+            .attr('class', 'session-root-text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .attr('font-size', '12px')
+            .attr('font-weight', '600')
+            .text(_('current_session', '当前会话'));
         }
-        return _('current_session', '当前会话');
       });
     
     // 为普通节点添加简短标签
@@ -801,15 +841,24 @@ function renderTreeLayout(
               .attr('class', 'tree-spa-badge')
               .attr('transform', `translate(${offsetX},${offsetY})`);
 
-            // 仅显示文本数字（取消背景色以避免与节点颜色冲突）
-            // 通过添加轻微描边提高在不同背景下的可读性
+            // 使用空心圆环把次数圈起来（无背景填充），并在其上绘制较小的数字
+            // 确保数字字体不会大于节点标题（使用较小字号，并加描边以增强对比度）
+            badgeGroup.append('circle')
+              .attr('r', 8)
+              .attr('cx', 0)
+              .attr('cy', 0)
+              .attr('fill', 'none')
+              .attr('stroke', '#000000')
+              .attr('stroke-width', 0.8)
+              .style('pointer-events', 'none');
+
             badgeGroup.append('text')
               .attr('class', 'spa-badge-text')
               .attr('x', 0)
               .attr('y', 0)
               .attr('text-anchor', 'middle')
               .attr('dominant-baseline', 'central')
-              .attr('font-size', '9px')
+              .attr('font-size', '7px')
               .attr('font-weight', '700')
               .attr('fill', '#ffffff')
               .attr('stroke', '#000000')

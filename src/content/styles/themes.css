@@ -660,6 +660,34 @@ svg text.group-badge-text {
   stroke: #111;
 }
 
+/* 会话根节点（session-root）样式 - 深色主题 */
+[data-theme="dark"] .session-root-circle {
+  fill: #111; /* 更深的底色，便于与浅色日期文字区分 */
+  stroke: #2b2b2b;
+}
+
+[data-theme="dark"] .session-root-text {
+  fill: #e6edf3; /* 浅色日期文字 */
+  font-weight: 600;
+}
+
+/* 会话根节点（session-root）样式 - 亮色主题 */
+[data-theme="light"] .session-root-circle {
+  fill: #222; /* 深色圆形以与整体浅色背景区分 */
+  stroke: #111;
+}
+
+[data-theme="light"] .session-root-text {
+  fill: #ffffff; /* 浅色日期文字 */
+  font-weight: 600;
+}
+
+/* SPA 角标样式（可被主题覆盖） */
+.tree-spa-badge text.spa-badge-text {
+  /* 使用 CSS 变量作为后备，默认 7px */
+  font-size: var(--badge-font-size, 7px);
+}
+
 [data-theme="dark"] .node.redirect text {
   fill: #ff9800;
 }
