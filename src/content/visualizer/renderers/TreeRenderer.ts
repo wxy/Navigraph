@@ -769,6 +769,15 @@ function renderTreeLayout(
               .attr('font-size', '12px')
               .attr('font-weight', '700')
               .text(yyyy);
+            // 分隔线（年 与 月日 之间）
+            g.append('line')
+              .attr('class', 'session-separator')
+              .attr('x1', -14)
+              .attr('x2', 14)
+              .attr('y1', 2)
+              .attr('y2', 2)
+              .attr('stroke-width', 1)
+              .style('pointer-events', 'none');
 
             // 月日（下行）
             g.append('text')

@@ -688,6 +688,26 @@ svg text.group-badge-text {
   font-size: var(--badge-font-size, 7px);
 }
 
+/* 强制移除树视图中 SPA 角标圆的填充（防止被通用 .node circle 覆盖） */
+.tree-spa-badge circle {
+  fill: none !important;
+  pointer-events: none;
+}
+
+/* 会话根节点分隔线样式，主题相关颜色 */
+[data-theme="dark"] .session-separator {
+  stroke: rgba(230, 237, 243, 0.25); /* 浅色、透明度低 */
+}
+
+[data-theme="light"] .session-separator {
+  stroke: rgba(255, 255, 255, 0.25);
+}
+
+/* 回退默认样式 */
+.session-separator {
+  stroke: rgba(0,0,0,0.12);
+}
+
 [data-theme="dark"] .node.redirect text {
   fill: #ff9800;
 }
