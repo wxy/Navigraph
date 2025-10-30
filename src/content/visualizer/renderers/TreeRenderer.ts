@@ -777,11 +777,29 @@ function renderTreeLayout(
           const spaCount = (d.data as any).spaRequestCount || 0;
           if (spaCount > 0) {
             // 在节点右上方添加一个小徽章：圆形 + 文本
+            // 根据节点已有装饰动态调整角标位置，避免重叠（例如 self-loop 或 filtered-indicator）
+            const hasFilter = Boolean((d.data as any).hasFilteredChildren);
+            const isSelfLoop = Boolean((d.data as any).isSelfLoop);
+
+            let offsetX = 24;
+            let offsetY = -10;
+
+            // filtered-indicator 在节点的右上方 (cx=18, cy=-18)，当存在时把 badge 上移以避免重叠
+            if (hasFilter) {
+              offsetY = -26;
+            }
+
+            // 自循环指示器通常位于右下（或右侧），如果存在则向左移动 badge 以避免重叠
+            if (isSelfLoop) {
+              offsetX = 12;
+              // 若同时存在 filtered 指示器，优先上移再左移
+              if (hasFilter) offsetY = -26;
+            }
+
             const badgeGroup = d3.select(this)
               .append('g')
               .attr('class', 'tree-spa-badge')
-              // 以节点为原点，向右偏移 24px，向上偏移 10px（与现有标记避免重叠）
-              .attr('transform', 'translate(24,-10)');
+              .attr('transform', `translate(${offsetX},${offsetY})`);
 
             // 仅显示文本数字（取消背景色以避免与节点颜色冲突）
             // 通过添加轻微描边提高在不同背景下的可读性
