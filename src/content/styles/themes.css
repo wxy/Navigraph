@@ -684,8 +684,10 @@ svg text.group-badge-text {
 
 /* SPA 角标样式（可被主题覆盖） */
 .tree-spa-badge text.spa-badge-text {
-  /* 使用 CSS 变量作为后备，默认 7px */
+  /* 使用 CSS 变量作为后备，默认 7px；颜色与节点标题一致，去掉描边 */
   font-size: var(--badge-font-size, 7px);
+  fill: var(--svg-text, var(--color-text, #333));
+  stroke: none;
 }
 
 /* 强制移除树视图中 SPA 角标圆的填充（防止被通用 .node circle 覆盖） */
@@ -696,16 +698,19 @@ svg text.group-badge-text {
 
 /* 会话根节点分隔线样式，主题相关颜色 */
 [data-theme="dark"] .session-separator {
-  stroke: rgba(230, 237, 243, 0.25); /* 浅色、透明度低 */
+  stroke: rgba(230, 237, 243, 0.6); /* 深色主题下更明显 */
+  stroke-width: 1.4;
 }
 
 [data-theme="light"] .session-separator {
-  stroke: rgba(255, 255, 255, 0.25);
+  stroke: rgba(0, 0, 0, 0.25); /* 亮色主题下使用深色分隔线 */
+  stroke-width: 1.4;
 }
 
-/* 回退默认样式 */
+/* 回退默认样式（中性） */
 .session-separator {
-  stroke: rgba(0,0,0,0.12);
+  stroke: rgba(0,0,0,0.18);
+  stroke-width: 1.2;
 }
 
 [data-theme="dark"] .node.redirect text {

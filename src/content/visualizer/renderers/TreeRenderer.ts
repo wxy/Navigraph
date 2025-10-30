@@ -4,35 +4,35 @@
  */
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
-import { 
-  NavNode, 
-  NavLink, 
-  ExtendedNavNode,
-  D3TreeNode,
-  D3TreeLink,
-  Visualizer 
-} from '../../types/navigation.js';
+            // 年份（上行） - 上移一点以增大两行间距
+            g.append('text')
+              .attr('class', 'session-root-text session-year')
+              .attr('text-anchor', 'middle')
+              .attr('x', 0)
+              .attr('y', -10)
+              .attr('font-size', '12px')
+              .attr('font-weight', '700')
+              .text(yyyy);
 
-import { 
-  getNodeColor, 
-  getEdgeColor, 
-  isTrackingPage,    
-  renderEmptyTreeMessage 
-} from '../../utils/visualization-utils.js';
+            // 分隔线（年 与 月日 之间）- 更明显、较长
+            g.append('line')
+              .attr('class', 'session-separator')
+              .attr('x1', -18)
+              .attr('x2', 18)
+              .attr('y1', 0)
+              .attr('y2', 0)
+              .attr('stroke-width', 1.4)
+              .style('pointer-events', 'none');
 
-import { 
-  saveViewState, 
-  getViewState
-} from '../../utils/state-manager.js';
-
-import { BaseRenderer } from './BaseRenderer.js';
-
-const d3 = window.d3;
-const logger = new Logger('TreeRenderer');
-
-export class TreeRenderer implements BaseRenderer {
-  private visualizer: Visualizer;
-  private svg: any = null;
+            // 月日（下行） - 下移以增大两行间距
+            g.append('text')
+              .attr('class', 'session-root-text session-mmdd')
+              .attr('text-anchor', 'middle')
+              .attr('x', 0)
+              .attr('y', 14)
+              .attr('font-size', '11px')
+              .attr('font-weight', '600')
+              .text(mmdd);
   private container: HTMLElement | null = null;
   private width: number = 0;
   private height: number = 0;
@@ -850,17 +850,7 @@ function renderTreeLayout(
               .attr('class', 'tree-spa-badge')
               .attr('transform', `translate(${offsetX},${offsetY})`);
 
-            // 使用空心圆环把次数圈起来（无背景填充），并在其上绘制较小的数字
-            // 确保数字字体不会大于节点标题（使用较小字号，并加描边以增强对比度）
-            badgeGroup.append('circle')
-              .attr('r', 8)
-              .attr('cx', 0)
-              .attr('cy', 0)
-              .attr('fill', 'none')
-              .attr('stroke', '#000000')
-              .attr('stroke-width', 0.8)
-              .style('pointer-events', 'none');
-
+            // 仅显示简单文字（与节点标题颜色一致），去掉圆环/描边
             badgeGroup.append('text')
               .attr('class', 'spa-badge-text')
               .attr('x', 0)
@@ -868,11 +858,8 @@ function renderTreeLayout(
               .attr('text-anchor', 'middle')
               .attr('dominant-baseline', 'central')
               .attr('font-size', '7px')
-              .attr('font-weight', '700')
-              .attr('fill', '#ffffff')
-              .attr('stroke', '#000000')
-              .attr('stroke-width', 0.8)
-              .attr('paint-order', 'stroke')
+              .attr('font-weight', '600')
+              // 填充/描边由 CSS 控制（使其与节点标题颜色一致）
               .text(String(spaCount))
               .style('pointer-events', 'none');
 
