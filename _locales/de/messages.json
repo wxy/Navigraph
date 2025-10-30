@@ -5141,7 +5141,8 @@
   },
   "content_spa_request_count": {
     "message": "Zusammenführungen",
-    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts",
+    "_untranslated": true
   },
   "nav_event_handler_cache_update_failed": {
     "message": "Cache konnte nicht aktualisiert werden: {0}",
@@ -5234,5 +5235,10 @@
   "options_apply_forced_locale_failed": {
     "message": "Die Anwendung erzwingt keine Sprache: {0}",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "spa_badge_render_failed": {
+    "message": "渲染 SPA 角标失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts",
+    "_untranslated": true
   }
 }

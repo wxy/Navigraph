@@ -720,7 +720,7 @@ svg text.group-badge-text {
   pointer-events: none;
   /* 默认描边颜色，主题会覆盖 */
   stroke: var(--spa-badge-ring-stroke, #666);
-  stroke-width: 0.8; /* 更细的外圈 */
+  stroke-width: 0.8 !important; /* 更细的外圈 */
 }
 
 /* 主题覆盖：深色与亮色主题下的 SPA 角标配色 */
@@ -744,13 +744,12 @@ svg text.group-badge-text {
 
 /* 会话根节点分隔线样式，主题相关颜色 */
 [data-theme="dark"] .session-separator {
-  /* 使用更高对比度以确保在深色根圆上可见 */
-  stroke: rgba(230, 237, 243, 0.95);
+  stroke: rgba(0, 0, 0, 0.35);
   stroke-width: 1.2;
 }
 
 [data-theme="light"] .session-separator {
-  stroke: rgba(0, 0, 0, 0.35); /* 亮色主题下使用深色分隔线，保证可见性 */
+  stroke: rgba(230, 237, 243, 0.95);
   stroke-width: 1.2;
 }
 

@@ -750,10 +750,10 @@ function renderTreeLayout(
         // 分隔线（由 CSS 控制颜色/宽度，位置稍微靠上以保证在深色圆内可见）
         g.append('line')
           .attr('class', 'session-separator')
-          .attr('x1', -radius * 0.65)
-          .attr('x2', radius * 0.65)
-          .attr('y1', 2)
-          .attr('y2', 2);
+          .attr('x1', -radius * 0.8)
+          .attr('x2', radius * 0.8)
+          .attr('y1', 0)
+          .attr('y2', 0);
 
         // MMDD (下行) — 上移一点以靠近分隔线，整体向上微调以居中
         g.append('text')
