@@ -3352,8 +3352,9 @@
     "description": "日历选择器资源清理日志"
   },
   "calendar_month_year": {
-    "message": "{0}年{1}",
-    "description": "年月格式"
+    "message": "{0}年{1}月",
+    "description": "年月格式",
+    "_untranslated": true
   },
   "calendar_month_jan": {
     "message": "1月",
@@ -4219,10 +4220,6 @@
     "message": "樹形圖",
     "description": "下拉选项文本 <option> 文本"
   },
-  "options_option_timeline": {
-    "message": "時間軸",
-    "description": "下拉选项文本 <option> 文本"
-  },
   "options_session_group_title": {
     "message": "會話管理",
     "description": "分组标题 <h2> 文本"
@@ -4338,14 +4335,6 @@
   "settings_handlers_save_settings": {
     "message": "儲存設定: {0}",
     "description": "日志消息 - 当保存用户设置时显示，{0}为设置对象"
-  },
-  "options_tree_view_label": {
-    "message": "樹形圖",
-    "description": "Label for tree view (short)"
-  },
-  "options_timeline_view_label": {
-    "message": "時間軸",
-    "description": "Label for timeline view (short)"
   },
   "options_load_failed": {
     "message": "載入設定失敗，請重試",
@@ -5139,10 +5128,6 @@
     "message": "⚠️ 未找到觀察視窗滑桿 .observation-slider",
     "description": "从TS提取 (_): src/content/visualizer/renderers/WaterfallRenderer.ts"
   },
-  "options_waterfall_view_label": {
-    "message": "瀑布流視圖",
-    "description": "从TS提取 (_): src/options/options.ts"
-  },
   "nav_storage_node_merged_spa": {
     "message": "節點 {0} 與頁面內請求合併，spaRequestCount={1}",
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
@@ -5234,5 +5219,25 @@
   "options_desc_force_language": {
     "message": "選擇後將強制選項頁使用該語言；選擇「跟隨系統」則使用瀏覽器語言。",
     "description": "从HTML提取: src/options/index.html"
+  },
+  "background_apply_forced_locale_failed": {
+    "message": "后台应用强制语言失败: {0}",
+    "description": "从TS提取 (_): src/background/background.ts",
+    "_untranslated": true
+  },
+  "content_forced_locale_applied": {
+    "message": "已应用强制语言: {0}",
+    "description": "从TS提取 (_): src/content/index.ts",
+    "_untranslated": true
+  },
+  "content_apply_forced_locale_failed": {
+    "message": "应用强制语言失败: {0}",
+    "description": "从TS提取 (_): src/content/index.ts",
+    "_untranslated": true
+  },
+  "options_apply_forced_locale_failed": {
+    "message": "应用强制语言失败: {0}",
+    "description": "从TS提取 (_): src/options/options.ts",
+    "_untranslated": true
   }
 }
