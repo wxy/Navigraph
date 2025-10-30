@@ -783,23 +783,20 @@ function renderTreeLayout(
               // 以节点为原点，向右偏移 24px，向上偏移 10px（与现有标记避免重叠）
               .attr('transform', 'translate(24,-10)');
 
-            // 背景圆（避免覆盖现有图标）
-            badgeGroup.append('circle')
-              .attr('r', 8)
-              .attr('fill', '#2c2c2c')
-              .attr('opacity', 0.95)
-              .attr('class', 'spa-badge-bg');
-
-            // 文本
+            // 仅显示文本数字（取消背景色以避免与节点颜色冲突）
+            // 通过添加轻微描边提高在不同背景下的可读性
             badgeGroup.append('text')
               .attr('class', 'spa-badge-text')
               .attr('x', 0)
               .attr('y', 0)
               .attr('text-anchor', 'middle')
               .attr('dominant-baseline', 'central')
-              .attr('font-size', '8px')
-              .attr('font-weight', '600')
+              .attr('font-size', '9px')
+              .attr('font-weight', '700')
               .attr('fill', '#ffffff')
+              .attr('stroke', '#000000')
+              .attr('stroke-width', 0.8)
+              .attr('paint-order', 'stroke')
               .text(String(spaCount))
               .style('pointer-events', 'none');
 
