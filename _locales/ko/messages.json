@@ -5141,8 +5141,7 @@
   },
   "content_spa_request_count": {
     "message": "공업",
-    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
     "message": "캐시 업데이트에 실패했습니다: {0}",
@@ -5237,8 +5236,11 @@
     "description": "从TS提取 (_): src/options/options.ts"
   },
   "spa_badge_render_failed": {
-    "message": "渲染 SPA 角标失败: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts",
-    "_untranslated": true
+    "message": "SPA 배지를 렌더링하는 데 실패했습니다: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "content_spa_badge_count": {
+    "message": "SPA 요청 수: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
   }
 }

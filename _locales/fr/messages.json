@@ -5141,8 +5141,7 @@
   },
   "content_spa_request_count": {
     "message": "Fusions",
-    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts",
-    "_untranslated": true
+    "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
     "message": "Échec de la mise à jour du cache : {0}",
@@ -5237,8 +5236,11 @@
     "description": "从TS提取 (_): src/options/options.ts"
   },
   "spa_badge_render_failed": {
-    "message": "渲染 SPA 角标失败: {0}",
-    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts",
-    "_untranslated": true
+    "message": "Échec du rendu du badge SPA : {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "content_spa_badge_count": {
+    "message": "Nombre de requêtes SPA : {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
   }
 }

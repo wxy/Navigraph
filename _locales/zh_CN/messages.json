@@ -5140,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "SPA 请求数: {0}",
+    "message": "请求",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
@@ -5237,6 +5237,10 @@
   },
   "spa_badge_render_failed": {
     "message": "渲染 SPA 角标失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "content_spa_badge_count": {
+    "message": "SPA 请求数: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
   }
 }
