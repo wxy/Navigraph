@@ -660,6 +660,105 @@ svg text.group-badge-text {
   stroke: #111;
 }
 
+/* 会话根节点（session-root）样式 - 深色主题 */
+[data-theme="dark"] .session-root-circle {
+  fill: #111; /* 更深的底色，便于与浅色日期文字区分 */
+  stroke: #2b2b2b;
+  stroke-width: 1;
+}
+
+[data-theme="dark"] .session-root-text {
+  fill: #e6edf3; /* 浅色日期文字 */
+  font-weight: 600;
+}
+
+/* 会话根节点（session-root）样式 - 亮色主题 */
+[data-theme="light"] .session-root-circle {
+  fill: #222; /* 深色圆形以与整体浅色背景区分 */
+  stroke: #111;
+  stroke-width: 1;
+}
+
+[data-theme="light"] .session-root-text {
+  fill: #ffffff; /* 浅色日期文字 */
+  font-weight: 600;
+}
+
+/* 会话根节点两行文本样式（默认） */
+.session-year,
+.session-mmdd {
+  font-family: inherit;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .session-year,
+[data-theme="dark"] .session-mmdd {
+  fill: rgba(230,237,243,0.95);
+}
+
+[data-theme="light"] .session-year,
+[data-theme="light"] .session-mmdd {
+  fill: #ffffff;
+}
+
+/* SPA 角标样式（可被主题覆盖） */
+.tree-spa-badge text.spa-badge-text {
+  /* 使用 CSS 变量作为后备，默认 7px；文本垂直居中并允许描边以提高可读性 */
+  font-size: var(--badge-font-size, 7px);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke-width: 0.8;
+  /* 默认颜色为浅色文本 + 深色描边（用于浅主题），主题规则会覆盖 */
+  fill: var(--spa-badge-fill, #fff);
+  stroke: var(--spa-badge-stroke, #000);
+}
+
+/* 强制移除树视图中 SPA 角标圆的填充（防止被通用 .node circle 覆盖） */
+.tree-spa-badge circle {
+  fill: none !important;
+  pointer-events: none;
+  /* 默认描边颜色，主题会覆盖 */
+  stroke: var(--spa-badge-ring-stroke, #666);
+  stroke-width: 0.8 !important; /* 更细的外圈 */
+}
+
+/* 主题覆盖：深色与亮色主题下的 SPA 角标配色 */
+[data-theme="dark"] .tree-spa-badge text.spa-badge-text {
+  fill: rgba(230,237,243,0.95); /* 浅色文本 */
+  stroke: rgba(0,0,0,0.85);
+}
+
+[data-theme="dark"] .tree-spa-badge circle {
+  stroke: rgba(230,237,243,0.35);
+}
+
+[data-theme="light"] .tree-spa-badge text.spa-badge-text {
+  fill: #111; /* 深色文本 */
+  stroke: rgba(255,255,255,0.85);
+}
+
+[data-theme="light"] .tree-spa-badge circle {
+  stroke: rgba(0,0,0,0.18);
+}
+
+/* 会话根节点分隔线样式，主题相关颜色 */
+[data-theme="dark"] .session-separator {
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 1.2;
+}
+
+[data-theme="light"] .session-separator {
+  stroke: rgba(230, 237, 243, 0.95);
+  stroke-width: 1.2;
+}
+
+/* 回退默认样式（中性） */
+.session-separator {
+  stroke: rgba(0,0,0,0.18);
+  stroke-width: 1.2;
+}
+
 [data-theme="dark"] .node.redirect text {
   fill: #ff9800;
 }

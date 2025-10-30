@@ -5140,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "请求",
+    "message": "请求数",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
@@ -5234,5 +5234,9 @@
   "options_apply_forced_locale_failed": {
     "message": "应用强制语言失败: {0}",
     "description": "从TS提取 (_): src/options/options.ts"
+  },
+  "spa_badge_render_failed": {
+    "message": "渲染 SPA 角标失败: {0}",
+    "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
   }
 }
