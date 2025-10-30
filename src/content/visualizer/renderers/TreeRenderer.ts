@@ -769,6 +769,47 @@ function renderTreeLayout(
         if (!d.data.title) return '';
         return d.data.title.length > 15 ? d.data.title.substring(0, 12) + '...' : d.data.title;
       });
+
+    // 在树视图节点上显示 SPA 请求合并计数角标（轻量化，不影响已有装饰）
+    node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
+      .each(function(this: SVGGElement, d: D3TreeNode) {
+        try {
+          const spaCount = (d.data as any).spaRequestCount || 0;
+          if (spaCount > 0) {
+            // 在节点右上方添加一个小徽章：圆形 + 文本
+            const badgeGroup = d3.select(this)
+              .append('g')
+              .attr('class', 'tree-spa-badge')
+              // 以节点为原点，向右偏移 24px，向上偏移 10px（与现有标记避免重叠）
+              .attr('transform', 'translate(24,-10)');
+
+            // 背景圆（避免覆盖现有图标）
+            badgeGroup.append('circle')
+              .attr('r', 8)
+              .attr('fill', '#2c2c2c')
+              .attr('opacity', 0.95)
+              .attr('class', 'spa-badge-bg');
+
+            // 文本
+            badgeGroup.append('text')
+              .attr('class', 'spa-badge-text')
+              .attr('x', 0)
+              .attr('y', 0)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'central')
+              .attr('font-size', '8px')
+              .attr('font-weight', '600')
+              .attr('fill', '#ffffff')
+              .text(String(spaCount))
+              .style('pointer-events', 'none');
+
+            // title 提示
+            badgeGroup.append('title').text(`${spaCount} SPA requests merged`);
+          }
+        } catch (e) {
+          // 不阻塞渲染
+        }
+      });
     
     // 为有被过滤子节点的节点添加标记
     node.filter((d: D3TreeNode) => d.data.hasFilteredChildren)
