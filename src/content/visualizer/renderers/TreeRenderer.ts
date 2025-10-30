@@ -803,8 +803,13 @@ function renderTreeLayout(
               .text(String(spaCount))
               .style('pointer-events', 'none');
 
-            // title 提示
-            badgeGroup.append('title').text(`${spaCount} SPA requests merged`);
+            // title 提示（使用 i18n 标签短语）
+            try {
+              badgeGroup.append('title').text(`${spaCount} ${_('content_spa_request_count', '请求')}`);
+            } catch (e) {
+              // 兜底为英文提示
+              badgeGroup.append('title').text(`${spaCount} SPA requests merged`);
+            }
           }
         } catch (e) {
           // 不阻塞渲染
