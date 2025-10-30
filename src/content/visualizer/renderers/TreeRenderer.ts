@@ -4,35 +4,35 @@
  */
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
-            // 年份（上行） - 上移一点以增大两行间距
-            g.append('text')
-              .attr('class', 'session-root-text session-year')
-              .attr('text-anchor', 'middle')
-              .attr('x', 0)
-              .attr('y', -10)
-              .attr('font-size', '12px')
-              .attr('font-weight', '700')
-              .text(yyyy);
+import { 
+  NavNode, 
+  NavLink, 
+  ExtendedNavNode,
+  D3TreeNode,
+  D3TreeLink,
+  Visualizer 
+} from '../../types/navigation.js';
 
-            // 分隔线（年 与 月日 之间）- 更明显、较长
-            g.append('line')
-              .attr('class', 'session-separator')
-              .attr('x1', -18)
-              .attr('x2', 18)
-              .attr('y1', 0)
-              .attr('y2', 0)
-              .attr('stroke-width', 1.4)
-              .style('pointer-events', 'none');
+import { 
+  getNodeColor, 
+  getEdgeColor, 
+  isTrackingPage,    
+  renderEmptyTreeMessage 
+} from '../../utils/visualization-utils.js';
 
-            // 月日（下行） - 下移以增大两行间距
-            g.append('text')
-              .attr('class', 'session-root-text session-mmdd')
-              .attr('text-anchor', 'middle')
-              .attr('x', 0)
-              .attr('y', 14)
-              .attr('font-size', '11px')
-              .attr('font-weight', '600')
-              .text(mmdd);
+import { 
+  saveViewState, 
+  getViewState
+} from '../../utils/state-manager.js';
+
+import { BaseRenderer } from './BaseRenderer.js';
+
+const d3 = window.d3;
+const logger = new Logger('TreeRenderer');
+
+export class TreeRenderer implements BaseRenderer {
+  private visualizer: Visualizer;
+  private svg: any = null;
   private container: HTMLElement | null = null;
   private width: number = 0;
   private height: number = 0;
@@ -717,11 +717,53 @@ function renderTreeLayout(
       })
       .attr('transform', (d: D3TreeNode) => `translate(${d.y},${d.x})`);
     
-    // 会话节点特殊处理 - 改为圆形以更美观地展示会话日期（适配两行显示）
+    // 会话节点特殊处理 — 使用圆形根节点并显示两行日期（年 / MMDD）
     node.filter((d: D3TreeNode) => d.data.id === 'session-root')
-      .append('circle')
-      .attr('r', 30)
-      .attr('class', 'session-root-circle');
+      .append('g')
+      .attr('class', 'session-root-group')
+      .each(function(this: SVGGElement, d: D3TreeNode) {
+        const g = d3.select(this);
+        const radius = 30; // 稍大以突出会话根
+
+        g.append('circle')
+          .attr('r', radius)
+          .attr('class', 'session-root-circle');
+
+        // 计算日期文本内容
+        let yearText = _('current_session', '当前会话');
+        let mmddText = '';
+        if (visualizer.currentSession) {
+          const date = new Date(visualizer.currentSession.startTime);
+          yearText = String(date.getFullYear());
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          mmddText = `${mm}${dd}`;
+        }
+
+        // 年 (上行)
+        g.append('text')
+          .attr('class', 'session-year')
+          .attr('text-anchor', 'middle')
+          .attr('y', -6)
+          .text(yearText);
+
+        // 分隔线
+        g.append('line')
+          .attr('class', 'session-separator')
+          .attr('x1', -radius * 0.6)
+          .attr('x2', radius * 0.6)
+          .attr('y1', 2)
+          .attr('y2', 2)
+          .attr('stroke-width', 1)
+          .attr('stroke', '#999');
+
+        // MMDD (下行)
+        g.append('text')
+          .attr('class', 'session-mmdd')
+          .attr('text-anchor', 'middle')
+          .attr('y', 16)
+          .text(mmddText);
+      });
     
     // 普通节点
     node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
@@ -748,67 +790,7 @@ function renderTreeLayout(
     node.append('title')
       .text((d: D3TreeNode) => d.data.title || d.data.url || _('unnamed_node', '未命名节点'));
     
-    // 为会话节点添加两行文字标签（年 / 月日），居中显示在圆内
-    node.filter((d: D3TreeNode) => d.data.id === 'session-root')
-      .each(function(this: SVGGElement, d: D3TreeNode) {
-        const g = d3.select(this);
-        try {
-          if (visualizer && visualizer.currentSession) {
-            const date = new Date(visualizer.currentSession.startTime);
-            const yyyy = String(date.getFullYear());
-            const mm = String(date.getMonth() + 1).padStart(2, '0');
-            const dd = String(date.getDate()).padStart(2, '0');
-            const mmdd = `${mm}${dd}`;
-
-            // 年份（上行）
-            g.append('text')
-              .attr('class', 'session-root-text session-year')
-              .attr('text-anchor', 'middle')
-              .attr('x', 0)
-              .attr('y', -6)
-              .attr('font-size', '12px')
-              .attr('font-weight', '700')
-              .text(yyyy);
-            // 分隔线（年 与 月日 之间）
-            g.append('line')
-              .attr('class', 'session-separator')
-              .attr('x1', -14)
-              .attr('x2', 14)
-              .attr('y1', 2)
-              .attr('y2', 2)
-              .attr('stroke-width', 1)
-              .style('pointer-events', 'none');
-
-            // 月日（下行）
-            g.append('text')
-              .attr('class', 'session-root-text session-mmdd')
-              .attr('text-anchor', 'middle')
-              .attr('x', 0)
-              .attr('y', 10)
-              .attr('font-size', '11px')
-              .attr('font-weight', '600')
-              .text(mmdd);
-          } else {
-            // 回退到单行显示文本
-            g.append('text')
-              .attr('class', 'session-root-text')
-              .attr('text-anchor', 'middle')
-              .attr('dominant-baseline', 'central')
-              .attr('font-size', '12px')
-              .attr('font-weight', '600')
-              .text(_('current_session', '当前会话'));
-          }
-        } catch (e) {
-          // 兜底显示
-          g.append('text')
-            .attr('class', 'session-root-text')
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'central')
-            .attr('font-size', '12px')
-            .attr('font-weight', '600')
-            .text(_('current_session', '当前会话'));
-        }
-      });
+    // （会话节点的详细文本由上方 session-root-group 处理）
     
     // 为普通节点添加简短标签
     node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
@@ -817,63 +799,6 @@ function renderTreeLayout(
       .text((d: D3TreeNode) => {
         if (!d.data.title) return '';
         return d.data.title.length > 15 ? d.data.title.substring(0, 12) + '...' : d.data.title;
-      });
-
-    // 在树视图节点上显示 SPA 请求合并计数角标（轻量化，不影响已有装饰）
-    node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
-      .each(function(this: SVGGElement, d: D3TreeNode) {
-        try {
-          const spaCount = (d.data as any).spaRequestCount || 0;
-          if (spaCount > 0) {
-            // 在节点右上方添加一个小徽章：圆形 + 文本
-            // 根据节点已有装饰动态调整角标位置，避免重叠（例如 self-loop 或 filtered-indicator）
-            const hasFilter = Boolean((d.data as any).hasFilteredChildren);
-            const isSelfLoop = Boolean((d.data as any).isSelfLoop);
-
-            let offsetX = 24;
-            let offsetY = -10;
-
-            // filtered-indicator 在节点的右上方 (cx=18, cy=-18)，当存在时把 badge 上移以避免重叠
-            if (hasFilter) {
-              offsetY = -26;
-            }
-
-            // 自循环指示器通常位于右下（或右侧），如果存在则向左移动 badge 以避免重叠
-            if (isSelfLoop) {
-              offsetX = 12;
-              // 若同时存在 filtered 指示器，优先上移再左移
-              if (hasFilter) offsetY = -26;
-            }
-
-            const badgeGroup = d3.select(this)
-              .append('g')
-              .attr('class', 'tree-spa-badge')
-              .attr('transform', `translate(${offsetX},${offsetY})`);
-
-            // 仅显示简单文字（与节点标题颜色一致），去掉圆环/描边
-            badgeGroup.append('text')
-              .attr('class', 'spa-badge-text')
-              .attr('x', 0)
-              .attr('y', 0)
-              .attr('text-anchor', 'middle')
-              .attr('dominant-baseline', 'central')
-              .attr('font-size', '7px')
-              .attr('font-weight', '600')
-              // 填充/描边由 CSS 控制（使其与节点标题颜色一致）
-              .text(String(spaCount))
-              .style('pointer-events', 'none');
-
-            // title 提示（使用 i18n 标签短语）
-            try {
-              badgeGroup.append('title').text(`${spaCount} ${_('content_spa_request_count', '请求')}`);
-            } catch (e) {
-              // 兜底为英文提示
-              badgeGroup.append('title').text(`${spaCount} SPA requests merged`);
-            }
-          }
-        } catch (e) {
-          // 不阻塞渲染
-        }
       });
     
     // 为有被过滤子节点的节点添加标记
@@ -895,6 +820,66 @@ function renderTreeLayout(
       .attr('class', 'self-loop-indicator')
       .append('title')
       .text(_('page_has_self_refresh', '页面存在自我刷新'));
+
+    // 为普通节点添加 SPA 请求数角标（来源: d.data.spaRequestCount）
+    // 角标基于节点半径计算位置与尺寸，避免与已有装饰（filtered/self-loop）重叠
+    node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
+      .each(function(this: SVGGElement, d: D3TreeNode) {
+        try {
+          const badgeCount = Number((d.data as any).spaRequestCount || 0);
+          if (!badgeCount || badgeCount <= 0) return;
+
+          const gNode = d3.select(this);
+          const hasFiltered = !!d.data.hasFilteredChildren;
+          const isSelfLoop = !!d.data.isSelfLoop;
+
+          // 尝试从节点本身读取半径（如果有），否则使用默认值
+          let nodeRadius = 20;
+          const ownCircle = gNode.select('circle');
+          if (!ownCircle.empty()) {
+            const rAttr = ownCircle.attr('r');
+            if (rAttr) nodeRadius = Number(rAttr) || nodeRadius;
+          }
+
+          // 基于半径计算偏移：放在右上方，距离边缘有一定间距
+          let bx = Math.ceil(nodeRadius + 6);
+          let by = Math.ceil(-nodeRadius * 0.6);
+
+          // 如果存在 filtered indicator（通常在右上），向上或向右避让
+          if (hasFiltered) {
+            by -= 8;
+            bx += 6;
+          }
+
+          // 如果存在 self-loop indicator（通常在右下），把角标上移以避免重合
+          if (isSelfLoop) {
+            by -= 6;
+          }
+
+          const badgeRadius = Math.max(6, Math.min(10, Math.round(nodeRadius * 0.35)));
+
+          const badge = gNode.append('g')
+            .attr('class', 'tree-spa-badge')
+            .attr('transform', `translate(${bx},${by})`);
+
+          // 空心圆环（样式交由 CSS 控制）
+          badge.append('circle')
+            .attr('r', badgeRadius)
+            .attr('class', 'spa-badge-ring');
+
+          // 数字文本，垂直居中由 dominant-baseline 控制，视觉样式交由 CSS
+          badge.append('text')
+            .attr('class', 'spa-badge-text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .text(String(badgeCount));
+
+          badge.append('title')
+            .text(_('content_spa_request_count', 'SPA 请求数: {0}', String(badgeCount)));
+        } catch (e) {
+          logger.warn(_('spa_badge_render_failed', '渲染 SPA 角标失败: {0}'), String(e));
+        }
+      });
 
     // 给自循环节点添加循环箭头图标
     node.filter((d: D3TreeNode) => d.data.isSelfLoop)

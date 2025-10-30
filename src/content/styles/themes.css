@@ -684,16 +684,43 @@ svg text.group-badge-text {
 
 /* SPA 角标样式（可被主题覆盖） */
 .tree-spa-badge text.spa-badge-text {
-  /* 使用 CSS 变量作为后备，默认 7px；颜色与节点标题一致，去掉描边 */
+  /* 使用 CSS 变量作为后备，默认 7px；文本垂直居中并允许描边以提高可读性 */
   font-size: var(--badge-font-size, 7px);
-  fill: var(--svg-text, var(--color-text, #333));
-  stroke: none;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke-width: 0.8;
+  /* 默认颜色为浅色文本 + 深色描边（用于浅主题），主题规则会覆盖 */
+  fill: var(--spa-badge-fill, #fff);
+  stroke: var(--spa-badge-stroke, #000);
 }
 
 /* 强制移除树视图中 SPA 角标圆的填充（防止被通用 .node circle 覆盖） */
 .tree-spa-badge circle {
   fill: none !important;
   pointer-events: none;
+  /* 默认描边颜色，主题会覆盖 */
+  stroke: var(--spa-badge-ring-stroke, #666);
+  stroke-width: 1;
+}
+
+/* 主题覆盖：深色与亮色主题下的 SPA 角标配色 */
+[data-theme="dark"] .tree-spa-badge text.spa-badge-text {
+  fill: rgba(230,237,243,0.95); /* 浅色文本 */
+  stroke: rgba(0,0,0,0.85);
+}
+
+[data-theme="dark"] .tree-spa-badge circle {
+  stroke: rgba(230,237,243,0.35);
+}
+
+[data-theme="light"] .tree-spa-badge text.spa-badge-text {
+  fill: #111; /* 深色文本 */
+  stroke: rgba(255,255,255,0.85);
+}
+
+[data-theme="light"] .tree-spa-badge circle {
+  stroke: rgba(0,0,0,0.18);
 }
 
 /* 会话根节点分隔线样式，主题相关颜色 */
