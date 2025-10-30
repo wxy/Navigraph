@@ -722,8 +722,8 @@ function renderTreeLayout(
       .append('g')
       .attr('class', 'session-root-group')
       .each(function(this: SVGGElement, d: D3TreeNode) {
-        const g = d3.select(this);
-        const radius = 30; // 稍大以突出会话根
+  const g = d3.select(this);
+  const radius = 36; // 增大会话根圆以更醒目
 
         g.append('circle')
           .attr('r', radius)
@@ -744,16 +744,16 @@ function renderTreeLayout(
         g.append('text')
           .attr('class', 'session-year')
           .attr('text-anchor', 'middle')
-          .attr('y', -6)
+          .attr('y', -12)
           .text(yearText);
 
-        // 分隔线
+        // 分隔线（位于两行文字之间）
         g.append('line')
           .attr('class', 'session-separator')
-          .attr('x1', -radius * 0.6)
-          .attr('x2', radius * 0.6)
-          .attr('y1', 2)
-          .attr('y2', 2)
+          .attr('x1', -radius * 0.7)
+          .attr('x2', radius * 0.7)
+          .attr('y1', 0)
+          .attr('y2', 0)
           .attr('stroke-width', 1)
           .attr('stroke', '#999');
 
@@ -761,7 +761,7 @@ function renderTreeLayout(
         g.append('text')
           .attr('class', 'session-mmdd')
           .attr('text-anchor', 'middle')
-          .attr('y', 16)
+          .attr('y', 10)
           .text(mmddText);
       });
     
@@ -872,6 +872,7 @@ function renderTreeLayout(
             .attr('class', 'spa-badge-text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'middle')
+            .attr('dy', '0.25em') /* 再次微调垂直位置，防止数字偏高 */
             .text(String(badgeCount));
 
           badge.append('title')
