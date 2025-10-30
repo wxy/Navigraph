@@ -5140,7 +5140,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "请求数",
+    "message": "SPA 请求数: {0}",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {

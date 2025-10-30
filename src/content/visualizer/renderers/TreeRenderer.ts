@@ -874,7 +874,7 @@ function renderTreeLayout(
             .text(String(badgeCount));
 
           badge.append('title')
-            .text(_('content_spa_request_count', 'SPA 请求数: {0}', String(badgeCount)));
+            .text(_('content_spa_badge_count', 'SPA 请求数: {0}', String(badgeCount)));
         } catch (e) {
           logger.warn(_('spa_badge_render_failed', '渲染 SPA 角标失败: {0}'), String(e));
         }
