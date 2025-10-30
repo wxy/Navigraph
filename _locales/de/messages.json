@@ -5141,7 +5141,7 @@
     "description": "从TS提取 (_): src/background/store/navigation-storage.ts"
   },
   "content_spa_request_count": {
-    "message": "Anzahl der Zusammenführungen von SPA-Anfragen",
+    "message": "Zusammenführungen",
     "description": "从TS提取 (_): src/content/visualizer/ui/NodeDetails.ts"
   },
   "nav_event_handler_cache_update_failed": {
