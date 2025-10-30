@@ -720,7 +720,7 @@ svg text.group-badge-text {
   pointer-events: none;
   /* 默认描边颜色，主题会覆盖 */
   stroke: var(--spa-badge-ring-stroke, #666);
-  stroke-width: 1;
+  stroke-width: 0.8; /* 更细的外圈 */
 }
 
 /* 主题覆盖：深色与亮色主题下的 SPA 角标配色 */

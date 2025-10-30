@@ -744,16 +744,16 @@ function renderTreeLayout(
         g.append('text')
           .attr('class', 'session-year')
           .attr('text-anchor', 'middle')
-          .attr('y', -12)
+          .attr('y', -6)
           .text(yearText);
 
-        // 分隔线（位于两行文字之间）
+        // 分隔线（位于两行文字之间，向下微调以确保可见）
         g.append('line')
           .attr('class', 'session-separator')
           .attr('x1', -radius * 0.7)
           .attr('x2', radius * 0.7)
-          .attr('y1', 0)
-          .attr('y2', 0)
+          .attr('y1', 4)
+          .attr('y2', 4)
           .attr('stroke-width', 1)
           .attr('stroke', '#999');
 
@@ -761,7 +761,7 @@ function renderTreeLayout(
         g.append('text')
           .attr('class', 'session-mmdd')
           .attr('text-anchor', 'middle')
-          .attr('y', 10)
+          .attr('y', 18)
           .text(mmddText);
       });
     
@@ -872,7 +872,7 @@ function renderTreeLayout(
             .attr('class', 'spa-badge-text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'middle')
-            .attr('dy', '0.25em') /* 再次微调垂直位置，防止数字偏高 */
+            .attr('dy', '-0.05em') /* 微调向上，修正数字略偏下的问题 */
             .text(String(badgeCount));
 
           badge.append('title')
