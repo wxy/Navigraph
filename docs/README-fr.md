@@ -1,131 +1,133 @@
-Navigraph : Visualisez votre historique de navigation
+Navigraph : Visualisation de l'historique de navigation
 ===
 
-> Visualisez intuitivement vos parcours de navigation et votre historique Web, vous aidant à comprendre le flux d'information et à mémoriser vos trajectoires de navigation.
+> Visualisez intuitivement vos chemins de navigation et l'historique de navigation web pour comprendre le flux d'informations et vous aider à vous souvenir de vos itinéraires de navigation.
 
 ## Fonctionnalités principales
 
-- 📊 **Visualisation de l'historique** - Affichez vos parcours Web sous forme de diagrammes arborescents et de graphes relationnels
-- 🗂️ **Gestion des sessions** - Organisation automatique des activités de navigation en sessions significatives
-- 🔄 **Mises à jour en temps réel** - Actualisation dynamique des graphiques pendant votre navigation
-- 🛡️ **Protection de la vie privée** - Toutes les données sont stockées localement, jamais téléchargées vers le cloud
-- 🌙 **Mode sombre** - Support du thème sombre pour protéger vos yeux
+- 📊 **Visualisation de l'historique de navigation** - Affichez les chemins de navigation web à l'aide de diagrammes en arbre et en cascade
+- 🗂️ **Gestion des sessions** - Organisez automatiquement les activités de navigation en sessions significatives
+- 🔄 **Mises à jour en temps réel** - Mettez à jour dynamiquement les diagrammes de navigation pendant la navigation
+- 🛡️ **Protection de la vie privée** - Toutes les données sont stockées localement et ne sont jamais téléchargées sur le cloud
+- 🌙 **Mode sombre** - Prend en charge les thèmes sombres pour protéger vos yeux
 
+### Démarrage rapide
 
+1. Ouvrez la page de l'extension (cliquez sur l'icône Navigraph dans la barre d'outils).
+2. Survolez brièvement ou cliquez sur la poignée du panneau de contrôle sur le côté droit de la page pour ouvrir la barre latérale. Depuis la barre latérale, vous pouvez sélectionner des dates de session, changer de vue ou filtrer les nœuds.
+3. Utilisez la barre d'état pour changer de vue ou basculer la visibilité des nœuds masqués/fermés.
+4. Cliquez sur les nœuds pour afficher des informations détaillées.
 
-## Guide d'utilisation
-
-Navigraph offre une interface intuitive qui vous aide à visualiser et analyser votre historique de navigation. Voici des instructions détaillées :
-
-### Opérations de base
-
-1. Lancer l'extension : Cliquez sur l'icône Navigraph dans la barre d'outils de votre navigateur pour ouvrir un nouvel onglet affichant la visualisation de votre historique.
-2. Voir la session actuelle : Par défaut, l'extension affiche votre session de navigation en cours.
-3. Panneau de contrôle : Le panneau gauche permet de changer de session et d'appliquer des filtres.
-4. Changement de vue : La barre d'outils supérieure permet de basculer entre différentes vues de visualisation.
-
-### Vues de visualisation
-
-Navigraph propose plusieurs façons de consulter votre historique de navigation :
-
-1. Vue arborescente : Affiche les relations de navigation entre pages dans une structure hiérarchique, montrant clairement quelle page a mené à la suivante.
-2. Waterfall : Visualise les événements de navigation le long d'un axe temporel, utile pour voir les chevauchements et les durées.
-
-### Gestion des sessions
-
-1. Division automatique des sessions : Le système divise automatiquement votre historique de navigation en différentes sessions selon vos habitudes et intervalles de temps.
-2. Calendrier des sessions :
-   - Cliquez ou survolez avec la souris pour ouvrir le panneau de contrôle à droite
-   - Les dates avec des enregistrements sont marquées de couleurs spéciales
-   - Cliquez sur une date pour voir les sessions de ce jour et charger son historique de navigation
-3. Mode jour ouvrable : Le système organise les sessions en fonction des jours ouvrables, facilitant la distinction entre activités de navigation professionnelles et personnelles.
-
-### Filtrage
-
-1. Filtrage par type : Utilisez les outils de filtrage pour filtrer les pages par type de navigation (accès direct, clics sur liens, soumissions de formulaires, etc.).
-2. Filtrage par comportement : Utilisez les outils de filtrage pour filtrer les pages par comportement de navigation.
-3. Filtrage par statut : Choisissez d'afficher uniquement les pages actives ou d'inclure les pages fermées.
-
-### Interaction avec les nœuds
-
-1. Voir les détails :
-   - Survolez les nœuds pour afficher de brèves informations sur la page
-   - Cliquez sur les nœuds pour voir les détails complets (titre, URL, heure d'accès, etc.)
-2. Revisiter : Cliquez sur les liens dans le panneau de détails du nœud pour rouvrir la page
-3. Mise en évidence : Cliquer sur un nœud met en évidence les autres nœuds directement liés
-4. Déplacement et zoom :
-   - Faites glisser la zone de visualisation pour déplacer l'ensemble du graphique
-   - Utilisez la molette de la souris pour zoomer ou dézoomer
-   - Utilisez les gestes à deux doigts sur les appareils tactiles pour zoomer
-
-### Personnalisation
-
-1. Changement de thème : Basculez entre les thèmes clair/sombre dans la barre d'outils supérieure
-2. Ajustement de la mise en page : Ajustez l'espacement des nœuds, le style des lignes de connexion et autres paramètres visuels
-3. Paramètres de session :
-   - Ajustez le seuil de temps d'inactivité pour la création automatique de nouvelles sessions
-   - Sélectionnez le mode de session (quotidien/manuel/basé sur l'activité)
-
-### Gestion des données
-
-1. Localisation des données : Toutes les données d'historique sont stockées uniquement sur votre appareil, garantissant la confidentialité.
-2. Fonctionnalité d'exportation : Exportez l'historique de navigation des sessions sélectionnées aux formats JSON ou CSV pour analyse.
-
-### Cas d'utilisation courants
-
-1. Retrouver des pages visitées précédemment : Même si vous avez oublié l'URL ou le titre, vous pouvez retrouver les pages précédemment consultées grâce à la visualisation.
-2. Analyser les habitudes de navigation : Comprendre vos habitudes Internet, les sites fréquemment visités et les parcours de navigation typiques.
-3. Organisation de la recherche professionnelle : Revisitez toutes les pages connexes consultées lors de sessions spécifiques pour organiser vos idées et matériaux.
-
-### Dépannage
-
-1. Vue non mise à jour : Si l'activité de navigation actuelle n'apparaît pas dans le graphique, essayez d'actualiser la page de l'extension.
-2. Problèmes d'identification de session : Si la division des sessions ne correspond pas à vos attentes, ajustez le seuil de temps d'inactivité dans les paramètres.
-
-Avec ce guide, vous devriez être en mesure de profiter pleinement de toutes les fonctionnalités de Navigraph pour mieux gérer et comprendre votre historique de navigation Web.
-
-## Mises à jour récentes
-
-Changements depuis la v1.1.0 :
-
-- La vue « Chronologie » a été remplacée par la nouvelle vue « Waterfall ».
-- Affichage du nombre de requêtes SPA sur les nœuds de l'arbre sous la forme d'un petit badge discret.
-- Refonte de la racine de session : nœud circulaire avec affichage de la date sur deux lignes.
-
-## Développeur & Informations techniques
+## Guide de l'utilisateur (aperçu)
 
 ### Installation
 
 #### Depuis le Chrome Web Store
 
 1. Visitez la [page Navigraph sur le Chrome Web Store](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
-2. Cliquez sur "Ajouter à Chrome".
+2. Cliquez sur "Ajouter à Chrome"
 
-#### Développement local
+#### Depuis le Microsoft Edge Add-ons Store
+
+1. Visitez la [page Navigraph sur le Microsoft Edge Add-ons Store](https://microsoftedge.microsoft.com/addons/detail/ibcpeknflplfaljendadfkhmflhfnhdh)
+2. Cliquez sur "Obtenir" pour installer l'extension
+
+### Barre latérale
+
+La barre latérale est principalement utilisée pour la sélection de sessions et le filtrage des nœuds :
+
+- Changement de vue : Changez la vue actuelle (diagramme en arbre / diagramme en cascade) depuis le haut de la barre latérale
+- Calendrier des sessions : Affiche les sessions par date et vous permet de sélectionner et de charger des historiques de sessions. Si plusieurs sessions existent le même jour, elles sont affichées individuellement
+- Contrôles de filtrage : Filtrez les résultats en fonction des types de navigation ou des actions (par exemple, afficher uniquement les clics sur les liens, les soumissions de formulaires, etc.)
+
+Astuce : La barre latérale sert de point d'entrée principal pour changer les plages de données ou identifier les portées d'analyse. Il est recommandé de sélectionner d'abord une session, puis de changer de vue.
+
+### Barre d'état
+
+La barre d'état fournit un contexte concis et des interactions dans l'interface :
+
+- Affiche et change la vue actuelle (diagramme en arbre / diagramme en cascade)
+- Affiche les statistiques de session (par exemple, nombre de nœuds, durée de la session) et fournit des actions rapides liées à la vue (par exemple, basculer la visibilité des nœuds masqués)
+- Cliquez sur la date pour revenir rapidement à la session d'aujourd'hui
+
+Explication : Les contrôles de la barre d'état sont des points d'entrée d'interaction directe liés à la vue actuelle. Un filtrage plus complexe continue d'être effectué via la barre latérale.
+
+### Interactions avec les vues
+
+Navigraph propose deux vues complémentaires : le diagramme en arbre et le diagramme en cascade.
+
+#### Diagramme en arbre
+
+Objectif : Affichez les chemins de navigation des pages à l'aide de relations hiérarchiques, ce qui facilite l'analyse des points d'entrée et des branches.
+
+- Interaction avec les nœuds : Survolez pour afficher des informations brèves. Cliquez pour ouvrir le panneau de détails (y compris le titre, l'URL, l'heure d'accès, le nombre de requêtes SPA, etc.)
+- Zoom/Déplacement : Dans la vue en arbre, faites glisser la toile avec la souris pour la déplacer, et utilisez la molette de la souris pour mettre à l'échelle la vue (le comportement spécifique peut varier selon le navigateur et les paramètres)
+- Badge SPA : Les nœuds de l'arbre comportent des badges annulaires subtils et des chiffres (si des requêtes SPA existent) pour indiquer le nombre de requêtes SPA fusionnées dans le nœud.
+
+#### Diagramme en cascade
+
+Objectif : Affichez les événements/requêtes le long d'une chronologie, ce qui facilite l'identification des chevauchements et des durées.
+
+- Interaction avec les nœuds : Dans le diagramme en cascade, les nœuds dans le même onglet et la même plage de temps sont regroupés en groupes repliables. Les utilisateurs peuvent développer ces groupes pour voir les éléments à l'intérieur. Les groupes repliables sont généralement affichés dans un style tiroir et prennent en charge le défilement interne
+- Groupes repliables : Groupés par onglet (les nœuds dans le même onglet et la même plage de temps sont fusionnés dans le même groupe). Après expansion, plus d'éléments peuvent être défilés dans le tiroir
+- Molette et Déplacement : Dans l'implémentation actuelle, la molette de la souris est principalement utilisée pour faire défiler verticalement entre les voies. Le déplacement est utilisé pour déplacer la fenêtre temporelle ou ajuster la position de la fenêtre d'observation
+- Badge SPA : La marque dans le coin supérieur droit des nœuds indique le nombre de requêtes SPA fusionnées dans le nœud.
+
+### Page des options (paramètres)
+
+La page des options comprend plusieurs préférences pour ajuster le comportement de l'extension :
+
+- Seuil de temps d'inactivité pour la division des sessions (utilisé pour diviser automatiquement les sessions)
+- Sélection du mode de session (par exemple, quotidien / manuel / basé sur l'activité)
+- Sélection de la langue (utilisée pour forcer la langue de localisation de l'interface)
+
+Explication : Le filtrage des nœuds, le contrôle de la visibilité et des opérations de filtrage plus détaillées sont fournis par les contrôles de filtrage dans la barre latérale ou les contrôles dans la vue. La page des options se concentre sur le comportement global et les paramètres de localisation.
+
+### Dépannage (FAQ)
+
+- La vue ne se met pas à jour : Actualisez la page de l'extension ou essayez de recharger la session.
+- Problèmes de division des sessions : Ajustez le seuil de temps d'inactivité dans la page des options pour obtenir une division plus conforme aux attentes.
+
+## Gestion des données et confidentialité
+
+- Stockage local : Toutes les données d'historique de navigation sont stockées localement (IndexedDB / LocalStorage) et ne sont jamais téléchargées sur le cloud.
+
+## Dernières mises à jour
+
+Modifications majeures depuis la v1.1.0 :
+
+- Suppression de la vue "Chronologie" et ajout d'une nouvelle vue "Cascade". Affiche les événements et les affectations de voies le long d'une chronologie
+- Ajout de la gestion des requêtes de pages SPA au diagramme en arbre : Affiche le nombre de requêtes SPA dans les détails des nœuds et comporte de petits badges annulaires sur les nœuds pour indiquer la présence de requêtes SPA
+
+## Informations pour les développeurs et techniques
+
+### Développement local et construction
 
 1. Clonez le dépôt : `git clone https://github.com/wxy/Navigraph.git`
 2. Installez les dépendances : `npm install`
-3. Build : `npm run build`
-4. Chargez l'extension non empaquetée dans Chrome (`chrome://extensions/`) et sélectionnez le répertoire `dist`.
+3. Construisez : `npm run build`
+4. Chargez l'extension non empaquetée dans Chrome (`chrome://extensions/`) et sélectionnez le répertoire `dist`
 
-### Contribution
+### Problèmes et contact
+
+Soumettez des bugs ou des demandes de fonctionnalités sur GitHub Issues : https://github.com/wxy/Navigraph/issues
+
+### Directives de contribution
 
 Si vous souhaitez contribuer :
 
-1. Forkez et créez une branche de fonctionnalité (`git checkout -b feature/your-feature`).
-2. Committez avec des messages clairs puis ouvrez une Pull Request.
+1. Forkez le dépôt et créez une branche de fonctionnalité (`git checkout -b feature/your-feature`)
+2. Commitez des modifications claires et ouvrez une pull request (PR)
 
-### Issues & Contact
-
-Signalez les bugs ou demandez des fonctionnalités via GitHub Issues : https://github.com/wxy/Navigraph/issues
+Si vous trouvez des erreurs ou des inexactitudes dans les langues utilisées par cette extension, soumettez une pull request incluant des améliorations de traduction !
 
 ### Licence
 
-Ce projet est sous licence MIT — voir [LICENSE](LICENSE).
+Ce projet est sous licence MIT — voir [LICENSE](LICENSE) pour les détails.
 
-### Architecture technique
+### Stack technique
 
 - Frontend : TypeScript, D3.js, CSS3
-- Stockage : IndexedDB, LocalStorage
-- API navigateur : Chrome Extensions API
-- Outils de build : Webpack
+- Stockage : IndexedDB / LocalStorage
+- API du navigateur : API des extensions Chrome
+- Outil de construction : Webpack
