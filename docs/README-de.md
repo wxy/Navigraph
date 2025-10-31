@@ -1,89 +1,103 @@
-Navigraph: Visualisieren Sie Ihren Browserverlauf
+Navigraph: Visualisierung des Browserverlaufs
 ===
 
-> Visualisieren Sie Ihre Browserpfade und Navigationsverlauf intuitiv, um Informationsflüsse besser zu verstehen und Browsingverläufe nachzuvollziehen.
+> Visualisieren Sie intuitiv Ihre Browserpfade und den Verlauf der Webnavigation, um den Informationsfluss zu verstehen und sich an Ihre Browserrouten zu erinnern.
 
 ## Hauptfunktionen
 
-- 📊 **Visualisierung des Browserverlaufs** - Stellt Ihre Websurf-Trajektorien als Baumdiagramme und Beziehungsgrafiken dar
-- 🗂️ **Sitzungsverwaltung** - Organisiert Browsingaktivitäten automatisch in sinnvolle Sitzungen
-- 🔄 **Echtzeit-Updates** - Aktualisiert Navigationsgrafiken dynamisch während des Browsens
-- 🛡️ **Datenschutz** - Alle Daten werden lokal gespeichert und nicht in die Cloud hochgeladen
-- 🌙 **Dunkelmodus** - Unterstützung für dunkles Design zum Schutz Ihrer Augen
+- 📊 **Visualisierung des Browserverlaufs** - Anzeigen von Web-Browserpfaden mithilfe von Baum- und Wasserfalldiagrammen
+- 🗂️ **Sitzungsverwaltung** - Automatische Organisation von Browseraktivitäten in sinnvolle Sitzungen
+- 🔄 **Echtzeit-Updates** - Dynamisches Aktualisieren von Navigationsdiagrammen während des Browsens
+- 🛡️ **Datenschutz** - Alle Daten werden lokal gespeichert und niemals in die Cloud hochgeladen
+- 🌙 **Dunkelmodus** - Unterstützt dunkle Themen, um Ihre Augen zu schonen
 
+<<<<<<< HEAD
 
+=======
+### Schnellstart
 
-## Benutzerhandbuch
+1. Öffnen Sie die Erweiterungsseite (klicken Sie auf das Navigraph-Symbol in der Symbolleiste).
+2. Bewegen Sie den Mauszeiger kurz oder klicken Sie auf den Steuerfeldgriff auf der rechten Seite der Seite, um die Seitenleiste zu öffnen. In der Seitenleiste können Sie Sitzungsdaten auswählen, Ansichten wechseln oder Knoten filtern.
+3. Verwenden Sie die Statusleiste, um Ansichten zu wechseln oder die Sichtbarkeit von ausgeblendeten/geschlossenen Knoten umzuschalten.
+4. Klicken Sie auf Knoten, um detaillierte Informationen anzuzeigen.
 
-Navigraph bietet eine intuitive Benutzeroberfläche, die Ihnen hilft, Ihren Browserverlauf zu visualisieren und zu analysieren. Nachfolgend finden Sie detaillierte Anweisungen:
+## Benutzerhandbuch (Übersicht)
 
-### Grundfunktionen
+### Installation
 
-1. Erweiterung starten: Klicken Sie auf das Navigraph-Symbol in Ihrer Browser-Symbolleiste, um einen neuen Tab zu öffnen, der Ihren visualisierten Browserverlauf anzeigt.
-2. Aktuelle Sitzung anzeigen: Standardmäßig wird Ihre aktuelle laufende Browsersitzung angezeigt.
-3. Bedienfeld: Das linke Panel bietet Funktionen zum Wechseln zwischen Sitzungen und Filtern.
-4. Ansichtswechsel: Die obere Symbolleiste ermöglicht den Wechsel zwischen verschiedenen Visualisierungsansichten.
+#### Aus dem Chrome Web Store
 
-### Visualisierungsansichten
+1. Besuchen Sie die [Navigraph-Seite im Chrome Web Store](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
+2. Klicken Sie auf "Zu Chrome hinzufügen"
 
-Navigraph bietet mehrere Möglichkeiten, Ihren Browserverlauf anzuzeigen:
+#### Aus dem Microsoft Edge Add-ons Store
 
+1. Besuchen Sie die [Navigraph-Seite im Microsoft Edge Add-ons Store](https://microsoftedge.microsoft.com/addons/detail/ibcpeknflplfaljendadfkhmflhfnhdh)
+2. Klicken Sie auf "Abrufen", um die Erweiterung zu installieren
+>>>>>>> c007809af331c0fe4fb45e1540565da910dce9a2
+
+### Seitenleiste
+
+Die Seitenleiste wird hauptsächlich für die Sitzungswahl und die Knotenfilterung verwendet:
+
+- Ansichtswechsel: Wechseln Sie die aktuelle Ansicht (Baumdiagramm / Wasserfalldiagramm) oben in der Seitenleiste
+- Sitzungs-Kalender: Zeigt Sitzungen nach Datum an und ermöglicht es Ihnen, Sitzungsverläufe auszuwählen und zu laden. Wenn mehrere Sitzungen am selben Tag vorhanden sind, werden diese einzeln angezeigt
+- Filtersteuerung: Filtern Sie Ergebnisse basierend auf Navigationstypen oder Aktionen (z. B. nur Linkklicks anzeigen, Formularübermittlungen usw.)
+
+Tipp: Die Seitenleiste dient als Haupteinstiegspunkt zum Wechseln von Datenbereichen oder Identifizieren von Analysebereichen. Es wird empfohlen, zuerst eine Sitzung auszuwählen und dann die Ansicht zu wechseln.
+
+### Statusleiste
+
+Die Statusleiste bietet einen prägnanten Kontext und Interaktionen innerhalb der Benutzeroberfläche:
+
+<<<<<<< HEAD
 1. Baumansicht: Zeigt Seitennavigationsbeziehungen in einer hierarchischen Struktur an und verdeutlicht, welche Seite zur nächsten geführt hat.
 2. Waterfall-Ansicht: Visualisiert Browsing-Ereignisse entlang einer Zeitachse und ist nützlich, um Überlappungen und Dauer zu erkennen.
+=======
+- Zeigt die aktuelle Ansicht (Baumdiagramm / Wasserfalldiagramm) an und wechselt diese
+- Zeigt Sitzungsstatistiken (z. B. Anzahl der Knoten, Sitzungsdauer) an und bietet Schnellaktionen im Zusammenhang mit der Ansicht (z. B. Umschalten der Sichtbarkeit ausgeblendeter Knoten)
+- Klicken Sie auf das Datum, um schnell zur heutigen Sitzung zurückzukehren
+>>>>>>> c007809af331c0fe4fb45e1540565da910dce9a2
 
-### Sitzungsverwaltung
+Erläuterung: Die Steuerungen in der Statusleiste sind direkte Interaktionspunkte, die sich auf die aktuelle Ansicht beziehen. Komplexere Filterungen werden weiterhin über die Seitenleiste durchgeführt.
 
-1. Automatische Sitzungseinteilung: Das System teilt Ihren Browserverlauf basierend auf Ihren Surfgewohnheiten und Zeitintervallen automatisch in verschiedene Sitzungen ein.
-2. Sitzungskalender:
-   - Klicken oder bewegen Sie den Mauszeiger, um das Bedienfeld auf der rechten Seite zu öffnen
-   - Daten mit Aufzeichnungen sind mit speziellen Farben markiert
-   - Klicken Sie auf ein Datum, um die Sitzungen für diesen Tag anzuzeigen und den entsprechenden Browserverlauf zu laden
-3. Arbeitstag-Modus: Das System organisiert Sitzungen basierend auf Arbeitstagen, um zwischen Arbeits- und Freizeitbrowsing zu unterscheiden.
+### Ansichtsinteraktionen
 
-### Filterung
+Navigraph bietet zwei komplementäre Ansichten: Baumdiagramm und Wasserfalldiagramm.
 
-1. Typ-Filterung: Verwenden Sie Filter-Tools, um Seiten nach Navigationstyp zu filtern (direkter Zugriff, Link-Klicks, Formularübermittlung usw.).
-2. Verhaltensfilterung: Verwenden Sie Filter-Tools, um Seiten nach Navigationsverhalten zu filtern.
-3. Statusfilterung: Wählen Sie, ob nur aktive Seiten angezeigt oder auch geschlossene Seiten einbezogen werden sollen.
+#### Baumdiagramm
 
-### Knoteninteraktion
+Zweck: Zeigt Seiten-Navigationspfade mithilfe hierarchischer Beziehungen an, um Einstiegspunkte und Verzweigungen leicht analysieren zu können.
 
-1. Details anzeigen:
-   - Bewegen Sie den Mauszeiger über Knoten, um kurze Seiteninformationen anzuzeigen
-   - Klicken Sie auf Knoten, um vollständige Seitendetails anzuzeigen (Titel, URL, Zugriffszeit usw.)
-2. Erneut besuchen: Klicken Sie im Detailbereich des Knotens auf Links, um die Seite erneut zu öffnen
-3. Knotenhervorhebung: Durch Klicken auf einen Knoten werden andere direkt verbundene Knoten hervorgehoben
-4. Ziehen und Zoomen:
-   - Ziehen Sie den Anzeigebereich, um die gesamte Grafik zu verschieben
-   - Verwenden Sie das Mausrad zum Vergrößern oder Verkleinern
-   - Verwenden Sie Zwei-Finger-Gesten auf Touch-Geräten zum Zoomen
+- Knoteninteraktion: Bewegen Sie den Mauszeiger, um kurze Informationen anzuzeigen. Klicken Sie, um das Detailfenster zu öffnen (einschließlich Titel, URL, Zugriffszeit, Anzahl der SPA-Anfragen usw.)
+- Zoom/Drag: Im Baumdiagramm können Sie die Leinwand mit der Maus ziehen, um sie zu verschieben, und das Mausrad verwenden, um die Ansicht zu skalieren (das spezifische Verhalten kann je nach Browser und Einstellungen variieren)
+- SPA-Badge: Baumknoten verfügen über subtile Ring-Badges und Zahlen (falls SPA-Anfragen vorhanden sind), um die Anzahl der in den Knoten zusammengeführten SPA-Anfragen anzuzeigen.
 
-### Personalisierung
+#### Wasserfalldiagramm
 
-1. Designwechsel: Wechseln Sie in der oberen Symbolleiste zwischen hellem/dunklem Design
-2. Layout-Anpassung: Passen Sie Knotenabstände, Verbindungslinien-Stile und andere visuelle Parameter an
-3. Sitzungseinstellungen:
-   - Passen Sie die Leerlaufzeit-Schwelle für die automatische Erstellung neuer Sitzungen an
-   - Wählen Sie den Sitzungsmodus (täglich/manuell/aktivitätsbasiert)
+Zweck: Zeigt Ereignisse/Anfragen entlang einer Zeitleiste an, um Überlappungen und Dauer leicht zu erkennen.
 
-### Datenverwaltung
+- Knoteninteraktion: Im Wasserfalldiagramm werden Knoten innerhalb desselben Tabs und Zeitbereichs in zusammenklappbare Gruppen gruppiert. Benutzer können diese Gruppen erweitern, um Elemente darin anzuzeigen. Zusammenklappbare Gruppen werden typischerweise im Schubladenstil angezeigt und unterstützen internes Scrollen
+- Zusammenklappbare Gruppen: Gruppiert nach Tab (Knoten im selben Tab und Zeitbereich werden in derselben Gruppe zusammengeführt). Nach dem Erweitern können im Schubladenstil mehr Elemente gescrollt werden
+- Rad und Ziehen: In der aktuellen Implementierung wird das Mausrad hauptsächlich verwendet, um vertikal zwischen den Bahnen zu scrollen. Ziehen wird verwendet, um das Zeitfenster zu verschieben oder die Position des Beobachtungsfensters anzupassen
+- SPA-Badge: Die Markierung in der oberen rechten Ecke der Knoten zeigt die Anzahl der in den Knoten zusammengeführten SPA-Anfragen an.
 
-1. Lokale Daten: Alle Browserverlaufsdaten werden nur auf Ihrem Gerät gespeichert, um die Privatsphäre zu gewährleisten.
-2. Exportfunktion: Exportieren Sie den Browserverlauf ausgewählter Sitzungen im JSON- oder CSV-Format für die Datenanalyse.
+### Optionsseite (Einstellungen)
 
-### Häufige Anwendungsfälle
+Die Optionsseite enthält mehrere Einstellungen zur Anpassung des Verhaltens der Erweiterung:
 
-1. Früher besuchte Seiten finden: Selbst wenn Sie die URL oder den Titel vergessen haben, können Sie zuvor besuchte Seiten durch die Visualisierung finden.
-2. Surfgewohnheiten analysieren: Verstehen Sie Ihre Internetgewohnheiten, häufig besuchte Websites und typische Navigationspfade.
-3. Arbeitsrecherche organisieren: Überprüfen Sie alle verwandten Seiten, die während bestimmter Recherche- oder Arbeitssitzungen besucht wurden, um Ideen und Materialien zu organisieren.
+- Leerlaufschwelle für die Sitzungsaufteilung (wird verwendet, um Sitzungen automatisch zu teilen)
+- Sitzungsmodus-Auswahl (z. B. täglich / manuell / aktivitätsbasiert)
+- Sprachauswahl (wird verwendet, um die Lokalisierungssprache der Benutzeroberfläche zu erzwingen)
 
-### Fehlerbehebung
+Erläuterung: Knotenfilterung, Sichtbarkeitssteuerung und detailliertere Filteroperationen werden durch die Filtersteuerungen in der Seitenleiste oder Steuerungen innerhalb der Ansicht bereitgestellt. Die Optionsseite konzentriert sich auf globales Verhalten und Lokalisierungseinstellungen.
 
-1. Ansicht wird nicht aktualisiert: Wenn die aktuelle Browsing-Aktivität nicht im Diagramm angezeigt wird, versuchen Sie, die Erweiterungsseite zu aktualisieren.
-2. Probleme bei der Sitzungserkennung: Wenn die Sitzungseinteilung nicht den Erwartungen entspricht, passen Sie den Leerlaufzeit-Schwellenwert in den Einstellungen an.
+### Fehlerbehebung (FAQ)
 
-Mit dieser Anleitung sollten Sie alle Funktionen von Navigraph optimal nutzen können, um Ihren Websurf-Verlauf besser zu verwalten und zu verstehen.
+- Ansicht wird nicht aktualisiert: Aktualisieren Sie die Erweiterungsseite oder versuchen Sie, die Sitzung neu zu laden.
+- Probleme bei der Sitzungsaufteilung: Passen Sie die Leerlaufschwelle auf der Optionsseite an, um eine Aufteilung zu erzielen, die besser den Erwartungen entspricht.
 
+<<<<<<< HEAD
 ## Kürzliche Änderungen
 
 Änderungen seit v1.1.0:
@@ -129,3 +143,48 @@ Dieses Projekt ist unter der MIT-Lizenz — siehe [LICENSE](LICENSE).
 - Speicher: IndexedDB, LocalStorage
 - Browser-API: Chrome Extensions API
 - Build-Tools: Webpack
+=======
+## Datenverwaltung und Datenschutz
+
+- Lokaler Speicher: Alle Browserverlaufsdaten werden lokal (IndexedDB / LocalStorage) gespeichert und niemals in die Cloud hochgeladen.
+
+## Neueste Updates
+
+Wesentliche Änderungen seit v1.1.0:
+
+- Entfernen der "Zeitleisten"-Ansicht und Hinzufügen einer neuen "Wasserfall"-Ansicht. Zeigt Ereignisse und Bahnzuweisungen entlang einer Zeitleiste an
+- Hinzufügen der SPA-Seitenanforderungsverarbeitung zum Baumdiagramm: Zeigt die Anzahl der SPA-Anfragen in Knotendetails an und verfügt über kleine Ring-Badges auf Knoten, um das Vorhandensein von SPA-Anfragen anzuzeigen
+
+## Entwickler- und technische Informationen
+
+### Lokale Entwicklung und Build
+
+1. Klonen Sie das Repository: `git clone https://github.com/wxy/Navigraph.git`
+2. Installieren Sie Abhängigkeiten: `npm install`
+3. Build: `npm run build`
+4. Laden Sie die nicht gepackte Erweiterung in Chrome (`chrome://extensions/`) und wählen Sie das Verzeichnis `dist`
+
+### Probleme und Kontakt
+
+Reichen Sie Fehler oder Funktionsanforderungen in GitHub Issues ein: https://github.com/wxy/Navigraph/issues
+
+### Beitragsrichtlinien
+
+Wenn Sie beitragen möchten:
+
+1. Forken Sie das Repository und erstellen Sie einen Feature-Branch (`git checkout -b feature/your-feature`)
+2. Commiten Sie klare Änderungen und öffnen Sie eine Pull-Request (PR)
+
+Wenn Sie Fehler oder Ungenauigkeiten in den von dieser Erweiterung verwendeten Sprachen finden, reichen Sie eine Pull-Request ein, die Übersetzungsverbesserungen enthält!
+
+### Lizenz
+
+Dieses Projekt ist unter der MIT-Lizenz lizenziert — siehe [LICENSE](LICENSE) für Details.
+
+### Technologiestack
+
+- Frontend: TypeScript, D3.js, CSS3
+- Speicher: IndexedDB / LocalStorage
+- Browser-API: Chrome Extensions API
+- Build-Tool: Webpack
+>>>>>>> c007809af331c0fe4fb45e1540565da910dce9a2
