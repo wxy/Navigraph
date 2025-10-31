@@ -43,7 +43,7 @@ Navigraph bietet eine intuitive Benutzeroberfläche, die Ihnen hilft, Ihren Brow
 Navigraph bietet mehrere Möglichkeiten, Ihren Browserverlauf anzuzeigen:
 
 1. Baumansicht: Zeigt Seitennavigationsbeziehungen in einer hierarchischen Struktur an und verdeutlicht, welche Seite zur nächsten geführt hat.
-2. Zeitleiste: Zeigt Ihren Browserverlauf in chronologischer Reihenfolge an, hilfreich zum Verständnis der Zeitverteilung.
+2. Waterfall-Ansicht: Visualisiert Browsing-Ereignisse entlang einer Zeitachse und ist nützlich, um Überlappungen und Dauer zu erkennen.
 
 ### Sitzungsverwaltung
 
@@ -97,6 +97,14 @@ Navigraph bietet mehrere Möglichkeiten, Ihren Browserverlauf anzuzeigen:
 2. Probleme bei der Sitzungserkennung: Wenn die Sitzungseinteilung nicht den Erwartungen entspricht, passen Sie den Leerlaufzeit-Schwellenwert in den Einstellungen an.
 
 Mit dieser Anleitung sollten Sie alle Funktionen von Navigraph optimal nutzen können, um Ihren Websurf-Verlauf besser zu verwalten und zu verstehen.
+
+## Kürzliche Änderungen
+
+Änderungen seit v1.1.0:
+
+- Die "Zeitleiste"-Ansicht wurde durch die neue "Waterfall"-Ansicht ersetzt.
+- Anzeige der Anzahl der SPA-Anfragen als dezentes Badge in der Baumansicht.
+- Neugestaltung der Sitzungswurzel: Kreisförmiges Element mit zweizeiliger Datumsanzeige.
 
 ## Technische Architektur
 

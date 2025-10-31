@@ -43,7 +43,7 @@ Navigraph offre une interface intuitive qui vous aide à visualiser et analyser 
 Navigraph propose plusieurs façons de consulter votre historique de navigation :
 
 1. Vue arborescente : Affiche les relations de navigation entre pages dans une structure hiérarchique, montrant clairement quelle page a mené à la suivante.
-2. Chronologie : Présente votre historique de navigation de façon chronologique, facilitant la compréhension de la distribution temporelle.
+2. Waterfall : Visualise les événements de navigation le long d'un axe temporel, utile pour voir les chevauchements et les durées.
 
 ### Gestion des sessions
 
@@ -97,6 +97,14 @@ Navigraph propose plusieurs façons de consulter votre historique de navigation 
 2. Problèmes d'identification de session : Si la division des sessions ne correspond pas à vos attentes, ajustez le seuil de temps d'inactivité dans les paramètres.
 
 Avec ce guide, vous devriez être en mesure de profiter pleinement de toutes les fonctionnalités de Navigraph pour mieux gérer et comprendre votre historique de navigation Web.
+
+## Mises à jour récentes
+
+Changements depuis la v1.1.0 :
+
+- La vue « Chronologie » a été remplacée par la nouvelle vue « Waterfall ».
+- Affichage du nombre de requêtes SPA sur les nœuds de l'arbre sous la forme d'un petit badge discret.
+- Refonte de la racine de session : nœud circulaire avec affichage de la date sur deux lignes.
 
 ## Architecture technique
 

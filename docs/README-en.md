@@ -43,7 +43,7 @@ Navigraph provides an intuitive interface to help you visualize and analyze your
 Navigraph offers multiple ways to view your browsing history:
 
 1. Tree view: Displays page navigation relationships in a hierarchical structure, clearly showing which page led to the next.
-2. Timeline: Shows your browsing history in chronological order, helpful for understanding time distribution.
+2. Waterfall: Visualizes browsing events along a time axis, useful for seeing overlaps and durations.
 
 ### Session Management
 
@@ -97,6 +97,14 @@ Navigraph offers multiple ways to view your browsing history:
 2. Session identification issues: If session division does not meet expectations, adjust the idle time threshold in settings.
 
 With this guide, you should be able to take full advantage of all Navigraph features to better manage and understand your web browsing history.
+
+## Recent updates
+
+Changes since v1.1.0:
+
+- Replaced the "Timeline" view with a new "Waterfall" view.
+- Show SPA request counts as a subtle badge on tree nodes.
+- Redesigned the session root: circular node with a two-line date display.
 
 ## Technical Architecture
 
