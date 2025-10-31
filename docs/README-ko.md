@@ -11,21 +11,7 @@ Navigraph: 브라우징 기록 시각화
 - 🛡️ **개인 정보 보호** - 모든 데이터는 로컬에 저장되며 클라우드에 업로드되지 않음
 - 🌙 **다크 모드** - 눈을 보호하기 위한 어두운 테마 지원
 
-## 설치 방법
 
-### Chrome 웹 스토어에서 설치
-
-1. [Chrome 웹 스토어의 Navigraph 페이지](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)를 방문합니다
-2. "Chrome에 추가" 버튼을 클릭합니다
-
-### 개발자 설치
-
-1. 이 저장소를 다운로드합니다 `git clone https://github.com/wxy/Navigraph.git`
-2. 종속성을 설치합니다 `npm install`
-3. 확장 프로그램을 빌드합니다 `npm run build`
-4. Chrome 브라우저에서 `chrome://extensions/`를 엽니다
-5. "개발자 모드"를 활성화합니다
-6. "압축해제된 확장 프로그램 로드"를 클릭하고 `dist` 디렉토리를 선택합니다
 
 ## 사용 가이드
 
@@ -47,26 +33,48 @@ Navigraph는 브라우징 기록을 볼 수 있는 여러 방법을 제공합니
 
 ### 세션 관리
 
-1. 세션 자동 분할: 시스템이 브라우징 습관과 시간 간격에 따라 브라우징 기록을 자동으로 다른 세션으로 분할합니다.
-2. 세션 캘린더:
-   - 마우스를 클릭하거나 호버하여 오른쪽 제어 패널 열기
-   - 기록이 있는 날짜는 특별한 색상으로 표시됩니다
-   - 날짜를 클릭하여 해당 날짜의 세션을 보고 브라우징 기록을 로드합니다
-3. 작업일 모드: 시스템이 작업일에 따라 세션을 자동으로 구성하여 업무와 레저 브라우징 활동을 쉽게 구분할 수 있습니다.
-
 ### 필터링
 
-1. 유형 필터링: 필터링 도구를 사용하여 탐색 유형(직접 접근, 링크 클릭, 양식 제출 등)별로 페이지를 필터링할 수 있습니다.
-2. 행동 필터링: 필터링 도구를 사용하여 탐색 행동별로 페이지를 필터링할 수 있습니다.
-3. 상태 필터링: 활성 페이지만 보거나 닫힌 페이지를 포함할지 선택할 수 있습니다.
-
-### 노드 상호작용
-
 1. 세부 정보 보기:
-   - 노드 위에 마우스를 올리면 페이지에 대한 간략한 정보가 표시됩니다
    - 노드를 클릭하면 페이지의 전체 세부 정보(제목, URL, 접근 시간 등)가 표시됩니다
 2. 다시 방문: 노드 세부 정보 패널에서 링크를 클릭하여 해당 페이지를 다시 열 수 있습니다
-3. 노드 강조 표시: 노드를 클릭하면 직접 관련된 다른 노드가 강조 표시됩니다
+## 개발자 및 기술 정보
+
+### 설치
+
+#### Chrome 웹 스토어
+
+1. 방문: https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi
+2. "Chrome에 추가" 클릭
+
+#### 로컬 개발
+
+1. 레포 복제: `git clone https://github.com/wxy/Navigraph.git`
+2. 의존성 설치: `npm install`
+3. 빌드: `npm run build`
+4. Chrome에서 압축 해제된 확장으로 로드 (`chrome://extensions/`) 하고 `dist` 선택
+
+### 기여
+
+기여 방법:
+
+1. Fork 및 기능 브랜치 생성 (`git checkout -b feature/your-feature`)
+2. 변경사항 커밋 후 Pull Request 생성
+
+### 이슈 및 연락
+
+버그/기능 요청: https://github.com/wxy/Navigraph/issues
+
+### 라이센스
+
+MIT 라이센스 — [LICENSE](LICENSE)
+
+### 기술 아키텍처
+
+- 프런트엔드: TypeScript, D3.js, CSS3
+- 저장소: IndexedDB, LocalStorage
+- 브라우저 API: Chrome Extensions API
+- 빌드 도구: Webpack
 4. 드래그 및 확대/축소:
    - 뷰 영역을 드래그하여 전체 차트를 이동할 수 있습니다
    - 마우스 휠을 사용하여 확대하거나 축소할 수 있습니다

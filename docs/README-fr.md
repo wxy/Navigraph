@@ -11,21 +11,7 @@ Navigraph : Visualisez votre historique de navigation
 - 🛡️ **Protection de la vie privée** - Toutes les données sont stockées localement, jamais téléchargées vers le cloud
 - 🌙 **Mode sombre** - Support du thème sombre pour protéger vos yeux
 
-## Installation
 
-### Depuis le Chrome Web Store
-
-1. Visitez la [page Navigraph sur le Chrome Web Store](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
-2. Cliquez sur le bouton "Ajouter à Chrome"
-
-### Installation pour développeurs
-
-1. Téléchargez ce dépôt `git clone https://github.com/wxy/Navigraph.git`
-2. Installez les dépendances `npm install`
-3. Construisez l'extension `npm run build`
-4. Dans le navigateur Chrome, ouvrez `chrome://extensions/`
-5. Activez le "Mode développeur"
-6. Cliquez sur "Charger l'extension non empaquetée" et sélectionnez le répertoire `dist`
 
 ## Guide d'utilisation
 
@@ -106,31 +92,40 @@ Changements depuis la v1.1.0 :
 - Affichage du nombre de requêtes SPA sur les nœuds de l'arbre sous la forme d'un petit badge discret.
 - Refonte de la racine de session : nœud circulaire avec affichage de la date sur deux lignes.
 
-## Architecture technique
+## Développeur & Informations techniques
 
-Navigraph est conçu avec une architecture moderne d'extension de navigateur :
+### Installation
 
-- **Frontend** : TypeScript, D3.js, CSS3
-- **Stockage** : IndexedDB, LocalStorage
-- **API navigateur** : Chrome Extensions API
-- **Outils de build** : Webpack
+#### Depuis le Chrome Web Store
 
-## Contribution
+1. Visitez la [page Navigraph sur le Chrome Web Store](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
+2. Cliquez sur "Ajouter à Chrome".
 
-Nous accueillons toutes formes de contributions ! Si vous souhaitez participer à ce projet :
+#### Développement local
 
-1. Forkez ce dépôt
-2. Créez votre branche de fonctionnalité (`git checkout -b feature/amazing-feature`)
-3. Validez vos modifications (`git commit -m 'Add some amazing feature'`)
-4. Poussez vers la branche (`git push origin feature/amazing-feature`)
-5. Ouvrez une Pull Request
+1. Clonez le dépôt : `git clone https://github.com/wxy/Navigraph.git`
+2. Installez les dépendances : `npm install`
+3. Build : `npm run build`
+4. Chargez l'extension non empaquetée dans Chrome (`chrome://extensions/`) et sélectionnez le répertoire `dist`.
 
-## Licence
+### Contribution
 
-Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails
+Si vous souhaitez contribuer :
 
-## Contact
+1. Forkez et créez une branche de fonctionnalité (`git checkout -b feature/your-feature`).
+2. Committez avec des messages clairs puis ouvrez une Pull Request.
 
-Si vous avez des questions ou des suggestions, veuillez nous contacter via :
+### Issues & Contact
 
-- Soumettre un problème : [GitHub Issues](https://github.com/wxy/Navigraph/issues)
+Signalez les bugs ou demandez des fonctionnalités via GitHub Issues : https://github.com/wxy/Navigraph/issues
+
+### Licence
+
+Ce projet est sous licence MIT — voir [LICENSE](LICENSE).
+
+### Architecture technique
+
+- Frontend : TypeScript, D3.js, CSS3
+- Stockage : IndexedDB, LocalStorage
+- API navigateur : Chrome Extensions API
+- Outils de build : Webpack

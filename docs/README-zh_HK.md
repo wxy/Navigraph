@@ -11,21 +11,7 @@ Navigraph: 可視化瀏覽歷史記錄
 - 🛡️ **私隱保護** - 所有數據本地儲存，不會上傳到雲端
 - 🌙 **黑暗模式** - 支援深色主題，保護您的眼睛
 
-## 安裝方式
 
-### 從Chrome網上應用店安裝
-
-1. 訪問 [Chrome 網上應用店 Navigraph 頁面](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
-2. 點擊"添加至 Chrome" 按鈕
-
-### 開發者安裝
-
-1. 下載此倉庫 `git clone https://github.com/wxy/Navigraph.git`
-2. 安裝依賴 `npm install`
-3. 構建擴展 `npm run build`
-4. 在 Chrome 瀏覽器中打開 `chrome://extensions/`
-5. 開啟"開發者模式"
-6. 點擊"載入已解壓的擴展"，選擇 `dist` 目錄
 
 ## 使用指南
 
@@ -106,31 +92,40 @@ Navigraph 提供多種查看您瀏覽歷史的方式：
 - 在樹視圖的節點上以小徽章顯示 SPA 請求數。
 - 重新設計會話根節點：圓形，顯示兩行日期。
 
-## 技術架構
+## 開發者與技術資訊
 
-Navigraph採用現代瀏覽器擴展架構設計：
+### 安裝
 
-- **前端**：TypeScript、D3.js、CSS3
-- **儲存**：IndexedDB、LocalStorage
-- **瀏覽器API**：Chrome Extensions API
-- **構建工具**：Webpack
+#### 從 Chrome 網上應用店
 
-## 貢獻指南
+1. 訪問: https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi
+2. 點擊「添加至 Chrome」。
 
-我們歡迎各種形式的貢獻！如果您想參與此項目：
+#### 本地開發
 
-1. 複製此倉庫
-2. 創建您的特性分支（`git checkout -b feature/amazing-feature`）
-3. 提交您的更改（`git commit -m 'Add some amazing feature'`）
-4. 推送到分支（`git push origin feature/amazing-feature`）
-5. 開啟一個拉取請求
+1. 克隆倉庫：`git clone https://github.com/wxy/Navigraph.git`
+2. 安裝相依：`npm install`
+3. 構建：`npm run build`
+4. 在 Chrome (`chrome://extensions/`) 中載入未封裝的擴展並選擇 `dist` 目錄。
 
-## 許可證
+### 貢獻
 
-此項目採用 MIT 許可證 — 詳情請查看 [LICENSE](LICENSE) 文件
+如果想貢獻：
 
-## 聯絡方式
+1. Fork 並建立功能分支（`git checkout -b feature/your-feature`）。
+2. 提交並開啟 PR。
 
-如有問題或建議，請通過以下方式聯絡我們：
+### Issues & 聯絡
 
-- 提交議題：[GitHub 議題](https://github.com/wxy/Navigraph/issues)
+回報 Bug 或功能請求： https://github.com/wxy/Navigraph/issues
+
+### 許可證
+
+本專案採用 MIT 許可證 — 見 [LICENSE](LICENSE)
+
+### 技術架構
+
+- 前端：TypeScript、D3.js、CSS3
+- 儲存：IndexedDB、LocalStorage
+- 瀏覽器 API：Chrome Extensions API
+- 構建工具：Webpack

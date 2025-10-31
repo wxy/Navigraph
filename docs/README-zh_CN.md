@@ -11,21 +11,7 @@ Navigraph: 可视化浏览历史记录
 - 🛡️ **隐私保护** - 所有数据本地存储，不会上传到云端
 - 🌙 **黑暗模式** - 支持深色主题，保护您的眼睛
 
-## 安装方式
 
-### 从Chrome网上应用店安装
-
-1. 访问 [Chrome 网上应用店 Navigraph 页面](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
-2. 点击“添加至 Chrome” 按钮
-
-### 开发者安装
-
-1. 下载此仓库 `git clone https://github.com/wxy/Navigraph.git`
-2. 安装依赖 `npm install`
-3. 构建扩展 `npm run build`
-4. 在 Chrome 浏览器中打开 `chrome://extensions/`
-5. 开启“开发者模式”
-6. 点击“加载已解压的扩展”，选择 `dist` 目录
 
 ## 使用指南
 
@@ -106,31 +92,40 @@ Navigraph 提供多种查看您浏览历史的方式：
 - 在树视图的节点上以小徽章显示 SPA 请求数。
 - 重新设计会话根节点：圆形，并显示两行日期。
 
-## 技术架构
+## 开发者与技术信息
 
-Navigraph采用现代浏览器扩展架构设计：
+### 安装
 
-- **前端**：TypeScript、D3.js、CSS3
-- **存储**：IndexedDB、LocalStorage
-- **浏览器API**：Chrome Extensions API
-- **构建工具**：Webpack
+#### 从 Chrome 网上应用店
 
-## 贡献指南
+1. 访问 [Chrome 网上应用店 Navigraph 页面](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
+2. 点击“添加至 Chrome”。
 
-我们欢迎各种形式的贡献！如果您想参与此项目：
+#### 本地开发与构建
 
-1. 复刻此仓库
-2. 创建您的特性分支（`git checkout -b feature/amazing-feature`）
-3. 提交您的更改（`git commit -m 'Add some amazing feature'`）
-4. 推送到分支（`git push origin feature/amazing-feature`）
-5. 开启一个拉取请求
+1. 克隆仓库：`git clone https://github.com/wxy/Navigraph.git`
+2. 安装依赖：`npm install`
+3. 构建：`npm run build`
+4. 在 Chrome (`chrome://extensions/`) 中加载未打包扩展，选择 `dist` 目录。
 
-## 许可证
+### 贡献指南
 
-此项目采用 MIT 许可证 — 详情请查看 [LICENSE](LICENSE) 文件
+如果您想贡献：
 
-## 联系方式
+1. Fork 仓库并创建功能分支（`git checkout -b feature/your-feature`）。
+2. 提交清晰的变更并打开 Pull Request。
 
-如有问题或建议，请通过以下方式联系我们：
+### 议题与联系
 
-- 提交议题：[GitHub 议题](https://github.com/wxy/Navigraph/issues)
+在 GitHub Issues 提交 Bug 或功能请求： https://github.com/wxy/Navigraph/issues
+
+### 许可证
+
+本项目采用 MIT 许可证 — 见 [LICENSE](LICENSE)。
+
+### 技术架构
+
+- 前端：TypeScript、D3.js、CSS3
+- 存储：IndexedDB、LocalStorage
+- 浏览器 API：Chrome Extensions API
+- 构建工具：Webpack

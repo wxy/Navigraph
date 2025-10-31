@@ -11,21 +11,7 @@ Navigraph: Visualize Your Browsing History
 - 🛡️ **Privacy Protection** - All data stored locally, never uploaded to the cloud
 - 🌙 **Dark Mode** - Support for dark theme to protect your eyes
 
-## Installation
 
-### From Chrome Web Store
-
-1. Visit the [Navigraph page on Chrome Web Store](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
-2. Click "Add to Chrome" button
-
-### Developer Installation
-
-1. Clone the repository `git clone https://github.com/wxy/Navigraph.git`
-2. Install dependencies `npm install`
-3. Build the extension `npm run build`
-4. Open Chrome browser and navigate to `chrome://extensions/`
-5. Enable "Developer mode"
-6. Click "Load unpacked" and select the `dist` directory
 
 ## User Guide
 
@@ -106,31 +92,40 @@ Changes since v1.1.0:
 - Show SPA request counts as a subtle badge on tree nodes.
 - Redesigned the session root: circular node with a two-line date display.
 
-## Technical Architecture
+## Developer & Technical Information
 
-Navigraph is designed with a modern browser extension architecture:
+### Installation
 
-- **Frontend**: TypeScript, D3.js, CSS3
-- **Storage**: IndexedDB, LocalStorage
-- **Browser API**: Chrome Extensions API
-- **Build Tools**: Webpack
+#### From Chrome Web Store
 
-## Contributing
+1. Visit the [Navigraph page on Chrome Web Store](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)
+2. Click "Add to Chrome".
 
-We welcome all forms of contribution! If you would like to participate in this project:
+#### Developer / local build
 
-1. Fork this repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Clone the repository: `git clone https://github.com/wxy/Navigraph.git`
+2. Install dependencies: `npm install`
+3. Build: `npm run build`
+4. Load unpacked extension in Chrome (`chrome://extensions/`) and select the `dist` directory.
 
-## License
+### Contributing
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+If you'd like to contribute:
 
-## Contact
+1. Fork and create a feature branch (`git checkout -b feature/your-feature`).
+2. Commit changes with clear messages and open a Pull Request.
 
-If you have any questions or suggestions, please contact us through:
+### Issues & Contact
 
-- Submit an Issue: [GitHub Issues](https://github.com/wxy/Navigraph/issues)
+Report bugs or request features via GitHub Issues: https://github.com/wxy/Navigraph/issues
+
+### License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE).
+
+### Technical Architecture
+
+- Frontend: TypeScript, D3.js, CSS3
+- Storage: IndexedDB, LocalStorage
+- Browser API: Chrome Extensions API
+- Build Tools: Webpack

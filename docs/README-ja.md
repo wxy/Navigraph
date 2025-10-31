@@ -11,21 +11,7 @@ Navigraph: ブラウジング履歴を可視化
 - 🛡️ **プライバシー保護** - すべてのデータはローカルに保存され、クラウドにアップロードされません
 - 🌙 **ダークモード** - 目を保護するためのダークテーマをサポート
 
-## インストール方法
 
-### Chrome ウェブストアからインストール
-
-1. [Chrome ウェブストアの Navigraph ページ](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi)にアクセス
-2. 「Chromeに追加」ボタンをクリック
-
-### 開発者向けインストール
-
-1. このリポジトリをダウンロード `git clone https://github.com/wxy/Navigraph.git`
-2. 依存関係をインストール `npm install`
-3. 拡張機能をビルド `npm run build`
-4. Chrome ブラウザで `chrome://extensions/` を開く
-5. 「デベロッパーモード」をオンにする
-6. 「パッケージ化されていない拡張機能を読み込む」をクリックし、`dist` ディレクトリを選択
 
 ## 使用ガイド
 
@@ -104,31 +90,40 @@ Navigraphはブラウジング履歴を見るための複数の方法を提供�
 - ツリービューのノードにSPAリクエスト数を小さなバッジで表示します。
 - セッションルートを再設計：円形ノードと2行の日付表示。
 
-## 技術アーキテクチャ
+## 開発者と技術情報
 
-Navigraphは現代的なブラウザ拡張機能アーキテクチャで設計されています：
+### インストール
 
-- **フロントエンド**：TypeScript、D3.js、CSS3
-- **ストレージ**：IndexedDB、LocalStorage
-- **ブラウザAPI**：Chrome Extensions API
-- **ビルドツール**：Webpack
+#### Chrome ウェブストアから
 
-## 貢献ガイド
+1. [Navigraph の Chrome ウェブストアページ](https://chrome.google.com/webstore/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi) にアクセス
+2. 「Chrome に追加」をクリック。
 
-あらゆる形の貢献を歓迎します！このプロジェクトに参加したい場合：
+#### ローカル開発
 
-1. このリポジトリをフォークする
-2. 機能ブランチを作成する（`git checkout -b feature/amazing-feature`）
-3. 変更をコミットする（`git commit -m 'Add some amazing feature'`）
-4. ブランチにプッシュする（`git push origin feature/amazing-feature`）
-5. プルリクエストを開く
+1. リポジトリをクローン: `git clone https://github.com/wxy/Navigraph.git`
+2. 依存関係をインストール: `npm install`
+3. ビルド: `npm run build`
+4. Chrome の拡張機能ページ (`chrome://extensions/`) で未パッケージの拡張機能を読み込み、`dist` を選択。
 
-## ライセンス
+### 貢献
 
-このプロジェクトはMITライセンスの下でライセンスされています - 詳細は[LICENSE](LICENSE)ファイルを参照してください
+貢献する場合：
 
-## お問い合わせ
+1. Fork して機能ブランチを作成（`git checkout -b feature/your-feature`）。
+2. 変更をコミットして Pull Request を作成。
 
-質問や提案がある場合は、以下の方法でお問い合わせください：
+### Issues と連絡先
 
-- 課題を提出：[GitHub Issues](https://github.com/wxy/Navigraph/issues)
+バグ報告や機能要望は GitHub Issues へ: https://github.com/wxy/Navigraph/issues
+
+### ライセンス
+
+本プロジェクトは MIT ライセンスです — 詳細は [LICENSE](LICENSE)。
+
+### 技術アーキテクチャ
+
+- フロントエンド: TypeScript、D3.js、CSS3
+- ストレージ: IndexedDB、LocalStorage
+- ブラウザ API: Chrome Extensions API
+- ビルドツール: Webpack
