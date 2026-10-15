@@ -238,8 +238,7 @@ export class NavigationManager {
       // Browser restarts do not retain storage.session. Reconstruct only open-tab histories.
       for (const tab of open.values()) {
         if (tab.id === undefined || !tab.url || !/^https?:/.test(tab.url)) continue;
-        const nodes = await this.navigationStorage.queryNodes({ sessionId: this.currentSessionId, tabId: tab.id, url: tab.url });
-        const node = nodes.sort((a, b) => b.timestamp - a.timestamp)[0];
+        const node = await this.navigationStorage.getLatestNodeForTabUrl(this.currentSessionId, tab.id, tab.url);
         this.tabStateManager.addTabState(tab.id, { id: tab.id, url: tab.url, lastNodeId: node?.id });
         if (node) { this.tabStateManager.addToNavigationHistory(tab.id, node.id); this.nodeTracker.addTabNodeCache(tab.id, node.url, node.id); }
       }

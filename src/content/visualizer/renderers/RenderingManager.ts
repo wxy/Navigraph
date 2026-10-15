@@ -27,8 +27,7 @@ export class RenderingManager {
   private currentRenderer: any = null;
   private restoreTimer?: ReturnType<typeof setTimeout>;
   private rangeControls: HTMLDivElement | null = null;
-  private rangePage = 0;
-  private rangeSession = '';
+
   
   /**
    * 构造函数
@@ -154,19 +153,14 @@ export class RenderingManager {
       
       // 获取SVG和数据引用
       const svg = this.viewStateManager.svg;
-      const filteredNodes = this.visualizer.nodes;
-      const sessionKey = this.visualizer.currentSession?.id || '';
-      if (this.rangeSession !== sessionKey) { this.rangeSession = sessionKey; this.rangePage = 0; }
-      const limit = window.navigraphSettings?.maxNodes || 100;
-      const pages = Math.max(1, Math.ceil(filteredNodes.length / limit));
-      this.rangePage = Math.min(this.rangePage, pages - 1);
-      const ordered = [...filteredNodes].sort((a, b) => b.timestamp - a.timestamp || a.id.localeCompare(b.id));
-      const selected = ordered.slice(this.rangePage * limit, (this.rangePage + 1) * limit);
-      const ids = new Set(selected.map(node => node.id));
-      const nodes = selected.map(node => ({ ...node, parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '' }));
-      const edges = this.visualizer.edges.filter(edge => ids.has(edge.source) && ids.has(edge.target));
-      this.updateRangeControls(filteredNodes.length, limit, pages);
       const currentSession = this.visualizer.currentSession;
+      const ids = new Set(this.visualizer.nodes.map(node => node.id));
+      // Only this rendering copy promotes page-external parents to roots; details retain the actual parentId.
+      const nodes = this.visualizer.nodes.map(node => ({ ...node,
+        parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
+        timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
+      const edges = this.visualizer.edges;
+      this.updateRangeControls();
 
       this.currentRenderer?.cleanup();
       this.currentRenderer = null;
@@ -246,25 +240,39 @@ export class RenderingManager {
     }
   }
   
-  private updateRangeControls(total: number, limit: number, pages: number): void {
+  private updateRangeControls(): void {
     this.rangeControls?.remove();
     this.rangeControls = null;
-    if (pages <= 1 || !this.container) return;
+    const info = this.visualizer.pageInfo;
+    if (!info || !this.container) return;
+    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
+    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
     const controls = document.createElement('div');
     controls.className = 'navigation-range-controls';
     controls.style.cssText = 'position:absolute;left:50%;bottom:42px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px';
     const en = chrome.i18n.getUILanguage().startsWith('en');
-    const start = this.rangePage * limit + 1, end = Math.min(total, start + limit - 1);
+    const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
     const label = document.createElement('span');
-    label.textContent = en ? `${start}–${end} / ${total} · newest first` : `${start}–${end} / ${total} · 从新到旧`;
+    label.textContent = en ? `${start}–${end} / ${info.matched} · newest first` : `${start}–${end} / ${info.matched} · 从新到旧`;
+    controls.append(label);
     for (const [text, delta] of [[en ? 'Newer' : '较新', -1], [en ? 'Older' : '较早', 1]] as const) {
-      const button = document.createElement('button');
-      button.textContent = text;
-      button.disabled = this.rangePage + delta < 0 || this.rangePage + delta >= pages;
-      button.addEventListener('click', () => { this.rangePage += delta; this.renderVisualization(); });
+      const button = document.createElement('button'); button.textContent = text;
+      button.disabled = info.page + delta < 0 || info.page + delta >= pages;
+      button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page + delta).catch(error => this.uiManager.showError(String(error))); });
       controls.append(button);
     }
-    controls.prepend(label);
+    if (edgePages > 1) {
+      const label = document.createElement('span');
+      label.className = 'edge-range';
+      label.textContent = `${en ? 'Edges' : '边'} ${info.edgePage * info.edgeLimit + 1}–${Math.min(info.edgeTotal, (info.edgePage + 1) * info.edgeLimit)} / ${info.edgeTotal}`;
+      controls.append(label);
+      for (const delta of [-1, 1]) {
+        const button = document.createElement('button'); button.textContent = delta < 0 ? '←' : '→';
+        button.disabled = info.edgePage + delta < 0 || info.edgePage + delta >= edgePages;
+        button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page, info.edgePage + delta).catch(error => this.uiManager.showError(String(error))); });
+        controls.append(button);
+      }
+    }
     this.container.append(controls);
     this.rangeControls = controls;
   }

@@ -91,7 +91,8 @@ export class NodeDetails {
   if (node.url) this.addUrlRow(table, node.url);
     if (node.type)
       this.addTableRow(table, _('content_type_label', '类型'), this.formatNavigationType(node.type));
-    if (node.timestamp)
+    if (node._timeUnknown) this.addTableRow(table, _('content_time_label', '时间'), _('content_unknown_time', '未知时间'));
+    else if (node.timestamp)
       this.addTableRow(table, _('content_time_label', '时间'), this.formatTimestamp(node.timestamp));
     this.addTableRow(
       table, 

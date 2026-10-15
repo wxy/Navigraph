@@ -1,3 +1,4 @@
+import type { SessionMetadata } from '../../lib/graph/query.js';
 /**
  * 会话管理器
  * 负责创建、管理和维护浏览会话
@@ -239,6 +240,7 @@ export class SessionManager {
     
     try {
       const sessions = await this.storage.getSessions(options);
+      for (const session of sessions) session.nodeCount = await getNavigationManager().getNavigationStorage().countSessionNodes(session.id);
       return sessions;
     } catch (error) {
       logger.error(_('session_manager_get_list_failed', '获取会话列表失败: {0}'), error instanceof Error ? error.message : String(error));
@@ -250,10 +252,13 @@ export class SessionManager {
   /**
    * 获取会话详情
    */
-  public async getSessionMetadata(sessionId: string): Promise<BrowsingSession | null> {
-    return this.storage.getSession(sessionId);
+  public async getSessionMetadata(sessionId: string): Promise<SessionMetadata | null> {
+    const session = await this.storage.getSession(sessionId);
+    if (session) session.nodeCount = await getNavigationManager().getNavigationStorage().countSessionNodes(sessionId);
+    return session;
   }
 
+  /** Explicit legacy full-graph API. Ordinary UI, metadata and statistics must use bounded queries. */
   public async getSessionDetails(sessionId: string): Promise<BrowsingSession | null> {
     await this.ensureInitialized();
     
@@ -726,12 +731,12 @@ export class SessionManager {
   /**
    * 获取当前查看的会话
    */
-  public async getCurrentSession(): Promise<BrowsingSession | null> {
+  public async getCurrentSession(): Promise<SessionMetadata | null> {
     if (!this.currentSessionId) {
       return null;
     }
     
-    return await this.getSessionDetails(this.currentSessionId);
+    return await this.getSessionMetadata(this.currentSessionId);
   }
   
   /**
@@ -754,11 +759,11 @@ export class SessionManager {
       // 如果与当前会话相同，直接返回会话
       if (this.currentSessionId === sessionId) {
         logger.log(_('session_manager_already_current', '会话已是当前会话: {0}'), sessionId);
-        return await this.getSessionDetails(sessionId);
+        return await this.getSessionMetadata(sessionId);
       }
       
       // 检查会话是否存在
-      const session = await this.getSessionDetails(sessionId);
+      const session = await this.getSessionMetadata(sessionId);
       if (!session) {
         throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
@@ -789,7 +794,7 @@ export class SessionManager {
   /**
    * 获取最新活跃会话
    */
-  public async getLatestSession(): Promise<BrowsingSession | null> {
+  public async getLatestSession(): Promise<SessionMetadata | null> {
     await this.ensureInitialized();
 
     if (!this.latestSessionId) {
@@ -797,7 +802,7 @@ export class SessionManager {
     }
 
     try {
-      return await this.getSessionDetails(this.latestSessionId);
+      return await this.getSessionMetadata(this.latestSessionId);
     } catch (error) {
       logger.error(_('latest_session_load_failed', '加载最新会话失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('latest_session_load_failed_message', '获取最新会话失败: {0}', error instanceof Error ? error.message : String(error));
@@ -828,11 +833,11 @@ export class SessionManager {
       // 如果与最新会话相同，直接返回会话
       if (this.latestSessionId === sessionId) {
         logger.log(_('session_manager_already_latest', '会话已是最新会话: {0}'), sessionId);
-        return await this.getSessionDetails(sessionId);
+        return await this.getSessionMetadata(sessionId);
       }
       
       // 检查会话是否存在
-      const session = await this.getSessionDetails(sessionId);
+      const session = await this.getSessionMetadata(sessionId);
       if (!session) {
         throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
       }
@@ -1043,98 +1048,11 @@ export class SessionManager {
   ): Promise<SessionStatistics> {
     await this.ensureInitialized();
   
-    try {
-      // 获取指定会话
-      const session = await this.getSessionDetails(sessionId);
-      if (!session) {
-        throw new _Error('session_does_not_exist', '会话 {0} 不存在', sessionId);
-      }
+    const session = await this.getSessionMetadata(sessionId);
+    if (!session) throw new Error('Session not found');
+    return getNavigationManager().getNavigationStorage().getSessionStatistics(session);
+  }
   
-      // 计算基本统计信息
-      let totalNodes = session.nodeCount || 0;
-      const duration = session.endTime
-        ? session.endTime - session.startTime
-        : Date.now() - session.startTime;
-  
-      // 域名和URL访问统计
-      const domainCounts: Map<string, number> = new Map();
-      const pageCounts: Map<string, {url: string, title: string, visits: number}> = new Map();
-      const hourlyActivity: Map<number, number> = new Map();
-      
-      try {
-        // 获取会话的详细导航数据
-        const navManager = getNavigationManager();
-        const sessionNodes = await navManager.queryNodes({ sessionId });
-        
-        // 处理每个节点的统计信息
-        sessionNodes.forEach(node => {
-          // 提取域名
-          try {
-            const url = new URL(node.url);
-            const domain = url.hostname;
-            
-            // 更新域名统计
-            domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
-            
-            // 更新页面访问统计
-            const pageKey = node.url;
-            if (!pageCounts.has(pageKey)) {
-              pageCounts.set(pageKey, {
-                url: node.url,
-                title: node.title || node.url,
-                visits: 0
-              });
-            }
-            pageCounts.get(pageKey)!.visits += 1;
-            
-            // 更新小时活动统计
-            const hour = new Date(node.timestamp).getHours();
-            hourlyActivity.set(hour, (hourlyActivity.get(hour) || 0) + 1);
-          } catch (urlError) {
-            // 忽略无效URL
-          }
-        });
-      } catch (navError) {
-        logger.error(_('session_statistics_failed', '获取会话 {0} 统计信息失败: {1}'), sessionId, navError);
-        // 继续执行，返回基础统计信息
-      }
-      
-      // 计算唯一域名数
-      const uniqueDomains = domainCounts.size;
-      
-      // 获取访问最多的域名（最多10个）
-      const topDomains = Array.from(domainCounts.entries())
-        .map(([domain, count]) => ({ domain, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-      
-      // 获取访问最多的页面（最多10个）
-      const mostVisitedPages = Array.from(pageCounts.values())
-        .sort((a, b) => b.visits - a.visits)
-        .slice(0, 10);
-      
-      // 生成所有小时的活动统计
-      const activityByHour = Array.from({ length: 24 }, (_, i) => i)
-        .map(hour => ({
-          hour,
-          count: hourlyActivity.get(hour) || 0
-        }));
-      
-      return {
-        totalNodes,
-        uniqueDomains,
-        duration,
-        topDomains,
-        mostVisitedPages,
-        activityByHour
-      };
-    } catch (error) {
-      logger.error(_('session_statistics_failed', '获取会话 {0} 统计信息失败: {1}'), sessionId, error);
-      throw new _Error('session_statistics_failed_message', '获取会话统计信息失败: {0}', error instanceof Error ? error.message : String(error)
-      );
-    }
-  } 
-
   /**
    * 清除所有会话数据
    */

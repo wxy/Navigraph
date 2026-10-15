@@ -1,3 +1,6 @@
+import { indexedNode, indexedEdge } from './graph-index.js';
+import { GraphPageQuery, GraphPageResult, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
+import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
  * 导航存储类
  * 替代旧版storage.ts的实现，使用新的IndexedDBStorage
@@ -91,10 +94,138 @@ export class NavigationStorage {
     void chrome.runtime.sendMessage({ target: 'content', action: 'refreshVisualization' }).catch(() => {});
   }
 
+  /** Ordinary UI queries scan only covering keys and materialize the selected window. */
+  public async getSessionPage(query: GraphPageQuery): Promise<GraphPageResult> {
+    await this.ensureInitialized();
+    return this.db.readTransaction(['nodes', 'edges', 'sessions'], (tx, done) => {
+      const nodes: NavNode[] = [], edges: NavLink[] = [];
+      const pageInfo = { page: query.page, limit: query.limit, total: 0, matched: 0,
+        edgePage: query.edgePage, edgeLimit: Math.min(2000, query.limit * 4), edgeTotal: 0 };
+      const result: GraphPageResult = { session: null, nodes, edges, pageInfo };
+      done(result);
+      const metadata = tx.objectStore('sessions').get(query.sessionId);
+      metadata.onsuccess = () => {
+        if (!metadata.result) return;
+        result.session = sessionMetadata(metadata.result);
+        scanNodes(false);
+      };
+      const range = IDBKeyRange.bound([query.sessionId], [query.sessionId, []]);
+      const nodeIndex = tx.objectStore('nodes').index('pageOrder');
+      let selected: string[] = [];
+      const scanNodes = (clamped: boolean) => {
+        selected = [];
+        let matched = 0, total = 0;
+        const request = nodeIndex.openKeyCursor(range);
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor) {
+            total++;
+            const key = cursor.key as [string, number, string, string, number, number];
+            if (matchesGraphFilters(key[3], key[4] === 1, key[5] === 1, query.filters)) {
+              if (matched >= pageInfo.page * query.limit && selected.length < query.limit) selected.push(key[2]);
+              matched++;
+            }
+            cursor.continue();
+          } else {
+            pageInfo.total = total; pageInfo.matched = matched;
+            const lastPage = Math.max(0, Math.ceil(matched / query.limit) - 1);
+            if (!clamped && pageInfo.page > lastPage) { pageInfo.page = lastPage; scanNodes(true); return; }
+            if (result.session) result.session.nodeCount = total;
+            for (const [position, id] of selected.entries()) {
+              const record = tx.objectStore('nodes').get(id);
+              record.onsuccess = () => { if (record.result) nodes[position] = record.result; };
+            }
+            scanEdges(false);
+          }
+        };
+      };
+      const scanEdges = (clamped: boolean) => {
+        let count = 0, sourceIndex = 0;
+        const ids = new Set(selected), sources = [...selected].sort();
+        const selectedEdges: string[] = [];
+        const nextSource = () => {
+          if (sourceIndex >= sources.length) {
+            pageInfo.edgeTotal = count;
+            const lastPage = Math.max(0, Math.ceil(count / pageInfo.edgeLimit) - 1);
+            if (!clamped && pageInfo.edgePage > lastPage) { pageInfo.edgePage = lastPage; scanEdges(true); return; }
+            for (const [position, id] of selectedEdges.entries()) {
+              const record = tx.objectStore('edges').get(id);
+              record.onsuccess = () => { if (record.result) edges[position] = record.result; };
+            }
+            return;
+          }
+          const source = sources[sourceIndex++];
+          const request = tx.objectStore('edges').index('pageRelations').openKeyCursor(
+            IDBKeyRange.bound([query.sessionId, source], [query.sessionId, source, []]));
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) { nextSource(); return; }
+            const key = cursor.key as [string, string, string, number, string];
+            if (ids.has(key[2])) {
+              if (count >= pageInfo.edgePage * pageInfo.edgeLimit && selectedEdges.length < pageInfo.edgeLimit) selectedEdges.push(key[4]);
+              count++;
+            }
+            cursor.continue();
+          };
+        };
+        nextSource();
+      };
+    });
+  }
+
+  public async countSessionNodes(sessionId: string): Promise<number> {
+    await this.ensureInitialized();
+    return this.db.readTransaction(['nodes'], (tx, done) => {
+      const request = tx.objectStore('nodes').index('pageOrder').count(IDBKeyRange.bound([sessionId], [sessionId, []]));
+      request.onsuccess = () => done(request.result);
+    });
+  }
+
+  /** Run-length aggregation: retain 24 hour buckets and two top-10 lists, never all URLs. */
+  public async getSessionStatistics(session: BrowsingSession): Promise<SessionStatistics> {
+    await this.ensureInitialized();
+    return this.db.readTransaction(['nodes'], (tx, done) => {
+      const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
+      const topDomains: Array<{ domain: string; count: number }> = [];
+      const pages: Array<{ url: string; title: string; visits: number; id: string }> = [];
+      let total = 0, uniqueDomains = 0, domain: string | undefined, url: string | undefined;
+      let domainCount = 0, pageCount = 0, pageId = '';
+      const top = <T>(list: T[], item: T, count: (entry: T) => number) => {
+        list.push(item); list.sort((a, b) => count(b) - count(a)); if (list.length > 10) list.pop();
+      };
+      const finishUrl = () => { if (url !== undefined && domain) top(pages, { url, title: url, visits: pageCount, id: pageId }, page => page.visits); };
+      const finishDomain = () => { if (domain) { uniqueDomains++; top(topDomains, { domain, count: domainCount }, entry => entry.count); } };
+      const request = tx.objectStore('nodes').index('statisticsOrder').openKeyCursor(IDBKeyRange.bound([session.id], [session.id, []]));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          const key = cursor.key as [string, string, string, number, string, number];
+          total++;
+          if (domain !== key[1] || url !== key[2]) {
+            finishUrl(); pageCount = 0; pageId = key[4]; url = key[2];
+            if (domain !== key[1]) { finishDomain(); domain = key[1]; domainCount = 0; }
+          }
+          pageCount++; domainCount++;
+          if (domain && key[5] === 1) hours[new Date(key[3]).getHours()].count++;
+          cursor.continue();
+        } else {
+          finishUrl(); finishDomain();
+          for (const page of pages) {
+            const record = tx.objectStore('nodes').get(page.id);
+            record.onsuccess = () => { page.title = record.result?.title || page.url; };
+          }
+          done({ totalNodes: total, uniqueDomains,
+            duration: (session.endTime || Date.now()) - session.startTime,
+            topDomains, mostVisitedPages: pages, activityByHour: hours });
+        }
+      };
+    });
+  }
+
   public async saveNode(node: NavNode): Promise<string> {
     await this.ensureInitialized();
     // Each visit has its own ID; only explicit updates may overwrite a visit.
-    await this.db.add(this.NODE_STORE, node);
+    await this.db.add(this.NODE_STORE, indexedNode(node));
     this.notifyChanged();
     return node.id;
   }
@@ -185,7 +316,7 @@ export class NavigationStorage {
         const request = store.get(id);
         request.onsuccess = () => {
           if (!request.result) { store.transaction.abort(); return; }
-          store.put({ ...request.result, ...updates, id, sessionId: request.result.sessionId });
+          store.put(indexedNode({ ...request.result, ...updates, id, sessionId: request.result.sessionId }));
         };
       });
       const updatedNode = { sessionId: '' };
@@ -223,7 +354,7 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
-      await this.db.put(this.EDGE_STORE, edge);
+      await this.db.put(this.EDGE_STORE, indexedEdge(edge));
       this.notifyChanged();
       logger.log(_('nav_storage_edge_saved', '边已保存: {0} ({1} -> {2})'), edge.id, edge.source, edge.target);
     } catch (error) {
@@ -303,7 +434,7 @@ export class NavigationStorage {
   public async saveNodes(nodes: NavNode[]): Promise<void> {
     await this.ensureInitialized();
     await this.db.mutate([this.NODE_STORE], tx => {
-      for (const node of nodes) tx.objectStore(this.NODE_STORE).add(node);
+      for (const node of nodes) tx.objectStore(this.NODE_STORE).add(indexedNode(node));
     });
   }
 
@@ -316,7 +447,7 @@ export class NavigationStorage {
     
     try {
       for (const edge of edges) {
-        await this.db.put(this.EDGE_STORE, edge);
+        await this.db.put(this.EDGE_STORE, indexedEdge(edge));
       }
       logger.log(_('nav_storage_edges_batch_saved', '批量保存了 {0} 条边'), edges.length.toString());
     } catch (error) {
@@ -378,29 +509,77 @@ export class NavigationStorage {
    * @param timestamp 时间戳
    * @returns 清除的节点数量
    */
+  /** Scan covering open-state keys; load/update only nodes selected for closure. */
+  public async closeMatchingOpenNodes(sessionId: string, shouldCloseTab: (tabId: number) => boolean): Promise<number> {
+    await this.ensureInitialized();
+    let count = 0;
+    const now = Date.now();
+    await this.db.mutate(['nodes'], tx => {
+      const store = tx.objectStore('nodes');
+      const request = store.index('openTabState').openKeyCursor(IDBKeyRange.bound([sessionId, 0], [sessionId, 0, []]));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const tabId = (cursor.key as IDBValidKey[])[2] as number;
+        if (tabId === -1 || !shouldCloseTab(tabId)) { cursor.continue(); return; }
+        const get = store.get(cursor.primaryKey);
+        get.onsuccess = () => {
+          if (get.result) { store.put(indexedNode({ ...get.result, isClosed: true, closeTime: now })); count++; }
+          cursor.continue();
+        };
+      };
+    });
+    if (count) this.notifyChanged();
+    return count;
+  }
+
+  /** Restore one latest visit without loading all revisits of an open tab URL. */
+  public async getLatestNodeForTabUrl(sessionId: string, tabId: number, url: string): Promise<NavNode | null> {
+    await this.ensureInitialized();
+    return this.db.readTransaction(['nodes'], (tx, resolve) => {
+      const prefix = [sessionId, tabId, url];
+      const request = tx.objectStore('nodes').index('latestTabUrl').openCursor(IDBKeyRange.bound(prefix, [...prefix, []]));
+      request.onsuccess = () => resolve(request.result?.value || null);
+    });
+  }
+
   /** Delete expired visits and repair graph relationships in one transaction. */
   public async purgeBeforeTime(timestamp: number): Promise<{ nodes: number; edges: number }> {
     await this.ensureInitialized();
     let nodes = 0, edges = 0;
     await this.db.mutate(['nodes', 'edges'], tx => {
-      const store = tx.objectStore('nodes');
-      const expired = store.index('timestamp').getAllKeys(IDBKeyRange.upperBound(timestamp, true));
-      expired.onsuccess = () => {
-        const removed = new Set(expired.result.map(String));
-        for (const id of removed) { store.delete(id); nodes++; }
-        const children = store.openCursor();
-        children.onsuccess = () => {
-          const c = children.result;
-          if (c) { if (removed.has(c.value.parentId)) c.update({ ...c.value, parentId: '' }); c.continue(); }
+      const store = tx.objectStore('nodes'), links = tx.objectStore('edges');
+      // Stream only expired keys; untouched graph values are never materialized.
+      const deleteEdgeKeys = (index: string, range: IDBKeyRange, done: () => void) => {
+        const request = links.index(index).openKeyCursor(range);
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor) { done(); return; }
+          links.delete(cursor.primaryKey); edges++; cursor.continue();
         };
-        const links = tx.objectStore('edges').openCursor();
-        links.onsuccess = () => {
-          const c = links.result;
-          if (c) { if (c.value.timestamp < timestamp || removed.has(c.value.source) || removed.has(c.value.target)) { c.delete(); edges++; } c.continue(); }
+      };
+      const expired = store.index('timestamp').openKeyCursor(IDBKeyRange.upperBound(timestamp, true));
+      expired.onsuccess = () => {
+        const cursor = expired.result;
+        if (!cursor) {
+          deleteEdgeKeys('timestamp', IDBKeyRange.upperBound(timestamp, true), () => {});
+          return;
+        }
+        const id = cursor.primaryKey;
+        const children = store.index('parentId').openCursor(IDBKeyRange.only(id));
+        children.onsuccess = () => {
+          const child = children.result;
+          if (child) { child.update(indexedNode({ ...child.value, parentId: '' })); child.continue(); return; }
+          // Sequential indexes prevent double counting a link touching both ends.
+          deleteEdgeKeys('source', IDBKeyRange.only(id), () => {
+            deleteEdgeKeys('target', IDBKeyRange.only(id), () => {
+              store.delete(id); nodes++; cursor.continue();
+            });
+          });
         };
       };
     });
-    this.notifyChanged();
+    if (nodes || edges) this.notifyChanged();
     return { nodes, edges };
   }
 

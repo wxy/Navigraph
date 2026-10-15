@@ -1,3 +1,5 @@
+import { indexedNode, indexedEdge } from './graph-index.js';
+import { sessionMetadata } from '../../lib/graph/query.js';
 /**
  * IndexedDB数据库访问封装
  * 提供对IndexedDB的低级封装，增强类型安全
@@ -204,6 +206,37 @@ export class IndexedDBStorage {
       this.createStore(db, store, transaction);
     }
     
+    if (this.schema.name === 'NavigraphDB' && this.schema.version >= 3) {
+      for (const name of ['nodes', 'edges']) {
+        const request = transaction.objectStore(name).openCursor();
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor) { cursor.update(name === 'nodes' ? indexedNode(cursor.value) : indexedEdge(cursor.value)); cursor.continue(); }
+        };
+      }
+      // Old metadata envelopes may embed graph maps. Preserve missing records before removing the envelopes.
+      const sessions = transaction.objectStore('sessions').openCursor();
+      sessions.onsuccess = () => {
+        const cursor = sessions.result;
+        if (!cursor) return;
+        const sessionId = cursor.value.id;
+        for (const [name, map] of [['nodes', cursor.value.records], ['edges', cursor.value.edges]] as const) {
+          for (const [recordId, record] of Object.entries(map || {})) {
+            if (!record || typeof record !== 'object') continue;
+            const value = { ...record, id: typeof (record as { id?: unknown }).id === 'string' ? (record as { id: string }).id : recordId };
+            const store = transaction.objectStore(name);
+            const existing = store.getKey(value.id);
+            existing.onsuccess = () => {
+              if (existing.result === undefined) store.put(name === 'nodes'
+                ? indexedNode({ ...value, sessionId } as any)
+                : indexedEdge({ ...value, sessionId } as any));
+            };
+          }
+        }
+        cursor.update(sessionMetadata(cursor.value));
+        cursor.continue();
+      };
+    }
     logger.log(_('indexed_db_upgrade_complete', '数据库升级完成'));
   }
   
@@ -222,6 +255,17 @@ export class IndexedDBStorage {
         store.createIndex(index.name, index.keyPath, { unique: index.unique, multiEntry: index.multiEntry || false });
       }
     }
+  }
+
+  public async readTransaction<T>(stores: string[], callback: (tx: IDBTransaction, result: (value: T) => void) => void): Promise<T> {
+    const db = await this.getDB();
+    return new Promise<T>((resolve, reject) => {
+      const tx = db.transaction(stores, 'readonly');
+      let value: T;
+      tx.oncomplete = () => resolve(value);
+      tx.onerror = tx.onabort = () => reject(tx.error || new Error('Read aborted'));
+      try { callback(tx, result => { value = result; }); } catch (error) { tx.abort(); reject(error); }
+    });
   }
 
   /** Run a multi-store mutation, resolving only once the transaction commits. */

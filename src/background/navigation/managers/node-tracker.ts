@@ -797,28 +797,8 @@ export class NodeTracker {
    */
   public async closeNodesForTab(tabId: number, sessionId: string): Promise<void> {
     try {
-      // 查找与此标签页相关的活跃节点
-      const activeNodes = await this.navigationStorage.queryNodes({
-        tabId: tabId,
-        sessionId: sessionId,
-        isClosed: false
-      });
-      
-      if (activeNodes.length === 0) {
-        return;
-      }
-      
-      const now = Date.now();
-      
-      // 更新这些节点为已关闭状态
-      for (const node of activeNodes) {
-        await this.navigationStorage.updateNode(node.id, {
-          isClosed: true,
-          closeTime: now
-        });
-      }
-      
-      logger.log(_('node_tracker_tab_nodes_closed', '已关闭标签页 {0} 的 {1} 个节点'), tabId.toString(), activeNodes.length.toString());
+      const count = await this.navigationStorage.closeMatchingOpenNodes(sessionId, id => id === tabId);
+      logger.log(_('node_tracker_tab_nodes_closed', '已关闭标签页 {0} 的 {1} 个节点'), tabId.toString(), count.toString());
     } catch (error) {
       logger.error(_('node_tracker_close_tab_nodes_failed', '关闭标签页 {0} 的节点失败: {1}'), tabId.toString(), error);
     }

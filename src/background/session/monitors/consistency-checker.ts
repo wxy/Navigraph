@@ -55,38 +55,10 @@ export class ConsistencyChecker {
         // 获取导航管理器实例
         const navManager = getNavigationManager();
         
-        // 查询当前会话的节点
-        const sessionNodes = await navManager.queryNodes({
-          sessionId: latestSessionId
-        });
-        
-        // 过滤出活跃(未关闭)节点
-        const activeNodes = sessionNodes.filter(node => node.isClosed !== true);
-        logger.log(_('consistency_checker_active_nodes', '当前会话有 {0} 个活跃节点'), activeNodes.length.toString());
-
-        // 找出标签页已关闭但节点未标记为关闭的节点
-        const orphanedNodes = activeNodes.filter(node => 
-          node.tabId !== undefined && !activeTabIds.has(node.tabId)
+        const count = await navManager.getNavigationStorage().closeMatchingOpenNodes(
+          latestSessionId, tabId => !activeTabIds.has(tabId)
         );
-        
-        if (orphanedNodes.length > 0) {
-          logger.log(_('consistency_checker_orphaned_found', '发现 {0} 个孤立节点，标记为已关闭'), orphanedNodes.length.toString());
-          
-          const now = Date.now();
-          
-          // 更新这些节点状态
-          for (const node of orphanedNodes) {
-            logger.log(_('consistency_checker_marking_node', '标记节点 {0} (tabId={1}) 为已关闭'), 
-              node.id, node.tabId ? node.tabId.toString() : 'undefined');
-            
-            await navManager.updateNode(node.id, {
-              isClosed: true,
-              closeTime: now
-            });
-          }
-        } else {
-          logger.log(_('consistency_checker_no_orphaned', '未发现需要更新状态的孤立节点'));
-        }
+        logger.log(_('consistency_checker_orphaned_found', '发现 {0} 个孤立节点，标记为已关闭'), count.toString());
       } catch (navError) {
         logger.error(_('consistency_checker_nav_manager_failed', '获取导航管理器失败: {0}'), 
           navError instanceof Error ? navError.message : String(navError));

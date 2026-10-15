@@ -189,7 +189,9 @@ export class SessionViewController {
       document.body.classList.remove("loading-session");
 
       if (!session) {
-        this.uiManager.showError(_('content_session_load_failed_or_unavailable', '会话加载失败或无可用会话'));
+        this.visualizer.currentSession = undefined;
+        this.visualizer.setRawData([], [], new Map());
+        this.visualizer.refreshVisualization();
         return;
       }
 
@@ -247,10 +249,7 @@ export class SessionViewController {
    */
   async refreshSessionData(): Promise<void> {
     // 防止递归调用
-    if (this.isRefreshingData) {
-      logger.debug(_('session_data_refresh_in_progress', '会话数据刷新已在进行中，跳过重复刷新'));
-      return;
-    }
+
     
     try {
       this.isRefreshingData = true;

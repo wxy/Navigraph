@@ -1,5 +1,7 @@
 # Navigraph 审计修复验证报告（2026-10-15）
 
+本报告对应已验证提交 `6cbb4e46be8cc90668db9a8c085b1eb21e605dcd`（v2数据库），其后v3按需加载修复另有报告；下方复现源码固定为该提交。
+
 ## 结果和边界
 
 在 macOS / Chromium 151.0.7922.34（Playwright 1.62.1 下载的 chromium-1234）中，真实加载 unpacked MV3 扩展，综合 E2E 24 项通过；独立 options 保存路径与初始化失败路径通过。`npm run build` 包含 `tsc --noEmit`，生产构建通过，仅保留 vendored D3 体积 warning。`git diff --check` 通过。生产构建和浏览器 harness 实际使用 Node v26.7.0。最低 Chrome 106、构建 Node >=20.9.0 是声明的支持边界，未在这些最低版本或全版本矩阵上实测。
@@ -86,7 +88,7 @@ export NAVIGRAPH_REPO="$PWD"
 export NAVIGRAPH_TASK_TEMP="$(mktemp -d "${TMPDIR:-/tmp/}navigraph-verify.XXXXXX")"
 export PLAYWRIGHT_BROWSERS_PATH="$NAVIGRAPH_TASK_TEMP/browsers"
 mkdir -p "$NAVIGRAPH_TASK_TEMP/source" "$NAVIGRAPH_TASK_TEMP/baseline"
-git archive HEAD | tar -x -C "$NAVIGRAPH_TASK_TEMP/source"
+git archive 6cbb4e46be8cc90668db9a8c085b1eb21e605dcd | tar -x -C "$NAVIGRAPH_TASK_TEMP/source"
 git archive 3f065ee4de36be0053eb87d761b3360f18677694 | tar -x -C "$NAVIGRAPH_TASK_TEMP/baseline"
 (cd "$NAVIGRAPH_TASK_TEMP/source" && npm ci --ignore-scripts && npm run build && npm audit --json)
 ln -s ../source/node_modules "$NAVIGRAPH_TASK_TEMP/baseline/node_modules"

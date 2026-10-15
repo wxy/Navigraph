@@ -1,3 +1,4 @@
+import type { GraphPageQuery, GraphPageResult, SessionMetadata } from '../../lib/graph/query.js';
 import { BaseMessage, BaseResponse } from './common.js';
 import { BrowsingSession } from '../session-types.js';
 // 添加这些新的类型定义
@@ -9,6 +10,7 @@ import {
   } from '../../types/session-types.js';
   
 export namespace BackgroundMessages {
+  export interface GetSessionPageRequest extends BaseMessage, GraphPageQuery { action: 'getSessionPage'; target: 'background'; }
   /**
    * 获取标签页ID请求
    */
@@ -311,6 +313,7 @@ export namespace BackgroundMessages {
 
 // 对应的响应类型（省略实现细节）
 export namespace BackgroundResponses {
+  export interface GetSessionPageResponse extends BaseResponse, GraphPageResult {}
   export interface GetTabIdResponse extends BaseResponse {
     tabId?: number;
   }
@@ -459,7 +462,7 @@ export namespace BackgroundResponses {
    */
   export interface SetCurrentSessionResponse extends BaseResponse {
     sessionId: string;
-    session?: BrowsingSession;
+    session?: SessionMetadata;
   }
 
   /**
@@ -467,7 +470,7 @@ export namespace BackgroundResponses {
    */
   export interface GetCurrentSessionResponse extends BaseResponse {
     sessionId: string | null;
-    session?: BrowsingSession;
+    session?: SessionMetadata;
   }
 
   /**
@@ -496,7 +499,7 @@ export namespace BackgroundResponses {
    * 获取最新会话响应
    */
   export interface GetLatestSessionResponse extends BaseResponse {
-    session: BrowsingSession | null;
+    session: SessionMetadata | null;
     sessionId: string | null;
   }
 
@@ -505,7 +508,7 @@ export namespace BackgroundResponses {
    */
   export interface SetLatestSessionResponse extends BaseResponse {
     sessionId: string | null;
-    session: BrowsingSession | null;
+    session: SessionMetadata | null;
   }
 
   /**
@@ -551,6 +554,7 @@ export namespace BackgroundResponses {
  * 后台API消息映射
  */
 export interface BackgroundAPI {
+  getSessionPage: { request: BackgroundMessages.GetSessionPageRequest; response: BackgroundResponses.GetSessionPageResponse; };
   getTabId: {
     request: BackgroundMessages.GetTabIdRequest;
     response: BackgroundResponses.GetTabIdResponse;
@@ -724,6 +728,7 @@ export type BackgroundRequest =
   | BackgroundMessages.FormSubmittedRequest
   | BackgroundMessages.GetHistoryRequest
   | BackgroundMessages.GetGraphDataRequest
+  | BackgroundMessages.GetSessionPageRequest
   | BackgroundMessages.GetSessionDetailsRequest
   | BackgroundMessages.CreateSessionRequest
   | BackgroundMessages.UpdateSessionRequest
@@ -756,6 +761,7 @@ export type BackgroundResponse =
   | BackgroundResponses.FormSubmittedResponse
   | BackgroundResponses.GetHistoryResponse
   | BackgroundResponses.GetGraphDataResponse
+  | BackgroundResponses.GetSessionPageResponse
   | BackgroundResponses.GetSessionDetailsResponse
   | BackgroundResponses.CreateSessionResponse
   | BackgroundResponses.UpdateSessionResponse

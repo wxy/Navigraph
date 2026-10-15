@@ -37,7 +37,7 @@
         window.navigraphSettings = settingsService.getSettings();
         settingsService.addChangeListener(settings => {
           window.navigraphSettings = settings;
-          window.visualizer?.refreshVisualization(undefined, { restoreTransform: true });
+          if (window.visualizer) void window.visualizer.loadGraphPage(0).catch(error => logger.error('Settings page load failed', error));
         });
         // 如果用户在设置中强制了语言，应用到 i18n（使主视图在刷新后也使用该语言）
         try {

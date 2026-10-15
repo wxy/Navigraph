@@ -68,6 +68,13 @@ export class NodeManager {
   /**
    * 将会话记录转换为节点
    */
+  public processPageData(nodes: NavNode[], edges: NavLink[]): void {
+    // A page fragment must never infer parentage from adjacent tabs or synthesize missing edges.
+    this.nodes = nodes.map(node => ({ ...node }));
+    this.edges = edges.map(edge => ({ ...edge }));
+    this.buildNodeMap();
+  }
+
   private processRecordsToNodes(session: SessionDetails): void {
     // 记录存储
     const records = session.records || {};

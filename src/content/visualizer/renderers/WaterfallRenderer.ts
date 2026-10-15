@@ -1212,7 +1212,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     // 🛡️ 安全检查：验证时间戳有效性
     let validNodes = nodes.filter(node => {
-      if (!node.timestamp || typeof node.timestamp !== 'number' || isNaN(node.timestamp)) {
+      if (typeof node.timestamp !== 'number' || !Number.isFinite(node.timestamp)) {
         logger.warn(_('waterfall_invalid_timestamp_node', '发现无效时间戳的节点，已过滤:'), node);
         return false;
       }
