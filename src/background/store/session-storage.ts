@@ -1,3 +1,4 @@
+import { getNavigationStorage } from './navigation-storage.js';
 /**
  * 会话存储实现
  * 负责会话数据的持久化存储与检索
@@ -579,7 +580,7 @@ export class SessionStorage {
         if (session.isActive) {
           continue;
         }
-        await this.deleteSession(session.id);
+        await getNavigationStorage().clearSessionData(session.id, true);
         deleteCount++;
       }
       

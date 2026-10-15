@@ -131,12 +131,12 @@
     <div id="navigraph-error" class="error-container" style="display: none;">
       <div class="error-header">
         <h3 class="error-title" data-i18n="content_error">错误</h3>
-        <button class="close-button" onclick="this.parentNode.parentNode.style.display='none'">&times;</button>
+        <button class="close-button" data-recovery="dismiss">&times;</button>
       </div>
       <p class="error-message"></p>
       <div class="error-actions">
-        <button class="refresh-button" onclick="location.reload()" data-i18n="content_refresh_page">刷新页面</button>
-        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'" data-i18n="content_close">关闭</button>
+        <button class="refresh-button" data-recovery="reload" data-i18n="content_refresh_page">刷新页面</button>
+        <button class="dismiss-button" data-recovery="dismiss" data-i18n="content_close">关闭</button>
       </div>
     </div>
     
@@ -144,7 +144,7 @@
     <div id="navigraph-error-detailed" class="error-container detailed" style="display: none;">
       <div class="error-header">
         <h3 class="error-title"></h3>
-        <button class="close-button" onclick="this.parentNode.parentNode.style.display='none'">&times;</button>
+        <button class="close-button" data-recovery="dismiss">&times;</button>
       </div>
       <p class="error-message"></p>
       <details>
@@ -152,8 +152,8 @@
         <pre class="error-stack"></pre>
       </details>
       <div class="error-actions">
-        <button class="refresh-button" onclick="location.reload()" data-i18n="content_refresh_page">刷新页面</button>
-        <button class="dismiss-button" onclick="this.parentNode.parentNode.style.display='none'" data-i18n="content_close">关闭</button>
+        <button class="refresh-button" data-recovery="reload" data-i18n="content_refresh_page">刷新页面</button>
+        <button class="dismiss-button" data-recovery="dismiss" data-i18n="content_close">关闭</button>
       </div>
     </div>
     

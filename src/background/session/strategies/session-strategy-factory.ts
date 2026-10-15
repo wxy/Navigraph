@@ -29,7 +29,11 @@ export class SessionStrategyFactory {
     const dailyStrategy = new DailySessionStrategy(this.manager);
     this.strategies.set(dailyStrategy.getType(), dailyStrategy);
     
-    // 添加其他策略...
+    this.strategies.set('manual', {
+      getType: () => 'manual',
+      shouldCreateNewSession: async (_last, _now, current) => !current,
+      createSession: () => this.manager.createSession()
+    });
     
     logger.log(_('strategy_factory_initialized', '已初始化{0}个会话策略'), this.strategies.size.toString());
   }

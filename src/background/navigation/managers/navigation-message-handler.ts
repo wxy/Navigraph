@@ -302,10 +302,7 @@ export class NavigationMessageHandler {
         const sessionManager = getSessionManager();
         
         // 并行执行两个清除操作
-        Promise.all([
-          navigationManager.clearAllData(),     // 清除导航数据
-          sessionManager.clearAllSessions()     // 清除会话数据
-        ])
+        navigationManager.clearAllData()
         .then(() => {
           logger.log(_('navigation_handlers_clear_success', '成功清除所有数据'));
           ctx.success();

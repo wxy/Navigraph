@@ -1,3 +1,4 @@
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 /**
  * 渲染管理器
  * 负责协调和管理所有渲染相关操作
@@ -24,6 +25,10 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
+  private restoreTimer?: ReturnType<typeof setTimeout>;
+  private rangeControls: HTMLDivElement | null = null;
+  private rangePage = 0;
+  private rangeSession = '';
   
   /**
    * 构造函数
@@ -149,10 +154,25 @@ export class RenderingManager {
       
       // 获取SVG和数据引用
       const svg = this.viewStateManager.svg;
-      const nodes = this.visualizer.nodes;
-      const edges = this.visualizer.edges;
+      const filteredNodes = this.visualizer.nodes;
+      const sessionKey = this.visualizer.currentSession?.id || '';
+      if (this.rangeSession !== sessionKey) { this.rangeSession = sessionKey; this.rangePage = 0; }
+      const limit = window.navigraphSettings?.maxNodes || 100;
+      const pages = Math.max(1, Math.ceil(filteredNodes.length / limit));
+      this.rangePage = Math.min(this.rangePage, pages - 1);
+      const ordered = [...filteredNodes].sort((a, b) => b.timestamp - a.timestamp || a.id.localeCompare(b.id));
+      const selected = ordered.slice(this.rangePage * limit, (this.rangePage + 1) * limit);
+      const ids = new Set(selected.map(node => node.id));
+      const nodes = selected.map(node => ({ ...node, parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '' }));
+      const edges = this.visualizer.edges.filter(edge => ids.has(edge.source) && ids.has(edge.target));
+      this.updateRangeControls(filteredNodes.length, limit, pages);
       const currentSession = this.visualizer.currentSession;
 
+      this.currentRenderer?.cleanup();
+      this.currentRenderer = null;
+      clearTimeout(this.restoreTimer);
+      svg.interrupt();
+      svg.selectAll('*').interrupt();
       // 清除现有可视化
       svg.selectAll("*").remove();
 
@@ -201,7 +221,7 @@ export class RenderingManager {
       // 在可视化渲染后，尝试恢复视图状态
       if (options.restoreTransform) {
         // 尝试恢复视图缩放状态
-        setTimeout(() => {
+        this.restoreTimer = setTimeout(() => {
           this.viewStateManager.restoreViewState();
         }, 50);
       }
@@ -226,6 +246,29 @@ export class RenderingManager {
     }
   }
   
+  private updateRangeControls(total: number, limit: number, pages: number): void {
+    this.rangeControls?.remove();
+    this.rangeControls = null;
+    if (pages <= 1 || !this.container) return;
+    const controls = document.createElement('div');
+    controls.className = 'navigation-range-controls';
+    controls.style.cssText = 'position:absolute;left:50%;bottom:42px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px';
+    const en = chrome.i18n.getUILanguage().startsWith('en');
+    const start = this.rangePage * limit + 1, end = Math.min(total, start + limit - 1);
+    const label = document.createElement('span');
+    label.textContent = en ? `${start}–${end} / ${total} · newest first` : `${start}–${end} / ${total} · 从新到旧`;
+    for (const [text, delta] of [[en ? 'Newer' : '较新', -1], [en ? 'Older' : '较早', 1]] as const) {
+      const button = document.createElement('button');
+      button.textContent = text;
+      button.disabled = this.rangePage + delta < 0 || this.rangePage + delta >= pages;
+      button.addEventListener('click', () => { this.rangePage += delta; this.renderVisualization(); });
+      controls.append(button);
+    }
+    controls.prepend(label);
+    this.container.append(controls);
+    this.rangeControls = controls;
+  }
+
   /**
    * 渲染空会话界面
    */
@@ -398,7 +441,7 @@ export class RenderingManager {
     if (iconElement && !iconElement.empty()) {
       const node = nodeMap.get(nodeId);
       if (node && node.favicon) {
-        iconElement.attr("href", node.favicon);
+        iconElement.attr("href", UrlUtils.getFaviconUrl(node.url));
       }
     }
   }
@@ -513,6 +556,12 @@ export class RenderingManager {
    */
   cleanup(): void {
     logger.log(_('rendering_manager_cleanup', '正在清理渲染管理器资源'));
-    // 当前没有需要特别清理的资源
+    clearTimeout(this.restoreTimer);
+    this.currentRenderer?.cleanup();
+    this.currentRenderer = null;
+    this.rangeControls?.remove();
+    this.rangeControls = null;
+    this.viewStateManager.svg?.on('.zoom', null);
+    this.viewStateManager.svg?.selectAll('*').interrupt();
   }
 }

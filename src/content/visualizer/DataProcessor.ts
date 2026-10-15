@@ -90,7 +90,7 @@ export class DataProcessor {
       }
       
       // 历史筛选
-      if (!filters.history && (node.type === 'history_back' || node.type === 'history_forward')) {
+      if (!filters.history && (node.type === 'history' || node.type === 'history_back' || node.type === 'history_forward')) {
         return false;
       }
       

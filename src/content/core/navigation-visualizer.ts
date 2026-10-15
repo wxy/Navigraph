@@ -61,6 +61,7 @@ export class NavigationVisualizer implements Visualizer {
 
   // 添加渲染管理器属性
   private renderingManager: RenderingManager;
+  private readonly resizeHandler = () => this.renderingManager.handleResize();
 
   // 修改 filters getter 以使用 FilterManager
   get filters(): FilterStates {
@@ -212,7 +213,7 @@ export class NavigationVisualizer implements Visualizer {
     this.renderingManager.initialize(container);
 
     // 添加窗口大小变化监听 - 委托给渲染管理器
-    window.addEventListener("resize", () => this.renderingManager.handleResize());
+    window.addEventListener("resize", this.resizeHandler);
     
     // 使用返回的SVG元素
     if (svg) {
@@ -300,7 +301,7 @@ export class NavigationVisualizer implements Visualizer {
     this.renderingManager.cleanup();
 
     // 移除事件监听器
-    window.removeEventListener("resize", () => this.renderingManager.handleResize());
+    window.removeEventListener("resize", this.resizeHandler);
 
     // 清理其他资源...
     logger.groupEnd();

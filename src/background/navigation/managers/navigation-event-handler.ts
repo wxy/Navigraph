@@ -1,3 +1,5 @@
+import { getSessionManager } from '../../session/session-manager.js';
+import { enqueue } from '../../lib/task-queue.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { TabStateManager } from './tab-state-manager.js';
@@ -63,14 +65,14 @@ export class NavigationEventHandler {
   ) {
     // 预绑定所有事件处理方法
     this.boundHandlers = {
-      tabCreated: this.handleTabCreated.bind(this),
-      tabUpdated: this.handleTabUpdated.bind(this),
-      tabActivated: this.handleTabActivated.bind(this),
-      tabRemoved: this.handleTabRemoved.bind(this),
-      navigationCommitted: this.handleNavigationCommitted.bind(this),
-      navigationCompleted: this.handleNavigationCompleted.bind(this),
-      historyStateUpdated: this.handleHistoryStateUpdated.bind(this),
-      redirect: this.handleRedirect.bind(this),
+      tabCreated: (...args: Parameters<NavigationEventHandler["handleTabCreated"]>) => { void enqueue(() => this.handleTabCreated(...args)); },
+      tabUpdated: (...args: Parameters<NavigationEventHandler["handleTabUpdated"]>) => { void enqueue(() => this.handleTabUpdated(...args)); },
+      tabActivated: (...args: Parameters<NavigationEventHandler["handleTabActivated"]>) => { void enqueue(() => this.handleTabActivated(...args)); },
+      tabRemoved: (...args: Parameters<NavigationEventHandler["handleTabRemoved"]>) => { void enqueue(() => this.handleTabRemoved(...args)); },
+      navigationCommitted: (...args: Parameters<NavigationEventHandler["handleNavigationCommitted"]>) => { void enqueue(() => this.handleNavigationCommitted(...args)); },
+      navigationCompleted: (...args: Parameters<NavigationEventHandler["handleNavigationCompleted"]>) => { void enqueue(() => this.handleNavigationCompleted(...args)); },
+      historyStateUpdated: (...args: Parameters<NavigationEventHandler["handleHistoryStateUpdated"]>) => { void enqueue(() => this.handleHistoryStateUpdated(...args)); },
+      redirect: (...args: Parameters<NavigationEventHandler["handleRedirect"]>) => { void enqueue(() => this.handleRedirect(...args)); },
     };
   }
 
@@ -107,10 +109,12 @@ export class NavigationEventHandler {
       this.boundHandlers.historyStateUpdated
     );
 
+    chrome.webNavigation.onReferenceFragmentUpdated.addListener(this.boundHandlers.historyStateUpdated);
+
     // 重定向事件
     chrome.webRequest.onBeforeRedirect.addListener(
       this.boundHandlers.redirect,
-      { urls: ["<all_urls>"] }
+      { urls: ["http://*/*", "https://*/*"], types: ["main_frame"] }
     );
 
     this.eventListenersSet = true;
@@ -140,6 +144,8 @@ export class NavigationEventHandler {
       this.boundHandlers.historyStateUpdated
     );
 
+    chrome.webNavigation.onReferenceFragmentUpdated.removeListener(this.boundHandlers.historyStateUpdated);
+
     // 重定向事件
     chrome.webRequest.onBeforeRedirect.removeListener(
       this.boundHandlers.redirect
@@ -168,7 +174,7 @@ export class NavigationEventHandler {
   private async handleTabCreated(tab: chrome.tabs.Tab): Promise<void> {
     try {
       const tabId = tab.id;
-      if (!tabId) return;
+      if (tabId === undefined || tab.incognito) return;
 
       // 记录标签页创建时间
       this.tabStateManager.addTabState(tabId, {
@@ -178,21 +184,7 @@ export class NavigationEventHandler {
         created: Date.now(),
       });
 
-      // 如果创建时已有URL，且不是空白页或新标签页，尝试创建初始导航记录
-      const url = tab.url || "";
-      if (url && !UrlUtils.isEmptyTabUrl(url) && !UrlUtils.isSystemPage(url)) {
-        // 获取可能的opener标签页作为父节点来源
-        let parentNodeId = "";
-        if (tab.openerTabId) {
-          const openerState = this.tabStateManager.getTabState(tab.openerTabId);
-          if (openerState && openerState.lastNodeId) {
-            parentNodeId = openerState.lastNodeId;
-          }
-        }
 
-        // 创建一个初始导航节点
-        await this.handleInitialNavigation(tabId, url, parentNodeId);
-      }
     } catch (error) {
       logger.error(_('nav_event_handler_tab_create_failed', '处理标签页创建失败: {0}'), error instanceof Error ? error.message : String(error));
     }
@@ -344,12 +336,14 @@ export class NavigationEventHandler {
       // 如果不是主框架或是错误页面，忽略此事件
       if (
         details.frameId !== 0 ||
+        !/^https?:/.test(details.url) ||
         UrlUtils.isErrorPage(details.url) ||
         UrlUtils.isSystemPage(details.url)
       ) {
         return;
       }
 
+      await getSessionManager().ensureRecordingSession();
       const tabId = details.tabId;
       if (this.tabStateManager.isTabRemoved(tabId)) {
         return;
@@ -388,11 +382,7 @@ export class NavigationEventHandler {
 
       // 覆盖基于限定词的导航类型
       if (transitionQualifiers.includes("forward_back")) {
-        if (transitionQualifiers.includes("forward")) {
-          navigationType = "history_forward";
-        } else {
-          navigationType = "history_back";
-        }
+        navigationType = "history"; // Chrome only exposes a combined forward_back qualifier.
       } else if (transitionQualifiers.includes("from_address_bar")) {
         navigationType = "address_bar";
       } else if (
@@ -429,6 +419,7 @@ export class NavigationEventHandler {
       // 过滤掉不需要记录的导航
       if (
         details.frameId !== 0 ||
+        !/^https?:/.test(details.url) ||
         UrlUtils.isErrorPage(details.url) ||
         UrlUtils.isSystemPage(details.url)
       ) {
@@ -459,12 +450,14 @@ export class NavigationEventHandler {
     try {
       if (
         details.frameId !== 0 ||
+        !/^https?:/.test(details.url) ||
         UrlUtils.isErrorPage(details.url) ||
         UrlUtils.isSystemPage(details.url)
       ) {
         return;
       }
 
+      await getSessionManager().ensureRecordingSession();
       const tabId = details.tabId;
       const url = details.url;
 
@@ -473,7 +466,9 @@ export class NavigationEventHandler {
       }
 
       // 检查是否已有相同URL的节点
-      const existingNodeId = await this.nodeTracker.getNodeIdForTab(tabId, url);
+      const lastId = this.tabStateManager.getLastNodeId(tabId);
+      const lastNode = lastId ? await this.navigationStorage.getNode(lastId) : null;
+      const existingNodeId = lastNode?.url === url ? lastId : null;
       if (existingNodeId) {
         // 更新现有节点的访问时间和计数
         const now = Date.now();
@@ -566,10 +561,7 @@ export class NavigationEventHandler {
       };
 
       // 保存记录并使用返回的实际ID
-      const savedIdAfter = await this.navigationStorage.saveNode(record).catch((e) => {
-        logger.error(_('nav_event_handler_save_node_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
-        return nodeId;
-      });
+      const savedIdAfter = await this.navigationStorage.saveNode(record);
 
       const finalIdAfter = savedIdAfter || nodeId;
 
@@ -616,29 +608,7 @@ export class NavigationEventHandler {
         return;
       }
 
-      // 从响应头中获取重定向目标
-      let redirectUrl = "";
-
-      if (details.responseHeaders) {
-        // 查找Location响应头
-        const locationHeader = details.responseHeaders.find(
-          (header) => header.name.toLowerCase() === "location"
-        );
-
-        if (locationHeader && locationHeader.value) {
-          redirectUrl = locationHeader.value;
-
-          // 如果是相对URL，转换为绝对URL
-          if (redirectUrl.startsWith("/")) {
-            try {
-              const originalUrl = new URL(details.url);
-              redirectUrl = `${originalUrl.origin}${redirectUrl}`;
-            } catch (e) {
-              logger.warn(_('nav_event_handler_relative_url_failed', '无法将相对路径转换为绝对URL: {0}'), redirectUrl);
-            }
-          }
-        }
-      }
+      const redirectUrl = (details as chrome.webRequest.WebRedirectionResponseDetails).redirectUrl;
 
       // 如果找不到重定向URL，退出
       if (!redirectUrl) {
@@ -708,22 +678,6 @@ export class NavigationEventHandler {
       // 生成新的节点ID
       const nodeId = IdGenerator.generateNodeId(tabId, url);
 
-      // 记录节点ID到标签页历史
-      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
-
-      // 更新标签页状态
-      this.tabStateManager.updateTabState(tabId, {
-        url: url,
-        lastNodeId: nodeId,
-        lastNavigation: now,
-      });
-
-      // 添加到待更新列表
-      this.nodeTracker.addToPendingUpdates(tabId, nodeId);
-
-      // 更新缓存
-      this.nodeTracker.addTabNodeCache(tabId, url, nodeId);
-
       // 获取标签页信息
       let title: string | undefined;
       let favicon: string | undefined;
@@ -762,12 +716,13 @@ export class NavigationEventHandler {
       };
 
       // 保存记录并使用返回的实际ID
-      const savedId = await this.navigationStorage.saveNode(record).catch((e) => {
-        logger.error(_('nav_event_handler_save_node_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
-        return nodeId;
-      });
+      const savedId = await this.navigationStorage.saveNode(record);
 
       const finalId = savedId || nodeId;
+      this.tabStateManager.addToNavigationHistory(tabId, finalId);
+      this.tabStateManager.updateTabState(tabId, { url, lastNodeId: finalId, lastNavigation: now });
+      this.nodeTracker.addToPendingUpdates(tabId, finalId);
+      this.nodeTracker.addTabNodeCache(tabId, url, finalId);
 
       // 如果存在父节点，创建边（使用最终ID）
       if (parentNodeId) {
@@ -808,6 +763,11 @@ export class NavigationEventHandler {
 
       // 1. 尝试查找上一个节点作为父节点
       let parentId = await this.findLastNodeIdForTab(tabId);
+      if (!parentId) {
+        const tab = await chrome.tabs.get(tabId);
+        if (tab.incognito) return;
+        if (tab.openerTabId !== undefined) parentId = this.tabStateManager.getLastNodeId(tab.openerTabId);
+      }
 
       // 2. 查找待处理导航
       const pendingNav =
@@ -858,22 +818,6 @@ export class NavigationEventHandler {
 
       // 5. 生成新的节点ID
       const nodeId = IdGenerator.generateNodeId(tabId, url);
-
-      // 6. 记录节点ID到标签页历史
-      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
-
-      // 7. 更新标签页状态
-      this.tabStateManager.updateTabState(tabId, {
-        url: url,
-        lastNodeId: nodeId,
-        lastNavigation: now,
-      });
-
-      // 8. 添加到待更新列表
-      this.nodeTracker.addToPendingUpdates(tabId, nodeId);
-
-      // 9. 更新缓存
-      this.nodeTracker.addTabNodeCache(tabId, url, nodeId);
 
       // 10. 创建导航记录
 
@@ -928,12 +872,13 @@ export class NavigationEventHandler {
       }
 
       // 13. 保存记录并使用返回的实际ID
-      const savedId = await this.navigationStorage.saveNode(record).catch((e) => {
-        logger.error(_('nav_event_handler_save_node_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
-        return nodeId;
-      });
+      const savedId = await this.navigationStorage.saveNode(record);
 
       const finalId = savedId || nodeId;
+      this.tabStateManager.addToNavigationHistory(tabId, finalId);
+      this.tabStateManager.updateTabState(tabId, { url, lastNodeId: finalId, lastNavigation: now });
+      this.nodeTracker.addToPendingUpdates(tabId, finalId);
+      this.nodeTracker.addTabNodeCache(tabId, url, finalId);
 
       // 14. 如果存在父节点，创建边（使用最终ID）
       if (parentId) {

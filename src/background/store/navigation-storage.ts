@@ -87,84 +87,18 @@ export class NavigationStorage {
   /**
    * 保存导航节点
    */
+  private notifyChanged(): void {
+    void chrome.runtime.sendMessage({ target: 'content', action: 'refreshVisualization' }).catch(() => {});
+  }
+
   public async saveNode(node: NavNode): Promise<string> {
     await this.ensureInitialized();
-    
-    try {
-      // 页面级 SPA 请求合并逻辑：如果在同一 sessionId 和 tabId 下存在归一化后相同页面的持久化节点，
-      // 则不插入新节点，而是将其视为页面内请求并增加 spaRequestCount（持久化合并计数）。
-      let savedId: string | null = null;
-
-      if (node.sessionId && node.tabId !== undefined) {
-        try {
-          // 在单个 readwrite 事务中先通过索引查询候选，然后在同一事务中写入，以减少竞态条件
-          await this.db.transact(this.NODE_STORE, 'readwrite', (store, tx) => {
-            const index = store.index('sessionId');
-            const request = index.getAll(node.sessionId as any);
-
-            request.onsuccess = () => {
-              try {
-                const candidates = request.result as NavNode[] || [];
-                const normalized = UrlUtils.normalizeUrlForAggregation(node.url);
-                // SPA 合并调试日志已移除
-
-                const match = candidates
-                  .filter(c => c.tabId === node.tabId)
-                  .find(c => UrlUtils.normalizeUrlForAggregation(c.url) === normalized);
-
-
-
-                if (match) {
-                  match.spaRequestCount = (match.spaRequestCount || 0) + 1;
-                  match.lastVisit = node.lastVisit || Date.now();
-                  match.timestamp = node.timestamp || match.timestamp || Date.now();
-                  if (node.url && node.url !== match.url) {
-                    match.url = node.url;
-                  }
-
-                  savedId = match.id;
-                  const putReq = store.put(match);
-                  putReq.onsuccess = () => {
-                    logger.log(_('nav_storage_node_merged_spa', '节点 {0} 与页面内请求合并，spaRequestCount={1}'), match.id, match.spaRequestCount?.toString() || '1');
-                  };
-                } else {
-                  savedId = node.id;
-                  const putReq = store.put(node as any);
-                  putReq.onsuccess = () => {
-                    logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), node.id);
-                  };
-                }
-              } catch (innerErr) {
-                logger.warn(_('nav_storage_spa_merge_failed', '尝试合并 SPA 请求失败，执行常规保存: {0}'), innerErr instanceof Error ? innerErr.message : String(innerErr));
-                try { savedId = node.id; store.put(node as any); } catch (_) {}
-              }
-            };
-
-            request.onerror = () => {
-              // 索引查询失败则在事务内保存节点作为回退
-              try { savedId = node.id; store.put(node as any); } catch (_) {}
-            };
-          });
-        } catch (e) {
-          logger.warn(_('nav_storage_spa_merge_failed', '尝试合并 SPA 请求失败（事务）: {0}'), e instanceof Error ? e.message : String(e));
-        }
-      }
-
-      // 如果事务路径未设置 savedId，则进行普通 put
-      if (!savedId) {
-        const key = await this.db.put(this.NODE_STORE, node);
-        savedId = (typeof key === 'string' || typeof key === 'number') ? String(key) : node.id;
-        logger.log(_('nav_storage_node_saved', '节点已保存: {0}'), savedId);
-      }
-
-      return savedId;
-    } catch (error) {
-      logger.error(_('nav_storage_save_node_failed', '保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new _Error('background_storage_save_node_failed', '保存节点失败: {0}', error instanceof Error ? error.message : String(error)
-      );
-    }
+    // Each visit has its own ID; only explicit updates may overwrite a visit.
+    await this.db.add(this.NODE_STORE, node);
+    this.notifyChanged();
+    return node.id;
   }
-  
+
   /**
    * 查询节点
    */
@@ -176,7 +110,13 @@ export class NavigationStorage {
       let nodes: NavNode[] = [];
       
       // 如果有会话ID，使用会话ID索引
-      if (options.sessionId) {
+      if (options.sessionId && options.tabId !== undefined && options.url) {
+        nodes = await this.db.getByIndex<NavNode>(this.NODE_STORE, 'sessionTabUrl', [options.sessionId, options.tabId, options.url]);
+      } else if (options.url) {
+        nodes = await this.db.getByIndex<NavNode>(this.NODE_STORE, 'url', options.url);
+      } else if (options.tabId !== undefined) {
+        nodes = await this.db.getByIndex<NavNode>(this.NODE_STORE, 'tabId', options.tabId);
+      } else if (options.sessionId) {
         nodes = await this.db.getByIndex<NavNode>(this.NODE_STORE, 'sessionId', options.sessionId);
       } 
       else if (options.tabId !== undefined) {
@@ -189,6 +129,10 @@ export class NavigationStorage {
         nodes = await this.db.getAll<NavNode>(this.NODE_STORE);
       }
       
+      nodes = nodes.filter(n => (!options.sessionId || n.sessionId === options.sessionId)
+        && (options.tabId === undefined || n.tabId === options.tabId)
+        && (!options.url || n.url === options.url)
+        && (options.isClosed === undefined || (n.isClosed === true) === options.isClosed));
       // 应用其他过滤条件
       if (options.startTime !== undefined) {
         nodes = nodes.filter(n => n.timestamp >= (options.startTime || 0));
@@ -237,17 +181,15 @@ export class NavigationStorage {
     await this.ensureInitialized();
     
     try {
-      // 先获取现有节点
-      const existingNode = await this.getNode(id);
-      if (!existingNode) {
-        throw new _Error('background_storage_node_not_found', '节点不存在: {0}', id);
-      }
-      
-      // 合并更新
-      const updatedNode = { ...existingNode, ...updates };
-      
-      // 保存更新后的节点
-      await this.db.put(this.NODE_STORE, updatedNode);
+      await this.db.transact(this.NODE_STORE, 'readwrite', store => {
+        const request = store.get(id);
+        request.onsuccess = () => {
+          if (!request.result) { store.transaction.abort(); return; }
+          store.put({ ...request.result, ...updates, id, sessionId: request.result.sessionId });
+        };
+      });
+      const updatedNode = { sessionId: '' };
+      this.notifyChanged();
       logger.log(_('nav_storage_node_updated', '节点已更新: {0}，会话 {1}'), id, updatedNode.sessionId);
     } catch (error) {
       logger.error(_('nav_storage_update_node_failed', '更新节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
@@ -282,6 +224,7 @@ export class NavigationStorage {
     
     try {
       await this.db.put(this.EDGE_STORE, edge);
+      this.notifyChanged();
       logger.log(_('nav_storage_edge_saved', '边已保存: {0} ({1} -> {2})'), edge.id, edge.source, edge.target);
     } catch (error) {
       logger.error(_('nav_storage_save_edge_failed', '保存边失败: {0}'), error instanceof Error ? error.message : String(error));
@@ -359,69 +302,11 @@ export class NavigationStorage {
    */
   public async saveNodes(nodes: NavNode[]): Promise<void> {
     await this.ensureInitialized();
-    
-    try {
-      // 对于批量保存，采用与 saveNode 相同的合并逻辑，逐个处理以保持语义一致
-      for (const node of nodes) {
-        // 尝试合并 SPA 请求
-        let merged = false;
-        if (node.sessionId && node.tabId !== undefined) {
-          try {
-            // 使用事务在批量处理中尝试合并：在同一事务内读取候选并写入
-            await this.db.transact(this.NODE_STORE, 'readwrite', (store, tx) => {
-              const index = store.index('sessionId');
-              const request = index.getAll(node.sessionId as any);
-
-              request.onsuccess = () => {
-                try {
-                  const candidates = request.result as NavNode[] || [];
-                  const normalized = UrlUtils.normalizeUrlForAggregation(node.url);
-                  // 批量 SPA 合并调试日志已移除
-
-                  const match = candidates
-                    .filter(c => c.tabId === node.tabId)
-                    .find(c => UrlUtils.normalizeUrlForAggregation(c.url) === normalized);
-
-                  if (!match) {
-                    // 批量 SPA 合并候选样例日志已移除
-                  }
-
-                  if (match) {
-                    match.spaRequestCount = (match.spaRequestCount || 0) + 1;
-                    match.lastVisit = node.lastVisit || Date.now();
-                    match.timestamp = node.timestamp || match.timestamp || Date.now();
-                    if (node.url && node.url !== match.url) {
-                      match.url = node.url;
-                    }
-
-                    store.put(match);
-                    merged = true;
-                  } else {
-                    store.put(node as any);
-                  }
-                } catch (inner) {
-                  logger.warn(_('nav_storage_spa_merge_failed_batch', '批量保存时尝试合并 SPA 请求失败，回退为常规保存: {0}'), inner instanceof Error ? inner.message : String(inner));
-                  try { store.put(node as any); } catch (_) {}
-                }
-              };
-
-              request.onerror = () => {
-                try { store.put(node as any); } catch (_) {}
-              };
-            });
-          } catch (e) {
-            logger.warn(_('nav_storage_spa_merge_failed_batch', '批量保存时尝试合并 SPA 请求失败（事务）: {0}'), e instanceof Error ? e.message : String(e));
-          }
-        }
-      }
-      logger.log(_('nav_storage_nodes_batch_saved', '批量保存了 {0} 个节点（含合并）'), nodes.length.toString());
-    } catch (error) {
-      logger.error(_('nav_storage_save_nodes_batch_failed', '批量保存节点失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new _Error('background_storage_save_nodes_batch_failed', '批量保存节点失败: {0}', error instanceof Error ? error.message : String(error)
-      );
-    }
+    await this.db.mutate([this.NODE_STORE], tx => {
+      for (const node of nodes) tx.objectStore(this.NODE_STORE).add(node);
+    });
   }
-  
+
   /**
    * 批量保存边
    * @param edges 边数组
@@ -466,9 +351,9 @@ export class NavigationStorage {
       
       // 补全可能缺失的父节点关系
       // 如果边定义了节点关系但节点没有记录父节点
+      const nodeMap = new Map(nodes.map(node => [node.id, node]));
       for (const edge of edges) {
-        // 找到目标节点
-        const targetNode = nodes.find(node => node.id === edge.target);
+        const targetNode = nodeMap.get(edge.target);
         if (targetNode && !targetNode.parentId) {
           // 设置父节点ID
           targetNode.parentId = edge.source;
@@ -493,6 +378,32 @@ export class NavigationStorage {
    * @param timestamp 时间戳
    * @returns 清除的节点数量
    */
+  /** Delete expired visits and repair graph relationships in one transaction. */
+  public async purgeBeforeTime(timestamp: number): Promise<{ nodes: number; edges: number }> {
+    await this.ensureInitialized();
+    let nodes = 0, edges = 0;
+    await this.db.mutate(['nodes', 'edges'], tx => {
+      const store = tx.objectStore('nodes');
+      const expired = store.index('timestamp').getAllKeys(IDBKeyRange.upperBound(timestamp, true));
+      expired.onsuccess = () => {
+        const removed = new Set(expired.result.map(String));
+        for (const id of removed) { store.delete(id); nodes++; }
+        const children = store.openCursor();
+        children.onsuccess = () => {
+          const c = children.result;
+          if (c) { if (removed.has(c.value.parentId)) c.update({ ...c.value, parentId: '' }); c.continue(); }
+        };
+        const links = tx.objectStore('edges').openCursor();
+        links.onsuccess = () => {
+          const c = links.result;
+          if (c) { if (c.value.timestamp < timestamp || removed.has(c.value.source) || removed.has(c.value.target)) { c.delete(); edges++; } c.continue(); }
+        };
+      };
+    });
+    this.notifyChanged();
+    return { nodes, edges };
+  }
+
   public async clearNodesBeforeTime(timestamp: number): Promise<number> {
     await this.ensureInitialized();
     
@@ -558,59 +469,28 @@ export class NavigationStorage {
    * 清除指定会话的所有导航数据
    * @param sessionId 会话ID
    */
-  public async clearSessionData(sessionId: string): Promise<void> {
+  public async clearSessionData(sessionId: string, deleteSession = false): Promise<void> {
     await this.ensureInitialized();
-    
-    try {
-      logger.log(_('nav_storage_clearing_session', '正在清除会话 {0} 的导航数据...'), sessionId);
-      
-      // 获取会话的所有节点
-      const nodes = await this.queryNodes({ sessionId });
-      
-      // 删除所有节点
-      for (const node of nodes) {
-        await this.db.delete(this.NODE_STORE, node.id);
+    await this.db.mutate(['nodes', 'edges', 'sessions'], tx => {
+      for (const name of ['nodes', 'edges']) {
+        const request = tx.objectStore(name).index('sessionId').openCursor(IDBKeyRange.only(sessionId));
+        request.onsuccess = () => { const cursor = request.result; if (cursor) { cursor.delete(); cursor.continue(); } };
       }
-      
-      // 获取会话的所有边
-      const edges = await this.queryEdges({ sessionId });
-      
-      // 删除所有边
-      for (const edge of edges) {
-        await this.db.delete(this.EDGE_STORE, edge.id);
-      }
-      
-      logger.log(_('nav_storage_cleared_session', '已清除会话 {0} 的导航数据: {1}个节点和{2}条边'), 
-                sessionId, nodes.length.toString(), edges.length.toString());
-    } catch (error) {
-      logger.error(_('nav_storage_clear_session_failed', '清除会话 {0} 的导航数据失败: {1}'), 
-                  sessionId, error instanceof Error ? error.message : String(error));
-      throw new Error(_('background_storage_clear_session_failed', 
-                          '清除会话导航数据失败: {0}', error instanceof Error ? error.message : String(error)));
-    }
+      if (deleteSession) tx.objectStore('sessions').delete(sessionId);
+    });
+    this.notifyChanged();
   }
 
   /**
    * 清除所有导航数据
    */
-  public async clearAllData(): Promise<void> {
+  public async clearAllData(includeSessions = false): Promise<void> {
     await this.ensureInitialized();
-    
-    try {
-      logger.log(_('nav_storage_clearing_all', '正在清除所有导航数据...'));
-      
-      // 清除所有节点
-      await this.db.clear(this.NODE_STORE);
-      
-      // 清除所有边
-      await this.db.clear(this.EDGE_STORE);
-      
-      logger.log(_('nav_storage_cleared_all', '已清除所有导航数据'));
-    } catch (error) {
-      logger.error(_('nav_storage_clear_failed', '清除导航数据失败: {0}'), error instanceof Error ? error.message : String(error));
-      throw new _Error('background_storage_clear_failed', '清除导航数据失败: {0}', error instanceof Error ? error.message : String(error));
-    }
+    const stores = includeSessions ? ['nodes', 'edges', 'sessions'] : ['nodes', 'edges'];
+    await this.db.mutate(stores, tx => { for (const name of stores) tx.objectStore(name).clear(); });
+    this.notifyChanged();
   }
+
 }
 
 /**

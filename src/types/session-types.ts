@@ -41,7 +41,7 @@ export interface TabState {
   activated?: number;          // 激活时间
   created?: number;            // 创建时间
   lastNavigation?: number;     // 最后导航时间
-  lastNodeId?: string;         // 最后节点ID 
+  lastNodeId?: string;         // 最后节点ID
   favicon?: string;            // 图标URL
   lastActiveTime?: number;     // 最后活跃时间
 }
@@ -112,13 +112,13 @@ export interface SessionMetadata {
 
   // 会话类型
   type?: string;              // 'daily', 'manual', 'project', 或其他类型
-  
+
   // 日期信息（时间戳）
   date?: number;
-  
+
   // 最后活动时间
   lastActivityTime?: number;
-  
+
   // 扩展属性，允许添加其他未来可能需要的元数据
   [key: string]: any;
 }
@@ -277,8 +277,8 @@ export interface SessionStatistics {
 }
 
 // 确保导航类型与旧的保持兼容
-export type NavigationType = "unknown" | "link_click" | "form_submit" | "address_bar" | 
-  "history_back" | "history_forward" | "reload" | "javascript" | 
+export type NavigationType = "unknown" | "link_click" | "form_submit" | "address_bar" |
+  "history" | "history_back" | "history_forward" | "reload" | "javascript" |
   "redirect" | "initial" | "bookmark";
 
 export type OpenTarget = "same_tab" | "new_tab" | "popup" | "frame";
@@ -294,19 +294,19 @@ export interface NavNode {
   timestamp: number;         // 时间戳
   sessionId: string;         // 所属会话ID
   parentId?: string;         // 父节点ID
-  
+
   // 核心字段
   type: NavigationType;      // 导航类型
   openTarget: OpenTarget;    // 打开目标
   source: string;            // 数据来源: chrome_api | content_script | navigation_event
-  
+
   // 元数据
   title?: string;            // 页面标题
   favicon?: string;          // 网站图标URL
   description?: string;      // 网站描述
   keywords?: string;         // 关键词
   referrer?: string;         // 引用页URL
-  
+
   // 访问信息
   firstVisit: number;        // 首次访问时间
   lastVisit: number;        // 最近访问时间
@@ -314,11 +314,11 @@ export interface NavNode {
   reloadCount: number;       // 重新加载次数
   loadTime?: number;         // 加载时间(毫秒)
   activeTime?: number;       // 活跃时间(毫秒)
-  
+
   // 框架信息
   frameId: number;           // 框架ID
   parentFrameId: number;     // 父框架ID
-  
+
   // 状态
   isClosed?: boolean;        // 是否已关闭
   closeTime?: number;        // 关闭时间
@@ -349,24 +349,24 @@ export interface NavLink {
 export interface NavDataQueryOptions {
   // 会话相关
   sessionId?: string;   // 会话ID过滤
-  
+
   // 节点相关
   tabId?: number;       // 标签页ID过滤
   url?: string;         // URL过滤
   isClosed?: boolean;  // 是否已关闭
-  
+
   // 边相关
   source?: string;      // 源节点ID
   target?: string;      // 目标节点ID
   type?: string;        // 类型过滤
-  
+
   // 时间范围
   startTime?: number;   // 开始时间戳（含）
   endTime?: number;     // 结束时间戳（含）
-  
+
   // 分页和排序
   limit?: number;       // 结果数量限制
-  
+
   offset?: number;      // 结果偏移量
   sortBy?: string;      // 排序字段
   sortOrder?: 'asc' | 'desc'; // 排序顺序

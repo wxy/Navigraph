@@ -63,6 +63,7 @@ export class NavigationManager {
   
     // 初始化标签页状态管理器
     this.tabStateManager = new TabStateManager(this.historyLimit);
+    this.tabStateManager.addEventListener(tabId => { this.dirtyTabs.add(tabId); });
   
     // 初始化节点追踪器
     this.nodeTracker = new NodeTracker(
@@ -98,6 +99,7 @@ export class NavigationManager {
       this.nodeTracker,
       this.navigationEventHandler
     );
+    this.registerHandlers();
   }
   
   // 删除 initializeComponents 方法，因为它的逻辑现在在构造函数中
@@ -123,7 +125,7 @@ export class NavigationManager {
       this.setupPeriodicTasks();
       
       // 注册事件和消息处理程序
-      this.registerHandlers();
+      await this.restoreState();
       
       logger.log(_('navigation_manager_init_complete', '导航管理器初始化完成'));
     } catch (error) {
@@ -176,8 +178,7 @@ export class NavigationManager {
    * 设置定期任务
    */
   private setupPeriodicTasks(): void {
-    setInterval(() => this.cleanupPendingUpdates(), 60000); // 每分钟清理一次待更新列表
-    setInterval(() => this.cleanupExpiredNavigations(), 30000); // 每30秒清理一次过期导航
+    void chrome.alarms.create('navigraph-maintenance', { periodInMinutes: 5 });
   }
 
   /**
@@ -193,6 +194,64 @@ export class NavigationManager {
     this.navigationEventHandler.setupEventListeners();
   }
 
+  private dirtyTabs = new Set<number>();
+  private snapshotMetadata = '';
+  public async persistState(): Promise<void> {
+    const state = { sessionId: this.currentSessionId, tabIds: this.tabStateManager.getAllTabStates().map(tab => tab.id) };
+    const metadata = JSON.stringify(state);
+    const updates: Record<string, unknown> = {};
+    const removals: string[] = [];
+    if (metadata !== this.snapshotMetadata) updates.navigationState = state;
+    const dirty = [...this.dirtyTabs];
+    for (const id of dirty) {
+      const tab = this.tabStateManager.getTabState(id);
+      if (tab) updates[`navigationTab_${id}`] = { tab, history: this.tabStateManager.getTabHistory(id) };
+      else removals.push(`navigationTab_${id}`);
+    }
+    if (Object.keys(updates).length) await chrome.storage.session.set(updates);
+    if (removals.length) await chrome.storage.session.remove(removals);
+    this.snapshotMetadata = metadata;
+    for (const id of dirty) this.dirtyTabs.delete(id);
+  }
+
+  private async restoreState(): Promise<void> {
+    const { navigationState } = await chrome.storage.session.get('navigationState');
+    const tabs = await chrome.tabs.query({});
+    const open = new Map(tabs.filter(t => !t.incognito).map(t => [t.id, t]));
+    if (navigationState?.sessionId === this.currentSessionId) {
+      const keys: string[] = (navigationState.tabIds || []).map((id: number) => `navigationTab_${id}`);
+      const snapshots = keys.length ? await chrome.storage.session.get(keys) : {};
+      const entries = navigationState.tabs || keys.map((key: string) => snapshots[key]).filter(Boolean);
+      for (const entry of entries) {
+        if (!open.has(entry.tab.id)) continue;
+        this.tabStateManager.addTabState(entry.tab.id, { ...entry.tab, lastNodeId: undefined });
+        for (const id of (entry.history || []).slice(-50)) {
+          const node = await this.navigationStorage.getNode(id);
+          if (node?.sessionId === this.currentSessionId) {
+            this.tabStateManager.addToNavigationHistory(entry.tab.id, id);
+            this.tabStateManager.updateTabState(entry.tab.id, { lastNodeId: id });
+            this.nodeTracker.addTabNodeCache(entry.tab.id, node.url, id);
+          }
+        }
+      }
+    } else {
+      // Browser restarts do not retain storage.session. Reconstruct only open-tab histories.
+      for (const tab of open.values()) {
+        if (tab.id === undefined || !tab.url || !/^https?:/.test(tab.url)) continue;
+        const nodes = await this.navigationStorage.queryNodes({ sessionId: this.currentSessionId, tabId: tab.id, url: tab.url });
+        const node = nodes.sort((a, b) => b.timestamp - a.timestamp)[0];
+        this.tabStateManager.addTabState(tab.id, { id: tab.id, url: tab.url, lastNodeId: node?.id });
+        if (node) { this.tabStateManager.addToNavigationHistory(tab.id, node.id); this.nodeTracker.addTabNodeCache(tab.id, node.url, node.id); }
+      }
+    }
+  }
+
+  public async maintain(): Promise<void> {
+    await this.cleanupPendingUpdates();
+    this.cleanupExpiredNavigations();
+    await getSessionManager().checkDayTransition();
+  }
+
   //-------------------------------------------------------------------------
   // 会话管理方法
   //-------------------------------------------------------------------------
@@ -202,6 +261,7 @@ export class NavigationManager {
    * @param sessionId 新的会话ID
    */
   private setCurrentSessionId(sessionId: string): void {
+    if (this.currentSessionId !== sessionId) this.resetNavigationState();
     this.currentSessionId = sessionId;
     this.nodeTracker.setSessionId(sessionId);
     this.edgeTracker.setSessionId(sessionId);
@@ -282,6 +342,8 @@ export class NavigationManager {
    * 重置所有组件的内部状态，但不清除存储的数据
    */
   private resetNavigationState(): void {
+    // Persist removals as well as changed tabs; snapshots are bounded to 50 IDs per open tab.
+    for (const tab of this.tabStateManager.getAllTabStates()) this.dirtyTabs.add(tab.id);
     // 重置各个组件的状态
     this.tabStateManager.reset();
     this.nodeTracker.reset();
@@ -434,11 +496,23 @@ export class NavigationManager {
       logger.log(_('navigation_manager_clearing_before', '清除{0}之前的导航数据...'), new Date(timestamp).toLocaleString());
       
       // 清除节点和边
-      const nodeCount = await this.navigationStorage.clearNodesBeforeTime(timestamp);
-      const edgeCount = await this.navigationStorage.clearEdgesBeforeTime(timestamp);
+      const { nodes: nodeCount, edges: edgeCount } = await this.navigationStorage.purgeBeforeTime(timestamp);
       
-      // 重置可能失效的内存缓存
-      this.tabStateManager.reset();
+      if (nodeCount > 0) {
+        // Keep live relationships; remove only references whose records were purged.
+        const surviving = this.tabStateManager.getAllTabStates().map(tab => ({ tab, ids: this.tabStateManager.getTabHistory(tab.id) }));
+        this.resetNavigationState();
+        for (const { tab, ids } of surviving) {
+          this.tabStateManager.addTabState(tab.id, { ...tab, lastNodeId: undefined });
+          for (const id of ids) {
+            const node = await this.navigationStorage.getNode(id);
+            if (!node) continue;
+            this.tabStateManager.addToNavigationHistory(tab.id, id);
+            this.tabStateManager.updateTabState(tab.id, { lastNodeId: id });
+            this.nodeTracker.addTabNodeCache(tab.id, node.url, id);
+          }
+        }
+      }
       
       logger.log(_('navigation_manager_cleared_before', '已清除{0}之前的导航数据: {1}个节点, {2}条边'), 
                 new Date(timestamp).toLocaleString(), nodeCount.toString(), edgeCount.toString());
@@ -459,7 +533,8 @@ export class NavigationManager {
       logger.log(_('navigation_manager_clear_all_start', '开始清除所有导航数据...'));
       
       // 清除导航数据
-      await this.navigationStorage.clearAllData();
+      await this.navigationStorage.clearAllData(true);
+      await getSessionManager().clearAllSessions();
       
       // 重置内存状态
       this.resetNavigationState();

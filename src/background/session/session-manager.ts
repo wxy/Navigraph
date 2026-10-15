@@ -202,7 +202,7 @@ export class SessionManager {
         
         // 如果最后活动时间在合理范围内（12小时），重用该会话
         const maxReusePeriod = 12 * 60 * 60 * 1000;
-        if (timeSinceLastActivity < maxReusePeriod) {
+        if (!mostRecent.endTime && timeSinceLastActivity < maxReusePeriod) {
           logger.log(_('session_manager_reuse_recent', '重用最近会话: {0}，超过活跃时间 {1} 小时'), 
             mostRecent.id, Math.round(timeSinceLastActivity / (1000 * 60 * 60)));
           
@@ -250,6 +250,10 @@ export class SessionManager {
   /**
    * 获取会话详情
    */
+  public async getSessionMetadata(sessionId: string): Promise<BrowsingSession | null> {
+    return this.storage.getSession(sessionId);
+  }
+
   public async getSessionDetails(sessionId: string): Promise<BrowsingSession | null> {
     await this.ensureInitialized();
     
@@ -694,7 +698,7 @@ export class SessionManager {
       }
       
       // 删除会话
-      await this.storage.deleteSession(sessionId);
+      await getNavigationManager().getNavigationStorage().clearSessionData(sessionId, true);
       
       // 更新引用
       if (this.currentSessionId === sessionId) {
@@ -704,6 +708,8 @@ export class SessionManager {
         this.latestSessionId = null;
       }
       
+      if (!this.latestSessionId) await this.ensureRecordingSession();
+      if (!this.currentSessionId && this.latestSessionId) await this._setCurrentSession(this.latestSessionId);
       // 发布会话删除事件
       sessionEvents.emitSessionDeleted(sessionId);
       
@@ -770,6 +776,12 @@ export class SessionManager {
   /**
    * 获取当前会话ID
    */
+  public async ensureRecordingSession(): Promise<void> {
+    if (!this.latestSessionId) {
+      await this.createSession({ makeActive: true, updateCurrent: !this.currentSessionId, skipCooldown: true });
+    }
+  }
+
   public getCurrentSessionId(): string | null {
     return this.currentSessionId;
   }
@@ -901,7 +913,7 @@ export class SessionManager {
       }
       
       // 获取当前会话和活动时间
-      const latestSession = await this.getSessionDetails(this.latestSessionId);
+      const latestSession = await this.storage.getSession(this.latestSessionId);
       const lastActivityTime = this.activityMonitor.getLastActivityTime();
       
       // 检查是否需要创建新会话
@@ -947,7 +959,7 @@ export class SessionManager {
       }
       
       // 检查是否需要创建新会话
-      const latestSession = await this.getSessionDetails(this.latestSessionId);
+      const latestSession = await this.storage.getSession(this.latestSessionId);
       if (latestSession && previousActivityTime > 0) {
         const strategy = this.strategyFactory.getActiveStrategy();
         const needNewSession = await strategy.shouldCreateNewSession(
@@ -990,7 +1002,8 @@ export class SessionManager {
     logger.log(_('session_manager_idle_detected', '检测到用户空闲'));
     
     try {
-      // 结束当前会话
+      // Manual sessions only end on an explicit user action.
+      if (getSettingsService().getSetting('sessionMode') === 'manual') return;
       await this.endSession(this.latestSessionId);
     } catch (error) {
       logger.error(_('session_manager_auto_end_failed', '自动结束会话失败: {0}'), error);

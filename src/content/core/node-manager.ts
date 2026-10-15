@@ -19,6 +19,7 @@ export class NodeManager {
   private nodes: NavNode[] = [];
   private edges: NavLink[] = [];
   private nodeMap: Map<string, NavNode> = new Map();
+  private childrenByParent = new Map<string, NavNode[]>();
 
   private constructor() {
     // 私有构造函数，防止外部实例化
@@ -108,8 +109,8 @@ export class NodeManager {
    */
   private processRelationships(): void {
     this.rebuildParentChildRelationships();
-    this.calculateNodeDepths();
     this.buildNodeMap();
+    this.calculateNodeDepths();
   }
   
   /**
@@ -291,7 +292,8 @@ export class NodeManager {
         }
         break;
         
-      case 'history_back':
+      case 'history':
+    case 'history_back':
       case 'history_forward':
         // 历史导航指向同一标签页中的某个节点
         // 这种情况较复杂，暂时保持当前处理方式
@@ -390,28 +392,25 @@ export class NodeManager {
    * 递归计算子节点深度
    */
   private calculateChildDepths(parentNode: NavNode, depth: number): void {
-    if (!parentNode || !parentNode.id) return;
-    
-    // 找出父节点的所有直接子节点
-    const childNodes = this.findChildNodesById(parentNode.id);
-    
-    // 设置子节点深度并递归处理
-    childNodes.forEach(childNode => {
-      childNode.depth = depth;
-      // 防止循环引用导致栈溢出
-      if (childNode.id !== parentNode.id) {
-        this.calculateChildDepths(childNode, depth + 1);
+    const queue: Array<[NavNode, number]> = [[parentNode, depth - 1]];
+    const visited = new Set<string>();
+    for (let i = 0; i < queue.length; i++) {
+      const [parent, parentDepth] = queue[i];
+      if (visited.has(parent.id)) continue;
+      visited.add(parent.id);
+      for (const child of this.findChildNodesById(parent.id)) {
+        if (visited.has(child.id)) continue;
+        child.depth = parentDepth + 1;
+        queue.push([child, parentDepth + 1]);
       }
-    });
+    }
   }
   
   /**
    * 根据父节点ID查找子节点
    */
   private findChildNodesById(parentId: string): NavNode[] {
-    return this.nodes.filter(node => 
-      node.parentId === parentId && node.id !== parentId
-    );
+    return this.childrenByParent.get(parentId) || [];
   }
   
   /**
@@ -419,6 +418,13 @@ export class NodeManager {
    */
   private buildNodeMap(): void {
     this.nodeMap.clear();
+    this.childrenByParent.clear();
+    for (const node of this.nodes) {
+      if (!node.parentId || node.parentId === node.id) continue;
+      const children = this.childrenByParent.get(node.parentId) || [];
+      children.push(node);
+      this.childrenByParent.set(node.parentId, children);
+    }
     if (this.nodes && this.nodes.length) {
       this.nodes.forEach(node => {
         this.nodeMap.set(node.id, node);

@@ -35,6 +35,10 @@
         const settingsService = getSettingsService();
         await settingsService.initialize();
         window.navigraphSettings = settingsService.getSettings();
+        settingsService.addChangeListener(settings => {
+          window.navigraphSettings = settings;
+          window.visualizer?.refreshVisualization(undefined, { restoreTransform: true });
+        });
         // 如果用户在设置中强制了语言，应用到 i18n（使主视图在刷新后也使用该语言）
         try {
           const forced = window.navigraphSettings?.forcedLocale;
@@ -145,16 +149,7 @@
         lastActivityTime = now;
         logger.log(_('content_page_activity_detected', '检测到页面活动({0})，触发刷新'), source);
         
-        // 修改为只刷新视图，不重新加载会话数据，但恢复视图状态
-        if (window.visualizer && typeof window.visualizer.refreshVisualization === 'function') {
-          window.visualizer.refreshVisualization(undefined, { 
-            restoreTransform: true,   // 恢复视图状态（包括观察窗口位置）
-            skipSessionEvents: true,  // 防止触发会话事件
-            source: 'pageActivity'
-          });
-        } else {
-          logger.warn(_('content_visualizer_missing_or_invalid', '可视化器实例不存在或没有刷新方法'));
-        }
+        if (window.visualizer) void window.visualizer.refreshData();
       } else {
         logger.debug(_('content_page_activity_too_frequent', '页面活动({0})距离上次时间过短({1}ms)，忽略'), source, (now - lastActivityTime).toString());
       }
@@ -202,4 +197,12 @@
     // 最后的后备方案 - 至少显示一个警告
     setTimeout(() => alert('Navigraph extension error: ' + (error instanceof Error ? error.message : String(error))), 1000);
   }
+});
+
+// MV3 CSP forbids inline event handlers, including error recovery controls.
+document.addEventListener('click', event => {
+  const button = (event.target as Element)?.closest('[data-recovery]');
+  if (!button) return;
+  if (button.getAttribute('data-recovery') === 'reload') location.reload();
+  else (button.closest('.error-container, .error-notification') || button.parentElement?.parentElement)?.setAttribute('style', 'display:none');
 });

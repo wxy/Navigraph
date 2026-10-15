@@ -15,7 +15,7 @@ import { DatabaseSchema } from '../../types/storage-types.js';
  */
 export const NavigraphDBSchema: DatabaseSchema = {
   name: 'NavigraphDB',
-  version: 1,
+  version: 2,
   stores: [
     // 导航节点存储
     {
@@ -24,6 +24,7 @@ export const NavigraphDBSchema: DatabaseSchema = {
       autoIncrement: false,
       indices: [
         { name: 'url', keyPath: 'url', unique: false },
+        { name: 'sessionTabUrl', keyPath: ['sessionId', 'tabId', 'url'], unique: false },
         { name: 'tabId', keyPath: 'tabId', unique: false },
         { name: 'timestamp', keyPath: 'timestamp', unique: false },
         { name: 'sessionId', keyPath: 'sessionId', unique: false },

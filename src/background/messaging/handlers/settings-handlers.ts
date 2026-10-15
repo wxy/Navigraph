@@ -23,7 +23,7 @@ export function registerSettingsHandlers(messageService: BackgroundMessageServic
     const settingsService = getSettingsService();
     try {
       // 使用现有的设置服务获取设置
-      settingsService.getSettings()
+      Promise.resolve(settingsService.getSettings())
         .then((settings: Record<string, any>) => {
           // 确保始终返回一个对象，即使设置为空
           ctx.success({ settings: settings || {} });

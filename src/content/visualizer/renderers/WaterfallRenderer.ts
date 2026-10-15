@@ -1,3 +1,4 @@
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
@@ -328,7 +329,7 @@ export class WaterfallRenderer implements BaseRenderer {
           if (containerNode) {
             try {
               if ((containerNode as any).__drawerWheelContainerHandler) {
-                try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
+                try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler, true); } catch(e) {}
                 try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
               }
             } catch(e) {}
@@ -366,7 +367,7 @@ export class WaterfallRenderer implements BaseRenderer {
         try {
           const bodyNodeAny: any = body.node && body.node();
           if (bodyNodeAny) {
-            try { if (bodyNodeAny.__drawerWheelHandler) { bodyNodeAny.removeEventListener && bodyNodeAny.removeEventListener('wheel', bodyNodeAny.__drawerWheelHandler); } } catch(e) {}
+            try { if (bodyNodeAny.__drawerWheelHandler) { bodyNodeAny.removeEventListener && bodyNodeAny.removeEventListener('wheel', bodyNodeAny.__drawerWheelHandler, true); } } catch(e) {}
             try { delete bodyNodeAny.__drawerWheelHandler; } catch(e) {}
             try { bodyNodeAny.__drawerWheelAccum = 0; } catch(e) {}
             try { bodyNodeAny.__drawerWheelRaf = null; } catch(e) {}
@@ -638,7 +639,7 @@ export class WaterfallRenderer implements BaseRenderer {
           });
 
           const totalAnim = 220 + itemNodes.length * stagger + itemDuration;
-          setTimeout(() => {
+          this.schedule(() => {
             try { body.style('pointer-events', 'all'); } catch(e) {}
             // set the display node's collapse badge text to 0 while drawer is open
             try {
@@ -983,7 +984,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
         // after items collapsed, shrink bg and hide body
         const totalAnim = itemNodes.length * stagger + itemDuration + 40;
-        setTimeout(() => {
+        this.schedule(() => {
             try {
             bg.transition().duration(160).attr('height', parseFloat(bg.attr('height')) ? parseFloat(bg.attr('height')) * 0 : 0).on('end', () => {
               try {
@@ -991,7 +992,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 try {
                   const bodyNode: any = body.node && body.node();
                   if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
-                    try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler); } catch(e) {}
+                    try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler, true); } catch(e) {}
                     try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
                   }
                 } catch(e) {}
@@ -1016,7 +1017,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 try {
                   const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
                   if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
-                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
+                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler, true); } catch(e) {}
                     try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
                   }
                 } catch(e) {}
@@ -1068,7 +1069,7 @@ export class WaterfallRenderer implements BaseRenderer {
               try {
                 const bodyNode: any = body.node && body.node();
                 if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
-                  try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler); } catch(e) {}
+                  try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler, true); } catch(e) {}
                   try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
                   try { logger.log(`drawer ${collapseKey} unbound wheel handler`); } catch(e) {}
                 }
@@ -1086,7 +1087,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 try {
                   const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
                   if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
-                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler); } catch(e) {}
+                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler, true); } catch(e) {}
                     try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
                     try { logger.log(_('waterfall_drawer_wheel_unbound_container', 'drawer %s unbound container wheel handler'), collapseKey); } catch(e) {}
                   }
@@ -1134,7 +1135,28 @@ export class WaterfallRenderer implements BaseRenderer {
     this.height = height;
   }
 
+  private timers = new Set<ReturnType<typeof setTimeout>>();
+  private schedule(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
+    const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, delay);
+    this.timers.add(timer);
+    return timer;
+  }
   cleanup(): void {
+    for (const timer of this.timers) clearTimeout(timer);
+    this.timers.clear();
+    if (this.wheelScrollTimeout) clearTimeout(this.wheelScrollTimeout);
+    const svgNode = this.svg?.node();
+    if (svgNode && this.svgWheelHandler) svgNode.removeEventListener('wheel', this.svgWheelHandler, true);
+    for (const node of [this.container, ...Array.from(this.container?.querySelectorAll('*') || [])] as any[]) {
+      if (!node) continue;
+      for (const key of ['__drawerWheelHandler', '__drawerWheelContainerHandler', '__navigraph_wheel_handler']) {
+        if (node[key]) { node.removeEventListener('wheel', node[key], true); delete node[key]; }
+      }
+      if (node.__drawerDebugDocHandler) { document.removeEventListener('wheel', node.__drawerDebugDocHandler, true); delete node.__drawerDebugDocHandler; }
+      for (const key of ['__drawerAnim', '__drawerWheelRaf']) { if (node[key]) cancelAnimationFrame(node[key]); }
+    }
+    this.svg?.on('.zoom', null);
+    this.svg?.selectAll('*').interrupt();
     this.currentLayout = null;
     this.observationWindow = null;
     this.svg = null;
@@ -1186,13 +1208,6 @@ export class WaterfallRenderer implements BaseRenderer {
     if (!nodes || nodes.length === 0) {
       logger.warn(_('waterfall_no_nodes', '没有节点数据可渲染'));
       return;
-    }
-
-    // 🛡️ 安全检查：限制节点数量，防止性能问题
-    const MAX_NODES = 500;
-    if (nodes.length > MAX_NODES) {
-      logger.warn(_('waterfall_nodes_too_many', '节点数量过多({0})，限制为{1}个'), nodes.length, MAX_NODES);
-      nodes = nodes.slice(0, MAX_NODES);
     }
 
     // 🛡️ 安全检查：验证时间戳有效性
@@ -2130,7 +2145,7 @@ export class WaterfallRenderer implements BaseRenderer {
   private renderSegmentNodes(group: any, layout: LayoutResult): void {
 
     let totalNodesRendered = 0;
-    const MAX_NODES_TO_RENDER = 500; // 防止渲染过多节点
+    const MAX_NODES_TO_RENDER = Number.POSITIVE_INFINITY; // 防止渲染过多节点
 
     layout.segments.forEach((segment, segIndex) => {
       if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
@@ -3078,7 +3093,7 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('y', iconY)
         .attr('width', iconSize)
         .attr('height', iconSize)
-        .attr('href', node.favicon)
+        .attr('href', UrlUtils.getFaviconUrl(node.url))
         .attr('preserveAspectRatio', 'xMidYMid meet')
         .style('pointer-events', 'none')
         .on('error', function(this: SVGImageElement) {
@@ -3341,7 +3356,7 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('y', (height - iconSize) / 2)
         .attr('width', iconSize)
         .attr('height', iconSize)
-        .attr('href', node.favicon)
+        .attr('href', UrlUtils.getFaviconUrl(node.url))
         .attr('preserveAspectRatio', 'xMidYMid meet')
         .style('pointer-events', 'none')
         .on('error', function(this: SVGImageElement) {
@@ -3440,7 +3455,8 @@ export class WaterfallRenderer implements BaseRenderer {
       case 'reload':
         color = '#bcbcbc'; // 灰色 - 页面刷新
         break;
-      case 'history_back':
+      case 'history':
+    case 'history_back':
       case 'history_forward':
         color = '#d3a4f9'; // 紫色 - 历史导航
         break;

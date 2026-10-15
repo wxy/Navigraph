@@ -251,9 +251,11 @@ export class SessionServiceClient {
   async loadCurrentSession(): Promise<any | null> {
     // 1. 尝试使用存储的会话ID
     const sessionId = this.getCurrentSessionId();
-    if (sessionId) {
+    if (sessionId && this.sessionList.some(session => session.id === sessionId)) {
       return this.loadSession(sessionId);
     }
+    this.currentSessionId = null;
+    localStorage.removeItem('navigraph_current_session');
     
     try {
       // 2. 尝试加载最新活跃会话

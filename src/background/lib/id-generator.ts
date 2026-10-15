@@ -14,23 +14,7 @@ export class IdGenerator {
    * @returns 基于标签ID和URL生成的节点ID
    */
   public static generateNodeId(tabId: number, url: string): string {
-    // 规范化URL
-    const normalizedUrl = UrlUtils.normalizeUrl(url);
-    
-    // 从URL中提取域名作为可读部分
-    let domain = '';
-    try {
-      const urlObj = new URL(url);
-      domain = urlObj.hostname.replace(/^www\./, '');
-    } catch {
-      domain = 'unknown';
-    }
-    
-    // 创建URL的哈希
-    const urlHash = this.hashString(normalizedUrl);
-    
-    // 返回格式: tabId-domain-urlHash
-    return `${tabId}-${domain}-${urlHash}`;
+    return `visit-${tabId}-${crypto.randomUUID()}`;
   }
   
   /**

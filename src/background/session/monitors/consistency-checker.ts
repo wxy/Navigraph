@@ -1,3 +1,4 @@
+import { enqueue } from '../../lib/task-queue.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { SessionManager } from '../session-manager.js';
 import { getNavigationManager } from '../../navigation/navigation-manager.js';
@@ -17,35 +18,20 @@ export class ConsistencyChecker {
   
   constructor(manager: SessionManager) {
     this.manager = manager;
+    chrome.alarms.onAlarm.addListener(alarm => {
+      if (alarm.name === 'navigraph-consistency') void enqueue(() => this.checkNodeStateConsistency());
+    });
   }
   
   /**
    * 开始定期检查
    */
   public startChecking(): void {
-    if (this.checkIntervalId) return;
-    
-    this.checkIntervalId = setInterval(() => {
-      this.checkNodeStateConsistency()
-        .catch(err => logger.error(_('consistency_checker_check_failed', '节点状态一致性检查失败: {0}'), 
-          err instanceof Error ? err.message : String(err)));
-    }, this.checkIntervalMs) as unknown as number;
-    
-    const intervalMinutes = (this.checkIntervalMs / (60 * 1000)).toString();
-    logger.log(_('consistency_checker_started', '启动节点状态一致性检查，间隔{0}分钟'), intervalMinutes);
+    void chrome.alarms.create('navigraph-consistency', { periodInMinutes: 5 });
   }
-  
-  /**
-   * 停止检查
-   */
-  public stopChecking(): void {
-    if (this.checkIntervalId) {
-      clearInterval(this.checkIntervalId);
-      this.checkIntervalId = null;
-      logger.log(_('consistency_checker_stopped', '停止节点状态一致性检查'));
-    }
-  }
-  
+
+  public stopChecking(): void { void chrome.alarms.clear('navigraph-consistency'); }
+
   /**
    * 检查节点状态一致性
    */
