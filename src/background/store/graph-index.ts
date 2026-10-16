@@ -6,12 +6,15 @@ interface IndexedNode extends NavNode {
   _restoreTab: number; _statsDomain: string; _statsUrl: string; _statsTime: number; _statsKnown: number; _timeUnknown: boolean;
 }
 interface IndexedEdge extends NavLink { _pageSession: string; _pageSource: string; _pageTarget: string; _pageTime: number; }
+/** Use the same URL grouping for covering-index writes and exact URL reads. */
+export function nodeUrlDomain(url: string): string {
+  try { return new URL(url).hostname; } catch { return ''; }
+}
 /** Covering keys let ordinary pages count/filter without reading node or edge values. */
 export function indexedNode(node: NavNode): IndexedNode {
   const url = typeof node.url === 'string' ? node.url : '';
   const timestamp = Number.isFinite(node.timestamp) && Math.abs(node.timestamp) <= 8640000000000000 ? node.timestamp : 0;
-  let domain = '';
-  try { domain = new URL(url).hostname; } catch { /* Legacy invalid URLs remain visible. */ }
+  const domain = nodeUrlDomain(url);
   return { ...node, _pageSession: typeof node.sessionId === 'string' ? node.sessionId : '',
     _timeUnknown: !Number.isFinite(node.timestamp) || Math.abs(node.timestamp) > 8640000000000000,
     _pageTime: -timestamp, _pageType: typeof node.type === 'string' ? node.type : 'unknown',

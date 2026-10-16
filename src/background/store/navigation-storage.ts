@@ -1,4 +1,4 @@
-import { indexedNode, indexedEdge } from './graph-index.js';
+import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
 import { GraphPageQuery, GraphPageResult, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
 import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
@@ -531,6 +531,23 @@ export class NavigationStorage {
     });
     if (count) this.notifyChanged();
     return count;
+  }
+
+  /** Exact session/URL lookup: greatest v3 normalized time, then smallest ID. */
+  public async getLatestNodeForUrl(sessionId: string, url: string): Promise<NavNode | null> {
+    await this.ensureInitialized();
+    return this.db.readTransaction(['nodes'], (tx, resolve) => {
+      const index = tx.objectStore('nodes').index('statisticsOrder');
+      const prefix: IDBValidKey[] = [sessionId, nodeUrlDomain(url), url];
+      const latest = index.openKeyCursor(IDBKeyRange.bound(prefix, [...prefix, []]), 'prev');
+      latest.onsuccess = () => {
+        if (!latest.result) { resolve(null); return; }
+        // Locate the timestamp without reading values, then select its smallest ID.
+        const timePrefix = [...prefix, (latest.result.key as IDBValidKey[])[3]];
+        const first = index.openCursor(IDBKeyRange.bound(timePrefix, [...timePrefix, []]));
+        first.onsuccess = () => resolve(first.result?.value || null);
+      };
+    });
   }
 
   /** Restore one latest visit without loading all revisits of an open tab URL. */
