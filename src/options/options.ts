@@ -94,7 +94,7 @@ function setupEventListeners(): void {
 
       // 立即更新主题设置
       settingsService.updateSettings({ theme })
-        .then(() => showNotification(_('options_theme_updated', '主题已更新')))
+        .then(() => showNotification(_('options_settings_saved_refresh', '设置已保存 - 请刷新页面以应用更改')))
         .catch(error => {
           logger.error(_('options_update_theme_error', '更新主题失败'), error);
           showNotification(_('options_update_theme_failed', '更新主题失败'), 'error');
@@ -529,12 +529,8 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     oldSettings.dataRetention !== newSettings.dataRetention ||
     oldSettings.idleTimeout !== newSettings.idleTimeout;
 
-  const affectsFrontend =
-    oldSettings.theme !== newSettings.theme ||
-    oldSettings.defaultView !== newSettings.defaultView ||
-    oldSettings.animationEnabled !== newSettings.animationEnabled ||
-    oldSettings.showLabels !== newSettings.showLabels ||
-    oldSettings.maxNodes !== newSettings.maxNodes;
+  // Theme is applied when a graph page initializes; display settings update live.
+  const requiresPageRefresh = oldSettings.theme !== newSettings.theme;
 
   // 根据情况选择适当的本地化消息ID
   let message: string;
@@ -593,8 +589,8 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     } catch (e) {
       logger.error(_('options_complex_notification_failed', '创建复杂通知失败，回退到标准通知: {0}'), e);
     }
-  } else if (affectsFrontend) {
-    message = _('options_settings_saved', '设置已保存');
+  } else if (requiresPageRefresh) {
+    message = _('options_settings_saved_refresh', '设置已保存 - 请刷新页面以应用更改');
   } else {
     // 基本的"设置已保存"消息
     message = _('options_settings_saved', '设置已保存');
