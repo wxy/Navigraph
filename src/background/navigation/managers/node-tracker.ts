@@ -24,10 +24,7 @@ export class NodeTracker {
 
   // 缓存
   private tabNodeIdCache = new Map<string, string>(); // "tabId-url" -> 节点ID
-  private urlToNodeCache = new Map<
-    string,
-    { nodeId: string; timestamp: number }
-  >(); // URL -> {节点ID, 时间戳}
+
 
   /**
    * 构造函数
@@ -420,19 +417,8 @@ export class NodeTracker {
     if (!url) return null;
 
     try {
-      const normalized = url;
-      const cached = this.urlToNodeCache.get(url);
-      if (cached && Date.now() - cached.timestamp < 60000) return cached.nodeId;
-      const records = await this.navigationStorage.queryNodes({ sessionId: this.sessionId, url });
-      const matchingRecord = records.sort((a, b) => b.timestamp - a.timestamp)[0];
-      // 更新缓存
-      if (matchingRecord?.id) {
-        this.urlToNodeCache.set(normalized, {
-          nodeId: matchingRecord.id,
-          timestamp: Date.now(),
-        });
-      }
-
+      // A bounded lookup avoids retaining a stale parent after visits/updates/deletes.
+      const matchingRecord = await this.navigationStorage.getLatestNodeForUrl(this.sessionId, url);
       return matchingRecord?.id || null;
     } catch (error) {
       logger.error(_('node_tracker_find_by_url_failed', '根据URL查找节点失败: {0}'), error);
@@ -633,17 +619,7 @@ export class NodeTracker {
    */
   async cleanupCache(): Promise<void> {
     try {
-      const now = Date.now();
-
-      // 清理 URL 缓存 - 移除超过5分钟的条目
-      for (const [url, entry] of this.urlToNodeCache.entries()) {
-        if (now - entry.timestamp > 300000) {
-          // 5分钟
-          this.urlToNodeCache.delete(url);
-        }
-      }
-
-      // Pending metadata and URL caches are bounded independently of graph size.
+      // Pending metadata and tab caches are bounded independently of graph size.
       while (this.tabNodeIdCache.size > 2000) this.tabNodeIdCache.delete(this.tabNodeIdCache.keys().next().value!);
       for (const [tabId, ids] of this.pendingUpdates) this.pendingUpdates.set(tabId, ids.slice(-50));
 
@@ -658,7 +634,6 @@ export class NodeTracker {
    */
   reset(): void {
     this.tabNodeIdCache.clear();
-    this.urlToNodeCache.clear();
     this.pendingUpdates.clear();
 
     logger.log(_('node_tracker_reset_complete', '节点追踪器已重置'));
