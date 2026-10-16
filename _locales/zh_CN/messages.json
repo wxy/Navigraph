@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "没有在链接中指定视图时使用；手动切换会保留当前页面的选择。",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "记录异常：部分浏览记录可能未保存。"
+  },
+  "recording_health_recovered": {
+    "message": "后续记录已保存；此前可能漏记的记录不会自动补回。"
+  },
+  "recording_health_unknown": {
+    "message": "暂时无法确认记录状态。"
+  },
+  "recording_metadata_not_saved": {
+    "message": "页面信息未保存，请检查记录状态。"
   }
 }

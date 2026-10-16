@@ -132,11 +132,12 @@ export class NavigationMessageHandler {
           }
           
           // 更新标题
-          await this.nodeTracker.updateNodeMetadata(
+          const result = await this.nodeTracker.updateNodeMetadata(
             nodeId,
             { title: message.title },
             'content_script'
           );
+          if (!result.success) return ctx.error(_('recording_metadata_not_saved', '页面信息未保存，请检查记录状态。'));
           return ctx.success();
         } catch (error) {
           return ctx.error(_('nav_msg_error_update_title', '更新页面标题失败: {0}'), error instanceof Error ? error.message : String(error));
@@ -176,11 +177,12 @@ export class NavigationMessageHandler {
           }
           
           // 更新favicon
-          await this.nodeTracker.updateNodeMetadata(
+          const result = await this.nodeTracker.updateNodeMetadata(
             nodeId,
             { favicon: message.faviconUrl },
             'content_script'
           );
+          if (!result.success) return ctx.error(_('recording_metadata_not_saved', '页面信息未保存，请检查记录状态。'));
           return ctx.success();
         } catch (error) {
           return ctx.error(_('nav_msg_error_update_favicon', '更新页面图标失败: {0}'), error instanceof Error ? error.message : String(error));

@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "Utilisée si le lien ne précise pas de vue. Un changement manuel conserve le choix de cette page.",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "Erreur d’enregistrement : certaines visites peuvent ne pas avoir été enregistrées."
+  },
+  "recording_health_recovered": {
+    "message": "Les nouvelles visites sont enregistrées ; les visites manquantes ne sont pas restaurées automatiquement."
+  },
+  "recording_health_unknown": {
+    "message": "L’état de l’enregistrement est temporairement inconnu."
+  },
+  "recording_metadata_not_saved": {
+    "message": "Les informations de la page n’ont pas été enregistrées. Vérifiez l’état de l’enregistrement."
   }
 }

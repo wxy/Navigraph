@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "Gilt, wenn der Link keine Ansicht vorgibt. Manuelles Umschalten behält die Auswahl dieser Seite bei.",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "Aufzeichnungsfehler: Einige Browsereinträge wurden möglicherweise nicht gespeichert."
+  },
+  "recording_health_recovered": {
+    "message": "Neue Einträge werden gespeichert; frühere fehlende Einträge werden nicht automatisch wiederhergestellt."
+  },
+  "recording_health_unknown": {
+    "message": "Der Aufzeichnungsstatus ist vorübergehend unbekannt."
+  },
+  "recording_metadata_not_saved": {
+    "message": "Seiteninformationen wurden nicht gespeichert. Prüfen Sie den Aufzeichnungsstatus."
   }
 }

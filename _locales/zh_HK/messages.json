@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "連結未指定檢視時使用；手動切換會保留目前頁面的選擇。",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "記錄異常：部分瀏覽記錄可能未儲存。"
+  },
+  "recording_health_recovered": {
+    "message": "後續記錄已儲存；此前可能遺漏的記錄不會自動補回。"
+  },
+  "recording_health_unknown": {
+    "message": "暫時無法確認記錄狀態。"
+  },
+  "recording_metadata_not_saved": {
+    "message": "頁面資訊未儲存，請檢查記錄狀態。"
   }
 }

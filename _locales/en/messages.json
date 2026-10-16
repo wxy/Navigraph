@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "Used when the link does not specify a view. Manual switching preserves this page’s choice.",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "Recording error: some browsing records may not have been saved."
+  },
+  "recording_health_recovered": {
+    "message": "Later records are being saved; earlier missing records are not automatically restored."
+  },
+  "recording_health_unknown": {
+    "message": "Recording status is temporarily unknown."
+  },
+  "recording_metadata_not_saved": {
+    "message": "Page information was not saved. Check recording status."
   }
 }

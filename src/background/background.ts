@@ -1,3 +1,4 @@
+import { recordingHealth } from './recording/health.js';
 import { enqueue, backgroundReady, backgroundFailed } from './lib/task-queue.js';
 /**
  * 主要的后台脚本，负责初始化和协调各个组件
@@ -44,6 +45,7 @@ chrome.alarms.onAlarm.addListener(alarm => {
  * 初始化后台脚本
  */
 async function initialize(): Promise<void> {
+  recordingHealth.start();
   try {
     logger.log(_('background_startup_begin', 'Navigraph 后台脚本启动'));
     logger.log(_('background_init_start', '初始化后台服务...'));

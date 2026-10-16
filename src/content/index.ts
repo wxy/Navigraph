@@ -19,6 +19,7 @@
   const { getThemeManager } = await import('./utils/theme-manager.js');
   const { NavigationVisualizer } = await import('./core/navigation-visualizer.js');
   
+  const { setupRecordingHealth } = await import('./utils/recording-health.js');
   const logger = new Logger('ContentScript');
 
   /**
@@ -67,6 +68,7 @@
       try {
         setupMessageService();
         registerContentMessageHandlers();
+        setupRecordingHealth();
         // 消息服务初始化完成
         logger.log(_('content_message_service_initialized', '消息服务初始化完成'));
       } catch (error) {
