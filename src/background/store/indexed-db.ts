@@ -47,6 +47,29 @@ export class IndexedDBStorage {
    * @param mode 事务模式
    * @param callback 接收 (store, transaction) 的同步回调，用于发起请求
    */
+  private graphRevision = 0;
+  private pendingGraphWrites = 0;
+
+  /** A revision is reusable only when no graph write is pending or executing. */
+  public getGraphRevision(): number | null {
+    return this.pendingGraphWrites ? null : this.graphRevision;
+  }
+
+  private trackGraphWrite(transaction: IDBTransaction): void {
+    if (transaction.mode !== 'readwrite' || !Array.from(transaction.objectStoreNames).some(name => name === 'nodes' || name === 'edges')) return;
+    this.graphRevision++;
+    this.pendingGraphWrites++;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      this.pendingGraphWrites--;
+      this.graphRevision++;
+    };
+    transaction.addEventListener('complete', finish);
+    transaction.addEventListener('abort', finish);
+  }
+
   public async transact(
     storeName: string,
     mode: IDBTransactionMode,
@@ -57,6 +80,7 @@ export class IndexedDBStorage {
     return new Promise<void>((resolve, reject) => {
       try {
         const transaction = db.transaction(storeName, mode);
+        this.trackGraphWrite(transaction);
         const store = transaction.objectStore(storeName);
 
         // 执行用户回调（应在同步上下文中发起 request）
@@ -182,6 +206,7 @@ export class IndexedDBStorage {
    * 同时从单例缓存中移除此实例
    */
   public close(): void {
+    this.graphRevision++;
     if (this.db) {
       this.db.close();
       this.db = null;
@@ -273,6 +298,7 @@ export class IndexedDBStorage {
     const db = await this.getDB();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(stores, 'readwrite');
+      this.trackGraphWrite(tx);
       tx.oncomplete = () => resolve();
       tx.onabort = tx.onerror = () => reject(tx.error || new Error('Transaction aborted'));
       try { callback(tx); } catch (error) { tx.abort(); reject(error); }
@@ -302,6 +328,7 @@ export class IndexedDBStorage {
   ): Promise<{ transaction: IDBTransaction; store: IDBObjectStore }> {
     const db = await this.getDB();
     const transaction = db.transaction(storeName, mode);
+    this.trackGraphWrite(transaction);
     const store = transaction.objectStore(storeName);
     
     return { transaction, store };

@@ -1,5 +1,6 @@
 import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
-import { GraphPageQuery, GraphPageResult, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
+import { QueryCache } from './query-cache.js';
+import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
 import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
  * 导航存储类
@@ -41,6 +42,10 @@ export class NavigationStorage {
   private readonly NODE_STORE = 'nodes';
   private readonly EDGE_STORE = 'edges';
   
+  private filterTotals = new QueryCache<{ total: number; matched: number }>(64);
+  private sessionCounts = new QueryCache<number>(128);
+  private statistics = new QueryCache<Omit<SessionStatistics, 'duration'>>(8, 128 * 1024);
+
   // 初始化标志
   private initialized = false;
   
@@ -97,7 +102,12 @@ export class NavigationStorage {
   /** Ordinary UI queries scan only covering keys and materialize the selected window. */
   public async getSessionPage(query: GraphPageQuery): Promise<GraphPageResult> {
     await this.ensureInitialized();
-    return this.db.readTransaction(['nodes', 'edges', 'sessions'], (tx, done) => {
+    const cacheKey = JSON.stringify([query.sessionId, ...Object.keys(DEFAULT_GRAPH_FILTERS).map(key => query.filters[key as keyof typeof DEFAULT_GRAPH_FILTERS])]);
+    let revision: number | null = null;
+    return this.db.readTransaction<GraphPageResult>(['nodes', 'edges', 'sessions'], (tx, done) => {
+      // Capture only after the readonly transaction exists, so counts match its snapshot.
+      revision = this.db.getGraphRevision();
+      let knownTotals = this.filterTotals.get(cacheKey, revision);
       const nodes: NavNode[] = [], edges: NavLink[] = [];
       const pageInfo = { page: query.page, limit: query.limit, total: 0, matched: 0,
         edgePage: query.edgePage, edgeLimit: Math.min(2000, query.limit * 4), edgeTotal: 0 };
@@ -107,11 +117,22 @@ export class NavigationStorage {
       metadata.onsuccess = () => {
         if (!metadata.result) return;
         result.session = sessionMetadata(metadata.result);
-        scanNodes(false);
+        if (knownTotals) pageInfo.page = Math.min(pageInfo.page, Math.max(0, Math.ceil(knownTotals.matched / query.limit) - 1));
+        if (knownTotals?.matched === 0) finishNodes();
+        else scanNodes(false);
       };
       const range = IDBKeyRange.bound([query.sessionId], [query.sessionId, []]);
       const nodeIndex = tx.objectStore('nodes').index('pageOrder');
       let selected: string[] = [];
+      const finishNodes = () => {
+        pageInfo.total = knownTotals!.total; pageInfo.matched = knownTotals!.matched;
+        if (result.session) result.session.nodeCount = pageInfo.total;
+        for (const [position, id] of selected.entries()) {
+          const record = tx.objectStore('nodes').get(id);
+          record.onsuccess = () => { if (record.result) nodes[position] = record.result; };
+        }
+        scanEdges(false);
+      };
       const scanNodes = (clamped: boolean) => {
         selected = [];
         let matched = 0, total = 0;
@@ -125,17 +146,13 @@ export class NavigationStorage {
               if (matched >= pageInfo.page * query.limit && selected.length < query.limit) selected.push(key[2]);
               matched++;
             }
+            if (knownTotals && (selected.length === query.limit || matched === knownTotals.matched)) { finishNodes(); return; }
             cursor.continue();
           } else {
-            pageInfo.total = total; pageInfo.matched = matched;
-            const lastPage = Math.max(0, Math.ceil(matched / query.limit) - 1);
+            knownTotals ||= { total, matched };
+            const lastPage = Math.max(0, Math.ceil(knownTotals.matched / query.limit) - 1);
             if (!clamped && pageInfo.page > lastPage) { pageInfo.page = lastPage; scanNodes(true); return; }
-            if (result.session) result.session.nodeCount = total;
-            for (const [position, id] of selected.entries()) {
-              const record = tx.objectStore('nodes').get(id);
-              record.onsuccess = () => { if (record.result) nodes[position] = record.result; };
-            }
-            scanEdges(false);
+            finishNodes();
           }
         };
       };
@@ -170,21 +187,40 @@ export class NavigationStorage {
         };
         nextSource();
       };
+    }).then(result => {
+      if (result.session && revision !== null && this.db.getGraphRevision() === revision) {
+        this.filterTotals.set(cacheKey, revision, { total: result.pageInfo.total, matched: result.pageInfo.matched });
+        this.sessionCounts.set(query.sessionId, revision, result.pageInfo.total);
+      }
+      return result;
     });
   }
 
   public async countSessionNodes(sessionId: string): Promise<number> {
     await this.ensureInitialized();
-    return this.db.readTransaction(['nodes'], (tx, done) => {
+    const cached = this.sessionCounts.get(sessionId, this.db.getGraphRevision());
+    if (cached !== undefined) return cached;
+    let revision: number | null = null;
+    return this.db.readTransaction<number>(['nodes'], (tx, done) => {
+      revision = this.db.getGraphRevision();
       const request = tx.objectStore('nodes').index('pageOrder').count(IDBKeyRange.bound([sessionId], [sessionId, []]));
       request.onsuccess = () => done(request.result);
+    }).then(count => {
+      if (revision !== null && this.db.getGraphRevision() === revision) this.sessionCounts.set(sessionId, revision, count);
+      return count;
     });
   }
 
   /** Run-length aggregation: retain 24 hour buckets and two top-10 lists, never all URLs. */
   public async getSessionStatistics(session: BrowsingSession): Promise<SessionStatistics> {
     await this.ensureInitialized();
-    return this.db.readTransaction(['nodes'], (tx, done) => {
+    const cacheKey = JSON.stringify([session.id, Intl.DateTimeFormat().resolvedOptions().timeZone, new Date().getTimezoneOffset()]);
+    const duration = () => (session.endTime || Date.now()) - session.startTime;
+    const cached = this.statistics.get(cacheKey, this.db.getGraphRevision());
+    if (cached) return { ...structuredClone(cached), duration: duration() };
+    let revision: number | null = null;
+    return this.db.readTransaction<Omit<SessionStatistics, 'duration'>>(['nodes'], (tx, done) => {
+      revision = this.db.getGraphRevision();
       const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
       const topDomains: Array<{ domain: string; count: number }> = [];
       const pages: Array<{ url: string; title: string; visits: number; id: string }> = [];
@@ -215,10 +251,15 @@ export class NavigationStorage {
             record.onsuccess = () => { page.title = record.result?.title || page.url; };
           }
           done({ totalNodes: total, uniqueDomains,
-            duration: (session.endTime || Date.now()) - session.startTime,
             topDomains, mostVisitedPages: pages, activityByHour: hours });
         }
       };
+    }).then(aggregate => {
+      if (revision !== null && this.db.getGraphRevision() === revision) {
+        this.statistics.set(cacheKey, revision, structuredClone(aggregate));
+        this.sessionCounts.set(session.id, revision, aggregate.totalNodes);
+      }
+      return { ...aggregate, duration: duration() };
     });
   }
 
