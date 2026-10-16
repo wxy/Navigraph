@@ -77,15 +77,20 @@ export class TreeRenderer implements BaseRenderer {
         const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, delay);
         this.timers.add(timer);
         return timer;
-      }
+      },
+      timer => this.cancelTracked(timer)
     );
   }
   
-  /**
-   * 清理资源
-   */
+  /** Cancel pending work and release its tracked handle together. */
+  private cancelTracked(timer: ReturnType<typeof setTimeout>): void {
+    clearTimeout(timer);
+    this.timers.delete(timer);
+  }
+
+  /** 清理资源 */
   cleanup(): void {
-    for (const timer of this.timers) clearTimeout(timer);
+    for (const timer of this.timers) this.cancelTracked(timer);
     this.timers.clear();
     this.svg?.on('.zoom', null);
     this.svg?.selectAll('*').interrupt();
@@ -105,15 +110,14 @@ function renderTreeLayout(
   width: number, 
   height: number, 
   visualizer: Visualizer,
-  schedule: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>
+  schedule: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>,
+  cancelTracked: (timer: ReturnType<typeof setTimeout>) => void
 ): void {
   logger.log(_('using_modular_tree_renderer', '使用模块化树形图渲染器'));
   
   try {
     // 声明并初始化saveStateTimeout变量
     let saveStateTimeout: ReturnType<typeof setTimeout> | null = null;
-    // 清除常见错误源
-    if (saveStateTimeout) clearTimeout(saveStateTimeout);
     
     // 获取特定视图类型的状态
     const tabId = visualizer.tabId || '';
@@ -191,7 +195,7 @@ function renderTreeLayout(
           }
           
           // 添加防抖保存状态逻辑
-          if (saveStateTimeout) clearTimeout(saveStateTimeout);
+          if (saveStateTimeout) cancelTracked(saveStateTimeout);
           saveStateTimeout = schedule(() => {
             // 安全检查
             if (Math.abs(event.transform.x) < width * 2 && 
