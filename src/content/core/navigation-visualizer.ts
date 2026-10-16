@@ -1,3 +1,5 @@
+import { defaultView, validView } from '../utils/display-settings.js';
+import type { NavigraphSettings } from '../../lib/settings/types.js';
 import { sessionServiceClient } from './session-service-client.js';
 import type { GraphPageInfo } from '../../lib/graph/query.js';
 /**
@@ -69,6 +71,16 @@ export class NavigationVisualizer implements Visualizer {
   // 添加渲染管理器属性
   private renderingManager: RenderingManager;
   private readonly resizeHandler = () => this.renderingManager.handleResize();
+  private explicitView = false;
+  private displayReady = false;
+  get hasExplicitView(): boolean { return this.explicitView; }
+  private readonly popstateHandler = () => {
+    const view = this.resolveLocationView();
+    this.filterManager.restoreFromUrl();
+    this.renderCurrentView(view);
+    void this.loadGraphPage(0).catch(error => this.showError(String(error)));
+  };
+
 
   // 修改 filters getter 以使用 FilterManager
   get filters(): FilterStates {
@@ -166,12 +178,16 @@ export class NavigationVisualizer implements Visualizer {
 
       // 第一阶段：基础配置与消息
       await this.initializeBaseConfig();
+      // Location/settings may change while waiting for the document load event.
+      this.applyGlobalConfig();
 
       // 第二阶段：委托UI管理器处理所有UI初始化
       await this.initializeUI();
       
       // 初始化筛选器管理器 - 新增
       this.filterManager.initialize();
+      this.displayReady = true;
+      window.addEventListener('popstate', this.popstateHandler);
 
       // 初始化调试工具
       this.initDebugTools();
@@ -257,23 +273,31 @@ export class NavigationVisualizer implements Visualizer {
   /**
    * 应用全局配置
    */
-  applyGlobalConfig() {
-    if (!window.navigraphSettings) {
-      logger.log(_('global_config_unavailable_using_defaults', '全局配置不可用，使用默认设置'));
+  applyGlobalConfig(): void {
+    this.viewStateManager.currentView = this.resolveLocationView();
+  }
+
+  private resolveLocationView(): 'tree' | 'waterfall' {
+    const view = validView(new URL(window.location.href).searchParams.get('view'));
+    this.explicitView = view !== undefined;
+    return view || defaultView();
+  }
+
+  /** Apply only changed display fields; unrelated/same-value notifications keep the current page. */
+  applyDisplaySettings(previous: NavigraphSettings, next: NavigraphSettings): void {
+    if (!this.displayReady) {
+      // Settings may arrive while initializeBaseConfig is awaiting window.load.
+      this.applyGlobalConfig();
       return;
     }
-
-    try {
-      const config = window.navigraphSettings;
-
-      // 应用默认视图
-      if (config.defaultView) {
-        logger.log(_('applying_default_view', '应用默认视图: {0}'), config.defaultView);
-      }
-
-      // 其他配置项应用...
-    } catch (error) {
-      logger.warn(_('global_config_apply_failed', '应用全局配置出错'), error);
+    const pageSizeChanged = Math.floor(Math.min(500, previous.maxNodes)) !== Math.floor(Math.min(500, next.maxNodes));
+    const target = !this.explicitView ? defaultView() : this.currentView;
+    const viewChanged = target !== this.currentView;
+    if (viewChanged) this.renderCurrentView(target as 'tree' | 'waterfall');
+    if (pageSizeChanged) {
+      void this.loadGraphPage(0).catch(error => this.showError(String(error)));
+    } else if (!viewChanged && (previous.animationEnabled !== next.animationEnabled || previous.showLabels !== next.showLabels)) {
+      this.refreshVisualization(undefined, { restoreTransform: true });
     }
   }
 
@@ -299,6 +323,8 @@ export class NavigationVisualizer implements Visualizer {
   cleanup(): void {
     logger.groupCollapsed(_('visualizer_resources_cleanup_start', '清理可视化器资源...'));
 
+    this.displayReady = false;
+
     // 清理消息处理器
     this.messageHandler.cleanup();
 
@@ -310,6 +336,7 @@ export class NavigationVisualizer implements Visualizer {
 
     // 移除事件监听器
     window.removeEventListener("resize", this.resizeHandler);
+    window.removeEventListener('popstate', this.popstateHandler);
 
     // 清理其他资源...
     logger.groupEnd();
@@ -405,6 +432,15 @@ export class NavigationVisualizer implements Visualizer {
       return;
     }
     
+    const url = new URL(window.location.href);
+    const changed = url.searchParams.get('view') !== view;
+    this.explicitView = true;
+    url.searchParams.set('view', view);
+    if (changed) window.history.pushState(null, '', url);
+    this.renderCurrentView(view);
+  }
+
+  private renderCurrentView(view: 'tree' | 'waterfall'): void {
     // 使用视图状态管理器切换视图
     this.viewStateManager.switchView(view as "tree" | "waterfall");
 

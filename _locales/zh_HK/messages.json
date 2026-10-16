@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "SPA 請求數: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "圖表動畫",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "啟用節點轉場與空白圖表動畫；停用後仍可正常操作圖表。",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "顯示節點標題",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "隱藏標題時，刻度、徽章與節點詳情仍可使用。",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "每頁節點數",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500；只限制同時顯示的節點，不刪除歷史記錄。",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "連結未指定檢視時使用；手動切換會保留目前頁面的選擇。",
+    "description": "Graph display setting"
   }
 }

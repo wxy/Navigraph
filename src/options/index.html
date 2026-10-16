@@ -44,6 +44,7 @@
                 <option value="waterfall" data-i18n="options_option_waterfall">瀑布图</option>
               </select>
               <div id="view-preview" class="preview-box waterfall-preview"></div>
+              <div class="description" data-i18n="options_desc_default_view">没有在链接中指定视图时使用；手动切换会保留当前页面的选择。</div>
             </div>
             <div class="setting-group">
               <label for="force-language" data-i18n="options_label_force_language">强制使用语言：</label>
@@ -149,10 +150,21 @@
         <div class="card">
           <div class="card-header">
             <h2 data-i18n="options_performance_group_title">性能设置</h2>
-            <div class="coming-soon-badge" data-i18n="options_badge_coming_soon">即将推出</div>
           </div>
           <div class="card-body">
-            <p class="placeholder-text" data-i18n="options_placeholder_performance">性能优化选项将在后续更新中添加</p>
+            <div class="setting-group">
+              <label><input id="animation-enabled" type="checkbox"> <span data-i18n="options_label_graph_animation">图表动画</span></label>
+              <div class="description" data-i18n="options_desc_graph_animation">开启节点过渡与空态动画；关闭仍可正常操作图表。</div>
+            </div>
+            <div class="setting-group">
+              <label><input id="show-labels" type="checkbox"> <span data-i18n="options_label_node_labels">显示节点标题</span></label>
+              <div class="description" data-i18n="options_desc_node_labels">隐藏标题时，刻度、徽标与节点详情仍可使用。</div>
+            </div>
+            <div class="setting-group">
+              <label for="max-nodes" data-i18n="options_label_nodes_per_page">每页节点数</label>
+              <input id="max-nodes" type="number" min="1" max="500" step="1">
+              <div class="description" data-i18n="options_desc_nodes_per_page">1–500；仅限制同时显示的节点，不删除历史记录。</div>
+            </div>
           </div>
         </div>
       </div>

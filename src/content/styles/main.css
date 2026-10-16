@@ -2051,3 +2051,10 @@ svg .node-label {
   text-anchor: middle;
   pointer-events: none;
 }
+
+/* Display preferences affect graph decoration, never axis/control text or hit targets. */
+.visualization-svg.hide-node-labels .node-title-label { display: none !important; }
+.visualization-svg.motion-disabled, .visualization-svg.motion-disabled * {
+  animation: none !important;
+  transition: none !important;
+}

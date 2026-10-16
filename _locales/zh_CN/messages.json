@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "SPA 请求数: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "图表动画",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "开启节点过渡与空态动画；关闭仍可正常操作图表。",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "显示节点标题",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "隐藏标题时，刻度、徽标与节点详情仍可使用。",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "每页节点数",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500；仅限制同时显示的节点，不删除历史记录。",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "没有在链接中指定视图时使用；手动切换会保留当前页面的选择。",
+    "description": "Graph display setting"
   }
 }

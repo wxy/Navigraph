@@ -1,3 +1,4 @@
+import { animationDuration, animationsEnabled } from '../../utils/display-settings.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
@@ -268,6 +269,11 @@ export class WaterfallRenderer implements BaseRenderer {
             }
           }
 
+          // Let the current badge's own toggle run the animated/immediate close cleanup.
+          const badge = (e.target as Element | null)?.closest?.('.group-badge');
+          if (this.currentOpenCollapseId && badge?.getAttribute('data-collapse-group') === this.currentOpenCollapseId) {
+            clickedInside = true;
+          }
           if (!clickedInside) {
             this.closeCurrentDrawer();
           }
@@ -385,7 +391,7 @@ export class WaterfallRenderer implements BaseRenderer {
   const items = body.selectAll('.drawer-item');
         const itemNodes = items.nodes();
         if (itemNodes.length === 0) {
-          body.transition().duration(120).style('opacity', 1 as any).on('end', () => {
+          body.transition().duration(animationDuration(120)).style('opacity', 1 as any).on('end', () => {
             try { body.style('pointer-events', 'all'); } catch(e) {}
             try { this.bindDocumentClickToClose(); } catch(e) {}
             this.drawerTransitioning = false;
@@ -466,7 +472,7 @@ export class WaterfallRenderer implements BaseRenderer {
                     // debug info removed
                   } catch(e) {}
                 }
-              if (defsSel && !defsSel.empty && !defsSel.empty()) {
+              if (defsSel && !defsSel.empty()) {
                 try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
                 try {
                   defsSel.append('clipPath')
@@ -501,7 +507,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 } catch(e) {}
               }
             } catch(e) {}
-            bg.transition().duration(200).attr('y', drawerTop).attr('height', actualDrawerHeight);
+            bg.transition().duration(animationDuration(200)).attr('y', drawerTop).attr('height', actualDrawerHeight);
           } catch(e) {}
 
           // compute slot centers for all slots (we want to position all hidden nodes
@@ -625,8 +631,8 @@ export class WaterfallRenderer implements BaseRenderer {
                   .style('pointer-events', 'none')
                   .attr('opacity', 0)
                   .transition()
-                  .delay(i * stagger)
-                  .duration(itemDuration)
+                  .delay(animationDuration(i * stagger))
+                  .duration(animationDuration(itemDuration))
                   .attr('transform', `translate(${baseX}, ${targetTop})`)
                   .attr('opacity', 1)
                   .on('end', function(this: any) { try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
@@ -793,7 +799,7 @@ export class WaterfallRenderer implements BaseRenderer {
                               return;
                             }
                             const proportional = diff * (diff > 0 ? STEP_FACTOR_DOWN : STEP_FACTOR_UP);
-                            const step = Math.sign(proportional) * Math.min(Math.abs(proportional), MAX_STEP);
+                            const step = animationsEnabled() ? Math.sign(proportional) * Math.min(Math.abs(proportional), MAX_STEP) : diff;
                             const newOffset = Math.max(0, Math.min(maxScroll, cur + step));
                             drawerScrollOffset = newOffset;
                             try { scrollGroupSel.attr('transform', `translate(0, ${-drawerScrollOffset})`); } catch(e) {}
@@ -976,8 +982,8 @@ export class WaterfallRenderer implements BaseRenderer {
           d3.select(this)
             .style('pointer-events', 'none')
             .transition()
-            .delay(i * stagger)
-            .duration(itemDuration)
+            .delay(animationDuration(i * stagger))
+            .duration(animationDuration(itemDuration))
             .attr('transform', `translate(${baseX}, ${baseY})`)
             .attr('opacity', 0);
         });
@@ -986,7 +992,7 @@ export class WaterfallRenderer implements BaseRenderer {
         const totalAnim = itemNodes.length * stagger + itemDuration + 40;
         this.schedule(() => {
             try {
-            bg.transition().duration(160).attr('height', parseFloat(bg.attr('height')) ? parseFloat(bg.attr('height')) * 0 : 0).on('end', () => {
+            bg.transition().duration(animationDuration(160)).attr('height', parseFloat(bg.attr('height')) ? parseFloat(bg.attr('height')) * 0 : 0).on('end', () => {
               try {
                 // remove any local wheel handler attached to the body
                 try {
@@ -1057,7 +1063,7 @@ export class WaterfallRenderer implements BaseRenderer {
               try {
                 const clipId = `drawer-clip-${collapseKey}`;
                 const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-                if (defsSel && !defsSel.empty && !defsSel.empty()) {
+                if (defsSel && !defsSel.empty()) {
                   try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
                 }
               } catch(e) {}
@@ -1114,7 +1120,7 @@ export class WaterfallRenderer implements BaseRenderer {
             try {
               const clipId = `drawer-clip-${collapseKey}`;
               const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-              if (defsSel && !defsSel.empty && !defsSel.empty()) {
+              if (defsSel && !defsSel.empty()) {
                 try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
               }
             } catch(e) {}
@@ -1137,7 +1143,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
   private timers = new Set<ReturnType<typeof setTimeout>>();
   private schedule(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
-    const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, delay);
+    const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, animationDuration(delay));
     this.timers.add(timer);
     return timer;
   }
@@ -2565,13 +2571,13 @@ export class WaterfallRenderer implements BaseRenderer {
       collapseBadgeGroup.on('mouseenter', function(this: SVGGElement) {
         d3.select(this).select('path')
           .transition()
-          .duration(200)
+          .duration(animationDuration(200))
           .attr('opacity', 1)
           .attr('fill', '#1a1a1a');
       }).on('mouseleave', function(this: SVGGElement) {
         d3.select(this).select('path')
           .transition()
-          .duration(200)
+          .duration(animationDuration(200))
           .attr('opacity', 0.95)
           .attr('fill', '#2c2c2c');
       });
@@ -3071,13 +3077,13 @@ export class WaterfallRenderer implements BaseRenderer {
     bgRect.on('mouseenter', function(this: SVGRectElement) {
       d3.select(this)
         .transition()
-        .duration(200)
+        .duration(animationDuration(200))
         .attr('fill', hoverColor)
         .attr('opacity', 1);
     }).on('mouseleave', function(this: SVGRectElement) {
       d3.select(this)
         .transition()
-        .duration(200)
+        .duration(animationDuration(200))
         .attr('fill', nodeColor)
         .attr('opacity', 0.95);
     });
@@ -3131,6 +3137,7 @@ export class WaterfallRenderer implements BaseRenderer {
   const maxChars = Math.max(1, Math.floor(textWidth / 6));
     
     const titleTextSelection = group.append('text')
+      .attr('class', 'node-title-label')
       .attr('x', textX)
       .attr('y', height / 2 + 4)
       .attr('font-size', '11px')
@@ -3264,13 +3271,13 @@ export class WaterfallRenderer implements BaseRenderer {
     bgRect.on('mouseenter', function(this: SVGRectElement) {
       d3.select(this)
         .transition()
-        .duration(150)
+        .duration(animationDuration(150))
         .attr('fill', hoverColor)
         .attr('opacity', 1);
     }).on('mouseleave', function(this: SVGRectElement) {
       d3.select(this)
         .transition()
-        .duration(150)
+        .duration(animationDuration(150))
         .attr('fill', nodeColor)
         .attr('opacity', 0.9);
     });
@@ -3282,6 +3289,7 @@ export class WaterfallRenderer implements BaseRenderer {
   const maxChars = Math.max(1, Math.floor((width - 8 - reservedRightSpace) / 5));
     
     group.append('text')
+      .attr('class', 'node-title-label')
       .attr('x', width / 2)
       .attr('y', height / 2 + 3)
       .attr('font-size', '9px')
@@ -3418,14 +3426,14 @@ export class WaterfallRenderer implements BaseRenderer {
     circle.on('mouseenter', function(this: SVGCircleElement) {
       d3.select(this)
         .transition()
-        .duration(150)
+        .duration(animationDuration(150))
         .attr('r', radius * 1.3)
         .attr('opacity', 1)
         .attr('fill', hoverColor);
     }).on('mouseleave', function(this: SVGCircleElement) {
       d3.select(this)
         .transition()
-        .duration(150)
+        .duration(animationDuration(150))
         .attr('r', radius)
         .attr('opacity', 0.85)
         .attr('fill', nodeColor);
@@ -4216,14 +4224,14 @@ export class WaterfallRenderer implements BaseRenderer {
       circle.on('mouseenter', function(this: SVGCircleElement) {
         d3.select(this)
           .transition()
-          .duration(150)
+          .duration(animationDuration(150))
           .attr('r', dotSize / 2 * 1.3)
           .attr('opacity', 1)
           .attr('fill', hoverColor);
       }).on('mouseleave', function(this: SVGCircleElement) {
         d3.select(this)
           .transition()
-          .duration(150)
+          .duration(animationDuration(150))
           .attr('r', dotSize / 2)
           .attr('opacity', 0.85)
           .attr('fill', nodeColor);

@@ -62,7 +62,7 @@ export class SessionServiceClient {
     if (page !== this.requestedPage) edgePage = 0;
     this.requestedPage = page; this.requestedEdgePage = edgePage;
     const generation = ++this.generation;
-    const query = { sessionId, page, edgePage, limit: Math.max(1, Math.min(500, this.readLimit())), filters: { ...this.readFilters() } };
+    const query = { sessionId, page, edgePage, limit: Math.max(1, Math.min(500, Math.floor(this.readLimit()))), filters: { ...this.readFilters() } };
     const queryKey = JSON.stringify(query);
     try {
       const response = await requestGraphPage(query);

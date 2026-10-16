@@ -1,3 +1,4 @@
+import { animationDuration, labelsEnabled } from '../../utils/display-settings.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
 /**
  * 树形图视图渲染器
@@ -180,9 +181,9 @@ function renderTreeLayout(
         
         // 缩放级别较低时隐藏文本
         if (event.transform.k < 0.5) {
-          nodesGroup.selectAll('text').style('display', 'none');
+          nodesGroup.selectAll('.node-title-label').style('display', 'none');
         } else {
-          nodesGroup.selectAll('text').style('display', null);
+          nodesGroup.selectAll('.node-title-label').style('display', labelsEnabled() ? null : 'none');
         }
         // 实时更新状态栏显示缩放比例
         if (visualizer) {
@@ -216,6 +217,7 @@ function renderTreeLayout(
       
       // 创建新的缩放行为
       const zoom = d3.zoom()
+        .duration(animationDuration(250))
         .scaleExtent([0.1, 8])
         .on('zoom', zoomHandler);
       
@@ -809,6 +811,7 @@ function renderTreeLayout(
     // 为普通节点添加简短标签
     node.filter((d: D3TreeNode) => d.data.id !== 'session-root')
       .append('text')
+      .attr('class', 'node-title-label')
       .attr('dy', 35)
       .text((d: D3TreeNode) => {
         if (!d.data.title) return '';

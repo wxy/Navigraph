@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "SPA 요청 수: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "그래프 애니메이션",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "노드 전환과 빈 그래프에 애니메이션을 적용합니다. 꺼도 그래프를 조작할 수 있습니다.",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "노드 제목 표시",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "제목을 숨겨도 축, 배지 및 노드 세부정보는 사용할 수 있습니다.",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "페이지당 노드 수",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500. 표시되는 노드 수만 제한하며 기록을 삭제하지 않습니다.",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "링크에 보기가 지정되지 않았을 때 사용합니다. 수동으로 전환하면 이 페이지의 선택이 유지됩니다.",
+    "description": "Graph display setting"
   }
 }

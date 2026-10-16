@@ -12,6 +12,10 @@ const settingsService = getSettingsService();
 
 // 当前设置引用
 let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
+let maxNodesEdited = false;
+function effectiveMaxNodes(value: number): number {
+  return Math.max(1, Math.min(500, Math.floor(Number.isFinite(value) ? value : DEFAULT_SETTINGS.maxNodes)));
+}
 
 document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
   logger.log(_('options_dom_loaded_init_start', 'DOM已加载，开始初始化选项页...'));
@@ -90,7 +94,7 @@ function setupEventListeners(): void {
 
       // 立即更新主题设置
       settingsService.updateSettings({ theme })
-        .then(() => showNotification(_('options_theme_updated', '主题已更新')))
+        .then(() => showNotification(_('options_settings_saved_refresh', '设置已保存 - 请刷新页面以应用更改')))
         .catch(error => {
           logger.error(_('options_update_theme_error', '更新主题失败'), error);
           showNotification(_('options_update_theme_failed', '更新主题失败'), 'error');
@@ -150,6 +154,8 @@ function setupEventListeners(): void {
       }
     });
   }
+
+  document.getElementById('max-nodes')?.addEventListener('input', () => { maxNodesEdited = true; });
 
   // 保存按钮
   const saveBtn = document.getElementById('save-btn');
@@ -388,8 +394,8 @@ function applySettingsToUI(): void {
   // 默认视图
   const viewSelect = document.getElementById('default-view') as HTMLSelectElement;
   if (viewSelect) {
-    viewSelect.value = currentSettings.defaultView || 'tree';
-    updateViewPreview(currentSettings.defaultView || 'tree');
+    viewSelect.value = currentSettings.defaultView || DEFAULT_SETTINGS.defaultView;
+    updateViewPreview(currentSettings.defaultView || DEFAULT_SETTINGS.defaultView);
   }
 
   // 强制语言 UI
@@ -407,6 +413,14 @@ function applySettingsToUI(): void {
       logger.warn(_('options_apply_forced_locale_failed', '应用强制语言失败: {0}'), String(e));
     }
   }
+
+  const animation = document.getElementById('animation-enabled') as HTMLInputElement;
+  if (animation) animation.checked = currentSettings.animationEnabled ?? DEFAULT_SETTINGS.animationEnabled;
+  const labels = document.getElementById('show-labels') as HTMLInputElement;
+  if (labels) labels.checked = currentSettings.showLabels ?? DEFAULT_SETTINGS.showLabels;
+  const limit = document.getElementById('max-nodes') as HTMLInputElement;
+  if (limit) limit.value = String(effectiveMaxNodes(currentSettings.maxNodes));
+  maxNodesEdited = false;
 
   // 会话模式
   const sessionModeSelect = document.getElementById('session-mode') as HTMLSelectElement;
@@ -442,7 +456,7 @@ function collectSettingsFromUI(): NavigraphSettings {
   const theme = (document.getElementById('theme') as HTMLSelectElement)?.value as 'light' | 'dark' | 'system' || 'system';
 
   // 默认视图（仅支持 tree 与 waterfall）
-  const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'waterfall' || 'tree';
+  const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'waterfall' || DEFAULT_SETTINGS.defaultView;
 
   // 会话模式 - 限制为 'daily' 或 'manual'
   const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'manual' || 'daily';
@@ -464,10 +478,11 @@ function collectSettingsFromUI(): NavigraphSettings {
     sessionMode,
     dataRetention,
     idleTimeout, // 添加空闲超时设置
-    maxNodes: currentSettings.maxNodes ?? 1000,
+    // Preserve legacy stored limits on unrelated saves; the graph already caps their effective page size.
+    maxNodes: maxNodesEdited ? effectiveMaxNodes((document.getElementById('max-nodes') as HTMLInputElement).valueAsNumber) : currentSettings.maxNodes,
     trackAnonymous: currentSettings.trackAnonymous ?? false,
-    animationEnabled: currentSettings.animationEnabled ?? true,
-    showLabels: currentSettings.showLabels ?? true
+    animationEnabled: (document.getElementById('animation-enabled') as HTMLInputElement)?.checked ?? currentSettings.animationEnabled,
+    showLabels: (document.getElementById('show-labels') as HTMLInputElement)?.checked ?? currentSettings.showLabels
   };
 }
 
@@ -514,9 +529,8 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     oldSettings.dataRetention !== newSettings.dataRetention ||
     oldSettings.idleTimeout !== newSettings.idleTimeout;
 
-  const affectsFrontend =
-    oldSettings.theme !== newSettings.theme ||
-    oldSettings.defaultView !== newSettings.defaultView;
+  // Theme is applied when a graph page initializes; display settings update live.
+  const requiresPageRefresh = oldSettings.theme !== newSettings.theme;
 
   // 根据情况选择适当的本地化消息ID
   let message: string;
@@ -575,10 +589,8 @@ function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettin
     } catch (e) {
       logger.error(_('options_complex_notification_failed', '创建复杂通知失败，回退到标准通知: {0}'), e);
     }
-  } else if (affectsFrontend) {
-    // 使用完整的"需要刷新"消息
-    message = _('options_settings_saved_refresh', '设置已保存 - 请刷新已打开的扩展页以应用新设置');
-    duration = 4000;
+  } else if (requiresPageRefresh) {
+    message = _('options_settings_saved_refresh', '设置已保存 - 请刷新页面以应用更改');
   } else {
     // 基本的"设置已保存"消息
     message = _('options_settings_saved', '设置已保存');

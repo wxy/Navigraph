@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "Anzahl der SPA-Anfragen: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "Diagrammanimationen",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "Knotenübergänge und leere Diagramme animieren; die Bedienung bleibt auch ohne Animationen möglich.",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "Knotentitel anzeigen",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "Bei ausgeblendeten Titeln bleiben Achsen, Abzeichen und Knotendetails verfügbar.",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "Knoten pro Seite",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500; begrenzt sichtbare Knoten, ohne den Verlauf zu löschen.",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "Gilt, wenn der Link keine Ansicht vorgibt. Manuelles Umschalten behält die Auswahl dieser Seite bei.",
+    "description": "Graph display setting"
   }
 }
