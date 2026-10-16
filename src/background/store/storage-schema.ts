@@ -15,7 +15,7 @@ import { DatabaseSchema } from '../../types/storage-types.js';
  */
 export const NavigraphDBSchema: DatabaseSchema = {
   name: 'NavigraphDB',
-  version: 1,
+  version: 3,
   stores: [
     // 导航节点存储
     {
@@ -24,6 +24,12 @@ export const NavigraphDBSchema: DatabaseSchema = {
       autoIncrement: false,
       indices: [
         { name: 'url', keyPath: 'url', unique: false },
+        { name: 'pageOrder', keyPath: ['_pageSession', '_pageTime', 'id', '_pageType', '_pageClosed', '_pageTracking'], unique: false },
+        { name: 'statisticsOrder', keyPath: ['_pageSession', '_statsDomain', '_statsUrl', '_statsTime', 'id', '_statsKnown'], unique: false },
+        { name: 'openTabState', keyPath: ['_pageSession', '_pageClosed', '_restoreTab', 'id'], unique: false },
+        { name: 'latestTabUrl', keyPath: ['_pageSession', '_restoreTab', '_statsUrl', '_pageTime', 'id'], unique: false },
+        { name: 'parentId', keyPath: 'parentId', unique: false },
+        { name: 'sessionTabUrl', keyPath: ['sessionId', 'tabId', 'url'], unique: false },
         { name: 'tabId', keyPath: 'tabId', unique: false },
         { name: 'timestamp', keyPath: 'timestamp', unique: false },
         { name: 'sessionId', keyPath: 'sessionId', unique: false },
@@ -36,6 +42,7 @@ export const NavigraphDBSchema: DatabaseSchema = {
       keyPath: 'id',
       autoIncrement: false,
       indices: [
+        { name: 'pageRelations', keyPath: ['_pageSession', '_pageSource', '_pageTarget', '_pageTime', 'id'], unique: false },
         { name: 'source', keyPath: 'source', unique: false },
         { name: 'target', keyPath: 'target', unique: false },
         { name: 'timestamp', keyPath: 'timestamp', unique: false },

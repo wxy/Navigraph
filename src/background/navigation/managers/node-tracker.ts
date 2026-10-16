@@ -52,6 +52,7 @@ export class NodeTracker {
    * @param sessionId 会话ID
    */
   setSessionId(sessionId: string): void {
+    if (this.sessionId !== sessionId) this.reset();
     this.sessionId = sessionId;
   }
 
@@ -115,8 +116,11 @@ export class NodeTracker {
       };
 
       // 保存记录
-      await this.navigationStorage.saveNode(record);
-
+      nodeId = await this.navigationStorage.saveNode(record);
+      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
+      this.tabStateManager.updateTabState(tabId, { url, lastNodeId: nodeId, lastNavigation: timestamp });
+      this.addTabNodeCache(tabId, url, nodeId);
+      this.addToPendingUpdates(tabId, nodeId);
       return nodeId;
     } catch (error) {
       logger.error(_('node_tracker_create_failed', '创建节点失败: {0}'), error);
@@ -131,13 +135,7 @@ export class NodeTracker {
    */
   public addTabNodeCache(tabId: number, url: string, nodeId: string): void {
     this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
-    // Also store an aggregation-normalized key (ignore query params) to improve matching for SPA internal requests
-    try {
-      const aggKey = UrlUtils.normalizeUrlForAggregation(url);
-      this.tabNodeIdCache.set(`${tabId}-${aggKey}`, nodeId);
-    } catch (e) {
-      // ignore
-    }
+    while (this.tabNodeIdCache.size > 2000) this.tabNodeIdCache.delete(this.tabNodeIdCache.keys().next().value!);
   }
 
   /**
@@ -147,20 +145,7 @@ export class NodeTracker {
    * @returns 节点ID或undefined
    */
   public getTabNodeCache(tabId: number, url: string): string | undefined {
-    // Try exact match first
-    const exact = this.tabNodeIdCache.get(`${tabId}-${url}`);
-    if (exact) return exact;
-
-    // Then try aggregation-normalized key (ignore query params)
-    try {
-      const aggKey = UrlUtils.normalizeUrlForAggregation(url);
-      const agg = this.tabNodeIdCache.get(`${tabId}-${aggKey}`);
-      if (agg) return agg;
-    } catch (e) {
-      // ignore
-    }
-
-    return undefined;
+    return this.tabNodeIdCache.get(`${tabId}-${url}`);
   }
   /**
    * 获取或创建URL对应的节点
@@ -194,22 +179,6 @@ export class NodeTracker {
 
       // 2. 如果没找到，创建新节点
       nodeId = IdGenerator.generateNodeId(tabId, url);
-
-      // 3. 记录节点ID到标签页历史
-      this.tabStateManager.addToNavigationHistory(tabId, nodeId);
-
-      // 4. 更新标签页状态
-      this.tabStateManager.updateTabState(tabId, {
-        url: url,
-        lastNodeId: nodeId,
-        lastNavigation: timestamp,
-      });
-
-      // 5. 添加到待更新列表
-      this.addToPendingUpdates(tabId, nodeId);
-
-      // 6. 更新缓存
-      this.tabNodeIdCache.set(`${tabId}-${url}`, nodeId);
 
       // 7. 查找可能的父节点
       let parentId = "";
@@ -247,10 +216,7 @@ export class NodeTracker {
       };
 
       // 保存记录并获取实际保存的ID（用于处理合并到已有节点的情况）
-      const savedId = await this.navigationStorage.saveNode(record).catch((e) => {
-        logger.error(_('node_tracker_create_save_failed', '保存节点失败: {0}'), e instanceof Error ? e.message : String(e));
-        return nodeId;
-      });
+      const savedId = await this.navigationStorage.saveNode(record);
 
       // 使用实际保存的 ID 更新历史、状态与缓存（如果合并发生，savedId 可能与生成的 nodeId 不同）
       const finalId = savedId || nodeId;
@@ -267,7 +233,7 @@ export class NodeTracker {
       this.tabNodeIdCache.set(`${tabId}-${url}`, finalId);
 
   // 返回最终ID（并指示是否为新创建）
-  const isNew = finalId !== nodeId; // 如果合并到了已有节点，则 finalId !== 初始生成的 nodeId
+  const isNew = finalId === nodeId; // 如果合并到了已有节点，则 finalId !== 初始生成的 nodeId
   return { id: finalId, isNew };
     } catch (error) {
       logger.error(_('node_tracker_get_or_create_failed', '获取或创建URL节点失败: {0}'), error);
@@ -454,32 +420,11 @@ export class NodeTracker {
     if (!url) return null;
 
     try {
-      // Use aggregation-normalized URL for cache/matching (ignore query params)
-      const normalized = UrlUtils.normalizeUrlForAggregation(url);
-      const cached = this.urlToNodeCache.get(normalized);
-      if (cached && Date.now() - cached.timestamp < 60000) {
-        // 1分钟内的缓存有效
-        return cached.nodeId;
-      }
-
-      // 标准化URL用于匹配（聚合级别）
-      const normalizedUrl = UrlUtils.normalizeUrlForAggregation(url);
-
-      // 查询记录
-      const records = await this.navigationStorage.queryNodes({
-        sessionId: this.sessionId,
-      });
-
-      // 首先尝试精确匹配
-      let matchingRecord = records.find((r) => r.url === url);
-
-      // 如果没找到，尝试基于聚合归一化的匹配（忽略查询参数）
-      if (!matchingRecord) {
-        matchingRecord = records.find(
-          (r) => UrlUtils.normalizeUrlForAggregation(r.url) === normalizedUrl
-        );
-      }
-
+      const normalized = url;
+      const cached = this.urlToNodeCache.get(url);
+      if (cached && Date.now() - cached.timestamp < 60000) return cached.nodeId;
+      const records = await this.navigationStorage.queryNodes({ sessionId: this.sessionId, url });
+      const matchingRecord = records.sort((a, b) => b.timestamp - a.timestamp)[0];
       // 更新缓存
       if (matchingRecord?.id) {
         this.urlToNodeCache.set(normalized, {
@@ -525,7 +470,7 @@ export class NodeTracker {
       tabState &&
       tabState.lastNodeId &&
       tabState.url &&
-      UrlUtils.isSameUrl(tabState.url, url)
+      tabState.url === url
     ) {
       return tabState.lastNodeId;
     }
@@ -544,12 +489,7 @@ export class NodeTracker {
       const record = await this.navigationStorage.getNode(nodeId);
       if (!record) return false;
 
-      // Prefer aggregation-normalized comparison (ignore query params)
-      try {
-        return UrlUtils.normalizeUrlForAggregation(record.url) === UrlUtils.normalizeUrlForAggregation(url);
-      } catch (e) {
-        return UrlUtils.isSameUrl(record.url, url);
-      }
+      return record.sessionId === this.sessionId && record.url === url;
     } catch (e) {
       logger.warn(_('node_tracker_check_url_match_failed', '检查节点 {0} URL匹配失败: {1}'), nodeId, e);
       return false;
@@ -703,29 +643,10 @@ export class NodeTracker {
         }
       }
 
-      // 清理待更新列表 - 移除无效节点ID
-      const records = await this.navigationStorage.queryNodes({
-        sessionId: this.sessionId,
-      });
+      // Pending metadata and URL caches are bounded independently of graph size.
+      while (this.tabNodeIdCache.size > 2000) this.tabNodeIdCache.delete(this.tabNodeIdCache.keys().next().value!);
+      for (const [tabId, ids] of this.pendingUpdates) this.pendingUpdates.set(tabId, ids.slice(-50));
 
-      // 创建有效节点ID集合
-      const validNodeIds = new Set(records.map((record) => record.id));
-
-      let totalRemoved = 0;
-
-      // 遍历所有标签页的待更新列表
-      for (const [tabId, nodeIds] of this.pendingUpdates.entries()) {
-        const validIds = nodeIds.filter((id) => validNodeIds.has(id));
-
-        if (validIds.length !== nodeIds.length) {
-          totalRemoved += nodeIds.length - validIds.length;
-          this.pendingUpdates.set(tabId, validIds);
-        }
-      }
-
-      if (totalRemoved > 0) {
-        logger.log(_('node_tracker_cache_cleanup_complete', '清理了 {0} 个无效缓存项'), totalRemoved.toString());
-      }
     } catch (error) {
       logger.error(_('node_tracker_cache_cleanup_failed', '清理缓存失败: {0}'), error);
     }
@@ -790,7 +711,7 @@ export class NodeTracker {
       // 获取所有活跃标签页
       const tabs = await chrome.tabs.query({});
       const relevantTabs = tabs.filter(tab => 
-        tab.id !== undefined && tab.url && !UrlUtils.isSystemPage(tab.url)
+        !tab.incognito && tab.id !== undefined && tab.url && /^https?:/.test(tab.url)
       );
       
       if (relevantTabs.length === 0) {
@@ -876,28 +797,8 @@ export class NodeTracker {
    */
   public async closeNodesForTab(tabId: number, sessionId: string): Promise<void> {
     try {
-      // 查找与此标签页相关的活跃节点
-      const activeNodes = await this.navigationStorage.queryNodes({
-        tabId: tabId,
-        sessionId: sessionId,
-        isClosed: false
-      });
-      
-      if (activeNodes.length === 0) {
-        return;
-      }
-      
-      const now = Date.now();
-      
-      // 更新这些节点为已关闭状态
-      for (const node of activeNodes) {
-        await this.navigationStorage.updateNode(node.id, {
-          isClosed: true,
-          closeTime: now
-        });
-      }
-      
-      logger.log(_('node_tracker_tab_nodes_closed', '已关闭标签页 {0} 的 {1} 个节点'), tabId.toString(), activeNodes.length.toString());
+      const count = await this.navigationStorage.closeMatchingOpenNodes(sessionId, id => id === tabId);
+      logger.log(_('node_tracker_tab_nodes_closed', '已关闭标签页 {0} 的 {1} 个节点'), tabId.toString(), count.toString());
     } catch (error) {
       logger.error(_('node_tracker_close_tab_nodes_failed', '关闭标签页 {0} 的节点失败: {1}'), tabId.toString(), error);
     }

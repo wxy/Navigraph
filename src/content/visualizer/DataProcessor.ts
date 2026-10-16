@@ -1,3 +1,4 @@
+import { isTrackingUrl, matchesGraphFilters } from '../../lib/graph/query.js';
 import { Logger } from '../../lib/utils/logger.js';
 import { _, _Error } from '../../lib/utils/i18n.js'; // 添加i18n导入
 import { NavNode, NavLink } from '../types/navigation.js';
@@ -28,12 +29,7 @@ export class DataProcessor {
    * 跟踪页面关键词列表
    * 用于判断页面是否为跟踪/分析页面
    */
-  private trackingKeywords = [
-    '/track/', '/pixel/', '/analytics/', '/beacon/', '/telemetry/', 
-    '/stats/', '/log/', '/metrics/', '/collect/', '/monitor/', 
-    'piwik.', 'matomo.', 'ga.js', 'gtm.js', 'fbevents', 
-    'insight.', '/counter/', 'www.google-analytics.com'
-  ];
+
 
   /**
    * 应用筛选器
@@ -42,28 +38,28 @@ export class DataProcessor {
    * @param filters 筛选器状态对象，使用明确的FilterStates类型
    */
   public applyFilters(
-    nodes: NavNode[], 
-    edges: NavLink[], 
+    nodes: NavNode[],
+    edges: NavLink[],
     filters: FilterStates
   ): { nodes: NavNode[]; edges: NavLink[] } {
     logger.log(_('data_processor_applying_filters', '应用筛选器: {0}'), filters);
-    
+
     // 筛选节点
     const filteredNodes = this.filterNodes(nodes, filters);
-    
+
     // 获取所有符合条件的节点ID集合，用于边过滤
     const nodeIds = new Set(filteredNodes.map(node => node.id));
-    
+
     // 过滤连接，只保留两端都在筛选后节点中的连接
     const filteredEdges = edges.filter(edge => {
       return nodeIds.has(edge.source) && nodeIds.has(edge.target);
     });
-    
+
     logger.log(_('data_processor_filter_result', '过滤结果: 从{0}个节点中筛选出{1}个符合条件的节点'), nodes.length, filteredNodes.length);
-    
+
     return { nodes: filteredNodes, edges: filteredEdges };
   }
-  
+
   /**
    * 根据筛选条件过滤节点
    * @param nodes 要筛选的节点列表
@@ -71,42 +67,7 @@ export class DataProcessor {
    * @returns 筛选后的节点列表
    */
   private filterNodes(nodes: NavNode[], filters: FilterStates): NavNode[] {
-    return nodes.filter(node => {
-      // 类型筛选 - 只过滤明确禁用的已知类型
-      if (node.type) {
-        if (
-          (node.type === 'link_click' && !filters.typeLink) ||
-          (node.type === 'address_bar' && !filters.typeAddress) ||
-          (node.type === 'form_submit' && !filters.typeForm) ||
-          (node.type === 'javascript' && !filters.typeJs)
-        ) {
-          return false;
-        }
-      }
-      
-      // 刷新筛选
-      if (!filters.reload && node.type === 'reload') {
-        return false;
-      }
-      
-      // 历史筛选
-      if (!filters.history && (node.type === 'history_back' || node.type === 'history_forward')) {
-        return false;
-      }
-      
-      // 关闭页面筛选
-      if (!filters.closed && node.isClosed) {
-        return false;
-      }
-      
-      // 跟踪页面筛选
-      if (!filters.showTracking && this.isTrackingPage(node)) {
-        return false;
-      }
-      
-      // 通过所有筛选条件
-      return true;
-    });
+    return nodes.filter(node => matchesGraphFilters(node.type || 'unknown', node.isClosed === true, isTrackingUrl(node.url || ''), filters));
   }
 
   /**
@@ -116,12 +77,10 @@ export class DataProcessor {
    */
   public isTrackingPage(node: NavNode): boolean {
     if (!node || !node.url) return false;
-    
-    const url = node.url.toLowerCase();
-    
-    return this.trackingKeywords.some(keyword => url.includes(keyword));
+
+    return isTrackingUrl(node.url || '');
   }
-  
+
   /**
    * 构建节点映射表
    * @param nodes 节点列表
@@ -142,7 +101,7 @@ export class DataProcessor {
   public identifyRootNodes(nodes: NavNode[]): string[] {
     const childNodes = new Set<string>();
     const allNodes = new Set<string>();
-    
+
     // 收集所有节点和子节点信息
     nodes.forEach(node => {
       allNodes.add(node.id);
@@ -150,7 +109,7 @@ export class DataProcessor {
         childNodes.add(node.id);
       }
     });
-    
+
     // 根节点是所有节点中不是子节点的节点
     const rootNodeIds: string[] = [];
     allNodes.forEach(nodeId => {
@@ -158,7 +117,7 @@ export class DataProcessor {
         rootNodeIds.push(nodeId);
       }
     });
-    
+
     return rootNodeIds;
   }
 }

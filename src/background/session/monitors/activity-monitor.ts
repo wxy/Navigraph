@@ -1,3 +1,4 @@
+import { enqueue } from '../../lib/task-queue.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { SessionManager } from '../session-manager.js';
 import { NavigraphSettings } from '../../../lib/settings/types.js';
@@ -24,6 +25,10 @@ export class ActivityMonitor {
 
   constructor(manager: SessionManager) {
     this.manager = manager;
+    this.setupActivityListeners();
+    chrome.alarms.onAlarm.addListener(alarm => {
+      if (alarm.name === 'navigraph-idle') void enqueue(() => this.checkIdle());
+    });
   }
   
   /**
@@ -35,8 +40,7 @@ export class ActivityMonitor {
     // 恢复最后活动时间
     await this.restoreActivityTime();
     
-    // 设置活动监听器
-    this.setupActivityListeners();
+    this.resetIdleTimer();
   }
   
   /**
@@ -60,7 +64,8 @@ export class ActivityMonitor {
    */
   private async restoreActivityTime(): Promise<void> {
     try {
-      const currentSession = await this.manager.getCurrentSession();
+      const id = this.manager.getLatestSessionId();
+      const currentSession = id ? await this.manager.getSessionMetadata(id) : null;
       if (currentSession) {
         this.lastActivityTime = currentSession.lastActivity || currentSession.startTime;
         logger.log(_('activity_monitor_restore_time_success', '活动监控器：成功恢复上次活动时间：{0}'), 
@@ -85,16 +90,16 @@ export class ActivityMonitor {
     // 浏览器启动时
     chrome.runtime.onStartup.addListener(() => {
       logger.log(_('activity_monitor_browser_startup', '活动监控器：检测到浏览器启动'));
-      this.manager.checkDayTransition();
+      void enqueue(() => this.manager.checkDayTransition());
     });
     
     // 标签页激活时
     chrome.tabs.onActivated.addListener(async (activeInfo) => {
       try {
         const tab = await chrome.tabs.get(activeInfo.tabId);
-        if (tab && tab.url && !UrlUtils.isSystemPage(tab.url)) {
+        if (tab && !tab.incognito && tab.url && /^https?:/.test(tab.url)) {
           logger.debug(_('activity_monitor_real_page_activated', '活动监控器：实际页面被激活：{0}'), tab.url);
-          this.markActivity();
+          void enqueue(() => this.markActivity());
         } else if (tab && tab.url) {
           logger.debug(_('activity_monitor_system_page_ignored', '活动监控器：忽略系统页面激活：{0}'), tab.url);
         }
@@ -106,9 +111,9 @@ export class ActivityMonitor {
     
     // 导航完成时
     chrome.webNavigation.onCompleted.addListener((details) => {
-      if (!UrlUtils.isSystemPage(details.url)) {
+      if (details.frameId === 0 && /^https?:/.test(details.url)) {
         logger.debug(_('activity_monitor_navigation_completed', '活动监控器：实际页面导航完成：{0}'), details.url);
-        this.markActivity();
+        void enqueue(() => this.markActivity());
       } else {
         logger.debug(_('activity_monitor_system_navigation_ignored', '活动监控器：忽略系统页面导航：{0}'), details.url);
       }
@@ -118,9 +123,9 @@ export class ActivityMonitor {
     // 标签页更新时
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (changeInfo.status === 'complete' && tab?.url) {
-        if (!UrlUtils.isSystemPage(tab.url)) {
+        if (!tab.incognito && /^https?:/.test(tab.url)) {
           logger.debug(_('activity_monitor_page_updated', '活动监控器：实际页面更新完成：{0}'), tab.url);
-          this.markActivity();
+          void enqueue(() => this.markActivity());
         } else {
           logger.debug(_('activity_monitor_system_update_ignored', '活动监控器：忽略系统页面更新：{0}'), tab.url);
         }
@@ -129,7 +134,7 @@ export class ActivityMonitor {
 
     // 标签页关闭监听
     chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-      this.handleTabClosed(tabId, removeInfo);
+      void enqueue(() => this.handleTabClosed(tabId, removeInfo));
     });
   }
   
@@ -145,6 +150,7 @@ export class ActivityMonitor {
       return;
     }
   
+    this.lastActivityTime = now;
     // 先检查是否需要创建新会话
     await this.manager.markSessionActivity(now, previousActivityTime);
     
@@ -159,25 +165,15 @@ export class ActivityMonitor {
    * 重置空闲计时器
    */
   private resetIdleTimer(): void {
-    // 清除现有计时器
-    if (this.idleTimerId) {
-      clearTimeout(this.idleTimerId);
-      this.idleTimerId = null;
+    if (!this.lastActivityTime) return;
+    void chrome.alarms.clear('navigraph-idle');
+    if (this.idleTimeoutMinutes > 0 && this.lastActivityTime > 0) {
+      void chrome.alarms.create('navigraph-idle', { when: Math.max(Date.now() + 1000, this.lastActivityTime + this.getIdleTimeoutMs()) });
     }
-    
-    // 如果空闲超时为0，不设置计时器
-    if (this.idleTimeoutMinutes <= 0) {
-      logger.debug(_('activity_monitor_idle_timer_disabled', '空闲计时器已禁用'));
-      return;
-    }
-    
-    // 设置新的计时器
-    const timeoutMs = this.idleTimeoutMinutes * 60 * 1000;
-    logger.debug(_('activity_monitor_idle_timer_reset', '重置空闲计时器，超时时间: {0}分钟'), this.idleTimeoutMinutes.toString());
-    
-    this.idleTimerId = setTimeout(() => {
-      this.handleUserIdle();
-    }, timeoutMs) as unknown as number;
+  }
+
+  public async checkIdle(): Promise<void> {
+    if (this.getIdleTimeoutMs() > 0 && Date.now() - this.lastActivityTime >= this.getIdleTimeoutMs()) await this.handleUserIdle();
   }
   
   /**

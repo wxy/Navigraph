@@ -63,10 +63,9 @@ export class SessionEventEmitter {
    * @param data 事件数据
    */
   public emit(eventType: SessionEventType, sessionId: string, data?: any): void {
-    if (!this.listeners.has(eventType)) {
-      return;
-    }
-    
+    void chrome.runtime.sendMessage({ target: 'content', action: 'refreshVisualization' }).catch(() => {});
+    if (!this.listeners.has(eventType)) return;
+
     const event: SessionEvent = {
       type: eventType,
       sessionId: sessionId,

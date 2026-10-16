@@ -24,6 +24,7 @@ const logger = new Logger('NavigationMessageHandler');
  */
 export class NavigationMessageHandler {
   private visualizer: NavigationVisualizer;
+  private refreshTimer: ReturnType<typeof setTimeout> | undefined;
   
   /**
    * 构造函数
@@ -60,6 +61,7 @@ export class NavigationMessageHandler {
   cleanup(): void {
     logger.log(_('nav_message_handler_cleanup', '清理消息处理器...'));
     
+    clearTimeout(this.refreshTimer);
     // 取消注册所有处理器
     unregisterHandler("getNodeId");
     unregisterHandler("pageLoaded");
@@ -91,18 +93,11 @@ export class NavigationMessageHandler {
           } as BaseResponse);
         }
         
-        // 延迟执行刷新操作
-        setTimeout(async () => {
-          try {
-            logger.log(_('nav_message_handler_refresh_start', '🔄 开始执行刷新操作...'));
-            await this.visualizer.refreshData();
-            logger.log(_('nav_message_handler_refresh_complete', '✅ 刷新操作完成'));
-          } catch (error) {
-            logger.error(_('nav_message_handler_refresh_failed', '❌ 自动刷新可视化失败: {0}'), 
-              error instanceof Error ? error.message : String(error));
-          }
-        }, 50);
-        
+        clearTimeout(this.refreshTimer);
+        this.refreshTimer = setTimeout(() => {
+          void this.visualizer.refreshData().catch(error => logger.error('Refresh failed', error));
+        }, 150);
+
         return false; // 同步处理响应
       }
     );

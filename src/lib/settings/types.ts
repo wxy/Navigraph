@@ -38,7 +38,7 @@ export interface NavigraphSettings {
   maxNodes: number;
   
   // 其他设置
-  [key: string]: any;
+
 }
 
 /**

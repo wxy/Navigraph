@@ -1,3 +1,5 @@
+import { sessionServiceClient } from './session-service-client.js';
+import type { GraphPageInfo } from '../../lib/graph/query.js';
 /**
  * 导航图谱可视化器核心类
  */
@@ -23,6 +25,11 @@ const logger = new Logger('NavigationVisualizer');
  * 负责可视化导航数据
  */ 
 export class NavigationVisualizer implements Visualizer {
+  get pageInfo(): GraphPageInfo | null { return sessionServiceClient.pageInfo; }
+  async loadGraphPage(page = 0, edgePage = 0): Promise<void> {
+    await sessionServiceClient.loadPage(page, edgePage);
+  }
+
   // 可视化容器
   container: HTMLElement | null = null;
 
@@ -61,6 +68,7 @@ export class NavigationVisualizer implements Visualizer {
 
   // 添加渲染管理器属性
   private renderingManager: RenderingManager;
+  private readonly resizeHandler = () => this.renderingManager.handleResize();
 
   // 修改 filters getter 以使用 FilterManager
   get filters(): FilterStates {
@@ -87,6 +95,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 初始化筛选器管理器 - 新增
     this.filterManager = new FilterManager(this, this.dataProcessor, this.uiManager);
+    sessionServiceClient.configure(() => this.filters, () => window.navigraphSettings?.maxNodes || 100);
     
     // 初始化渲染管理器
     this.renderingManager = new RenderingManager(this, this.viewStateManager, this.uiManager);
@@ -212,7 +221,7 @@ export class NavigationVisualizer implements Visualizer {
     this.renderingManager.initialize(container);
 
     // 添加窗口大小变化监听 - 委托给渲染管理器
-    window.addEventListener("resize", () => this.renderingManager.handleResize());
+    window.addEventListener("resize", this.resizeHandler);
     
     // 使用返回的SVG元素
     if (svg) {
@@ -300,7 +309,7 @@ export class NavigationVisualizer implements Visualizer {
     this.renderingManager.cleanup();
 
     // 移除事件监听器
-    window.removeEventListener("resize", () => this.renderingManager.handleResize());
+    window.removeEventListener("resize", this.resizeHandler);
 
     // 清理其他资源...
     logger.groupEnd();
@@ -425,9 +434,8 @@ export class NavigationVisualizer implements Visualizer {
    * 修改为使用FilterManager
    */
   public applyFilters(): void {
-    const result = this.filterManager.applyFilters(this.allNodes, this.allEdges);
-    this.nodes = result.nodes;
-    this.edges = result.edges;
+    this.nodes = this.allNodes;
+    this.edges = this.allEdges;
   }
 
   /**
@@ -480,7 +488,7 @@ export class NavigationVisualizer implements Visualizer {
    * 修改为使用FilterManager
    */
   public updateFilter(filterId: string, value: boolean): void {
-    this.filterManager.updateFilter(filterId, value);
+    this.filterManager.handleFilterChange(filterId, value);
   }
 
   /**
@@ -507,7 +515,7 @@ export class NavigationVisualizer implements Visualizer {
    * @param node 节点数据
    */
   public showNodeDetails(node: NavNode): void {
-    this.uiManager.showNodeDetails(node);
+    this.uiManager.showNodeDetails(this.nodeMap.get(node.id) || node);
   }
   public showDetailedError(
     title: string,

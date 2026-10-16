@@ -1,3 +1,5 @@
+import { sessionMetadata } from '../../lib/graph/query.js';
+import { getNavigationStorage } from './navigation-storage.js';
 /**
  * 会话存储实现
  * 负责会话数据的持久化存储与检索
@@ -91,7 +93,7 @@ export class SessionStorage {
     await this.ensureInitialized();
     
     try {
-      await this.db.put(this.STORE_NAME, session);
+      await this.db.put(this.STORE_NAME, sessionMetadata(session));
     } catch (error) {
       logger.error(_('session_storage_save_failed', '保存会话失败: {0}', error instanceof Error ? error.message : String(error)), error);
       throw new _Error('session_storage_save_failed', '保存会话失败: {0}', error instanceof Error ? error.message : String(error)
@@ -109,7 +111,7 @@ export class SessionStorage {
     
     try {
       const session = await this.db.get<BrowsingSession>(this.STORE_NAME, sessionId);
-      return session || null;
+      return session ? sessionMetadata(session) : null;
     } catch (error) {
       logger.error(_('session_storage_get_failed', '获取会话失败: {0}', error instanceof Error ? error.message : String(error)), error);
       throw new _Error('session_storage_get_failed', '获取会话失败: {0}', error instanceof Error ? error.message : String(error)
@@ -127,7 +129,7 @@ export class SessionStorage {
     
     try {
       // 获取所有会话
-      let sessions = await this.db.getAll<BrowsingSession>(this.STORE_NAME);
+      let sessions = (await this.db.getAll<BrowsingSession>(this.STORE_NAME)).map(sessionMetadata);
       
       // 应用过滤器
       if (options) {
@@ -160,8 +162,8 @@ export class SessionStorage {
           const direction = options.sortOrder === 'desc' ? -1 : 1;
           
           sessions.sort((a, b) => {
-            let aValue = a[sortField as keyof BrowsingSession];
-            let bValue = b[sortField as keyof BrowsingSession];
+            let aValue = a[sortField as keyof typeof a];
+            let bValue = b[sortField as keyof typeof a];
             
             // 特别处理日期字段，确保是数值
             if (sortField === 'startTime' || sortField === 'endTime' || sortField === 'lastActivity') {
@@ -579,7 +581,7 @@ export class SessionStorage {
         if (session.isActive) {
           continue;
         }
-        await this.deleteSession(session.id);
+        await getNavigationStorage().clearSessionData(session.id, true);
         deleteCount++;
       }
       

@@ -7,7 +7,7 @@
  */
 export interface StoreDefinition {
   name: string;                 // 存储表名称
-  keyPath: string;              // 主键路径
+  keyPath: string | string[];              // 主键路径
   autoIncrement: boolean;       // 是否自动递增
   indices?: IndexDefinition[];  // 索引定义
 }
@@ -17,7 +17,7 @@ export interface StoreDefinition {
  */
 export interface IndexDefinition {
   name: string;           // 索引名称
-  keyPath: string;        // 索引键路径
+  keyPath: string | string[];        // 索引键路径
   unique: boolean;        // 是否唯一
   multiEntry?: boolean;   // 是否多条目
 }

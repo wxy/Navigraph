@@ -112,6 +112,7 @@ export class TabStateManager {
    */
   markTabRemoved(tabId: number): void {
     this.removedTabs.add(tabId);
+    if (this.removedTabs.size > 1000) this.removedTabs.delete(this.removedTabs.values().next().value!);
     
     logger.log(_('tab_state_manager_tab_removed', '标签页 {0} 已标记为移除'), tabId.toString());
     

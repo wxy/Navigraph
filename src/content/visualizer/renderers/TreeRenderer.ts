@@ -1,3 +1,4 @@
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 /**
  * 树形图视图渲染器
  * 负责绘制层次化的导航树结构
@@ -32,6 +33,7 @@ const logger = new Logger('TreeRenderer');
 
 export class TreeRenderer implements BaseRenderer {
   private visualizer: Visualizer;
+  private timers = new Set<ReturnType<typeof setTimeout>>();
   private svg: any = null;
   private container: HTMLElement | null = null;
   private width: number = 0;
@@ -70,14 +72,28 @@ export class TreeRenderer implements BaseRenderer {
       edges,
       this.width,
       this.height,
-      this.visualizer
+      this.visualizer,
+      (callback, delay) => {
+        const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, delay);
+        this.timers.add(timer);
+        return timer;
+      },
+      timer => this.cancelTracked(timer)
     );
   }
   
-  /**
-   * 清理资源
-   */
+  /** Cancel pending work and release its tracked handle together. */
+  private cancelTracked(timer: ReturnType<typeof setTimeout>): void {
+    clearTimeout(timer);
+    this.timers.delete(timer);
+  }
+
+  /** 清理资源 */
   cleanup(): void {
+    for (const timer of this.timers) this.cancelTracked(timer);
+    this.timers.clear();
+    this.svg?.on('.zoom', null);
+    this.svg?.selectAll('*').interrupt();
     // 清理任何需要释放的资源
     this.svg = null;
     this.container = null;
@@ -93,15 +109,15 @@ function renderTreeLayout(
   links: any[], 
   width: number, 
   height: number, 
-  visualizer: Visualizer
+  visualizer: Visualizer,
+  schedule: (callback: () => void, delay: number) => ReturnType<typeof setTimeout>,
+  cancelTracked: (timer: ReturnType<typeof setTimeout>) => void
 ): void {
   logger.log(_('using_modular_tree_renderer', '使用模块化树形图渲染器'));
   
   try {
     // 声明并初始化saveStateTimeout变量
     let saveStateTimeout: ReturnType<typeof setTimeout> | null = null;
-    // 清除常见错误源
-    if (saveStateTimeout) clearTimeout(saveStateTimeout);
     
     // 获取特定视图类型的状态
     const tabId = visualizer.tabId || '';
@@ -179,8 +195,8 @@ function renderTreeLayout(
           }
           
           // 添加防抖保存状态逻辑
-          if (saveStateTimeout) clearTimeout(saveStateTimeout);
-          saveStateTimeout = setTimeout(() => {
+          if (saveStateTimeout) cancelTracked(saveStateTimeout);
+          saveStateTimeout = schedule(() => {
             // 安全检查
             if (Math.abs(event.transform.x) < width * 2 && 
                 Math.abs(event.transform.y) < height * 2) {
@@ -771,7 +787,7 @@ function renderTreeLayout(
     // 添加图标
     node.filter((d: D3TreeNode) => d.data.id !== 'session-root' && d.data.favicon)
       .append('image')
-      .attr('xlink:href', (d: D3TreeNode) => d.data.favicon || chrome.runtime.getURL('images/logo-48.png'))
+      .attr('xlink:href', (d: D3TreeNode) => UrlUtils.getFaviconUrl(d.data.url))
       .attr('x', -8)
       .attr('y', -8)
       .attr('width', 16)
@@ -978,7 +994,7 @@ function renderTreeLayout(
     // 7. 添加调试信息
     logger.log(_('tree_rendering_complete', '树形图渲染完成，节点数: {0}, 链接数: {1}'), descendants.length.toString(), treeLinks.length.toString());
     // 验证变换是否被正确应用
-    setTimeout(() => {
+    schedule(() => {
       try {
         const currentTransform = d3.zoomTransform(svg.node());
         } catch (e) {

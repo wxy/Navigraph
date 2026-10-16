@@ -20,6 +20,7 @@ export function getNodeColor(type: string): string {
       return '#f5d76e';
     case 'reload':
       return '#bcbcbc';
+    case 'history':
     case 'history_back':
     case 'history_forward':
       return '#d3a4f9';
@@ -41,6 +42,7 @@ export function getEdgeColor(type: string): string {
     'address_bar': '#c0e8a5',
     'form_submit': '#f5d76e',
     'reload': '#bcbcbc',
+    'history': '#d3a4f9',
     'history_back': '#d3a4f9',
     'history_forward': '#d3a4f9',
     'redirect': '#ff9966',
@@ -87,7 +89,7 @@ export function calculateLinkPath(
   target: { x: number, y: number },
   linkType: string
 ): string {
-  if (linkType === 'history_back' || linkType === 'history_forward') {
+  if (linkType === 'history' || linkType === 'history_back' || linkType === 'history_forward') {
     return `M${source.x},${source.y} 
             C${source.x + (target.x - source.x) * 0.5},${source.y} 
               ${source.x + (target.x - source.x) * 0.5},${target.y} 
@@ -174,6 +176,7 @@ export function getNodeTypeName(type: string): string {
       return _('vis_utils_node_type_form_submit', '表单提交');
     case 'reload':
       return _('vis_utils_node_type_reload', '页面刷新');
+    case 'history':
     case 'history_back':
     case 'history_forward':
       return _('vis_utils_node_type_history_navigation', '历史导航');

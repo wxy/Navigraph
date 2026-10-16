@@ -249,19 +249,11 @@ export class UrlUtils {
    * @param fallbackUrl 备选URL
    * @returns favicon URL
    */
-  static getFaviconUrl(url: string, fallbackUrl?: string): string {
-    // 如果有回退URL且不是空字符串，直接使用
-    if (fallbackUrl && fallbackUrl.trim().length > 0) {
-      return fallbackUrl;
-    }
-
-    // 使用Google的favicon服务
+  static getFaviconUrl(url: string = '', fallbackUrl?: string): string {
+    // Chrome resolves from its local favicon cache. Never load historical remote URLs.
     try {
-      const urlObj = new URL(url);
-      return `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=128`;
-    } catch (e) {
-      // 如果URL解析失败，返回一个默认图标
-      return "chrome://favicon/";
-    }
+      if (!/^https?:/.test(url)) return chrome.runtime.getURL('images/logo-48.png');
+      return chrome.runtime.getURL('_favicon/') + '?pageUrl=' + encodeURIComponent(url) + '&size=32';
+    } catch { return ''; }
   }
 }

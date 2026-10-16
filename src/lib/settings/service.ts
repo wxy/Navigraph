@@ -19,7 +19,12 @@ export class SettingsService {
    * 私有构造函数（单例模式）
    */
   private constructor() {
-
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'sync' && changes[SETTINGS_STORAGE_KEY]) {
+        this.updateSettingsInternal(changes[SETTINGS_STORAGE_KEY].newValue || DEFAULT_SETTINGS);
+        this.updateCache(this.currentSettings);
+      }
+    });
   }
   
   /**
@@ -36,6 +41,7 @@ export class SettingsService {
    * 初始化设置服务
    */
   public async initialize(): Promise<void> {
+    if (this.initialized) return;
     try {
       // 尝试从缓存加载设置（快速响应）
       this.loadFromCache();
@@ -62,7 +68,7 @@ export class SettingsService {
       const cachedSettings = localStorage.getItem(SETTINGS_CACHE_KEY);
       if (cachedSettings) {
         const settings = JSON.parse(cachedSettings);
-        this.updateSettingsInternal(settings);
+        this.updateSettingsInternal(settings.data || settings);
       }
     } catch (error) {
       logger.warn(_('settings_cache_load_failed', '从本地缓存加载设置失败: {0}'), error instanceof Error ? error.message : String(error));
@@ -150,16 +156,30 @@ export class SettingsService {
    * 更新设置内部状态（不保存到存储）
    */
   private updateSettingsInternal(settings: Partial<NavigraphSettings>): void {
-    // 合并设置
-    this.currentSettings = {
-      ...this.currentSettings,
-      ...settings
-    };
-    
+    this.currentSettings = this.validate(settings);
+
     // 通知监听器
     this.notifyListeners();
   }
   
+  private validate(input: Partial<NavigraphSettings>): NavigraphSettings {
+    const result = { ...DEFAULT_SETTINGS };
+    if (!input || typeof input !== 'object') return result;
+    const enums: Partial<Record<keyof NavigraphSettings, string[]>> = { theme: ['light', 'dark', 'system'], defaultView: ['tree', 'waterfall'], sessionMode: ['daily', 'manual'] };
+    for (const [rawKey, choices] of Object.entries(enums)) {
+      const key = rawKey as keyof NavigraphSettings;
+      if (typeof input[key] === 'string' && choices.includes(input[key] as string)) Object.assign(result, { [key]: input[key] });
+    }
+    for (const key of ['animationEnabled', 'showLabels'] as const) if (typeof input[key] === 'boolean') result[key] = input[key];
+    for (const [key, min, max] of [['idleTimeout', 0, 720], ['dataRetention', 0, 36500], ['maxNodes', 1, 10000]] as const) {
+      const value = input[key];
+      if (typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max) result[key] = key === 'idleTimeout' ? value : Math.floor(value);
+    }
+    if (typeof input.forcedLocale === 'string' && /^(system|[a-z]{2,3}(?:_[A-Z]{2})?)$/.test(input.forcedLocale)) result.forcedLocale = input.forcedLocale;
+    result.trackAnonymous = false; // Incognito collection is unsupported; manifest enforces the boundary.
+    return result;
+  }
+
   /**
    * 检查是否已初始化
    */
@@ -187,7 +207,7 @@ export class SettingsService {
   public async updateSettings(settings: Partial<NavigraphSettings>): Promise<void> {
     try {
       // 合并新旧设置
-      const newSettings = { ...this.currentSettings, ...settings };
+      const newSettings = this.validate({ ...this.currentSettings, ...settings });
       
       // 保存到存储
       await this.saveToStorage(newSettings);

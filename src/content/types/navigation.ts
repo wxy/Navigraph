@@ -1,3 +1,4 @@
+import type { GraphPageInfo } from '../../lib/graph/query.js';
 /**
  * 导航图谱公共类型定义
  */
@@ -79,6 +80,8 @@ export interface D3TreeLink {
  * 导航可视化器接口
  */
 export interface Visualizer {
+  readonly pageInfo?: GraphPageInfo | null;
+  loadGraphPage(page?: number, edgePage?: number): Promise<void>;
   // 原有的基本属性和方法
   
   // 状态栏相关

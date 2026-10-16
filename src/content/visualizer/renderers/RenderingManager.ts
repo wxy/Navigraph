@@ -1,3 +1,4 @@
+import { UrlUtils } from '../../../lib/utils/url-utils.js';
 /**
  * 渲染管理器
  * 负责协调和管理所有渲染相关操作
@@ -24,6 +25,9 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
+  private restoreTimer?: ReturnType<typeof setTimeout>;
+  private rangeControls: HTMLDivElement | null = null;
+
   
   /**
    * 构造函数
@@ -149,10 +153,20 @@ export class RenderingManager {
       
       // 获取SVG和数据引用
       const svg = this.viewStateManager.svg;
-      const nodes = this.visualizer.nodes;
-      const edges = this.visualizer.edges;
       const currentSession = this.visualizer.currentSession;
+      const ids = new Set(this.visualizer.nodes.map(node => node.id));
+      // Only this rendering copy promotes page-external parents to roots; details retain the actual parentId.
+      const nodes = this.visualizer.nodes.map(node => ({ ...node,
+        parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
+        timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
+      const edges = this.visualizer.edges;
+      this.updateRangeControls();
 
+      this.currentRenderer?.cleanup();
+      this.currentRenderer = null;
+      clearTimeout(this.restoreTimer);
+      svg.interrupt();
+      svg.selectAll('*').interrupt();
       // 清除现有可视化
       svg.selectAll("*").remove();
 
@@ -201,7 +215,7 @@ export class RenderingManager {
       // 在可视化渲染后，尝试恢复视图状态
       if (options.restoreTransform) {
         // 尝试恢复视图缩放状态
-        setTimeout(() => {
+        this.restoreTimer = setTimeout(() => {
           this.viewStateManager.restoreViewState();
         }, 50);
       }
@@ -226,6 +240,43 @@ export class RenderingManager {
     }
   }
   
+  private updateRangeControls(): void {
+    this.rangeControls?.remove();
+    this.rangeControls = null;
+    const info = this.visualizer.pageInfo;
+    if (!info || !this.container) return;
+    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
+    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
+    const controls = document.createElement('div');
+    controls.className = 'navigation-range-controls';
+    controls.style.cssText = 'position:absolute;left:50%;bottom:42px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px';
+    const en = chrome.i18n.getUILanguage().startsWith('en');
+    const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
+    const label = document.createElement('span');
+    label.textContent = en ? `${start}–${end} / ${info.matched} · newest first` : `${start}–${end} / ${info.matched} · 从新到旧`;
+    controls.append(label);
+    for (const [text, delta] of [[en ? 'Newer' : '较新', -1], [en ? 'Older' : '较早', 1]] as const) {
+      const button = document.createElement('button'); button.textContent = text;
+      button.disabled = info.page + delta < 0 || info.page + delta >= pages;
+      button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page + delta).catch(error => this.uiManager.showError(String(error))); });
+      controls.append(button);
+    }
+    if (edgePages > 1) {
+      const label = document.createElement('span');
+      label.className = 'edge-range';
+      label.textContent = `${en ? 'Edges' : '边'} ${info.edgePage * info.edgeLimit + 1}–${Math.min(info.edgeTotal, (info.edgePage + 1) * info.edgeLimit)} / ${info.edgeTotal}`;
+      controls.append(label);
+      for (const delta of [-1, 1]) {
+        const button = document.createElement('button'); button.textContent = delta < 0 ? '←' : '→';
+        button.disabled = info.edgePage + delta < 0 || info.edgePage + delta >= edgePages;
+        button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page, info.edgePage + delta).catch(error => this.uiManager.showError(String(error))); });
+        controls.append(button);
+      }
+    }
+    this.container.append(controls);
+    this.rangeControls = controls;
+  }
+
   /**
    * 渲染空会话界面
    */
@@ -398,7 +449,7 @@ export class RenderingManager {
     if (iconElement && !iconElement.empty()) {
       const node = nodeMap.get(nodeId);
       if (node && node.favicon) {
-        iconElement.attr("href", node.favicon);
+        iconElement.attr("href", UrlUtils.getFaviconUrl(node.url));
       }
     }
   }
@@ -513,6 +564,12 @@ export class RenderingManager {
    */
   cleanup(): void {
     logger.log(_('rendering_manager_cleanup', '正在清理渲染管理器资源'));
-    // 当前没有需要特别清理的资源
+    clearTimeout(this.restoreTimer);
+    this.currentRenderer?.cleanup();
+    this.currentRenderer = null;
+    this.rangeControls?.remove();
+    this.rangeControls = null;
+    this.viewStateManager.svg?.on('.zoom', null);
+    this.viewStateManager.svg?.selectAll('*').interrupt();
   }
 }

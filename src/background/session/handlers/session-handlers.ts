@@ -1,3 +1,6 @@
+import type { GraphPageQuery } from '../../../lib/graph/query.js';
+import { DEFAULT_GRAPH_FILTERS } from '../../../lib/graph/query.js';
+import { getNavigationManager } from '../../navigation/navigation-manager.js';
 import { Logger } from "../../../lib/utils/logger.js";
 import { BackgroundMessageService } from "../../messaging/bg-message-service.js";
 import { SessionManager } from "../session-manager.js";
@@ -24,6 +27,20 @@ export class SessionMessageHandler {
    */
   public registerHandlers(messageService: BackgroundMessageService): void {
     logger.groupCollapsed(_('session_handler_registering', '注册会话相关消息处理程序'));
+
+    messageService.registerHandler<BackgroundMessages.GetSessionPageRequest, BackgroundResponses.GetSessionPageResponse>('getSessionPage', (message, sender, sendResponse) => {
+      const ctx = messageService.createMessageContext(message, sender, sendResponse);
+      const input = message;
+      const integer = (value: unknown, fallback: number, max: number) => typeof value === 'number' && Number.isInteger(value) && value >= 0 ? Math.min(value, max) : fallback;
+      const query: GraphPageQuery = { sessionId: input.sessionId, page: integer(input.page, 0, Number.MAX_SAFE_INTEGER),
+        limit: Math.max(1, integer(input.limit, 100, 500)), edgePage: integer(input.edgePage, 0, Number.MAX_SAFE_INTEGER), filters: { ...DEFAULT_GRAPH_FILTERS } };
+      if (typeof query.sessionId !== 'string' || !query.sessionId) return ctx.error('Invalid session');
+      for (const key of Object.keys(query.filters) as Array<keyof typeof query.filters>) {
+        if (typeof input.filters?.[key] === 'boolean') query.filters[key] = input.filters[key];
+      }
+      void getNavigationManager().getNavigationStorage().getSessionPage(query).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
+      return true;
+    });
 
     // 只包含原始实现中存在的处理程序
     this.registerGetSessionsHandler(messageService);
@@ -463,30 +480,9 @@ export class SessionMessageHandler {
         }
 
         // 设置当前会话
-        this.manager.setCurrentSession(message.sessionId);
-
-        // 如果ID为null，返回空会话
-        if (!message.sessionId) {
-          ctx.success({ sessionId: null, session: null });
-          return false;
-        }
-
-        // 获取并返回会话详情
-        this.manager
-          .getSessionDetails(message.sessionId)
-          .then((session) => {
-            if (session) {
-              ctx.success({ sessionId: message.sessionId, session });
-            } else {
-              ctx.error(_('session_handler_session_not_found', '找不到会话: {0}'), message.sessionId);
-            }
-          })
-          .catch((error) => {
-            logger.error(_('session_handler_set_current_failed', '设置当前会话失败: {0}'), error);
-            ctx.error(_('session_handler_set_current_failed_message', '设置当前会话失败: {0}'),
-              error instanceof Error ? error.message : String(error)
-            );
-          });
+        void this.manager.setCurrentSession(message.sessionId)
+          .then(session => ctx.success({ session, sessionId: message.sessionId }))
+          .catch(error => ctx.error(String(error)));
 
         return true; // 异步响应
       }

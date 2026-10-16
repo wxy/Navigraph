@@ -1,3 +1,4 @@
+import { enqueue, backgroundReady, backgroundFailed } from './lib/task-queue.js';
 /**
  * 主要的后台脚本，负责初始化和协调各个组件
  */
@@ -24,6 +25,21 @@ export function getMessageService() {
   return messageService;
 }
 
+// MV3 wake-up events must find all listeners and action handlers synchronously.
+messageService = getBackgroundMessageService();
+registerAllBackgroundHandlers();
+settingsService = getSettingsService();
+sessionManager = new SessionManager();
+setSessionManager(sessionManager);
+navigationManager = new NavigationManager(messageService);
+setNavigationManager(navigationManager);
+sessionManager.registerMessageHandlers(messageService);
+setupEventListeners();
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === 'navigraph-maintenance') void enqueue(() => navigationManager.maintain());
+  if (alarm.name === 'navigraph-retention') void enqueue(() => navigationManager.executeDataRetentionPolicy());
+});
+
 /**
  * 初始化后台脚本
  */
@@ -31,17 +47,17 @@ async function initialize(): Promise<void> {
   try {
     logger.log(_('background_startup_begin', 'Navigraph 后台脚本启动'));
     logger.log(_('background_init_start', '初始化后台服务...'));
-    
+
     // 1. 首先创建消息服务实例
     logger.log(_('background_message_service_init_start', '初始化消息服务...'));
-    messageService = getBackgroundMessageService();    
+
     // 2. 注册基础消息处理程序（tab和settings相关）
     logger.log(_('background_register_base_handlers_start', '注册基础消息处理程序...'));
-    registerAllBackgroundHandlers();
-    
+
+
     // 3. 然后创建设置服务
     logger.log(_('background_settings_service_init_start', '初始化设置服务...'));
-    settingsService = getSettingsService();
+
     await settingsService.initialize();
     // 如果管理员/用户通过设置强制了语言，应用到后台上下文（有助于后台消息或调试输出的一致性）
     try {
@@ -54,16 +70,16 @@ async function initialize(): Promise<void> {
     } catch (e) {
       logger.debug(_('background_apply_forced_locale_failed', '后台应用强制语言失败: {0}'), String(e));
     }
-        
+
     // 4. 会话管理器
     logger.log(_('background_session_manager_init_start', '初始化会话管理器...'));
-    sessionManager = new SessionManager();
-    setSessionManager(sessionManager);
+
+
 
     // 5. 导航管理器
     logger.log(_('background_nav_manager_init_start', '初始化导航管理器...'));
-    navigationManager = new NavigationManager(messageService);    
-    setNavigationManager(navigationManager);
+
+
 
     // 为避免交叉依赖，一起初始化
     await sessionManager.initialize();
@@ -71,14 +87,25 @@ async function initialize(): Promise<void> {
 
     // 6. 注册会话管理器消息处理程序
     logger.log(_('background_register_session_handlers_start', '注册会话管理器消息处理程序...'));
-    sessionManager.registerMessageHandlers(messageService);
-    
+
+
     // 7. 设置事件监听器和上下文菜单
-    setupEventListeners();
+
     setupContextMenus();
+    await navigationManager.executeDataRetentionPolicy();
+    await chrome.alarms.create('navigraph-retention', { periodInMinutes: 1440 });
+    let previousRetention = settingsService.getSetting('dataRetention');
+    settingsService.addChangeListener((settings: import('../lib/settings/types.js').NavigraphSettings) => {
+      if (previousRetention !== settings.dataRetention) {
+        previousRetention = settings.dataRetention;
+        void enqueue(() => navigationManager.executeDataRetentionPolicy());
+      }
+    });
+    backgroundReady(() => navigationManager.persistState());
 
     logger.log(_('background_init_complete', '导航图谱后台初始化成功'));
   } catch (error) {
+    backgroundFailed(error);
     logger.error(_('background_init_failed', '导航图谱后台初始化失败'), error);
   }
 }

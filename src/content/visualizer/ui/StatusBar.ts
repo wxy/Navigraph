@@ -149,7 +149,7 @@ export class StatusBar {
       // 获取当前会话信息和总节点数
       const visualizer = this.visualizer as any;
       const currentSession = visualizer.currentSession;
-      const allNodesCount = visualizer.allNodes?.length || 0;
+      const allNodesCount = visualizer.pageInfo?.total ?? visualizer.allNodes?.length ?? 0;
 
       // 打印详细日志以帮助诊断问题
       /*logger.debug(_('status_bar_data_retrieved', '状态栏数据获取: {0}'), {
@@ -163,13 +163,13 @@ export class StatusBar {
       // 更新节点计数
       const nodeCountElement = document.getElementById("status-nodes");
       if (nodeCountElement) {
-        nodeCountElement.textContent = _('content_nodes_count', '节点: {0}', nodeCount.toString());
+        nodeCountElement.textContent = _('content_nodes_count', '节点: {0}', (visualizer.pageInfo?.matched ?? nodeCount).toString());
       }
 
       // 更新已过滤节点计数
       const filteredElement = document.getElementById("status-filtered");
       if (filteredElement) {
-        const filteredCount = Math.max(0, allNodesCount - nodeCount);
+        const filteredCount = Math.max(0, allNodesCount - (visualizer.pageInfo?.matched ?? nodeCount));
         filteredElement.textContent = _('content_hidden_count', '已隐藏: {0}', filteredCount.toString());
         
         // 根据隐藏数量设置文本颜色

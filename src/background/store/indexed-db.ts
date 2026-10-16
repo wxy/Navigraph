@@ -1,3 +1,5 @@
+import { indexedNode, indexedEdge } from './graph-index.js';
+import { sessionMetadata } from '../../lib/graph/query.js';
 /**
  * IndexedDB数据库访问封装
  * 提供对IndexedDB的低级封装，增强类型安全
@@ -146,11 +148,12 @@ export class IndexedDBStorage {
           const db = (event.target as IDBOpenDBRequest).result;
           
           // 升级数据库结构
-          this.upgradeDatabase(db, event.oldVersion);
+          this.upgradeDatabase(db, request.transaction!);
         };
         
         request.onsuccess = (event) => {
           this.db = request.result;
+          this.db.onversionchange = () => this.close();
           
           // 只在第一次打开时输出日志，避免重复
           if (!this.isInitialized) {
@@ -197,12 +200,43 @@ export class IndexedDBStorage {
    * @param db 数据库连接
    * @param oldVersion 旧版本
    */
-  private upgradeDatabase(db: IDBDatabase, oldVersion: number): void {
+  private upgradeDatabase(db: IDBDatabase, transaction: IDBTransaction): void {
     // 创建所有存储对象
     for (const store of this.schema.stores) {
-      this.createStore(db, store);
+      this.createStore(db, store, transaction);
     }
     
+    if (this.schema.name === 'NavigraphDB' && this.schema.version >= 3) {
+      for (const name of ['nodes', 'edges']) {
+        const request = transaction.objectStore(name).openCursor();
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor) { cursor.update(name === 'nodes' ? indexedNode(cursor.value) : indexedEdge(cursor.value)); cursor.continue(); }
+        };
+      }
+      // Old metadata envelopes may embed graph maps. Preserve missing records before removing the envelopes.
+      const sessions = transaction.objectStore('sessions').openCursor();
+      sessions.onsuccess = () => {
+        const cursor = sessions.result;
+        if (!cursor) return;
+        const sessionId = cursor.value.id;
+        for (const [name, map] of [['nodes', cursor.value.records], ['edges', cursor.value.edges]] as const) {
+          for (const [recordId, record] of Object.entries(map || {})) {
+            if (!record || typeof record !== 'object') continue;
+            const value = { ...record, id: typeof (record as { id?: unknown }).id === 'string' ? (record as { id: string }).id : recordId };
+            const store = transaction.objectStore(name);
+            const existing = store.getKey(value.id);
+            existing.onsuccess = () => {
+              if (existing.result === undefined) store.put(name === 'nodes'
+                ? indexedNode({ ...value, sessionId } as any)
+                : indexedEdge({ ...value, sessionId } as any));
+            };
+          }
+        }
+        cursor.update(sessionMetadata(cursor.value));
+        cursor.continue();
+      };
+    }
     logger.log(_('indexed_db_upgrade_complete', '数据库升级完成'));
   }
   
@@ -211,34 +245,40 @@ export class IndexedDBStorage {
    * @param db 数据库连接
    * @param storeDefinition 存储定义
    */
-  private createStore(db: IDBDatabase, storeDefinition: StoreDefinition): void {
-    // 如果存储已存在，先删除
-    if (db.objectStoreNames.contains(storeDefinition.name)) {
-      db.deleteObjectStore(storeDefinition.name);
-      logger.log(_('indexed_db_store_deleted', '已删除存储对象: {0}'), storeDefinition.name);
-    }
-    
-    // 创建存储
-    const store = db.createObjectStore(storeDefinition.name, {
-      keyPath: storeDefinition.keyPath,
-      autoIncrement: storeDefinition.autoIncrement
-    });
-    
-    logger.log(_('indexed_db_store_created', '已创建存储对象: {0}'), storeDefinition.name);
-    
-    // 创建索引
-    if (storeDefinition.indices) {
-      for (const index of storeDefinition.indices) {
-        store.createIndex(index.name, index.keyPath, {
-          unique: index.unique,
-          multiEntry: index.multiEntry || false
-        });
-        
-        logger.log(_('indexed_db_index_created', '已创建索引: {0}'), index.name);
+  private createStore(db: IDBDatabase, definition: StoreDefinition, transaction: IDBTransaction): void {
+    // Upgrades only add missing stores/indexes. Existing keys and edges stay intact.
+    const store = db.objectStoreNames.contains(definition.name)
+      ? transaction.objectStore(definition.name)
+      : db.createObjectStore(definition.name, { keyPath: definition.keyPath, autoIncrement: definition.autoIncrement });
+    for (const index of definition.indices || []) {
+      if (!store.indexNames.contains(index.name)) {
+        store.createIndex(index.name, index.keyPath, { unique: index.unique, multiEntry: index.multiEntry || false });
       }
     }
   }
-  
+
+  public async readTransaction<T>(stores: string[], callback: (tx: IDBTransaction, result: (value: T) => void) => void): Promise<T> {
+    const db = await this.getDB();
+    return new Promise<T>((resolve, reject) => {
+      const tx = db.transaction(stores, 'readonly');
+      let value: T;
+      tx.oncomplete = () => resolve(value);
+      tx.onerror = tx.onabort = () => reject(tx.error || new Error('Read aborted'));
+      try { callback(tx, result => { value = result; }); } catch (error) { tx.abort(); reject(error); }
+    });
+  }
+
+  /** Run a multi-store mutation, resolving only once the transaction commits. */
+  public async mutate(stores: string[], callback: (transaction: IDBTransaction) => void): Promise<void> {
+    const db = await this.getDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(stores, 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onabort = tx.onerror = () => reject(tx.error || new Error('Transaction aborted'));
+      try { callback(tx); } catch (error) { tx.abort(); reject(error); }
+    });
+  }
+
   /**
    * 获取数据库连接
    */
@@ -281,14 +321,14 @@ export class IndexedDBStorage {
         const request = store.add(data);
         
         request.onsuccess = () => {
-          resolve(request.result);
+          transaction.oncomplete = () => resolve(request.result);
         };
         
         request.onerror = () => {
           reject(new _Error('background_db_add_failed', '向存储 {0} 添加数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -311,14 +351,14 @@ export class IndexedDBStorage {
         const request = store.put(data);
         
         request.onsuccess = () => {
-          resolve(request.result);
+          transaction.oncomplete = () => resolve(request.result);
         };
         
         request.onerror = () => {
           reject(new _Error('background_db_put_failed', '更新存储 {0} 中的数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -348,7 +388,7 @@ export class IndexedDBStorage {
           reject(new _Error('background_db_get_failed', '从存储 {0} 获取数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -377,7 +417,7 @@ export class IndexedDBStorage {
           reject(new _Error('background_db_get_all_failed', '获取存储 {0} 的所有数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -418,7 +458,7 @@ export class IndexedDBStorage {
           reject(new _Error('background_db_get_by_index_failed', '通过索引获取存储 {0} 的数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -440,14 +480,14 @@ export class IndexedDBStorage {
         const request = store.delete(key);
         
         request.onsuccess = () => {
-          resolve();
+          transaction.oncomplete = () => resolve();
         };
         
         request.onerror = () => {
           reject(new _Error('background_db_delete_failed', '从存储 {0} 删除数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -468,14 +508,14 @@ export class IndexedDBStorage {
         const request = store.clear();
         
         request.onsuccess = () => {
-          resolve();
+          transaction.oncomplete = () => resolve();
         };
         
         request.onerror = () => {
           reject(new _Error('background_db_clear_failed', '清空存储 {0} 失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -513,7 +553,7 @@ export class IndexedDBStorage {
           reject(new _Error('background_db_for_each_failed', '遍历存储 {0} 的数据失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -562,14 +602,14 @@ export class IndexedDBStorage {
         const request = store.count();
         
         request.onsuccess = () => {
-          resolve(request.result);
+          transaction.oncomplete = () => resolve(request.result);
         };
         
         request.onerror = () => {
           reject(new _Error('background_db_count_failed', '获取存储 {0} 的记录数量失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {
@@ -599,7 +639,7 @@ export class IndexedDBStorage {
           reject(new _Error('background_db_exists_failed', '检查数据在存储 {0} 中是否存在时失败', storeName));
         };
         
-        transaction.onerror = (event) => {
+        transaction.onabort = transaction.onerror = (event) => {
           reject(new _Error('background_db_transaction_error', '数据库事务错误: {0}', String(event)));
         };
       } catch (error) {

@@ -154,7 +154,7 @@ export class FilterManager {
     }
     
     // 触发可视化刷新
-    this.visualizer.refreshVisualization(undefined, { restoreTransform: true });
+    void this.visualizer.loadGraphPage(0).catch(error => this.uiManager.showError(String(error)));
   }
   
   /**
@@ -170,7 +170,7 @@ export class FilterManager {
     this.updateFilterUI();
     
     // 触发可视化刷新
-    this.visualizer.refreshVisualization(undefined, { restoreTransform: true });
+    void this.visualizer.loadGraphPage(0).catch(error => this.uiManager.showError(String(error)));
     
     logger.log(_('filter_reset_complete', '所有筛选器已重置为默认值'));
   }
