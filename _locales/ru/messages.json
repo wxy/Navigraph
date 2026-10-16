@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "Используется, если вид не указан в ссылке. Ручное переключение сохраняет выбор этой страницы.",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "Ошибка записи: некоторые посещения могли не сохраниться."
+  },
+  "recording_health_recovered": {
+    "message": "Последующие записи сохраняются; ранее пропущенные записи автоматически не восстанавливаются."
+  },
+  "recording_health_unknown": {
+    "message": "Статус записи временно неизвестен."
+  },
+  "recording_metadata_not_saved": {
+    "message": "Информация о странице не сохранена. Проверьте статус записи."
   }
 }

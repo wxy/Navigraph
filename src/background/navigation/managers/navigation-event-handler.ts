@@ -307,7 +307,7 @@ export class NavigationEventHandler {
         try {
           const record = await this.navigationStorage.getNode(nodeId);
           if (record && !record.isClosed) {
-            await this.navigationStorage.updateNode(nodeId, { isClosed: true });
+            await this.navigationStorage.updateNode(nodeId, { isClosed: true }, 'recording');
           }
         } catch (e) {
           logger.warn(_('nav_event_handler_update_node_close_failed', '更新节点关闭状态失败: {0}'), nodeId);
@@ -486,7 +486,7 @@ export class NavigationEventHandler {
             updates.url = url;
           }
 
-          await this.navigationStorage.updateNode(existingNodeId, updates);
+          await this.navigationStorage.updateNode(existingNodeId, updates, 'recording');
 
           // Also update tab state and caches so UI reflects the new URL immediately
           try {
@@ -505,7 +505,7 @@ export class NavigationEventHandler {
           const now2 = Date.now();
           await this.navigationStorage.updateNode(existingNodeId, {
             lastVisit: now2,
-          });
+          }, 'recording');
         }
 
         return;
@@ -923,7 +923,7 @@ export class NavigationEventHandler {
       if (record) {
         await this.navigationStorage.updateNode(lastNodeId, {
           activeTime: (record.activeTime || 0) + elapsedTime,
-        });
+        }, 'recording');
       }
     } catch (error) {
       logger.warn(_('nav_event_handler_update_active_time_failed', '更新标签页活跃时间失败: {0}'), error instanceof Error ? error.message : String(error));

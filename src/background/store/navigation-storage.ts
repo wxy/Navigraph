@@ -1,3 +1,4 @@
+import { recordingHealth } from '../recording/health.js';
 import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
 import { QueryCache } from './query-cache.js';
 import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
@@ -96,7 +97,7 @@ export class NavigationStorage {
    * 保存导航节点
    */
   private notifyChanged(): void {
-    void chrome.runtime.sendMessage({ target: 'content', action: 'refreshVisualization' }).catch(() => {});
+    void Promise.resolve().then(() => chrome.runtime.sendMessage({ target: 'content', action: 'refreshVisualization' })).catch(() => {});
   }
 
   /** Ordinary UI queries scan only covering keys and materialize the selected window. */
@@ -264,11 +265,14 @@ export class NavigationStorage {
   }
 
   public async saveNode(node: NavNode): Promise<string> {
-    await this.ensureInitialized();
-    // Each visit has its own ID; only explicit updates may overwrite a visit.
-    await this.db.add(this.NODE_STORE, indexedNode(node));
-    this.notifyChanged();
-    return node.id;
+    try {
+      await this.ensureInitialized();
+      // Each visit has its own ID; only explicit updates may overwrite a visit.
+      await this.db.add(this.NODE_STORE, indexedNode(node));
+      recordingHealth.committed();
+      this.notifyChanged();
+      return node.id;
+    } catch (error) { recordingHealth.failed(); throw error; }
   }
 
   /**
@@ -349,21 +353,26 @@ export class NavigationStorage {
    * @param id 节点ID
    * @param updates 更新内容
    */
-  public async updateNode(id: string, updates: Partial<NavNode>): Promise<void> {
-    await this.ensureInitialized();
-    
+  public async updateNode(id: string, updates: Partial<NavNode>, intent: 'recording' | 'maintenance' = 'maintenance'): Promise<void> {
     try {
+      await this.ensureInitialized();
+      let wrote = false;
       await this.db.transact(this.NODE_STORE, 'readwrite', store => {
         const request = store.get(id);
         request.onsuccess = () => {
           if (!request.result) { store.transaction.abort(); return; }
+          const changed = Object.entries(updates).some(([key, value]) => !Object.is(request.result[key], value));
+          if (!changed) return;
           store.put(indexedNode({ ...request.result, ...updates, id, sessionId: request.result.sessionId }));
+          wrote = true;
         };
       });
+      if (wrote && intent === 'recording') recordingHealth.committed();
       const updatedNode = { sessionId: '' };
       this.notifyChanged();
       logger.log(_('nav_storage_node_updated', '节点已更新: {0}，会话 {1}'), id, updatedNode.sessionId);
     } catch (error) {
+      if (intent === 'recording') recordingHealth.failed();
       logger.error(_('nav_storage_update_node_failed', '更新节点失败: {0}, {1}'), id, error instanceof Error ? error.message : String(error));
       throw new _Error('background_storage_update_node_failed', '更新节点失败: {0}', error instanceof Error ? error.message : String(error)
       );
@@ -392,13 +401,14 @@ export class NavigationStorage {
    * @param edge 边信息
    */
   public async saveEdge(edge: NavLink): Promise<void> {
-    await this.ensureInitialized();
-    
     try {
+      await this.ensureInitialized();
       await this.db.put(this.EDGE_STORE, indexedEdge(edge));
+      recordingHealth.committed();
       this.notifyChanged();
       logger.log(_('nav_storage_edge_saved', '边已保存: {0} ({1} -> {2})'), edge.id, edge.source, edge.target);
     } catch (error) {
+      recordingHealth.failed();
       logger.error(_('nav_storage_save_edge_failed', '保存边失败: {0}'), error instanceof Error ? error.message : String(error));
       throw new _Error('background_storage_save_edge_failed', '保存边失败: {0}', error instanceof Error ? error.message : String(error)
       );

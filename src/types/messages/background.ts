@@ -1,3 +1,4 @@
+import type { RecordingHealth } from '../recording-health.js';
 import type { GraphPageQuery, GraphPageResult, SessionMetadata } from '../../lib/graph/query.js';
 import { BaseMessage, BaseResponse } from './common.js';
 import { BrowsingSession } from '../session-types.js';
@@ -10,6 +11,7 @@ import {
   } from '../../types/session-types.js';
   
 export namespace BackgroundMessages {
+  export interface GetRecordingHealthRequest extends BaseMessage { action: 'getRecordingHealth'; target: 'background'; }
   export interface GetSessionPageRequest extends BaseMessage, GraphPageQuery { action: 'getSessionPage'; target: 'background'; }
   /**
    * 获取标签页ID请求
@@ -313,6 +315,7 @@ export namespace BackgroundMessages {
 
 // 对应的响应类型（省略实现细节）
 export namespace BackgroundResponses {
+  export interface GetRecordingHealthResponse extends BaseResponse { health: RecordingHealth; }
   export interface GetSessionPageResponse extends BaseResponse, GraphPageResult {}
   export interface GetTabIdResponse extends BaseResponse {
     tabId?: number;
@@ -554,6 +557,7 @@ export namespace BackgroundResponses {
  * 后台API消息映射
  */
 export interface BackgroundAPI {
+  getRecordingHealth: { request: BackgroundMessages.GetRecordingHealthRequest; response: BackgroundResponses.GetRecordingHealthResponse; };
   getSessionPage: { request: BackgroundMessages.GetSessionPageRequest; response: BackgroundResponses.GetSessionPageResponse; };
   getTabId: {
     request: BackgroundMessages.GetTabIdRequest;
@@ -728,6 +732,7 @@ export type BackgroundRequest =
   | BackgroundMessages.FormSubmittedRequest
   | BackgroundMessages.GetHistoryRequest
   | BackgroundMessages.GetGraphDataRequest
+  | BackgroundMessages.GetRecordingHealthRequest
   | BackgroundMessages.GetSessionPageRequest
   | BackgroundMessages.GetSessionDetailsRequest
   | BackgroundMessages.CreateSessionRequest
@@ -761,6 +766,7 @@ export type BackgroundResponse =
   | BackgroundResponses.FormSubmittedResponse
   | BackgroundResponses.GetHistoryResponse
   | BackgroundResponses.GetGraphDataResponse
+  | BackgroundResponses.GetRecordingHealthResponse
   | BackgroundResponses.GetSessionPageResponse
   | BackgroundResponses.GetSessionDetailsResponse
   | BackgroundResponses.CreateSessionResponse
