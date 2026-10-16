@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "SPA リクエスト数: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "グラフのアニメーション",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "ノード遷移と空のグラフをアニメーション表示します。無効でもグラフを操作できます。",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "ノードのタイトルを表示",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "タイトルを非表示にしても、軸、バッジ、ノードの詳細は利用できます。",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "1ページのノード数",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1～500。表示数のみを制限し、履歴は削除しません。",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "リンクに表示形式の指定がない場合に使用します。手動で切り替えると、このページの選択が保持されます。",
+    "description": "Graph display setting"
   }
 }

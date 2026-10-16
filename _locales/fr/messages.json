@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "Nombre de requêtes SPA : {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "Animations du graphique",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "Animer les transitions et les graphiques vides ; les interactions restent disponibles sans animation.",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "Afficher les titres des nœuds",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "Les axes, badges et détails restent disponibles lorsque les titres sont masqués.",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "Nœuds par page",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500 ; limite les nœuds visibles sans supprimer l’historique.",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "Utilisée si le lien ne précise pas de vue. Un changement manuel conserve le choix de cette page.",
+    "description": "Graph display setting"
   }
 }

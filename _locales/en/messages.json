@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "SPA request count: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "Graph animations",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "Animate node transitions and empty graphs; disabling keeps graph interactions available.",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "Show node titles",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "When titles are hidden, axes, badges, and node details remain available.",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "Nodes per page",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500; limits visible nodes without deleting history.",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "Used when the link does not specify a view. Manual switching preserves this page’s choice.",
+    "description": "Graph display setting"
   }
 }

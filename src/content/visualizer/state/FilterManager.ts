@@ -62,6 +62,13 @@ export class FilterManager {
   /**
    * 从URL参数加载筛选器配置
    */
+  /** History entries without filters restore defaults rather than retaining the previous entry. */
+  restoreFromUrl(): void {
+    this.filterConfigs = getInitialFilters();
+    this.loadFilterConfigFromUrl();
+    this.updateFilterUI();
+  }
+
   private loadFilterConfigFromUrl(): void {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -74,14 +81,14 @@ export class FilterManager {
         
         // 更新筛选器配置
         for (const config of this.filterConfigs) {
-          if (config.property === 'reload') config.enabled = filterValues.reload ?? config.enabled;
-          if (config.property === 'history') config.enabled = filterValues.history ?? config.enabled;
-          if (config.property === 'closed') config.enabled = filterValues.closed ?? config.enabled;
-          if (config.property === 'showTracking') config.enabled = filterValues.tracking ?? config.enabled;
-          if (config.property === 'typeLink') config.enabled = filterValues.typeLink ?? config.enabled;
-          if (config.property === 'typeAddress') config.enabled = filterValues.typeAddress ?? config.enabled;
-          if (config.property === 'typeForm') config.enabled = filterValues.typeForm ?? config.enabled;
-          if (config.property === 'typeJs') config.enabled = filterValues.typeJs ?? config.enabled;
+          if (config.property === 'reload') config.enabled = typeof filterValues.reload === 'boolean' ? filterValues.reload : config.enabled;
+          if (config.property === 'history') config.enabled = typeof filterValues.history === 'boolean' ? filterValues.history : config.enabled;
+          if (config.property === 'closed') config.enabled = typeof filterValues.closed === 'boolean' ? filterValues.closed : config.enabled;
+          if (config.property === 'showTracking') config.enabled = typeof filterValues.tracking === 'boolean' ? filterValues.tracking : config.enabled;
+          if (config.property === 'typeLink') config.enabled = typeof filterValues.typeLink === 'boolean' ? filterValues.typeLink : config.enabled;
+          if (config.property === 'typeAddress') config.enabled = typeof filterValues.typeAddress === 'boolean' ? filterValues.typeAddress : config.enabled;
+          if (config.property === 'typeForm') config.enabled = typeof filterValues.typeForm === 'boolean' ? filterValues.typeForm : config.enabled;
+          if (config.property === 'typeJs') config.enabled = typeof filterValues.typeJs === 'boolean' ? filterValues.typeJs : config.enabled;
         }
       }
     } catch (error) {

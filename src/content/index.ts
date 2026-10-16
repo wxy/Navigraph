@@ -36,8 +36,9 @@
         await settingsService.initialize();
         window.navigraphSettings = settingsService.getSettings();
         settingsService.addChangeListener(settings => {
+          const previous = window.navigraphSettings;
           window.navigraphSettings = settings;
-          if (window.visualizer) void window.visualizer.loadGraphPage(0).catch(error => logger.error('Settings page load failed', error));
+          if (window.visualizer && previous) window.visualizer.applyDisplaySettings(previous, settings);
         });
         // 如果用户在设置中强制了语言，应用到 i18n（使主视图在刷新后也使用该语言）
         try {

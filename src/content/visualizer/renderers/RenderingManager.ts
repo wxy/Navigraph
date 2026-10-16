@@ -1,3 +1,4 @@
+import { animationsEnabled, labelsEnabled } from '../../utils/display-settings.js';
 import { UrlUtils } from '../../../lib/utils/url-utils.js';
 /**
  * 渲染管理器
@@ -117,7 +118,8 @@ export class RenderingManager {
       const url = new URL(window.location.href);
 
       // 更新视图参数
-      url.searchParams.set("view", this.viewStateManager.currentView);
+      if (this.visualizer.hasExplicitView) url.searchParams.set('view', this.viewStateManager.currentView);
+      else url.searchParams.delete('view');
 
       // 更新筛选器参数
       const filterParam = this.visualizer.getFilterUrlParam();
@@ -153,6 +155,7 @@ export class RenderingManager {
       
       // 获取SVG和数据引用
       const svg = this.viewStateManager.svg;
+      svg.classed('motion-disabled', !animationsEnabled()).classed('hide-node-labels', !labelsEnabled());
       const currentSession = this.visualizer.currentSession;
       const ids = new Set(this.visualizer.nodes.map(node => node.id));
       // Only this rendering copy promotes page-external parents to roots; details retain the actual parentId.
@@ -312,7 +315,7 @@ export class RenderingManager {
     const sessionTitle = currentSession?.title || _('content_current_session', '当前会话');
     sessionNode
       .append("text")
-      .attr("class", "node-label empty-node-label")
+      .attr("class", "node-label empty-node-label node-title-label")
       .attr("dy", 70)
       .attr("text-anchor", "middle")
       .text(sessionTitle);
@@ -406,6 +409,7 @@ export class RenderingManager {
    * 为空会话节点添加闪烁动画
    */
   private addEmptySessionAnimation(sessionNode: any): void {
+    if (!animationsEnabled()) return;
     // 添加脉冲动画
     sessionNode
       .select(".node-circle")

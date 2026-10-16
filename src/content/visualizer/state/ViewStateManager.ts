@@ -1,3 +1,4 @@
+import { animationDuration } from '../../utils/display-settings.js';
 /**
  * 视图状态管理器 - 处理视图类型和缩放状态
  */
@@ -114,6 +115,7 @@ export class ViewStateManager {
     try {
       const zoom = d3
         .zoom()
+        .duration(animationDuration(250))
         .scaleExtent([0.5, 2])
         .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
           this._svg.select(".main-group").attr("transform", event.transform);

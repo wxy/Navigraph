@@ -5242,5 +5242,33 @@
   "content_spa_badge_count": {
     "message": "Количество запросов SPA: {0}",
     "description": "从TS提取 (_): src/content/visualizer/renderers/TreeRenderer.ts"
+  },
+  "options_label_graph_animation": {
+    "message": "Анимация графика",
+    "description": "Graph display setting"
+  },
+  "options_desc_graph_animation": {
+    "message": "Анимация переходов узлов и пустых графиков; без неё управление остаётся доступным.",
+    "description": "Graph display setting"
+  },
+  "options_label_node_labels": {
+    "message": "Показывать заголовки узлов",
+    "description": "Graph display setting"
+  },
+  "options_desc_node_labels": {
+    "message": "При скрытых заголовках оси, значки и сведения об узлах остаются доступны.",
+    "description": "Graph display setting"
+  },
+  "options_label_nodes_per_page": {
+    "message": "Узлов на странице",
+    "description": "Graph display setting"
+  },
+  "options_desc_nodes_per_page": {
+    "message": "1–500; ограничивает видимые узлы, не удаляя историю.",
+    "description": "Graph display setting"
+  },
+  "options_desc_default_view": {
+    "message": "Используется, если вид не указан в ссылке. Ручное переключение сохраняет выбор этой страницы.",
+    "description": "Graph display setting"
   }
 }
