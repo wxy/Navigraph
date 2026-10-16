@@ -19,6 +19,18 @@ const logger = new Logger('WaterfallRenderer_v3');
  * 4. 时间轴比例与节点显示比例完全一致
  */
 
+interface DrawerOwner {
+  drawer: any;
+  body: any;
+  container: HTMLElement | null;
+  key: string;
+  active: boolean;
+  closing: boolean;
+  timers: Set<ReturnType<typeof setTimeout>>;
+  containerWheel?: EventListener;
+  debugDocument?: EventListener;
+}
+
 interface TimeSegment {
   startTime: number;
   endTime: number;
@@ -165,6 +177,8 @@ export class WaterfallRenderer implements BaseRenderer {
   private currentOpenDrawerSel: any = null;
   // 抽屉动画互斥标志，防止重复打开/关闭导致的竞态
   private drawerTransitioning: boolean = false;
+  private drawerOwner: DrawerOwner | null = null;
+  private disposed = false;
   // 文档级捕获点击处理器（用于点击外部关闭抽屉）
   private documentClickHandler: ((e: Event) => void) | null = null;
 
@@ -175,70 +189,74 @@ export class WaterfallRenderer implements BaseRenderer {
     this.visualizer = visualizer;
   }
 
-  // 关闭指定 drawer sel（安全地收起）
-  private closeDrawerSel(drawerSel: any): void {
-    try {
-      if (!drawerSel || drawerSel.empty()) return;
-      const body = drawerSel.select('.drawer-body');
-      // 如果在 body.node() 上绑定了原生 wheel 处理器，清理它
-      try {
-        const bodyNode = body.node && body.node();
-        if (bodyNode && (bodyNode as any).__navigraph_wheel_handler) {
-          try { bodyNode.removeEventListener('wheel', (bodyNode as any).__navigraph_wheel_handler, true); } catch(e) {}
-          try { delete (bodyNode as any).__navigraph_wheel_handler; } catch(e) {}
-        }
-      } catch(e) {}
-      const bg = body.select('.drawer-bg');
-      const items = body.selectAll('.drawer-item');
+  private ownsDrawer(owner: DrawerOwner): boolean {
+    return !this.disposed && owner.active && this.drawerOwner === owner;
+  }
 
-      // 快速收起（不做复杂动画）
-      try { items.attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
-      try { bg.attr('height', 0); } catch(e) {}
-      try { body.attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
-      try { drawerSel.attr('data-open', 'false'); } catch(e) {}
-      // restore display node's badge count if applicable
-      try {
-        const groupId = drawerSel.attr && drawerSel.attr('data-collapse-group');
-        if (groupId) {
-          const badgeSel = this.svg && this.svg.select ? this.svg.select(`.group-badge[data-collapse-group="${groupId}"]`) : null;
-          if (badgeSel && !badgeSel.empty()) {
-            try {
-              // prefer original saved badge text if present on the element
-              const orig = badgeSel.attr && badgeSel.attr('data-original-badge');
-              if (orig != null && String(orig) !== '') {
-                try { badgeSel.select('text').text(String(orig)); } catch(e) {}
-                try { badgeSel.attr('data-original-badge', null); } catch(e) {}
-              } else {
-                // find collapsedGroup count if available in memory; support both new (displayNode.id) and old (tabId) keys
-                const cg = this.collapsedGroups ? this.collapsedGroups.find(g => (g.displayNode && g.displayNode.id === groupId) || g.tabId === groupId) : null;
-                const txt = cg ? String(cg.count) : (badgeSel.select('text').text() || '0');
-                try { badgeSel.select('text').text(txt); } catch(e) {}
-              }
-            } catch(e) {}
-          }
-        }
-      } catch(e) {}
-    } catch (e) {
-      // ignore
+  /** Invalidate first: interrupted transitions and late frames must not revive this drawer. */
+  private releaseDrawer(owner: DrawerOwner): void {
+    if (!owner.active) return;
+    owner.active = false;
+    const isCurrent = this.drawerOwner === owner;
+    if (isCurrent) {
+      this.drawerOwner = null;
+      this.currentOpenCollapseId = null;
+      this.currentOpenDrawerSel = null;
+      this.drawerTransitioning = false;
+      this.unbindDocumentClickToClose();
+    }
+    for (const timer of owner.timers) { clearTimeout(timer); this.timers.delete(timer); }
+    owner.timers.clear();
+    owner.drawer.interrupt();
+    owner.drawer.selectAll('*').interrupt();
+    const bodyNode: any = owner.body.node();
+    if (bodyNode) {
+      for (const key of ['__drawerWheelHandler', '__navigraph_wheel_handler']) {
+        const handler = bodyNode[key];
+        if (handler) bodyNode.removeEventListener('wheel', handler, true);
+        delete bodyNode[key];
+      }
+      for (const key of ['__drawerAnim', '__drawerWheelRaf']) {
+        if (bodyNode[key] != null) cancelAnimationFrame(bodyNode[key]);
+        bodyNode[key] = null;
+      }
+      bodyNode.__drawerTarget = 0;
+      bodyNode.__drawerWheelAccum = 0;
+    }
+    // The container is shared across renderer lifetimes. Remove only our actual functions.
+    const container: any = owner.container;
+    if (owner.containerWheel && container) {
+      container.removeEventListener('wheel', owner.containerWheel, true);
+      if (container.__drawerWheelContainerHandler === owner.containerWheel) delete container.__drawerWheelContainerHandler;
+    }
+    if (owner.debugDocument) {
+      document.removeEventListener('wheel', owner.debugDocument, true);
+      if (container?.__drawerDebugDocHandler === owner.debugDocument) delete container.__drawerDebugDocHandler;
+    }
+    owner.body.select('.drawer-scroll').attr('transform', 'translate(0, 0)');
+    owner.body.selectAll('.drawer-item').attr('opacity', 0).style('pointer-events', 'none');
+    owner.body.select('.drawer-bg').attr('height', 0);
+    owner.body.attr('opacity', 0).attr('clip-path', null).style('pointer-events', 'none');
+    owner.drawer.attr('data-open', 'false').style('pointer-events', 'none');
+    this.svg?.selectAll('clipPath').filter(function(this: Element) {
+      return this.id === `drawer-clip-${owner.key}`;
+    }).remove();
+    const badge = this.svg?.select(`.group-badge[data-collapse-group="${owner.key}"]`);
+    if (badge && !badge.empty()) {
+      const count = this.collapsedGroups.find(group => (group.displayNode?.id || group.tabId) === owner.key)?.count;
+      badge.select('text').text(badge.attr('data-original-badge') || String(count ?? ''));
+      badge.attr('data-original-badge', null);
     }
   }
 
   private closeCurrentDrawer(): void {
-    try {
-      if (this.currentOpenDrawerSel && !this.currentOpenDrawerSel.empty()) {
-        this.closeDrawerSel(this.currentOpenDrawerSel);
-      }
-    } catch (e) {
-      // ignore
-    } finally {
-      this.currentOpenCollapseId = null;
-      this.currentOpenDrawerSel = null;
-      try { this.svg.on('click.drawer', null); } catch(e) {}
-      // 移除文档级捕获点击
-      try { this.unbindDocumentClickToClose(); } catch (e) {}
-      // 结束任何正在进行的互斥状态
-      this.drawerTransitioning = false;
-    }
+    if (this.drawerOwner) this.releaseDrawer(this.drawerOwner);
+    // The legacy exception fallback owns only this renderer's SVG namespace and DOM.
+    this.svg?.on('click.drawer', null);
+    const fallback = this.svg?.selectAll('.collapsed-nodes-drawer');
+    fallback?.interrupt();
+    fallback?.selectAll('*').interrupt();
+    fallback?.remove();
   }
 
   // 绑定文档级捕获阶段点击，用于检测“外部点击”并关闭当前抽屉
@@ -310,6 +328,8 @@ export class WaterfallRenderer implements BaseRenderer {
     nodeWidth: number,
     nodeHeight: number
   ): void {
+    if (this.disposed) return;
+    let operationOwner: DrawerOwner | null = null;
     try {
   // Debug flag: keep disabled in production
   const DRAWER_DEBUG = false;
@@ -326,38 +346,20 @@ export class WaterfallRenderer implements BaseRenderer {
       const isOpen = drawerSel.attr('data-open') === 'true';
 
       if (!isOpen) {
-        // 如果正在进行动画，则忽略重复打开请求
         if (this.drawerTransitioning) return;
+        this.closeCurrentDrawer();
+        const owner: DrawerOwner = {
+          drawer: drawerSel, body: drawerSel.select('.drawer-body'), container: this.container,
+          key: collapseKey, active: true, closing: false, timers: new Set()
+        };
+        operationOwner = owner;
+        const ownsDrawer = () => this.ownsDrawer(owner);
+        this.drawerOwner = owner;
+        this.currentOpenCollapseId = collapseKey;
+        this.currentOpenDrawerSel = drawerSel;
         this.drawerTransitioning = true;
-        // Defensive cleanup: remove any leftover handlers from previous openings
-        try {
-          const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
-          if (containerNode) {
-            try {
-              if ((containerNode as any).__drawerWheelContainerHandler) {
-                try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler, true); } catch(e) {}
-                try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
-              }
-            } catch(e) {}
-            try {
-              if ((containerNode as any).__drawerDebugDocHandler) {
-                try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
-                try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
-              }
-            } catch(e) {}
-          }
-        } catch(e) {}
-        // if another drawer is open, normalize its z-order then close it first
-        try {
-          if (this.currentOpenDrawerSel && !this.currentOpenDrawerSel.empty()) {
-            try {
-              // Bring previous drawer/swimlane to front without reparenting
-              const prevNode = this.currentOpenDrawerSel.node() as any;
-              try { d3.select(prevNode).raise(); } catch (e) {}
-            } catch(e) {}
-            this.closeCurrentDrawer();
-          }
-        } catch(e) {}
+        // Register before any open animation so outside clicks can also cancel pending opens.
+        this.bindDocumentClickToClose();
 
   // open: do down-direction expand animation (background stretch + per-item move)
         // keep the outer drawer container non-interactive so it doesn't block
@@ -369,19 +371,6 @@ export class WaterfallRenderer implements BaseRenderer {
         // find the body and bg
         const body = drawerSel.select('.drawer-body');
         const bg = body.select('.drawer-bg');
-        // defensive: remove any leftover body-level handlers/state from previous openings
-        try {
-          const bodyNodeAny: any = body.node && body.node();
-          if (bodyNodeAny) {
-            try { if (bodyNodeAny.__drawerWheelHandler) { bodyNodeAny.removeEventListener && bodyNodeAny.removeEventListener('wheel', bodyNodeAny.__drawerWheelHandler, true); } } catch(e) {}
-            try { delete bodyNodeAny.__drawerWheelHandler; } catch(e) {}
-            try { bodyNodeAny.__drawerWheelAccum = 0; } catch(e) {}
-            try { bodyNodeAny.__drawerWheelRaf = null; } catch(e) {}
-            try { bodyNodeAny.__drawerAnim = null; } catch(e) {}
-            try { bodyNodeAny.__drawerTarget = 0; } catch(e) {}
-          }
-        } catch(e) {}
-
         // bring drawer to front within its current parent (avoid reparenting)
         try {
           try { drawerSel.raise(); } catch (e) {}
@@ -392,6 +381,7 @@ export class WaterfallRenderer implements BaseRenderer {
         const itemNodes = items.nodes();
         if (itemNodes.length === 0) {
           body.transition().duration(animationDuration(120)).style('opacity', 1 as any).on('end', () => {
+            if (!ownsDrawer()) return;
             try { body.style('pointer-events', 'all'); } catch(e) {}
             try { this.bindDocumentClickToClose(); } catch(e) {}
             this.drawerTransitioning = false;
@@ -635,7 +625,7 @@ export class WaterfallRenderer implements BaseRenderer {
                   .duration(animationDuration(itemDuration))
                   .attr('transform', `translate(${baseX}, ${targetTop})`)
                   .attr('opacity', 1)
-                  .on('end', function(this: any) { try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
+                  .on('end', function(this: any) { if (!ownsDrawer()) return; try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
                 d3.select(this).on('click.drawerItem', function(event: MouseEvent) { try { event.stopPropagation(); } catch(e) {} });
               } else {
                 // position offscreen/hidden children at their target slots so they can be revealed by scrolling later
@@ -664,8 +654,6 @@ export class WaterfallRenderer implements BaseRenderer {
                 } catch(e) {}
               }
             } catch(e) {}
-            this.currentOpenCollapseId = collapseKey;
-            this.currentOpenDrawerSel = drawerSel;
             try { this.bindDocumentClickToClose(); } catch(e) {}
 
             // setup local wheel handler to perform internal scroll by translating .drawer-scroll
@@ -682,6 +670,7 @@ export class WaterfallRenderer implements BaseRenderer {
               // debug flag already defined in outer scope
 
                 const applyAccumulated = () => {
+                  if (!this.ownsDrawer(owner) || owner.closing) return;
                   try {
                     const accum: number = (bodyNode as any).__drawerWheelAccum || 0;
                     if (accum === 0) { (bodyNode as any).__drawerWheelRaf = null; return; }
@@ -787,6 +776,7 @@ export class WaterfallRenderer implements BaseRenderer {
                         const STEP_FACTOR_DOWN = 0.75; // fraction for moving down (faster)
                         const STEP_FACTOR_UP = 0.35; // fraction for moving up (slower) - reduced to slow upward motion
                         const stepLoop = () => {
+                          if (!this.ownsDrawer(owner) || owner.closing) return;
                           try {
                             const cur = drawerScrollOffset;
                             const tgt = (bodyNode as any).__drawerTarget || cur;
@@ -838,6 +828,7 @@ export class WaterfallRenderer implements BaseRenderer {
                 };
 
                 const onWheel = (ev: WheelEvent) => {
+                  if (!this.ownsDrawer(owner) || owner.closing) return;
                   try {
                     ev.preventDefault();
                     ev.stopPropagation();
@@ -883,6 +874,7 @@ export class WaterfallRenderer implements BaseRenderer {
                       const drawerNode: any = drawerSel && drawerSel.node && drawerSel.node();
                       if (containerNode && containerNode.addEventListener && drawerNode) {
                         const onWheelContainer = (ev: WheelEvent) => {
+                          if (!this.ownsDrawer(owner) || owner.closing) return;
                           try {
                             // Prefer geometric hit test: if the wheel event's clientX/Y falls within the drawer bg rect,
                             // treat it as targeting the drawer (this handles gaps where the pointer is over transparent area).
@@ -923,6 +915,7 @@ export class WaterfallRenderer implements BaseRenderer {
                           if (!(containerNode as any).__drawerWheelContainerHandler) {
                             try { containerNode.addEventListener('wheel', onWheelContainer, { passive: false, capture: true }); } catch(e) { try { containerNode.addEventListener('wheel', onWheelContainer, true); } catch(e) {} }
                             (containerNode as any).__drawerWheelContainerHandler = onWheelContainer;
+                            owner.containerWheel = onWheelContainer as EventListener;
                           }
                         } catch(e) {}
 
@@ -949,6 +942,7 @@ export class WaterfallRenderer implements BaseRenderer {
                             if (!(containerNode as any).__drawerDebugDocHandler) {
                               try { document.addEventListener('wheel', debugDocHandler, { capture: true, passive: true }); } catch(e) { try { document.addEventListener('wheel', debugDocHandler, true); } catch(e) {} }
                               (containerNode as any).__drawerDebugDocHandler = debugDocHandler;
+                              owner.debugDocument = debugDocHandler as EventListener;
                             }
                           } catch(e) {}
                         } catch(e) {}
@@ -959,11 +953,15 @@ export class WaterfallRenderer implements BaseRenderer {
             } catch(e) {}
 
             this.drawerTransitioning = false;
-          }, totalAnim);
+          }, totalAnim, owner);
         }
       } else {
         // close: reverse animation - collapse items to base position then shrink bg and hide
     if (this.drawerTransitioning) return; // ignore close while transitioning
+    const owner = this.drawerOwner;
+    if (!owner || owner.drawer.node() !== drawerSel.node() || !this.ownsDrawer(owner)) return;
+    operationOwner = owner;
+    owner.closing = true;
     this.drawerTransitioning = true;
         const body = drawerSel.select('.drawer-body');
         const bg = body.select('.drawer-bg');
@@ -991,150 +989,23 @@ export class WaterfallRenderer implements BaseRenderer {
         // after items collapsed, shrink bg and hide body
         const totalAnim = itemNodes.length * stagger + itemDuration + 40;
         this.schedule(() => {
-            try {
-            bg.transition().duration(animationDuration(160)).attr('height', parseFloat(bg.attr('height')) ? parseFloat(bg.attr('height')) * 0 : 0).on('end', () => {
-              try {
-                // remove any local wheel handler attached to the body
-                try {
-                  const bodyNode: any = body.node && body.node();
-                  if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
-                    try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler, true); } catch(e) {}
-                    try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
-                  }
-                } catch(e) {}
-                // reset scroll transform and animation state
-                try {
-                  const scrollGroupSel = body.select && body.select('.drawer-scroll');
-                  if (scrollGroupSel && !scrollGroupSel.empty()) {
-                    try { scrollGroupSel.attr('transform', `translate(0, 0)`); } catch(e) {}
-                  }
-                } catch(e) {}
-                try {
-                  const bodyNode: any = body.node && body.node();
-                  if (bodyNode) {
-                    try { if ((bodyNode as any).__drawerAnim) { cancelAnimationFrame((bodyNode as any).__drawerAnim); } } catch(e) {}
-                    try { (bodyNode as any).__drawerAnim = null; } catch(e) {}
-                    try { (bodyNode as any).__drawerTarget = 0; } catch(e) {}
-                    try { (bodyNode as any).__drawerWheelAccum = 0; } catch(e) {}
-                    try { (bodyNode as any).__drawerWheelRaf = null; } catch(e) {}
-                  }
-                } catch(e) {}
-                // also remove container/document handlers if present
-                try {
-                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
-                  if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
-                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler, true); } catch(e) {}
-                    try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
-                  }
-                } catch(e) {}
-                try {
-                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
-                  if (containerNode && (containerNode as any).__drawerDebugDocHandler) {
-                    try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
-                    try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
-                  }
-                } catch(e) {}
-                  body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
-                  // restore the display node's collapse badge text
-                  try {
-                    const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapseKey}"]`) : null;
-                    if (badgeSel && !badgeSel.empty()) {
-                      try {
-                        // prefer original saved text if present
-                        const orig = badgeSel.attr && badgeSel.attr('data-original-badge');
-                        if (orig != null && String(orig) !== '') {
-                          try { badgeSel.select('text').text(String(orig)); } catch(e) {}
-                          try { badgeSel.attr('data-original-badge', null); } catch(e) {}
-                        } else {
-                          try { badgeSel.select('text').text(String(collapsedGroup.count)); } catch(e) {}
-                        }
-                      } catch(e) {}
-                    }
-                  } catch(e) {}
-              } catch(e) {}
-              // cleanup currentOpen if this was the current
-              if (this.currentOpenCollapseId === collapseKey) {
-                this.currentOpenCollapseId = null;
-                this.currentOpenDrawerSel = null;
-              }
-              // 取消文档点击绑定
-              try { this.unbindDocumentClickToClose(); } catch(e) {}
-              // remove clipPath associated with this drawer to avoid accumulating defs
-              try {
-                const clipId = `drawer-clip-${collapseKey}`;
-                const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-                if (defsSel && !defsSel.empty()) {
-                  try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
-                }
-              } catch(e) {}
-              this.drawerTransitioning = false;
+          try {
+            bg.transition().duration(animationDuration(160)).attr('height', 0).on('end', () => {
+              if (this.ownsDrawer(owner)) this.releaseDrawer(owner);
             });
-          } catch(e) {
-            try {
-              // remove any local wheel handler attached to the body
-              try {
-                const bodyNode: any = body.node && body.node();
-                if (bodyNode && (bodyNode as any).__drawerWheelHandler) {
-                  try { bodyNode.removeEventListener && bodyNode.removeEventListener('wheel', (bodyNode as any).__drawerWheelHandler, true); } catch(e) {}
-                  try { delete (bodyNode as any).__drawerWheelHandler; } catch(e) {}
-                  try { logger.log(`drawer ${collapseKey} unbound wheel handler`); } catch(e) {}
-                }
-
-                // cancel any pending rAF and clear accumulator
-                try {
-                  if (bodyNode) {
-                    try { if ((bodyNode as any).__drawerWheelRaf) { cancelAnimationFrame((bodyNode as any).__drawerWheelRaf); } } catch(e) {}
-                    try { (bodyNode as any).__drawerWheelRaf = null; } catch(e) {}
-                    try { (bodyNode as any).__drawerWheelAccum = 0; } catch(e) {}
-                  }
-                } catch(e) {}
-
-                // remove container-level forwarder if present
-                try {
-                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
-                  if (containerNode && (containerNode as any).__drawerWheelContainerHandler) {
-                    try { containerNode.removeEventListener && containerNode.removeEventListener('wheel', (containerNode as any).__drawerWheelContainerHandler, true); } catch(e) {}
-                    try { delete (containerNode as any).__drawerWheelContainerHandler; } catch(e) {}
-                    try { logger.log(_('waterfall_drawer_wheel_unbound_container', 'drawer %s unbound container wheel handler'), collapseKey); } catch(e) {}
-                  }
-                } catch(e) {}
-
-                // remove debug document-level handler if present
-                try {
-                  const containerNode: any = this.container || (this.svg && this.svg.node && this.svg.node());
-                  if (containerNode && (containerNode as any).__drawerDebugDocHandler) {
-                    try { document.removeEventListener && document.removeEventListener('wheel', (containerNode as any).__drawerDebugDocHandler, true); } catch(e) {}
-                    try { delete (containerNode as any).__drawerDebugDocHandler; } catch(e) {}
-                    try { logger.log(_('waterfall_drawer_wheel_debugdoc_unbound', 'drawer %s unbound debug document wheel listener'), collapseKey); } catch(e) {}
-                  }
-                } catch(e) {}
-              } catch(e) {}
-            } catch(e) {}
-            body.attr('opacity', 0).style('pointer-events', 'none'); drawerSel.attr('data-open', 'false').style('pointer-events', 'none');
-            if (this.currentOpenCollapseId === collapseKey) {
-              this.currentOpenCollapseId = null;
-              this.currentOpenDrawerSel = null;
-            }
-            try { this.unbindDocumentClickToClose(); } catch(e) {}
-            // try to remove clipPath even on error
-            try {
-              const clipId = `drawer-clip-${collapseKey}`;
-              const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-              if (defsSel && !defsSel.empty()) {
-                try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
-              }
-            } catch(e) {}
-            this.drawerTransitioning = false;
+          } catch (e) {
+            if (this.ownsDrawer(owner)) this.releaseDrawer(owner);
           }
-        }, totalAnim);
+        }, totalAnim, owner);
       }
     } catch (e) {
-      // error suppressed: handled upstream or not actionable here
+      if (operationOwner) this.releaseDrawer(operationOwner);
     }
   }
 
   initialize(svg: any, container: HTMLElement, width: number, height: number): void {
     // badge styles are provided by main.css (merged at build time)
+    this.disposed = false;
     this.svg = svg;
     this.container = container;
     this.width = width;
@@ -1142,25 +1013,25 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   private timers = new Set<ReturnType<typeof setTimeout>>();
-  private schedule(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
-    const timer = setTimeout(() => { this.timers.delete(timer); callback(); }, animationDuration(delay));
+  private schedule(callback: () => void, delay: number, owner: DrawerOwner): ReturnType<typeof setTimeout> {
+    const timer = setTimeout(() => {
+      this.timers.delete(timer);
+      owner.timers.delete(timer);
+      if (this.ownsDrawer(owner)) callback();
+    }, animationDuration(delay));
     this.timers.add(timer);
+    owner.timers.add(timer);
     return timer;
   }
   cleanup(): void {
+    this.disposed = true;
+    this.closeCurrentDrawer();
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
     if (this.wheelScrollTimeout) clearTimeout(this.wheelScrollTimeout);
+    this.wheelScrollTimeout = null;
     const svgNode = this.svg?.node();
     if (svgNode && this.svgWheelHandler) svgNode.removeEventListener('wheel', this.svgWheelHandler, true);
-    for (const node of [this.container, ...Array.from(this.container?.querySelectorAll('*') || [])] as any[]) {
-      if (!node) continue;
-      for (const key of ['__drawerWheelHandler', '__drawerWheelContainerHandler', '__navigraph_wheel_handler']) {
-        if (node[key]) { node.removeEventListener('wheel', node[key], true); delete node[key]; }
-      }
-      if (node.__drawerDebugDocHandler) { document.removeEventListener('wheel', node.__drawerDebugDocHandler, true); delete node.__drawerDebugDocHandler; }
-      for (const key of ['__drawerAnim', '__drawerWheelRaf']) { if (node[key]) cancelAnimationFrame(node[key]); }
-    }
     this.svg?.on('.zoom', null);
     this.svg?.selectAll('*').interrupt();
     this.currentLayout = null;
