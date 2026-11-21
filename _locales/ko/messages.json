@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "링크에 보기가 지정되지 않았을 때 사용합니다. 수동으로 전환하면 이 페이지의 선택이 유지됩니다.",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "기록 오류: 일부 방문 기록이 저장되지 않았을 수 있습니다."
+  },
+  "recording_health_recovered": {
+    "message": "이후 기록은 저장되고 있습니다. 이전에 누락된 기록은 자동 복원되지 않습니다."
+  },
+  "recording_health_unknown": {
+    "message": "일시적으로 기록 상태를 확인할 수 없습니다."
+  },
+  "recording_metadata_not_saved": {
+    "message": "페이지 정보가 저장되지 않았습니다. 기록 상태를 확인하세요."
   }
 }

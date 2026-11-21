@@ -1,3 +1,5 @@
+import { recordingHealth } from '../recording/health.js';
+import { BackgroundMessages, BackgroundResponses } from '../../types/messages/background.js';
 import { getSessionManager } from '../session/session-manager.js';
 import { enqueue } from '../lib/task-queue.js';
 import { getNavigationStorage } from '../store/navigation-storage.js';
@@ -39,7 +41,7 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message?.target !== 'background') return false;
-      void enqueue(async () => {
+      const handle = async () => {
         try {
           await this.authorize(message, sender);
           await new Promise<void>(resolve => {
@@ -50,7 +52,9 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
         } catch (error) {
           sendResponse({ success: false, error: error instanceof Error ? error.message : String(error), requestId: message?.requestId });
         }
-      }).catch(error => {
+      };
+      // Health remains readable while initialization is pending or has failed.
+      void (message.action === 'getRecordingHealth' ? handle() : enqueue(handle)).catch(error => {
         sendResponse({ success: false, error: error instanceof Error ? error.message : String(error), requestId: message?.requestId });
       });
       return true;
@@ -132,6 +136,11 @@ export const registerAllBackgroundHandlers = (): void => {
   logger.groupCollapsed(_('bg_message_service_registering_handlers', '正在注册后台消息处理程序...'));
   
   // 仅注册实际需要的处理程序
+  messageService.registerHandler<BackgroundMessages.GetRecordingHealthRequest, BackgroundResponses.GetRecordingHealthResponse>('getRecordingHealth', (message, sender, respond) => {
+    const ctx = messageService.createMessageContext(message, sender, respond);
+    ctx.success({ health: recordingHealth.get() });
+    return false;
+  });
   registerTabHandlers(messageService);
   registerSettingsHandlers(messageService);
   

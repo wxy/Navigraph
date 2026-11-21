@@ -169,7 +169,7 @@ export class NodeTracker {
         await this.navigationStorage.updateNode(nodeId, {
           lastVisit: timestamp,
           visitCount: await this.incrementVisitCount(nodeId),
-        });
+        }, 'recording');
 
         return { id: nodeId };
       }
@@ -346,7 +346,7 @@ export class NodeTracker {
 
       // 应用更新
       if (Object.keys(updates).length > 0) {
-        await this.navigationStorage.updateNode(nodeId, updates);
+        await this.navigationStorage.updateNode(nodeId, updates, 'recording');
 
         return {
           success: true,
@@ -392,7 +392,7 @@ export class NodeTracker {
     }
 
     // 使用统一方法更新元数据
-    await this.updateNodeMetadata(
+    const result = await this.updateNodeMetadata(
       nodeId,
       {
         title: metadata.title,
@@ -405,6 +405,7 @@ export class NodeTracker {
       "content_script"
     );
 
+    if (!result.success) throw new Error(_('recording_metadata_not_saved', '页面信息未保存，请检查记录状态。'));
     return nodeId;
   }
 

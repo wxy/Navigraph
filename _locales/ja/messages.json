@@ -5270,5 +5270,17 @@
   "options_desc_default_view": {
     "message": "リンクに表示形式の指定がない場合に使用します。手動で切り替えると、このページの選択が保持されます。",
     "description": "Graph display setting"
+  },
+  "recording_health_error": {
+    "message": "記録エラー：一部の閲覧記録が保存されていない可能性があります。"
+  },
+  "recording_health_recovered": {
+    "message": "以後の記録は保存されています。以前の欠落記録は自動復元されません。"
+  },
+  "recording_health_unknown": {
+    "message": "記録状態を一時的に確認できません。"
+  },
+  "recording_metadata_not_saved": {
+    "message": "ページ情報を保存できませんでした。記録状態を確認してください。"
   }
 }

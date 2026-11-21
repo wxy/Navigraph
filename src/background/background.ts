@@ -1,3 +1,4 @@
+import { recordingHealth } from './recording/health.js';
 import { enqueue, backgroundReady, backgroundFailed } from './lib/task-queue.js';
 /**
  * 主要的后台脚本，负责初始化和协调各个组件
@@ -44,6 +45,7 @@ chrome.alarms.onAlarm.addListener(alarm => {
  * 初始化后台脚本
  */
 async function initialize(): Promise<void> {
+  recordingHealth.start();
   try {
     logger.log(_('background_startup_begin', 'Navigraph 后台脚本启动'));
     logger.log(_('background_init_start', '初始化后台服务...'));
@@ -67,6 +69,7 @@ async function initialize(): Promise<void> {
       } else if (forced === 'system') {
         await I18n.getInstance().setLocale(null);
       }
+      recordingHealth.refreshPresentation();
     } catch (e) {
       logger.debug(_('background_apply_forced_locale_failed', '后台应用强制语言失败: {0}'), String(e));
     }
@@ -95,7 +98,15 @@ async function initialize(): Promise<void> {
     await navigationManager.executeDataRetentionPolicy();
     await chrome.alarms.create('navigraph-retention', { periodInMinutes: 1440 });
     let previousRetention = settingsService.getSetting('dataRetention');
+    let previousLocale = settingsService.getSetting('forcedLocale');
     settingsService.addChangeListener((settings: import('../lib/settings/types.js').NavigraphSettings) => {
+      if (previousLocale !== settings.forcedLocale) {
+        previousLocale = settings.forcedLocale;
+        void enqueue(async () => {
+          await I18n.getInstance().setLocale(settings.forcedLocale || null);
+          recordingHealth.refreshPresentation();
+        });
+      }
       if (previousRetention !== settings.dataRetention) {
         previousRetention = settings.dataRetention;
         void enqueue(() => navigationManager.executeDataRetentionPolicy());
@@ -105,6 +116,7 @@ async function initialize(): Promise<void> {
 
     logger.log(_('background_init_complete', '导航图谱后台初始化成功'));
   } catch (error) {
+    recordingHealth.failed();
     backgroundFailed(error);
     logger.error(_('background_init_failed', '导航图谱后台初始化失败'), error);
   }
