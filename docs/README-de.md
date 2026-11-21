@@ -8,7 +8,7 @@ Navigraph: Visualisierung des Browserverlaufs
 - 📊 **Visualisierung des Browserverlaufs** - Anzeigen von Web-Browserpfaden mithilfe von Baum- und Wasserfalldiagrammen
 - 🗂️ **Sitzungsverwaltung** - Automatische Organisation von Browseraktivitäten in sinnvolle Sitzungen
 - 🔄 **Echtzeit-Updates** - Dynamisches Aktualisieren von Navigationsdiagrammen während des Browsens
-- 🛡️ **Datenschutz** - Alle Daten werden lokal gespeichert und niemals in die Cloud hochgeladen
+- 🛡️ **Datenschutz** - Der Browserverlauf bleibt im lokalen Browserprofil; Einstellungen können über das Browserkonto synchronisiert werden
 - 🌙 **Dunkelmodus** - Unterstützt dunkle Themen, um Ihre Augen zu schonen
 
 ### Schnellstart

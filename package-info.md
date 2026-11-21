@@ -14,27 +14,27 @@ This permission enables Navigraph to observe navigation events within tabs (such
 
 #### webRequest
 
-This permission allows Navigraph to analyze web requests to determine the type of navigation occurring (e.g., link click, form submission, redirect). This information is used to create more accurate and informative visualizations of browsing patterns.
+This permission lets Navigraph observe main-frame redirect events to connect page navigation paths. It does not inspect request bodies or monitor subresource requests.
 
 #### storage
 
-This permission enables Navigraph to store browsing sessions, user preferences, and visualization settings locally. The extension needs to maintain history data between browser sessions to provide continuous visualization of browsing patterns across multiple days.
+This permission stores browsing history and sessions in the local browser profile (IndexedDB) and preferences in browser sync storage. Preferences may sync through the browser account; browsing history is not stored in sync storage.
 
-#### contextMenus
+#### alarms
 
-This permission allows Navigraph to add context menu options that enhance user experience, such as the ability to save specific pages to the navigation graph or access debugging features during development.
+This permission schedules periodic navigation maintenance and data-retention checks, including after the service worker wakes.
 
-#### activeTab
+#### favicon
 
-This permission enables Navigraph to access the currently active tab's information to update the visualization in real-time and provide contextual data about the current page being viewed.
+This permission retrieves website icons through the browser favicon API for browsing-history nodes.
 
 #### host_permissions
 
-This permission is necessary for Navigraph to capture navigation data across all websites the user visits. Without this permission, the extension could not build comprehensive navigation trees that represent the user's complete browsing history. All captured data is stored locally and is never transmitted to external servers.
+This permission is necessary for Navigraph to capture navigation data across all websites the user visits. Without this permission, the extension could not build comprehensive navigation trees that represent the user's complete browsing history. Browsing history remains in the local browser profile; preferences may sync through the browser account.
 
 ### 数据使用和隐私
 
-Navigraph operates entirely locally within the user's browser. All navigation data collected by the extension is:
+Navigraph processes browsing history locally in the user's browser profile. Preferences may sync through the browser account. Browsing history collected by the extension is:
 
 1. Stored exclusively on the user's device using browser's built-in storage mechanisms
 2. Never transmitted to any external servers or third parties
@@ -48,7 +48,7 @@ Users have complete control over their data, including the ability to view, filt
 Navigraph implements several security measures to protect user data:
 
 1. Content scripts operate in isolated worlds to prevent interference with webpage JavaScript
-2. All data processing occurs locally with no external API calls
+2. Browsing-history processing occurs locally without external processing services
 3. The extension adheres to Chrome's Manifest V3 security model
 4. Regular code updates address potential security vulnerabilities
 
