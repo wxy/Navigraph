@@ -8,7 +8,7 @@ Navigraph: Visualizing Browsing History
 - 📊 **Browsing History Visualization** - Display web browsing paths using Tree and Waterfall diagrams
 - 🗂️ **Session Management** - Automatically organize browsing activities into meaningful sessions
 - 🔄 **Real-Time Updates** - Dynamically update navigation diagrams while browsing
-- 🛡️ **Privacy Protection** - All data is stored locally and never uploaded to the cloud
+- 🛡️ **Privacy Protection** - Browsing history stays in the local browser profile; preferences may sync through the browser account
 - 🌙 **Dark Mode** - Supports dark themes to protect your eyes
 
 ### Quick Start

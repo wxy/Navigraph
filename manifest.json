@@ -14,8 +14,6 @@
     "webNavigation",
     "webRequest",
     "storage",
-    "contextMenus",
-    "activeTab",
     "alarms",
     "favicon"
   ],

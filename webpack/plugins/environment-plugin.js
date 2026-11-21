@@ -21,6 +21,7 @@ class EnvironmentPlugin {
             
             // 开发版本使用0.x.x.x格式，生产版本使用x.x.x格式
             if (this.isDev) {
+              manifest.permissions.push('contextMenus');
               // 确保开发版本号以0开头
               if (!manifest.version.startsWith('0.')) {
                 manifest.version = '0.' + manifest.version;

@@ -8,7 +8,7 @@ Navigraph : Visualisation de l'historique de navigation
 - 📊 **Visualisation de l'historique de navigation** - Affichez les chemins de navigation web à l'aide de diagrammes en arbre et en cascade
 - 🗂️ **Gestion des sessions** - Organisez automatiquement les activités de navigation en sessions significatives
 - 🔄 **Mises à jour en temps réel** - Mettez à jour dynamiquement les diagrammes de navigation pendant la navigation
-- 🛡️ **Protection de la vie privée** - Toutes les données sont stockées localement et ne sont jamais téléchargées sur le cloud
+- 🛡️ **Protection de la vie privée** - L’historique de navigation reste dans le profil local du navigateur ; les préférences peuvent être synchronisées via le compte du navigateur
 - 🌙 **Mode sombre** - Prend en charge les thèmes sombres pour protéger vos yeux
 
 ### Démarrage rapide
