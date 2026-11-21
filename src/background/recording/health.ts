@@ -14,6 +14,8 @@ class RecordingHealthService {
 
   public get(): RecordingHealth { return { ...this.state }; }
 
+  public refreshPresentation(): void { this.present(); }
+
   // Restore is deliberately independent of background readiness and the recording queue.
   public start(): void {
     if (this.started) return;

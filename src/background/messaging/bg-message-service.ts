@@ -41,7 +41,7 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
     // 设置消息监听器
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message?.target !== 'background') return false;
-      void enqueue(async () => {
+      const handle = async () => {
         try {
           await this.authorize(message, sender);
           await new Promise<void>(resolve => {
@@ -52,7 +52,9 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
         } catch (error) {
           sendResponse({ success: false, error: error instanceof Error ? error.message : String(error), requestId: message?.requestId });
         }
-      }).catch(error => {
+      };
+      // Health remains readable while initialization is pending or has failed.
+      void (message.action === 'getRecordingHealth' ? handle() : enqueue(handle)).catch(error => {
         sendResponse({ success: false, error: error instanceof Error ? error.message : String(error), requestId: message?.requestId });
       });
       return true;
