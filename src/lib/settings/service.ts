@@ -55,6 +55,7 @@ export class SettingsService {
       logger.log(_('settings_service_init_complete', '设置服务初始化完成'));
     } catch (error) {
       logger.error(_('settings_service_init_failed', '设置服务初始化失败: {0}'), error instanceof Error ? error.message : String(error));
+      throw error;
     }
   }
   
