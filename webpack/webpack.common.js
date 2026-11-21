@@ -47,8 +47,8 @@ module.exports = {
     }),
     // 本地化处理插件
     new I18nPlugin({
-      // 可选：指定默认语言
-      // defaultLang: 'zh_CN',
+      // 中文源码的提取目录；与 manifest 的英文 fallback 分开。
+      defaultLang: 'zh_CN',
       // 源代码目录
       srcDir: './',
       // 输出目录
