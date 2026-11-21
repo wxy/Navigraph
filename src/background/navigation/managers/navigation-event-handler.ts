@@ -514,11 +514,6 @@ export class NavigationEventHandler {
       // 找到父节点
       const parentId = await this.findLastNodeIdForTab(tabId);
 
-      // 如果没有找到父节点，则忽略
-      if (!parentId) {
-        return;
-      }
-
       // 创建新节点记录
       const now = Date.now();
       const nodeId = IdGenerator.generateNodeId(tabId, url);
@@ -546,7 +541,7 @@ export class NavigationEventHandler {
         url: url,
         timestamp: now,
         sessionId: this.currentSessionId,
-        parentId: parentId,
+        parentId: parentId || "",
         title: title,
         favicon: favicon,
         type: "javascript",
@@ -576,13 +571,15 @@ export class NavigationEventHandler {
       this.nodeTracker.addTabNodeCache(tabId, url, finalIdAfter);
 
       // 创建边
-      await this.edgeTracker.createNavigationEdge({
-        sourceId: parentId,
-        targetId: finalIdAfter,
-        timestamp: now,
-        navigationType: "javascript",
-        sessionId: this.currentSessionId,
-      });
+      if (parentId) {
+        await this.edgeTracker.createNavigationEdge({
+          sourceId: parentId,
+          targetId: finalIdAfter,
+          timestamp: now,
+          navigationType: "javascript",
+          sessionId: this.currentSessionId,
+        });
+      }
     } catch (error) {
       logger.error(_('nav_event_handler_history_update_failed', '处理历史状态更新失败: {0}'), error instanceof Error ? error.message : String(error));
     }
