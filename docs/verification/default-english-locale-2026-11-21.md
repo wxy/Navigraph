@@ -13,3 +13,16 @@ Credential prompt event：尝试macOS语言的两次直接spawn漏--use-mock-key
 3文件hash=deb31ba68e536b4f193580f48d422765cb578e9aca81b12d503addf74be90313；完整非docs冻结输入01b535d7b48a48ab3cccea62d79fcc02acb78bbff45456241cab62602f216f3d。候选ZIP d6ca85f2de4f2c438d94f79eb65ad12ea9086258891e340464a79120ec1723fe（717615bytes），CRC/清单/引用/locale静态核对通过；与旧根ZIP只有manifest和en messages两个entry不同，其余44entry逐字相同。详细文件尺寸/hash、许可证、catalog差异、原生读数、credential事件与重建脚本见本地release/1.2.5/candidates/default-en/BUILD-INFO.json及RELEASE-CHECKS.md。
 
 版本保持1.2.5，用户已确认未提审。旧根ZIP c724...027c及GitHub draft未替换；候选尚无交付commit，不宣称合并、发布或真实英文fallback运行通过。
+
+
+## 编译后维护脚本源语言修正（仅静态）
+
+scripts/i18n-helper/translate.js仍从manifest.default_locale推断翻译源，导致manifest改en后维护脚本会把中文待译消息标为English源，并在目录遍历跳过en、误处理中文源目录。本次用单一SOURCE_LOCALE='zh_CN'取代原探测函数；batchTranslate API source为zh-CN，processLocalesDir只跳过zh_CN。删除失效的--default-lang帮助与不再使用的fs同步导入，不增加通用选项层。
+
+只执行 `node --check scripts/i18n-helper/translate.js`（exit0）和调用点静态核对：SOURCE_LOCALE定义、API source转换、目录skip均一致，旧determineDefaultLanguage/defaultLang/default-lang/DEFAULT_LOCALE/manifest.default_locale探测不再存在。没有运行或require维护脚本，没有加载dotenv/.env、读取API凭据、调用翻译网络、浏览器、编译或其它测试。
+
+该脚本不参与编译或打包，候选ZIP保持d6ca85f2de4f2c438d94f79eb65ad12ea9086258891e340464a79120ec1723fe。真实3编译文件hash仍deb31ba68e536b4f193580f48d422765cb578e9aca81b12d503addf74be90313，真实compiled source仍01b535d7b48a48ab3cccea62d79fcc02acb78bbff45456241cab62602f216f3d；未伪造重编译。BUILD-INFO另记postBuildSourceOnlyDelta与currentSourceNonDocsSha256。
+
+当前维护脚本单文件SHA256：5b6afd9cdc89cebcce876dbf46cc85f2733b83632b8e6899ad93f5b39e74aa16。当前4个修改源文件集合hash：f5f0db5fa9ec752517639f6607a847355eb2fe5c80b733172546ee7d3d28de16。当前完整非docs产品源码hash：fbb3ea65c6c6469db4a62a327c3fcf04d1680cb612f02269e3f617f7e579af61（同前述path+LF+bytes+LF算法，base archive非docs路径加4个当前源文件）。9份完整商店description和根旧物料未改动。
+
+独立 Reviewer 对该增量静态审核 PASS，无阻塞项；确认两个调用点、旧选项引用清理和编译／后续源码来源的区分。Reviewer 未运行脚本、测试、编译、浏览器或翻译 API。
