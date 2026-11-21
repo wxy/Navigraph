@@ -1,7 +1,6 @@
 const fs = require('fs').promises;
 const axios = require('axios');
 const path = require('path');
-const { existsSync, readFileSync } = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '.env') });  // 加载 .env 文件
 
 // Helpers: normalize text and handle HTML entities
@@ -61,53 +60,8 @@ async function loadApiKey() {
   }
 }
 
-// 确定默认语言：尝试多种方式获取
-function determineDefaultLanguage() {
-  // 1. 命令行参数中指定的默认语言 (--default-lang=xx_XX)
-  const cmdArgs = process.argv;
-  for (let i = 0; i < cmdArgs.length; i++) {
-    const arg = cmdArgs[i];
-    if (arg.startsWith('--default-lang=')) {
-      return arg.split('=')[1];
-    }
-    if (arg === '--default-lang' && i + 1 < cmdArgs.length) {
-      return cmdArgs[i + 1];
-    }
-  }
-  
-  // 2. 环境变量中指定的默认语言
-  if (process.env.DEFAULT_LOCALE) {
-    return process.env.DEFAULT_LOCALE;
-  }
-  
-  // 3. 尝试从项目根目录的manifest.json获取
-  try {
-    // 尝试不同的相对路径查找manifest.json
-    const possiblePaths = [
-      'manifest.json',
-      '../manifest.json',
-      '../../manifest.json',
-      '../../../manifest.json'
-    ];
-    
-    for (const manifestPath of possiblePaths) {
-      const fullPath = path.resolve(__dirname, manifestPath);
-      if (existsSync(fullPath)) {
-        const manifest = JSON.parse(readFileSync(fullPath, 'utf8'));
-        if (manifest.default_locale) {
-          console.log(`从 ${fullPath} 中读取到默认语言: ${manifest.default_locale}`);
-          return manifest.default_locale;
-        }
-      }
-    }
-  } catch (error) {
-    console.log('未能从manifest.json读取默认语言');
-  }
-  
-  // 4. 使用硬编码默认值
-  console.log('使用默认值: zh_CN');
-  return 'zh_CN';
-}
+// 翻译源与中文源码提取目录一致，不使用 manifest 的界面兜底语言。
+const SOURCE_LOCALE = 'zh_CN';
 
 // 从文件路径中提取语言代码
 function extractLanguageCode(filePath) {
@@ -133,15 +87,9 @@ function extractLanguageCode(filePath) {
 async function batchTranslate(texts, apiKey, targetLang, batchSize = 50) {
   console.log(`目标语言: ${targetLang}`);
   
-  // 获取源语言（默认语言的API格式）
-  let sourceLang = determineDefaultLanguage().replace('_', '-');
-  // 某些语言需要特殊处理
-  if (sourceLang === 'zh-CN') {
-    sourceLang = 'zh-CN';  // 简体中文
-  } else if (sourceLang === 'zh-TW' || sourceLang === 'zh-HK') {
-    sourceLang = 'zh-TW';  // 繁体中文
-  }
-  
+  // API 使用连字符格式，源消息仍来自 zh_CN。
+  const sourceLang = SOURCE_LOCALE.replace('_', '-');
+
   console.log(`源语言: ${sourceLang}`);
   
   const batches = [];
@@ -327,9 +275,7 @@ async function processFile(filePath, apiKey) {
 async function processLocalesDir(localesDir, apiKey) {
   console.log(`处理本地化目录: ${localesDir}`);
   
-  // 获取默认语言
-  const defaultLang = determineDefaultLanguage();
-  console.log(`默认语言: ${defaultLang}`);
+  console.log(`源语言: ${SOURCE_LOCALE}`);
   
   try {
     // 获取所有语言目录
@@ -339,9 +285,9 @@ async function processLocalesDir(localesDir, apiKey) {
     let totalModified = 0;
     
     for (const langDir of langDirs) {
-      // 跳过默认语言
-      if (langDir === defaultLang) {
-        console.log(`跳过默认语言: ${langDir}`);
+      // 跳过中文源目录
+      if (langDir === SOURCE_LOCALE) {
+        console.log(`跳过源语言: ${langDir}`);
         continue;
       }
       
@@ -389,16 +335,14 @@ async function checkPath(inputPath) {
 // 显示帮助信息
 function showHelp() {
   console.log(`
-翻译工具使用方法:
+翻译工具使用方法（源语言固定为 ${SOURCE_LOCALE}，与界面兜底语言分开）:
   node translate.js [选项] <文件路径或_locales目录路径>
 
 选项:
-  --default-lang=xx_XX   指定默认语言 (例如: zh_CN, en, fr)
   --help                 显示此帮助信息
 
 例子:
   node translate.js _locales                     # 处理所有语言文件
-  node translate.js --default-lang=en _locales   # 使用英语作为默认语言
   node translate.js _locales/fr/messages.json    # 只处理法语文件
   `);
 }
