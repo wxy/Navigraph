@@ -243,14 +243,30 @@ export function layoutEllipticalTree(
     if (!source) continue;
     const { x: sourceX, y: sourceY } = source.node;
     const { x: targetX, y: targetY } = target.node;
-    const midX = (sourceX + targetX) / 2;
+    let firstX = (sourceX + targetX) / 2;
+    let firstY = sourceY;
+    let secondX = firstX;
+    let secondY = targetY;
+    if (source.parent) {
+      const previous = source.parent.node;
+      const incomingX = sourceX - previous.x;
+      const incomingY = previous.depth === 0 ? 0 : sourceY - previous.y;
+      const dx = targetX - sourceX;
+      const dy = targetY - sourceY;
+      const handleScale = Math.hypot(dx, dy) / (3 * Math.hypot(incomingX, incomingY));
+      // Continue the incoming tangent and let aligned links follow one line.
+      firstX = sourceX + incomingX * handleScale;
+      firstY = sourceY + incomingY * handleScale;
+      secondX = targetX - dx / 3;
+      secondY = targetY - dy / 3;
+    }
     links.push({
       source: source.node,
       target: target.node,
-      path: `M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`,
+      path: `M${sourceX},${sourceY} C${firstX},${firstY} ${secondX},${secondY} ${targetX},${targetY}`,
       fold: target.entry.fold,
-      x: midX,
-      y: (sourceY + targetY) / 2,
+      x: (sourceX + 3 * (firstX + secondX) + targetX) / 8,
+      y: (sourceY + 3 * (firstY + secondY) + targetY) / 8,
     });
   }
   const fitScale = Math.min(1, viewWidth / (2 * radius * unitX + 108), viewHeight / (2 * radius * unitY + 86));
