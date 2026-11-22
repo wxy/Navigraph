@@ -7,6 +7,7 @@ import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { RendererFactory } from './RendererFactory.js';
+import type { TreeExpansionState } from './TreeRenderer.js';
 import type { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
 import type { ViewStateManager } from '../state/ViewStateManager.js';
 import type { UIManager } from '../ui/UIManager.js';
@@ -26,7 +27,7 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
-  private expandedTreeChains = new Set<string>();
+  private treeExpansion: TreeExpansionState = { expandedChains: new Set(), overviews: new Map() };
   private treeSessionId?: string;
   private rangeControls: HTMLDivElement | null = null;
 
@@ -160,7 +161,8 @@ export class RenderingManager {
       const currentSession = this.visualizer.currentSession;
       const view = this.viewStateManager.currentView as 'tree' | 'waterfall';
       if (this.treeSessionId !== currentSession?.id) {
-        this.expandedTreeChains.clear();
+        this.treeExpansion.expandedChains.clear();
+        this.treeExpansion.overviews.clear();
         this.treeSessionId = currentSession?.id;
       }
       const ids = new Set(this.visualizer.nodes.map(node => node.id));
@@ -201,7 +203,7 @@ export class RenderingManager {
         const renderer = RendererFactory.createRenderer(
           view,
           this.visualizer,
-          this.expandedTreeChains
+          this.treeExpansion
         );
         
         // 保存当前渲染器引用

@@ -331,23 +331,23 @@ function updateViewPreview(view: ViewType): void {
     } else if (previewType === 'tree') {
       const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" width="100%" height="100%" aria-hidden="true">
-          <g fill="none" stroke="#b4bdd3" stroke-dasharray="3 4">
-            <ellipse cx="120" cy="70" rx="47" ry="24" />
-            <ellipse cx="120" cy="70" rx="92" ry="48" />
+          <g stroke="#b4bdd3" stroke-width=".5">
+            <ellipse cx="120" cy="70" rx="92" ry="48" fill="#f1eefb" />
+            <ellipse cx="120" cy="70" rx="47" ry="24" fill="#e3effa" />
           </g>
           <g fill="none" stroke="#aab9dc" stroke-width="2">
-            <path d="M120 70 V46 Q112 35 88 25 M120 46 Q128 34 152 25" />
-            <path d="M120 70 H28 M120 70 H167 M120 70 V94" />
+            <path d="M120 70 H28 M120 70 Q142 70 157 55 M120 70 Q142 70 157 85" />
+            <path d="M157 55 Q170 51 185 36 M157 55 Q181 55 211 62 M157 85 Q170 89 185 104" />
           </g>
           <circle cx="120" cy="70" r="11" fill="#4a6ee0" />
           <g fill="#7aa2ff" stroke="#fff" stroke-width="1.5">
-            <circle cx="120" cy="46" r="7" />
-            <circle cx="167" cy="70" r="7" />
-            <circle cx="120" cy="94" r="7" />
             <circle cx="73" cy="70" r="7" />
-            <circle cx="88" cy="25" r="6" />
-            <circle cx="152" cy="25" r="6" />
             <circle cx="28" cy="70" r="6" />
+            <circle cx="157" cy="55" r="7" />
+            <circle cx="157" cy="85" r="7" />
+            <circle cx="185" cy="36" r="6" />
+            <circle cx="211" cy="62" r="6" />
+            <circle cx="185" cy="104" r="6" />
           </g>
           <rect x="37" y="64" width="25" height="12" rx="6" fill="#fff" stroke="#aab9dc" />
           <text x="49.5" y="73" font-size="8" text-anchor="middle" fill="#33415e">+4</text>

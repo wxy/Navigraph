@@ -6,7 +6,7 @@ import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { Visualizer } from '../../types/navigation.js';
 import { BaseRenderer } from './BaseRenderer.js';
-import { TreeRenderer } from './TreeRenderer.js';
+import { TreeRenderer, type TreeExpansionState } from './TreeRenderer.js';
 import { WaterfallRenderer } from './WaterfallRenderer.js';
 
 const logger = new Logger('RendererFactory');
@@ -18,12 +18,12 @@ export class RendererFactory {
    * @param visualizer 可视化器实例
    * @returns 相应类型的渲染器
    */
-  static createRenderer(viewType: 'tree' | 'waterfall', visualizer: Visualizer, expandedTreeChains: Set<string>): BaseRenderer {
+  static createRenderer(viewType: 'tree' | 'waterfall', visualizer: Visualizer, treeExpansion: TreeExpansionState): BaseRenderer {
     logger.log(_('renderer_factory_create_renderer', '创建 {0} 渲染器'), viewType);
     
     switch (viewType) {
       case 'tree':
-        return new TreeRenderer(visualizer, expandedTreeChains);
+        return new TreeRenderer(visualizer, treeExpansion);
       case 'waterfall':
         return new WaterfallRenderer(visualizer);
       default:

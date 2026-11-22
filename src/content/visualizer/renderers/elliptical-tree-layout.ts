@@ -1,5 +1,6 @@
 import type { ExtendedNavNode, NavLink, NavNode } from '../../types/navigation.js';
 
+const d3: typeof import('d3') = window.d3;
 const MIN_RING_GAP = 86;
 const MIN_FOLDED_PAGES = 3;
 const FULL_TURN = Math.PI * 2;
@@ -8,6 +9,7 @@ interface ChainFold {
   id: string;
   count: number;
   expanded: boolean;
+  endpointId: string;
 }
 
 interface TreeEntry {
@@ -15,7 +17,6 @@ interface TreeEntry {
   children: TreeEntry[];
   originalDepth: number;
   continuesOutsidePage: boolean;
-  leaves: number;
   fold?: ChainFold;
 }
 
@@ -39,6 +40,7 @@ interface Placement {
 }
 
 export interface EllipticalTreeLink {
+  source: EllipticalTreeNode;
   target: EllipticalTreeNode;
   path: string;
   fold?: ChainFold;
@@ -64,7 +66,9 @@ function compactChains(entry: TreeEntry, protectedIds: ReadonlySet<string>, expa
 
     if (middle.length < MIN_FOLDED_PAGES) return compactChains(first, protectedIds, expanded);
 
-    const fold = { id: first.data.id, count: middle.length, expanded: expanded.has(first.data.id) };
+    const fold = {
+      id: first.data.id, count: middle.length, expanded: expanded.has(first.data.id), endpointId: endpoint.data.id,
+    };
     const tail = compactChains(endpoint, protectedIds, expanded);
     const visible = fold.expanded
       ? middle.reduceRight((child, page) => ({ ...page, children: [child] }), tail)
@@ -74,10 +78,8 @@ function compactChains(entry: TreeEntry, protectedIds: ReadonlySet<string>, expa
   return { ...entry, children };
 }
 
-function measureBranch(entry: TreeEntry, counts: number[], depth = 0): number {
-  counts[depth] = (counts[depth] ?? 0) + 1;
-  entry.leaves = entry.children.reduce((total, child) => total + measureBranch(child, counts, depth + 1), 0) || 1;
-  return entry.leaves;
+function countLeaves(entry: TreeEntry): number {
+  return entry.children.reduce((total, child) => total + countLeaves(child), 0) || 1;
 }
 
 // The parameter angle advances at different speeds around an ellipse.
@@ -111,13 +113,12 @@ export function layoutEllipticalTree(
   width: number,
   height: number
 ) {
-  const root: TreeEntry = { data: session, children: [], originalDepth: 0, continuesOutsidePage: false, leaves: 0 };
+  const root: TreeEntry = { data: session, children: [], originalDepth: 0, continuesOutsidePage: false };
   const entries = new Map(nodes.map((node): [string, TreeEntry] => [node.id, {
     data: { ...node },
     children: [],
     originalDepth: 0,
     continuesOutsidePage: false,
-    leaves: 1,
   }]));
   const visiting = new Set<TreeEntry>();
   let brokenCycles = 0;
@@ -165,32 +166,30 @@ export function layoutEllipticalTree(
   const centerX = width / 2;
   const centerY = height / 2;
 
-  const branches = visibleTree.children.map(entry => {
-    const counts: number[] = [];
-    measureBranch(entry, counts);
-    const breadth = Math.max(...counts);
-    return { entry, breadth, height: counts.length };
-  });
-  branches.sort((a, b) => b.breadth - a.breadth || b.height - a.height || byTime(a.entry, b.entry));
-  const sectors = [0, 0.5, 0.75, 0.25].map(center => ({
-    center, vertical: center === 0.25 || center === 0.75, used: 0, branches: [] as typeof branches,
-  }));
+  // Balance the two sides by leaf count, which tracks the vertical space each
+  // subtree needs. Keep the siblings of each subtree together.
+  const right = { direction: 1, leaves: 0, children: [] as TreeEntry[] };
+  const left = { direction: -1, leaves: 0, children: [] as TreeEntry[] };
+  const branches = visibleTree.children.map(entry => ({ entry, leaves: countLeaves(entry) }));
+  branches.sort((a, b) => b.leaves - a.leaves || byTime(a.entry, b.entry));
   for (const branch of branches) {
-    const shortAxis = branch.breadth > 1;
-    const vertical = shortAxis === (aspect >= 1);
-    let chosen = sectors[0];
-    let bestScore = Infinity;
-    for (const sector of sectors) {
-      const penalty = sector.vertical === vertical ? 0 : branch.breadth * (shortAxis ? 1 : 0.5);
-      const score = sector.used + penalty;
-      if (score < bestScore) {
-        chosen = sector;
-        bestScore = score;
-      }
-    }
-    chosen.used += branch.breadth;
-    chosen.branches.push(branch);
+    const side = left.leaves < right.leaves ? left : right;
+    side.children.push(branch.entry);
+    side.leaves += branch.leaves;
   }
+
+  const tidyTree: d3.TreeLayout<TreeEntry> = d3.tree();
+  tidyTree.nodeSize([1, 1]).separation((a, b) => a.parent === b.parent ? 1 : 1.35);
+  const sides = [left, right].filter(side => side.children.length > 0).map(side => {
+    const hierarchy = d3.hierarchy({ ...visibleTree, children: side.children.sort(byTime) }, entry => entry.children);
+    return { direction: side.direction, tree: tidyTree(hierarchy) };
+  });
+  let verticalExtent = 0;
+  for (const { tree } of sides) {
+    tree.each(node => { verticalExtent = Math.max(verticalExtent, Math.abs(node.x)); });
+  }
+  // Leave half a node's spacing at the ends so both halves stay distinct.
+  verticalExtent += 0.5;
 
   const center: Placement = {
     entry: root, arc: 0, radius: 0, unitX: 0, unitY: 0,
@@ -198,54 +197,26 @@ export function layoutEllipticalTree(
   };
   const positions: Placement[] = [center];
   const levels: Placement[][] = [];
-  function place(entry: TreeEntry, parent: Placement, start: number, end: number): void {
-    const arc = (start + end) / 2;
-    const angle = angleAt(arc);
-    const depth = parent.node.depth + 1;
-    const position: Placement = {
-      entry, parent, arc, radius: 0, unitX: unitX * Math.cos(angle), unitY: unitY * Math.sin(angle),
-      node: {
-        data: entry.data, x: centerX, y: centerY, depth, originalDepth: entry.originalDepth,
-        continuesOutsidePage: entry.continuesOutsidePage,
-      },
-    };
-    positions.push(position);
-    (levels[depth - 1] ??= []).push(position);
-    let childStart = start;
-    for (const child of entry.children) {
-      const childEnd = childStart + (end - start) * child.leaves / entry.leaves;
-      place(child, position, childStart, childEnd);
-      childStart = childEnd;
-    }
-  }
-  for (const sector of sectors) {
-    if (!sector.branches.length) continue;
-    // Keep the widest branch on the short axis and the deepest on the long axis,
-    // even after more roots fill the rest of the sector.
-    if (sector.vertical !== (aspect >= 1)) {
-      sector.branches.sort((a, b) => b.height - a.height || byTime(a.entry, b.entry));
-    }
-    const [primary, ...neighbors] = sector.branches;
-    const halfWidth = 0.125 * primary.breadth / sector.used;
-    place(primary.entry, center, sector.center - halfWidth, sector.center + halfWidth);
-
-    const before = { used: 0, branches: [] as typeof branches };
-    const after = { used: 0, branches: [] as typeof branches };
-    for (const branch of neighbors) {
-      const half = before.used <= after.used ? before : after;
-      half.used += branch.breadth;
-      half.branches.push(branch);
-    }
-    function placeHalf(half: typeof before, start: number): void {
-      half.branches.sort((a, b) => byTime(a.entry, b.entry));
-      for (const branch of half.branches) {
-        const end = start + (0.125 - halfWidth) * branch.breadth / half.used;
-        place(branch.entry, center, start, end);
-        start = end;
-      }
-    }
-    placeHalf(before, sector.center - 0.125);
-    placeHalf(after, sector.center + halfWidth);
+  for (const { direction, tree } of sides) {
+    const placed = new Map<d3.HierarchyPointNode<TreeEntry>, Placement>([[tree, center]]);
+    tree.eachBefore(node => {
+      if (!node.parent) return;
+      // Project the tidy tree's vertical order onto this half of each ellipse.
+      const arc = (direction === 1 ? 0 : 0.5) + direction * node.x / (4 * verticalExtent);
+      const angle = angleAt(arc);
+      const entry = node.data;
+      const position: Placement = {
+        entry, parent: placed.get(node.parent), arc, radius: 0,
+        unitX: unitX * Math.cos(angle), unitY: unitY * Math.sin(angle),
+        node: {
+          data: entry.data, x: centerX, y: centerY, depth: node.depth, originalDepth: entry.originalDepth,
+          continuesOutsidePage: entry.continuesOutsidePage,
+        },
+      };
+      placed.set(node, position);
+      positions.push(position);
+      (levels[node.depth - 1] ??= []).push(position);
+    });
   }
 
   let radius = 0;
@@ -279,6 +250,7 @@ export function layoutEllipticalTree(
     const secondX = centerX + target.unitX * middle;
     const secondY = centerY + target.unitY * middle;
     links.push({
+      source: source.node,
       target: target.node,
       path: `M${source.node.x},${source.node.y} C${firstX},${firstY} ${secondX},${secondY} ${target.node.x},${target.node.y}`,
       fold: target.entry.fold,

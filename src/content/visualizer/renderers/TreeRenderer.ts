@@ -12,13 +12,20 @@ import type { EllipticalTreeLink, EllipticalTreeNode } from './elliptical-tree-l
 const d3: typeof import('d3') = window.d3;
 const logger = new Logger('TreeRenderer');
 const SESSION_ROOT = 'session-root';
-const VIEW_STATE = 'elliptical-tree';
+const VIEW_STATE = 'balanced-elliptical-tree';
+const HALO_ID = 'tree-level-halo-gradient';
 
-interface FoldAnchor {
+type TreeTransform = Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>;
+type ChainLink = EllipticalTreeLink & { fold: NonNullable<EllipticalTreeLink['fold']> };
+
+export interface TreeExpansionState {
+  expandedChains: Set<string>;
+  overviews: Map<number, { layoutScope: string; transform: TreeTransform }>;
+}
+
+interface FoldAction {
   id: string;
-  x: number;
-  y: number;
-  transform: Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>;
+  closing: boolean;
   focus: boolean;
 }
 
@@ -28,7 +35,7 @@ export class TreeRenderer implements BaseRenderer {
   private width = 0;
   private height = 0;
 
-  constructor(private visualizer: Visualizer, private expandedChains: Set<string>) {}
+  constructor(private visualizer: Visualizer, private expansion: TreeExpansionState) {}
 
   initialize(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>, _container: HTMLElement, width: number, height: number): void {
     this.svg = svg;
@@ -51,13 +58,17 @@ export class TreeRenderer implements BaseRenderer {
     };
     const main = svg.select<SVGGElement>('.main-group');
     const rings = main.insert('g', ':first-child').attr('class', 'tree-levels').attr('aria-hidden', 'true');
+    const halo = rings.append('ellipse').attr('class', 'tree-level-halo').attr('fill', `url(#${HALO_ID})`);
+    const gradient = svg.append('defs').append('radialGradient').attr('id', HALO_ID).attr('class', 'tree-level-gradient');
     const links = main.select<SVGGElement>('.links-group');
     const pages = main.select<SVGGElement>('.nodes-group');
     const folds = main.append('g').attr('class', 'tree-chain-controls');
     let selectedNodeId: string | undefined;
+    let activeChain: ChainLink | undefined;
 
     const tabId = visualizer.tabId || '';
-    const layoutScope = `${currentSession?.id ?? ''}:${visualizer.pageInfo?.page ?? 0}:${width}x${height}`;
+    const pageIndex = visualizer.pageInfo?.page ?? 0;
+    const layoutScope = `${currentSession?.id ?? ''}:${pageIndex}:${width}x${height}`;
     const saved = getViewState(tabId, VIEW_STATE);
     const stored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
     const restored = stored && Number.isFinite(stored.x) && Number.isFinite(stored.y) && Number.isFinite(stored.k) && stored.k > 0
@@ -68,35 +79,64 @@ export class TreeRenderer implements BaseRenderer {
       pages.selectAll<SVGTextElement, EllipticalTreeNode>('.node-title-label')
         .style('display', () => display);
     };
+    const applyViewport = (transform: d3.ZoomTransform) => {
+      main.attr('transform', transform.toString());
+      visualizer.currentTransform = transform;
+      const scale = transform.k;
+      updateLabels(scale);
+      folds.selectAll<SVGForeignObjectElement, ChainLink>('foreignObject').attr('transform', link => {
+        if (link !== activeChain || scale >= 0.9) return null;
+        const horizontal = Math.abs(link.target.x - link.source.x) >= Math.abs(link.target.y - link.source.y);
+        const offset = 24 / scale;
+        // Keep the active collapse button usable beside the link at low zoom.
+        const x = link.x - (horizontal ? 0 : offset);
+        const y = link.y - (horizontal ? offset : 0);
+        return `translate(${x},${y}) scale(${0.9 / scale}) translate(${-link.x},${-link.y})`;
+      });
+      visualizer.updateStatusBar();
+    };
     const zoom: d3.ZoomBehavior<SVGSVGElement, unknown> = d3.zoom();
     zoom.duration(animationDuration(250))
       .filter((event: MouseEvent) => {
         const onFold = (event.target as Element).closest('.tree-chain-toggle');
         return (!onFold || event.type === 'wheel') && (!event.ctrlKey || event.type === 'wheel') && !event.button;
       })
-      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        main.attr('transform', event.transform.toString());
-        visualizer.currentTransform = event.transform;
-        updateLabels(event.transform.k);
-        visualizer.updateStatusBar();
-      })
+      .on('zoom', event => applyViewport(event.transform))
       .on('end', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        if (event.sourceEvent) saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: event.transform });
+        if (event.sourceEvent && !activeChain) {
+          saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: event.transform });
+        }
       });
     this.zoom = zoom;
     visualizer.zoom = zoom;
     svg.call(zoom).style('cursor', 'move');
 
     const updateSelection = (depth?: number) => {
-      rings.selectAll<SVGEllipseElement, { depth: number }>('ellipse')
+      rings.selectAll<SVGEllipseElement, { depth: number }>('ellipse.tree-level')
         .classed('selected-tree-level', ring => ring.depth === depth);
       pages.selectAll<SVGGElement, EllipticalTreeNode>('.node')
         .classed('highlighted', page => page.data.id === selectedNodeId);
     };
 
-    const draw = (anchor?: FoldAnchor) => {
-      const layout = layoutEllipticalTree(nodes, edges, sessionNode, this.expandedChains, width, height);
-      rings.selectAll<SVGEllipseElement, typeof layout.rings[number]>('ellipse')
+    const draw = (action?: FoldAction) => {
+      const { expandedChains, overviews } = this.expansion;
+      const layout = layoutEllipticalTree(nodes, edges, sessionNode, expandedChains, width, height);
+      const outer = layout.rings[layout.rings.length - 1];
+      halo.attr('cx', layout.centerX).attr('cy', layout.centerY).attr('rx', outer.rx).attr('ry', outer.ry);
+      const stops = layout.rings.flatMap((ring, index) => {
+        const progress = index / Math.max(1, layout.rings.length - 1);
+        const hue = 200 + 62 * progress;
+        const strength = 1 - 0.55 * progress;
+        const innerRadius = index === 0 ? 0 : layout.rings[index - 1].rx;
+        return [innerRadius, ring.rx].map(radius => ({ offset: radius / outer.rx, hue, strength }));
+      });
+      gradient.selectAll<SVGStopElement, typeof stops[number]>('stop')
+        .data(stops)
+        .join('stop')
+        .attr('offset', stop => stop.offset)
+        .style('--tree-level-hue', stop => String(stop.hue))
+        .style('--tree-level-strength', stop => String(stop.strength));
+      rings.selectAll<SVGEllipseElement, typeof layout.rings[number]>('ellipse.tree-level')
         .data(layout.rings, ring => ring.depth)
         .join('ellipse')
         .attr('class', 'tree-level')
@@ -119,9 +159,12 @@ export class TreeRenderer implements BaseRenderer {
       });
       updateSelection(layout.nodes.find(node => node.data.id === selectedNodeId)?.depth);
 
-      const foldedLinks = layout.links.filter(link => link.fold !== undefined);
-      const controls = folds.selectAll<SVGForeignObjectElement, EllipticalTreeLink>('foreignObject')
-        .data(foldedLinks, link => link.fold!.id)
+      const foldedLinks = layout.links.filter((link): link is ChainLink => link.fold !== undefined);
+      const byFoldId = new Map(foldedLinks.map(link => [link.fold.id, link]));
+      const activeId = Array.from(expandedChains).reverse().find(id => byFoldId.has(id));
+      activeChain = activeId === undefined ? undefined : byFoldId.get(activeId);
+      const controls = folds.selectAll<SVGForeignObjectElement, ChainLink>('foreignObject')
+        .data(foldedLinks, link => link.fold.id)
         .join(enter => enter.append('foreignObject')
           .attr('width', 64)
           .attr('height', 36)
@@ -131,27 +174,30 @@ export class TreeRenderer implements BaseRenderer {
         .attr('x', link => link.x - 32)
         .attr('y', link => link.y - 18);
 
-      function actionText(link: EllipticalTreeLink): string {
-        return link.fold!.expanded
-          ? _('tree_chain_collapse', '收起 {0} 个中间页面', String(link.fold!.count))
-          : _('tree_chain_expand', '展开 {0} 个中间页面', String(link.fold!.count));
+      function actionText(link: ChainLink): string {
+        return link.fold.expanded
+          ? _('tree_chain_collapse', '收起 {0} 个中间页面', String(link.fold.count))
+          : _('tree_chain_expand', '展开 {0} 个中间页面', String(link.fold.count));
       }
 
       const buttons = controls.select<HTMLButtonElement>('button')
-        .attr('aria-expanded', link => String(link.fold!.expanded))
+        .attr('aria-expanded', link => String(link.fold.expanded))
         .attr('title', actionText)
         .attr('aria-label', link => {
           const label = link.target.data.title || link.target.data.url;
-          return `${link.fold!.expanded ? '−' : '+'}${link.fold!.count} ${actionText(link)}${label ? ` · ${label}` : ''}`;
+          return `${link.fold.expanded ? '−' : '+'}${link.fold.count} ${actionText(link)}${label ? ` · ${label}` : ''}`;
         })
-        .text(link => `${link.fold!.expanded ? '−' : '+'}${link.fold!.count}`)
+        .text(link => `${link.fold.expanded ? '−' : '+'}${link.fold.count}`)
         .on('click', (event: MouseEvent, link) => {
-          const fold = link.fold!;
-          const transform = d3.zoomTransform(svg.node()!);
+          const fold = link.fold;
           const focus = event.currentTarget === document.activeElement;
-          if (fold.expanded) this.expandedChains.delete(fold.id);
-          else this.expandedChains.add(fold.id);
-          draw({ id: fold.id, x: link.x, y: link.y, transform, focus });
+          if (fold.expanded) {
+            expandedChains.delete(fold.id);
+          } else {
+            if (!activeChain) overviews.set(pageIndex, { layoutScope, transform: d3.zoomTransform(svg.node()!) });
+            expandedChains.add(fold.id);
+          }
+          draw({ id: fold.id, closing: fold.expanded, focus });
         });
 
       svg.selectAll<SVGTextElement, number>('text.cycle-message')
@@ -163,19 +209,27 @@ export class TreeRenderer implements BaseRenderer {
         .attr('text-anchor', 'end')
         .text(count => _('fixed_cycle_connections', '已移除 {0} 个循环连接', String(count)));
 
-      zoom.scaleExtent([Math.min(0.1, layout.fitScale), 8]);
       const scale = layout.fitScale;
       const initial = d3.zoomIdentity
         .translate(layout.centerX * (1 - scale), layout.centerY * (1 - scale))
         .scale(scale);
-      const next = anchor && foldedLinks.find(link => link.fold!.id === anchor.id);
-      if (anchor && next) {
-        const { x, y, k } = anchor.transform;
-        svg.call(zoom.transform, d3.zoomIdentity
-          .translate(x + (anchor.x - next.x) * k, y + (anchor.y - next.y) * k).scale(k));
-        if (anchor.focus) buttons.filter(link => link === next).node()?.focus({ preventScroll: true });
-      } else {
-        svg.call(zoom.transform, restored ?? initial);
+      const overview = overviews.get(pageIndex);
+      let transform = restored ?? initial;
+      if (activeChain) {
+        transform = fitExpandedChain(activeChain, layout.links, width, height);
+      } else if (overview?.layoutScope === layoutScope) {
+        const { x, y, k } = overview.transform;
+        transform = d3.zoomIdentity.translate(x, y).scale(k);
+      }
+      if (action?.closing && !activeChain) overviews.delete(pageIndex);
+
+      zoom.scaleExtent([Math.min(0.1, scale, transform.k), 8]);
+      svg.call(zoom.transform, transform);
+      // A wheel gesture may still belong to the previous renderer after a resize.
+      if (visualizer.currentTransform !== transform) applyViewport(transform);
+      if (action?.focus) {
+        const focusId = activeChain?.fold.id ?? action.id;
+        buttons.filter(link => link.fold.id === focusId).node()?.focus({ preventScroll: true });
       }
     };
     draw();
@@ -188,6 +242,31 @@ export class TreeRenderer implements BaseRenderer {
     this.zoom = undefined;
     this.svg = null;
   }
+}
+
+function fitExpandedChain(chain: ChainLink, links: EllipticalTreeLink[], width: number, height: number): d3.ZoomTransform {
+  const byTarget = new Map(links.map(link => [link.target.data.id, link]));
+  const ancestor = chain.source.depth === 1 ? byTarget.get(chain.source.data.id)?.source : undefined;
+  const start = ancestor ?? chain.source;
+  let minX = Math.min(start.x, chain.source.x, chain.x);
+  let maxX = Math.max(start.x, chain.source.x, chain.x);
+  let minY = Math.min(start.y, chain.source.y, chain.y);
+  let maxY = Math.max(start.y, chain.source.y, chain.y);
+  for (let link = byTarget.get(chain.fold.endpointId); link; link = byTarget.get(link.source.data.id)) {
+    minX = Math.min(minX, link.target.x);
+    maxX = Math.max(maxX, link.target.x);
+    minY = Math.min(minY, link.target.y);
+    maxY = Math.max(maxY, link.target.y);
+    if (link === chain) break;
+  }
+  // Reserve space for node labels and keep the chain clear of graph controls.
+  const top = 54;
+  const bottom = 88;
+  const scale = Math.min(1, Math.max(1, width - 80) / (maxX - minX + 140),
+    Math.max(1, height - top - bottom) / (maxY - minY + 92));
+  return d3.zoomIdentity
+    .translate(width / 2 - (minX + maxX) * scale / 2, (height + top - bottom) / 2 - (minY + maxY) * scale / 2)
+    .scale(scale);
 }
 
 function drawNodes(
