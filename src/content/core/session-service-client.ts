@@ -17,7 +17,8 @@ export class SessionServiceClient {
   private static instance: SessionServiceClient | null = null;
   private sessionList: SessionMetadata[] = [];
   private currentSession: SessionDetails | null = null;
-  private currentSessionId: string | null = localStorage.getItem('navigraph_current_session');
+  private currentSessionId: string | null = null;
+  private followsLatestSession = true;
   private latestSession: SessionMetadata | null = null;
   private generation = 0;
   private pendingListRequest: Promise<SessionMetadata[]> | null = null;
@@ -50,8 +51,7 @@ export class SessionServiceClient {
     try { return await this.pendingListRequest; } finally { this.pendingListRequest = null; }
   }
 
-  async loadSession(sessionId: string): Promise<SessionDetails | null> {
-    if (sessionId !== this.currentSessionId) { this.requestedPage = 0; this.requestedEdgePage = 0; }
+  private async loadSession(sessionId: string): Promise<SessionDetails | null> {
     this.setCurrentSessionId(sessionId);
     return this.loadPage();
   }
@@ -89,7 +89,7 @@ export class SessionServiceClient {
     }
   }
 
-  async loadLatestSession(): Promise<SessionMetadata | null> {
+  private async loadLatestSession(): Promise<SessionMetadata | null> {
     const response = await sendMessage('getLatestSession');
     if (!response?.success) throw new Error(response?.error || 'Latest session unavailable');
     this.latestSession = response.session || null;
@@ -100,23 +100,33 @@ export class SessionServiceClient {
   getLatestSession(): SessionMetadata | null { return this.latestSession; }
 
   async loadCurrentSession(): Promise<SessionDetails | null> {
-    if (this.currentSessionId && this.sessionList.some(session => session.id === this.currentSessionId)) return this.loadPage();
     const generation = ++this.generation;
     const latest = await this.loadLatestSession();
     if (generation !== this.generation) return this.currentSession;
-    const id = latest?.id || this.sessionList[0]?.id;
-    if (id) return this.loadSession(id);
+    if (!this.followsLatestSession && this.sessionList.some(session => session.id === this.currentSessionId)) {
+      return this.loadPage();
+    }
+
+    this.followsLatestSession = true;
+    // 活跃会话刚创建时，先显示最近一个已有记录的会话。
+    const latestWithRecords = latest?.nodeCount
+      ? latest
+      : this.sessionList.find(session => (session.nodeCount ?? 0) > 0);
+    const session = latestWithRecords ?? latest ?? this.sessionList[0];
+    if (session) return this.loadSession(session.id);
+
     this.setCurrentSessionId(null); this.currentSession = null; this.pageInfo = null;
     nodeManager.processPageData([], []);
     for (const listener of this.sessionLoadListeners) listener(null);
     return null;
   }
-  async switchSession(sessionId: string): Promise<SessionDetails | null> { return this.loadSession(sessionId); }
-  setCurrentSessionId(sessionId: string | null): void {
+  async switchSession(sessionId: string): Promise<SessionDetails | null> {
+    this.followsLatestSession = false;
+    return this.loadSession(sessionId);
+  }
+  private setCurrentSessionId(sessionId: string | null): void {
     if (sessionId !== this.currentSessionId) { this.generation++; this.requestedPage = 0; this.requestedEdgePage = 0; }
     this.currentSessionId = sessionId;
-    if (sessionId) localStorage.setItem('navigraph_current_session', sessionId);
-    else localStorage.removeItem('navigraph_current_session');
   }
   getSessionList(): SessionMetadata[] { return this.sessionList; }
   getCurrentSession(): SessionDetails | null { return this.currentSession; }

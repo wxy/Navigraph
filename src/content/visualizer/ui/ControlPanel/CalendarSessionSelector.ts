@@ -780,7 +780,7 @@ export class CalendarSessionSelector {
     this.selectedSessionId = sessionId;
     
     // 调用会话服务加载选中会话
-    sessionServiceClient.loadSession(sessionId)
+    sessionServiceClient.switchSession(sessionId)
       .then(() => {
         logger.log(_('calendar_session_selected', '会话已选择: {0}'), sessionId);
         this.renderCalendarDays(); // 更新选中状态
