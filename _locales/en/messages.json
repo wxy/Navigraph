@@ -5285,5 +5285,20 @@
   },
   "content_unknown_time": {
     "message": "Unknown time"
+  },
+  "tree_chain_expand": {
+    "message": "Expand {0} intermediate pages"
+  },
+  "tree_chain_collapse": {
+    "message": "Collapse {0} intermediate pages"
+  },
+  "tree_visible_level": {
+    "message": "Visible level {0}"
+  },
+  "tree_original_level": {
+    "message": "Level {0} before folding"
+  },
+  "tree_continues_outside_page": {
+    "message": "The parent page is outside the current range"
   }
 }

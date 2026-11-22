@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "Seiteninformationen wurden nicht gespeichert. Prüfen Sie den Aufzeichnungsstatus."
+  },
+  "tree_chain_expand": {
+    "message": "{0} Zwischenseiten aufklappen"
+  },
+  "tree_chain_collapse": {
+    "message": "{0} Zwischenseiten einklappen"
+  },
+  "tree_visible_level": {
+    "message": "Sichtbare Ebene {0}"
+  },
+  "tree_original_level": {
+    "message": "Ebene {0} vor dem Einklappen"
+  },
+  "tree_continues_outside_page": {
+    "message": "Die übergeordnete Seite liegt außerhalb des aktuellen Bereichs"
   }
 }

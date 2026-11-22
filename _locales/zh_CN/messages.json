@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "页面信息未保存，请检查记录状态。"
+  },
+  "tree_chain_expand": {
+    "message": "展开 {0} 个中间页面"
+  },
+  "tree_chain_collapse": {
+    "message": "收起 {0} 个中间页面"
+  },
+  "tree_visible_level": {
+    "message": "可见第 {0} 层"
+  },
+  "tree_original_level": {
+    "message": "折叠前第 {0} 层"
+  },
+  "tree_continues_outside_page": {
+    "message": "上游页面不在当前范围"
   }
 }

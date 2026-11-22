@@ -329,30 +329,28 @@ function updateViewPreview(view: ViewType): void {
 
       previewContainer.innerHTML = svg;
     } else if (previewType === 'tree') {
-      // 左右平衡树：根节点在中间，左右对称展开，颜色分组
       const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
-          <rect x="0" y="0" width="240" height="140" fill="transparent" />
-          <!-- center root -->
-          <circle cx="120" cy="28" r="12" fill="#4a6ee0" stroke="#fff" stroke-width="2" />
-
-          <!-- left branch -->
-          <path d="M120 36 C100 46 88 62 68 76" stroke="#d0d7ef" stroke-width="2" fill="none" />
-          <circle cx="72" cy="78" r="10" fill="#ff6b6b" stroke="#fff" stroke-width="2" />
-          <path d="M72 88 C60 98 52 110 40 120" stroke="#e9eef8" stroke-width="1.5" fill="none" />
-          <circle cx="44" cy="120" r="7" fill="#fbbc05" stroke="#fff" stroke-width="1.5" />
-          <circle cx="56" cy="106" r="7" fill="#9b59b6" stroke="#fff" stroke-width="1.5" />
-
-          <!-- right branch (mirror) -->
-          <path d="M120 36 C140 46 152 62 172 76" stroke="#d0d7ef" stroke-width="2" fill="none" />
-          <circle cx="168" cy="78" r="10" fill="#34a853" stroke="#fff" stroke-width="2" />
-          <path d="M168 88 C180 98 188 110 200 120" stroke="#e9eef8" stroke-width="1.5" fill="none" />
-          <circle cx="196" cy="120" r="7" fill="#00aaff" stroke="#fff" stroke-width="1.5" />
-          <circle cx="184" cy="106" r="7" fill="#ff7f50" stroke="#fff" stroke-width="1.5" />
-
-          <!-- subtle connectors near root -->
-          <line x1="96" y1="48" x2="104" y2="56" stroke="#dfe8fb" stroke-width="1.5" />
-          <line x1="136" y1="56" x2="144" y2="48" stroke="#dfe8fb" stroke-width="1.5" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" width="100%" height="100%" aria-hidden="true">
+          <g fill="none" stroke="#b4bdd3" stroke-dasharray="3 4">
+            <ellipse cx="120" cy="70" rx="47" ry="24" />
+            <ellipse cx="120" cy="70" rx="92" ry="48" />
+          </g>
+          <g fill="none" stroke="#aab9dc" stroke-width="2">
+            <path d="M120 70 V46 Q112 35 88 25 M120 46 Q128 34 152 25" />
+            <path d="M120 70 H28 M120 70 H167 M120 70 V94" />
+          </g>
+          <circle cx="120" cy="70" r="11" fill="#4a6ee0" />
+          <g fill="#7aa2ff" stroke="#fff" stroke-width="1.5">
+            <circle cx="120" cy="46" r="7" />
+            <circle cx="167" cy="70" r="7" />
+            <circle cx="120" cy="94" r="7" />
+            <circle cx="73" cy="70" r="7" />
+            <circle cx="88" cy="25" r="6" />
+            <circle cx="152" cy="25" r="6" />
+            <circle cx="28" cy="70" r="6" />
+          </g>
+          <rect x="37" y="64" width="25" height="12" rx="6" fill="#fff" stroke="#aab9dc" />
+          <text x="49.5" y="73" font-size="8" text-anchor="middle" fill="#33415e">+4</text>
         </svg>
       `;
 

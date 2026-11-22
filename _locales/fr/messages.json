@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "Les informations de la page n’ont pas été enregistrées. Vérifiez l’état de l’enregistrement."
+  },
+  "tree_chain_expand": {
+    "message": "Déplier {0} pages intermédiaires"
+  },
+  "tree_chain_collapse": {
+    "message": "Replier {0} pages intermédiaires"
+  },
+  "tree_visible_level": {
+    "message": "Niveau visible {0}"
+  },
+  "tree_original_level": {
+    "message": "Niveau {0} avant le repli"
+  },
+  "tree_continues_outside_page": {
+    "message": "La page parente est hors de la plage actuelle"
   }
 }

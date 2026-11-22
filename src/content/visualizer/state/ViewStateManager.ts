@@ -20,10 +20,8 @@ export class ViewStateManager {
   private _svg: any = null;
   private _zoom: any = null;
   private _currentTransform?: { x: number; y: number; k: number };
-  private _isRestoringTransform: boolean = false;
   
   // 各视图的缩放状态
-  private _treeZoom: any = null;      // 树形视图的缩放状态
   private _waterfallZoom: any = null; // 瀑布视图的缩放状态（已废弃，保留兼容性）
   
   // 瀑布视图的观察窗口位置
@@ -154,9 +152,6 @@ export class ViewStateManager {
     logger.log(_('view_switching', '切换视图: {0} -> {1}'), previousView, view);
 
     try {
-      // 保存当前视图的缩放状态
-      this.saveCurrentViewState();
-      
       // 更新当前视图
       this._currentView = view;
 
@@ -176,55 +171,6 @@ export class ViewStateManager {
 
       // 恢复到先前的视图
       this._currentView = previousView;
-    }
-  }
-  
-  /**
-   * 保存当前视图状态
-   */
-  saveCurrentViewState(): void {
-    if (this._currentView === 'tree' && this._currentTransform) {
-      this._treeZoom = this._currentTransform;
-      logger.debug(_('tree_view_zoom_state_saved', '已保存树形视图缩放状态: {0}'), this._treeZoom);
-    }
-    // 瀑布视图不需要保存缩放状态，观察窗口索引由渲染器管理
-  }
-  
-  /**
-   * 恢复特定视图的变换状态
-   */
-  restoreViewState(): boolean {
-    // 只有树形视图需要恢复缩放状态
-    if (this._currentView === 'tree' && this._treeZoom && this._zoom) {
-      logger.log(_('view_zoom_state_restoring', '恢复{0}视图的缩放状态'), this._currentView);
-      this.applyTransform(this._treeZoom);
-      return true;
-    }
-    
-    // 瀑布视图不需要恢复缩放状态
-    return false;
-  }
-  
-  /**
-   * 应用变换状态
-   */
-  applyTransform(transform: any): void {
-    if (!transform || !this._svg || !this._zoom) {
-      logger.warn(_('content_transform_apply_failed_missing_components', '无法应用变换：缺少必要组件'));
-      return;
-    }
-
-    this._isRestoringTransform = true;
-
-    try {
-      this._svg.call(this._zoom.transform, transform);
-      setTimeout(() => {
-        this._isRestoringTransform = false;
-      }, 100);
-      logger.debug(_('transform_state_applied', '已应用变换状态'));
-    } catch (e) {
-      logger.warn(_('content_transform_apply_failed', '无法应用变换状态'), e);
-      this._isRestoringTransform = false;
     }
   }
   

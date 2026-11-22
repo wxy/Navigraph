@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "ページ情報を保存できませんでした。記録状態を確認してください。"
+  },
+  "tree_chain_expand": {
+    "message": "途中の {0} ページを展開"
+  },
+  "tree_chain_collapse": {
+    "message": "途中の {0} ページを折りたたむ"
+  },
+  "tree_visible_level": {
+    "message": "表示上の第 {0} 層"
+  },
+  "tree_original_level": {
+    "message": "折りたたみ前の第 {0} 層"
+  },
+  "tree_continues_outside_page": {
+    "message": "親ページは現在の表示範囲外です"
   }
 }

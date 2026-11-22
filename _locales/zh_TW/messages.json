@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "頁面資訊未儲存，請檢查記錄狀態。"
+  },
+  "tree_chain_expand": {
+    "message": "展開 {0} 個中間頁面"
+  },
+  "tree_chain_collapse": {
+    "message": "收合 {0} 個中間頁面"
+  },
+  "tree_visible_level": {
+    "message": "可見第 {0} 層"
+  },
+  "tree_original_level": {
+    "message": "摺疊前第 {0} 層"
+  },
+  "tree_continues_outside_page": {
+    "message": "上一層頁面不在目前範圍"
   }
 }

@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "페이지 정보가 저장되지 않았습니다. 기록 상태를 확인하세요."
+  },
+  "tree_chain_expand": {
+    "message": "중간 페이지 {0}개 펼치기"
+  },
+  "tree_chain_collapse": {
+    "message": "중간 페이지 {0}개 접기"
+  },
+  "tree_visible_level": {
+    "message": "표시 깊이 {0}"
+  },
+  "tree_original_level": {
+    "message": "접기 전 깊이 {0}"
+  },
+  "tree_continues_outside_page": {
+    "message": "상위 페이지가 현재 범위 밖에 있습니다"
   }
 }

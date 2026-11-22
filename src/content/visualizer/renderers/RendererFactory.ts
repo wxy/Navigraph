@@ -18,12 +18,12 @@ export class RendererFactory {
    * @param visualizer 可视化器实例
    * @returns 相应类型的渲染器
    */
-  static createRenderer(viewType: 'tree' | 'waterfall', visualizer: Visualizer): BaseRenderer {
+  static createRenderer(viewType: 'tree' | 'waterfall', visualizer: Visualizer, expandedTreeChains: Set<string>): BaseRenderer {
     logger.log(_('renderer_factory_create_renderer', '创建 {0} 渲染器'), viewType);
     
     switch (viewType) {
       case 'tree':
-        return new TreeRenderer(visualizer);
+        return new TreeRenderer(visualizer, expandedTreeChains);
       case 'waterfall':
         return new WaterfallRenderer(visualizer);
       default:

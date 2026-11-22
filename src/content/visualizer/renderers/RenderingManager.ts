@@ -26,7 +26,8 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
-  private restoreTimer?: ReturnType<typeof setTimeout>;
+  private expandedTreeChains = new Set<string>();
+  private treeSessionId?: string;
   private rangeControls: HTMLDivElement | null = null;
 
   
@@ -157,17 +158,21 @@ export class RenderingManager {
       const svg = this.viewStateManager.svg;
       svg.classed('motion-disabled', !animationsEnabled()).classed('hide-node-labels', !labelsEnabled());
       const currentSession = this.visualizer.currentSession;
+      const view = this.viewStateManager.currentView as 'tree' | 'waterfall';
+      if (this.treeSessionId !== currentSession?.id) {
+        this.expandedTreeChains.clear();
+        this.treeSessionId = currentSession?.id;
+      }
       const ids = new Set(this.visualizer.nodes.map(node => node.id));
-      // Only this rendering copy promotes page-external parents to roots; details retain the actual parentId.
+      // The tree uses the original parent ID to mark continuations beyond this page.
       const nodes = this.visualizer.nodes.map(node => ({ ...node,
-        parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
+        parentId: view === 'tree' || (node.parentId && ids.has(node.parentId)) ? node.parentId : '',
         timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
       const edges = this.visualizer.edges;
       this.updateRangeControls();
 
       this.currentRenderer?.cleanup();
       this.currentRenderer = null;
-      clearTimeout(this.restoreTimer);
       svg.interrupt();
       svg.selectAll('*').interrupt();
       // 清除现有可视化
@@ -194,8 +199,9 @@ export class RenderingManager {
       } else {
         // 使用渲染器工厂创建相应的渲染器
         const renderer = RendererFactory.createRenderer(
-          this.viewStateManager.currentView as 'tree' | 'waterfall',
-          this.visualizer
+          view,
+          this.visualizer,
+          this.expandedTreeChains
         );
         
         // 保存当前渲染器引用
@@ -213,14 +219,6 @@ export class RenderingManager {
         renderer.render(nodes, edges, {
           restoreTransform: options.restoreTransform
         });
-      }
-
-      // 在可视化渲染后，尝试恢复视图状态
-      if (options.restoreTransform) {
-        // 尝试恢复视图缩放状态
-        this.restoreTimer = setTimeout(() => {
-          this.viewStateManager.restoreViewState();
-        }, 50);
       }
 
       // 更新状态栏
@@ -568,7 +566,6 @@ export class RenderingManager {
    */
   cleanup(): void {
     logger.log(_('rendering_manager_cleanup', '正在清理渲染管理器资源'));
-    clearTimeout(this.restoreTimer);
     this.currentRenderer?.cleanup();
     this.currentRenderer = null;
     this.rangeControls?.remove();

@@ -5282,5 +5282,20 @@
   },
   "recording_metadata_not_saved": {
     "message": "Информация о странице не сохранена. Проверьте статус записи."
+  },
+  "tree_chain_expand": {
+    "message": "Развернуть промежуточные страницы ({0})"
+  },
+  "tree_chain_collapse": {
+    "message": "Свернуть промежуточные страницы ({0})"
+  },
+  "tree_visible_level": {
+    "message": "Видимый уровень {0}"
+  },
+  "tree_original_level": {
+    "message": "Уровень {0} до сворачивания"
+  },
+  "tree_continues_outside_page": {
+    "message": "Родительская страница вне текущего диапазона"
   }
 }

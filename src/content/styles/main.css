@@ -2054,6 +2054,55 @@ svg .node-label {
 
 /* Display preferences affect graph decoration, never axis/control text or hit targets. */
 .visualization-svg.hide-node-labels .node-title-label { display: none !important; }
+
+.tree-levels {
+  pointer-events: none;
+}
+
+.tree-level {
+  fill: none;
+  stroke: var(--svg-text);
+  stroke-opacity: 0.28;
+  stroke-width: 1px;
+  stroke-dasharray: 4 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.selected-tree-level {
+  stroke: var(--btn-primary, #4285f4);
+  stroke-opacity: 0.8;
+  stroke-width: 1.5px;
+}
+
+.link.tree-link-continuation {
+  stroke-dasharray: 4 5;
+  stroke-opacity: 0.5;
+}
+
+.tree-chain-toggle {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
+  margin: 3px 4px;
+  padding: 0;
+  border: 1px solid var(--svg-node-stroke);
+  border-radius: 999px;
+  background: var(--svg-background);
+  color: var(--svg-text);
+  font: 600 13px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.tree-chain-toggle:hover {
+  background: var(--svg-node-fill);
+  border-color: var(--btn-primary, #4285f4);
+}
+
+.tree-chain-toggle:focus-visible {
+  outline: 2px solid var(--svg-text);
+  outline-offset: 1px;
+}
 .visualization-svg.motion-disabled, .visualization-svg.motion-disabled * {
   animation: none !important;
   transition: none !important;
