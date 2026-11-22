@@ -331,9 +331,9 @@ function updateViewPreview(view: ViewType): void {
     } else if (previewType === 'tree') {
       const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" width="100%" height="100%" aria-hidden="true">
-          <g stroke="#b4bdd3" stroke-width=".5">
-            <ellipse cx="120" cy="70" rx="92" ry="48" fill="#f1eefb" />
-            <ellipse cx="120" cy="70" rx="47" ry="24" fill="#e3effa" />
+          <g fill="#4a6ee0" stroke="#b4bdd3" stroke-width=".5">
+            <ellipse cx="120" cy="70" rx="92" ry="48" fill-opacity=".05" />
+            <ellipse cx="120" cy="70" rx="47" ry="24" fill-opacity=".08" />
           </g>
           <g fill="none" stroke="#aab9dc" stroke-width="2">
             <path d="M120 70 H28 M120 70 Q142 70 157 55 M120 70 Q142 70 157 85" />

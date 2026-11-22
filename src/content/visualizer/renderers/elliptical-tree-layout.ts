@@ -36,7 +36,6 @@ interface Placement {
   arc: number;
   unitX: number;
   unitY: number;
-  radius: number;
 }
 
 export interface EllipticalTreeLink {
@@ -192,7 +191,7 @@ export function layoutEllipticalTree(
   verticalExtent += 0.5;
 
   const center: Placement = {
-    entry: root, arc: 0, radius: 0, unitX: 0, unitY: 0,
+    entry: root, arc: 0, unitX: 0, unitY: 0,
     node: { data: session, x: centerX, y: centerY, depth: 0, originalDepth: 0, continuesOutsidePage: false },
   };
   const positions: Placement[] = [center];
@@ -206,7 +205,7 @@ export function layoutEllipticalTree(
       const angle = angleAt(arc);
       const entry = node.data;
       const position: Placement = {
-        entry, parent: placed.get(node.parent), arc, radius: 0,
+        entry, parent: placed.get(node.parent), arc,
         unitX: unitX * Math.cos(angle), unitY: unitY * Math.sin(angle),
         node: {
           data: entry.data, x: centerX, y: centerY, depth: node.depth, originalDepth: entry.originalDepth,
@@ -232,7 +231,6 @@ export function layoutEllipticalTree(
       });
     }
     for (const position of level) {
-      position.radius = radius;
       position.node.x += position.unitX * radius;
       position.node.y += position.unitY * radius;
     }
@@ -243,19 +241,16 @@ export function layoutEllipticalTree(
   for (const target of positions) {
     const source = target.parent;
     if (!source) continue;
-    const middle = (source.radius + target.radius) / 2;
-    const start = source.node.depth === 0 ? target : source;
-    const firstX = centerX + start.unitX * middle;
-    const firstY = centerY + start.unitY * middle;
-    const secondX = centerX + target.unitX * middle;
-    const secondY = centerY + target.unitY * middle;
+    const { x: sourceX, y: sourceY } = source.node;
+    const { x: targetX, y: targetY } = target.node;
+    const midX = (sourceX + targetX) / 2;
     links.push({
       source: source.node,
       target: target.node,
-      path: `M${source.node.x},${source.node.y} C${firstX},${firstY} ${secondX},${secondY} ${target.node.x},${target.node.y}`,
+      path: `M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`,
       fold: target.entry.fold,
-      x: (source.node.x + 3 * (firstX + secondX) + target.node.x) / 8,
-      y: (source.node.y + 3 * (firstY + secondY) + target.node.y) / 8,
+      x: midX,
+      y: (sourceY + targetY) / 2,
     });
   }
   const fitScale = Math.min(1, viewWidth / (2 * radius * unitX + 108), viewHeight / (2 * radius * unitY + 86));

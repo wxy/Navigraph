@@ -125,16 +125,14 @@ export class TreeRenderer implements BaseRenderer {
       halo.attr('cx', layout.centerX).attr('cy', layout.centerY).attr('rx', outer.rx).attr('ry', outer.ry);
       const stops = layout.rings.flatMap((ring, index) => {
         const progress = index / Math.max(1, layout.rings.length - 1);
-        const hue = 200 + 62 * progress;
-        const strength = 1 - 0.55 * progress;
+        const strength = 1 - 0.6 * progress;
         const innerRadius = index === 0 ? 0 : layout.rings[index - 1].rx;
-        return [innerRadius, ring.rx].map(radius => ({ offset: radius / outer.rx, hue, strength }));
+        return [innerRadius, ring.rx].map(radius => ({ offset: radius / outer.rx, strength }));
       });
       gradient.selectAll<SVGStopElement, typeof stops[number]>('stop')
         .data(stops)
         .join('stop')
         .attr('offset', stop => stop.offset)
-        .style('--tree-level-hue', stop => String(stop.hue))
         .style('--tree-level-strength', stop => String(stop.strength));
       rings.selectAll<SVGEllipseElement, typeof layout.rings[number]>('ellipse.tree-level')
         .data(layout.rings, ring => ring.depth)

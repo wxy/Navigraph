@@ -2055,22 +2055,28 @@ svg .node-label {
 /* Display preferences affect graph decoration, never axis/control text or hit targets. */
 .visualization-svg.hide-node-labels .node-title-label { display: none !important; }
 
+.visualization-svg[data-view="tree"] .node-title-label {
+  stroke: none;
+}
+
+[data-theme="dark"] .visualization-svg[data-view="tree"] .link:is(.initial, .unknown) {
+  stroke: var(--label-color);
+}
+
 .tree-levels {
   pointer-events: none;
 }
 
 .tree-level-gradient {
-  --tree-halo-lightness: 52%;
-  --tree-halo-opacity: 0.17;
+  --tree-halo-opacity: 0.12;
 }
 
 [data-theme="dark"] .tree-level-gradient {
-  --tree-halo-lightness: 70%;
-  --tree-halo-opacity: 0.21;
+  --tree-halo-opacity: 0.19;
 }
 
 .tree-level-gradient stop {
-  stop-color: hsl(var(--tree-level-hue) 60% var(--tree-halo-lightness));
+  stop-color: var(--btn-primary, #4a6ee0);
   stop-opacity: calc(var(--tree-halo-opacity) * var(--tree-level-strength));
 }
 
