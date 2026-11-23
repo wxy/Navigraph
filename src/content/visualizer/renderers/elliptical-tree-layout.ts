@@ -1,10 +1,11 @@
 import type { ExtendedNavNode, NavLink, NavNode } from '../../types/navigation.js';
 
 const d3: typeof import('d3') = window.d3;
+const ROOT_RING_GAP = 128;
 const MIN_RING_GAP = 86;
 const MIN_FOLDED_PAGES = 3;
 const FULL_TURN = Math.PI * 2;
-const ROOT_BRANCH_HALF_TURN = Math.PI / 12;
+const ROOT_BRANCH_HALF_TURN = 2 * Math.PI / 9;
 const FORK_HALF_TURN_LIMIT = Math.PI / 3;
 
 interface ChainFold {
@@ -123,7 +124,6 @@ export function layoutEllipticalTree(
   }]));
   const visiting = new Set<TreeEntry>();
   let brokenCycles = 0;
-  let originalDepth = 0;
   function attach(entry: TreeEntry): void {
     if (entry.originalDepth > 0) return;
     visiting.add(entry);
@@ -133,7 +133,6 @@ export function layoutEllipticalTree(
     if (parent && !isCycle) attach(parent);
     const destination = parent && !isCycle ? parent : root;
     entry.originalDepth = destination.originalDepth + 1;
-    originalDepth = Math.max(originalDepth, entry.originalDepth);
     entry.continuesOutsidePage = Boolean(originalParent && !parent);
     entry.data.isRoot = destination === root;
     entry.data.isSelfLoop = parent === entry || entry.data.isSelfLoop;
@@ -225,7 +224,8 @@ export function layoutEllipticalTree(
 
   let radius = 0;
   const rings = levels.map((level, index) => {
-    radius += MIN_RING_GAP;
+    // Leave enough of the first arc visible outside the date and page circles.
+    radius += index === 0 ? ROOT_RING_GAP : MIN_RING_GAP;
     if (level.length > 1) {
       level.sort((a, b) => a.arc - b.arc);
       level.forEach((position, slot) => {
@@ -242,8 +242,11 @@ export function layoutEllipticalTree(
     return { depth: index + 1, rx: radius * unitX, ry: radius * unitY };
   });
 
-  // Use the original depth so expanding a chain can reveal more of the same arc.
-  const reach = Math.max(radius, originalDepth * MIN_RING_GAP) * Math.max(unitX, unitY);
+  const reachBySide = new Map(sides.map(({ direction, tree }) => {
+    const ring = rings[tree.height - 1];
+    return [direction, Math.max(ring.rx, ring.ry)] as const;
+  }));
+  const lowerRootBySide = new Map<number, { inclination: number; departure: number }>();
   const links: EllipticalTreeLink[] = [];
   function drawBranch(source: Placement, first: Placement, incomingDirection?: number): void {
     const branch = [first];
@@ -265,11 +268,48 @@ export function layoutEllipticalTree(
     let halfTurn: number;
     let bearing: number;
     if (incomingDirection === undefined) {
-      // Pass through the original first-level position and bow towards the top of each side.
-      const room = Math.atan2(Math.abs(dx), Math.abs(dy));
-      halfTurn = -side * Math.min(ROOT_BRANCH_HALF_TURN, room / 2);
-      arcRadius = reach / (2 * Math.abs(Math.sin(halfTurn)));
-      bearing = chordAngle - Math.sign(halfTurn) * Math.asin(chord / (2 * arcRadius));
+      // Size the arc to the visible half of the tree, including when a long chain is folded.
+      const reach = reachBySide.get(side)!;
+      const firstFraction = chord / reach;
+      const inclination = Math.atan2(dy, Math.abs(dx));
+      const poleMargin = (Math.PI / 2 - Math.abs(inclination)) / 3;
+      const startRoom = Math.PI / 2 - poleMargin - inclination;
+      const endRoom = Math.PI / 2 - poleMargin + inclination;
+      // Constrain the bearings at the root and at maximum reach to stay inside this half.
+      const beforeFirst = Math.asin(Math.min(1, Math.sin(Math.min(startRoom, Math.PI / 2)) / firstFraction));
+      const afterFirst = Math.atan2(Math.sin(endRoom), Math.cos(endRoom) - firstFraction);
+      const turnLimit = Math.min(ROOT_BRANCH_HALF_TURN, beforeFirst, afterFirst);
+      arcRadius = reach / (2 * Math.sin(turnLimit));
+      for (const target of branch.slice(1)) {
+        const level = target.node.depth - 1;
+        let clearance = Infinity;
+        for (const neighbor of levels[level]) {
+          if (neighbor.unitX * side <= 0) continue;
+          const angle = Math.atan2(neighbor.unitY, Math.abs(neighbor.unitX));
+          if (angle < inclination) clearance = Math.min(clearance, inclination - angle);
+        }
+        if (!Number.isFinite(clearance)) continue;
+        // Keep the moved node near its original angular slot when a branch is above it.
+        const turn = clearance / 8;
+        const angle = inclination - turn;
+        const x = side * Math.cos(angle);
+        const y = Math.sin(angle);
+        const ring = rings[level];
+        const distance = 1 / Math.hypot(x / ring.rx, y / ring.ry);
+        const across = Math.hypot(distance * x - dx, distance * y - dy);
+        arcRadius = Math.max(arcRadius, across / (2 * Math.sin(turn)));
+      }
+      const lower = lowerRootBySide.get(side);
+      if (lower) {
+        // Keep the departure bearings in the same order as the first-level nodes.
+        const gap = (lower.inclination - inclination) / 4;
+        const limit = Math.min(ROOT_BRANCH_HALF_TURN, lower.departure - inclination - gap);
+        arcRadius = Math.max(arcRadius, chord / (2 * Math.sin(limit)));
+      }
+      const firstTurn = Math.asin(chord / (2 * arcRadius));
+      lowerRootBySide.set(side, { inclination, departure: inclination + firstTurn });
+      halfTurn = -side * Math.asin(reach / (2 * arcRadius));
+      bearing = chordAngle + side * firstTurn;
     } else {
       const delta = chordAngle - incomingDirection;
       const turn = Math.atan2(Math.sin(delta), Math.cos(delta));
@@ -331,6 +371,8 @@ export function layoutEllipticalTree(
       }
     });
   }
+  // Process each side from bottom to top so each root arc can respect its lower neighbor.
+  center.children.sort((a, b) => Math.atan2(b.unitY, Math.abs(b.unitX)) - Math.atan2(a.unitY, Math.abs(a.unitX)));
   for (const child of center.children) drawBranch(center, child);
   const fitScale = Math.min(1, viewWidth / (2 * radius * unitX + 108), viewHeight / (2 * radius * unitY + 86));
   return { nodes: positions.map(position => position.node), links, rings, centerX, centerY, fitScale, brokenCycles };
