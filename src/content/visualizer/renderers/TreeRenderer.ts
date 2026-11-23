@@ -6,7 +6,7 @@ import { animationDuration, labelsEnabled } from '../../utils/display-settings.j
 import { getViewState, saveViewState } from '../../utils/state-manager.js';
 import { isTrackingPage } from '../../utils/visualization-utils.js';
 import type { BaseRenderer } from './BaseRenderer.js';
-import { layoutEllipticalTree } from './elliptical-tree-layout.js';
+import { layoutEllipticalTree, treeNodeTitle } from './elliptical-tree-layout.js';
 import type { EllipticalTreeLink, EllipticalTreeNode } from './elliptical-tree-layout.js';
 
 const d3: typeof import('d3') = window.d3;
@@ -14,6 +14,7 @@ const logger = new Logger('TreeRenderer');
 const SESSION_ROOT = 'session-root';
 const VIEW_STATE = 'balanced-elliptical-tree';
 const HALO_ID = 'tree-level-halo-gradient';
+const FOLD_BUTTON_OFFSET = 26;
 
 type TreeTransform = Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>;
 type ChainLink = EllipticalTreeLink & { fold: NonNullable<EllipticalTreeLink['fold']> };
@@ -68,7 +69,7 @@ export class TreeRenderer implements BaseRenderer {
 
     const tabId = visualizer.tabId || '';
     const pageIndex = visualizer.pageInfo?.page ?? 0;
-    const layoutScope = `${currentSession?.id ?? ''}:${pageIndex}:${width}x${height}`;
+    const layoutScope = `v2:${currentSession?.id ?? ''}:${pageIndex}:${width}x${height}`;
     const saved = getViewState(tabId, VIEW_STATE);
     const stored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
     const restored = stored && Number.isFinite(stored.x) && Number.isFinite(stored.y) && Number.isFinite(stored.k) && stored.k > 0
@@ -84,15 +85,14 @@ export class TreeRenderer implements BaseRenderer {
       visualizer.currentTransform = transform;
       const scale = transform.k;
       updateLabels(scale);
+      const buttonScale = (link: ChainLink) => link === activeChain ? Math.max(1, 0.9 / scale) : 1;
       folds.selectAll<SVGForeignObjectElement, ChainLink>('foreignObject').attr('transform', link => {
-        if (link !== activeChain || scale >= 0.9) return null;
-        const horizontal = Math.abs(link.target.x - link.source.x) >= Math.abs(link.target.y - link.source.y);
-        const offset = 24 / scale;
-        // Keep the active collapse button usable beside the link at low zoom.
-        const x = link.x - (horizontal ? 0 : offset);
-        const y = link.y - (horizontal ? offset : 0);
-        return `translate(${x},${y}) scale(${0.9 / scale}) translate(${-link.x},${-link.y})`;
+        const factor = buttonScale(link);
+        const y = link.y - FOLD_BUTTON_OFFSET * factor;
+        return `translate(${link.x},${y}) scale(${factor}) translate(${-link.x},${-link.y})`;
       });
+      folds.selectAll<SVGLineElement, ChainLink>('line')
+        .attr('y2', link => link.y - (FOLD_BUTTON_OFFSET - 15) * buttonScale(link));
       visualizer.updateStatusBar();
     };
     const zoom: d3.ZoomBehavior<SVGSVGElement, unknown> = d3.zoom();
@@ -161,6 +161,12 @@ export class TreeRenderer implements BaseRenderer {
       const byFoldId = new Map(foldedLinks.map(link => [link.fold.id, link]));
       const activeId = Array.from(expandedChains).reverse().find(id => byFoldId.has(id));
       activeChain = activeId === undefined ? undefined : byFoldId.get(activeId);
+      folds.selectAll<SVGLineElement, ChainLink>('line')
+        .data(foldedLinks, link => link.fold.id)
+        .join(enter => enter.insert('line', ':first-child').attr('class', 'tree-chain-guide'))
+        .attr('x1', link => link.x)
+        .attr('x2', link => link.x)
+        .attr('y1', link => link.y);
       const controls = folds.selectAll<SVGForeignObjectElement, ChainLink>('foreignObject')
         .data(foldedLinks, link => link.fold.id)
         .join(enter => enter.append('foreignObject')
@@ -317,10 +323,7 @@ function drawNodes(
     });
 
   pages.append('text').attr('class', 'node-title-label').attr('dy', 35)
-    .text(({ data }) => {
-      const title = data.title || '';
-      return title.length > 15 ? title.substring(0, 12) + '...' : title;
-    });
+    .text(({ data }) => treeNodeTitle(data));
 
   pages.filter(node => !!node.data.hasFilteredChildren)
     .append('circle').attr('r', 6).attr('cx', 18).attr('cy', -18).attr('class', 'filtered-indicator')

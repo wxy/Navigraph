@@ -331,26 +331,31 @@ function updateViewPreview(view: ViewType): void {
     } else if (previewType === 'tree') {
       const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" width="100%" height="100%" aria-hidden="true">
+          <defs>
+            <g id="tree-preview-branch">
+              <path d="M0 0 C8 -13 20 -17 32.5 -17.7 M32.5 -17.7 C39 -30 50 -36 63 -36 M32.5 -17.7 C38 -12 58 -12 91 -12"
+                fill="none" stroke="#aab9dc" stroke-width="2" />
+              <g fill="#7aa2ff" stroke="#fff" stroke-width="1.5">
+                <circle cx="32.5" cy="-17.7" r="5.5" />
+                <circle cx="63" cy="-36" r="5" />
+                <circle cx="91" cy="-12" r="5" />
+              </g>
+            </g>
+          </defs>
           <g fill="#4a6ee0" stroke="#b4bdd3" stroke-width=".5">
             <ellipse cx="120" cy="70" rx="92" ry="48" fill-opacity=".05" />
             <ellipse cx="120" cy="70" rx="47" ry="24" fill-opacity=".08" />
           </g>
-          <g fill="none" stroke="#aab9dc" stroke-width="2">
-            <path d="M120 70 H28 M120 70 Q142 70 157 55 M120 70 Q142 70 157 85" />
-            <path d="M157 55 Q170 51 185 36 M157 55 Q181 55 211 62 M157 85 Q170 89 185 104" />
+          <g transform="translate(120 70)">
+            <use href="#tree-preview-branch" />
+            <use href="#tree-preview-branch" transform="scale(-1 1)" />
+            <use href="#tree-preview-branch" transform="scale(1 -1)" />
+            <use href="#tree-preview-branch" transform="scale(-1 -1)" />
           </g>
           <circle cx="120" cy="70" r="11" fill="#4a6ee0" />
-          <g fill="#7aa2ff" stroke="#fff" stroke-width="1.5">
-            <circle cx="73" cy="70" r="7" />
-            <circle cx="28" cy="70" r="6" />
-            <circle cx="157" cy="55" r="7" />
-            <circle cx="157" cy="85" r="7" />
-            <circle cx="185" cy="36" r="6" />
-            <circle cx="211" cy="62" r="6" />
-            <circle cx="185" cy="104" r="6" />
-          </g>
-          <rect x="37" y="64" width="25" height="12" rx="6" fill="#fff" stroke="#aab9dc" />
-          <text x="49.5" y="73" font-size="8" text-anchor="middle" fill="#33415e">+4</text>
+          <path d="M173.5 48 V54" stroke="#aab9dc" />
+          <rect x="161" y="36" width="25" height="12" rx="6" fill="#fff" stroke="#aab9dc" />
+          <text x="173.5" y="45" font-size="8" text-anchor="middle" fill="#33415e">+4</text>
         </svg>
       `;
 

@@ -2099,6 +2099,12 @@ svg .node-label {
   stroke-opacity: 0.5;
 }
 
+.tree-chain-guide {
+  stroke: var(--svg-text);
+  stroke-opacity: .38;
+  pointer-events: none;
+}
+
 .tree-chain-toggle {
   display: grid;
   place-items: center;
