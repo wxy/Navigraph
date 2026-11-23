@@ -4,6 +4,8 @@ const d3: typeof import('d3') = window.d3;
 const MIN_RING_GAP = 86;
 const MIN_FOLDED_PAGES = 3;
 const FULL_TURN = Math.PI * 2;
+const ROOT_BRANCH_HALF_TURN = Math.PI / 12;
+const FORK_HALF_TURN_LIMIT = Math.PI / 3;
 
 interface ChainFold {
   id: string;
@@ -32,7 +34,7 @@ export interface EllipticalTreeNode {
 interface Placement {
   entry: TreeEntry;
   node: EllipticalTreeNode;
-  parent?: Placement;
+  children: Placement[];
   arc: number;
   unitX: number;
   unitY: number;
@@ -121,6 +123,7 @@ export function layoutEllipticalTree(
   }]));
   const visiting = new Set<TreeEntry>();
   let brokenCycles = 0;
+  let originalDepth = 0;
   function attach(entry: TreeEntry): void {
     if (entry.originalDepth > 0) return;
     visiting.add(entry);
@@ -130,6 +133,7 @@ export function layoutEllipticalTree(
     if (parent && !isCycle) attach(parent);
     const destination = parent && !isCycle ? parent : root;
     entry.originalDepth = destination.originalDepth + 1;
+    originalDepth = Math.max(originalDepth, entry.originalDepth);
     entry.continuesOutsidePage = Boolean(originalParent && !parent);
     entry.data.isRoot = destination === root;
     entry.data.isSelfLoop = parent === entry || entry.data.isSelfLoop;
@@ -191,7 +195,7 @@ export function layoutEllipticalTree(
   verticalExtent += 0.5;
 
   const center: Placement = {
-    entry: root, arc: 0, unitX: 0, unitY: 0,
+    entry: root, children: [], arc: 0, unitX: 0, unitY: 0,
     node: { data: session, x: centerX, y: centerY, depth: 0, originalDepth: 0, continuesOutsidePage: false },
   };
   const positions: Placement[] = [center];
@@ -205,13 +209,14 @@ export function layoutEllipticalTree(
       const angle = angleAt(arc);
       const entry = node.data;
       const position: Placement = {
-        entry, parent: placed.get(node.parent), arc,
+        entry, children: [], arc,
         unitX: unitX * Math.cos(angle), unitY: unitY * Math.sin(angle),
         node: {
           data: entry.data, x: centerX, y: centerY, depth: node.depth, originalDepth: entry.originalDepth,
           continuesOutsidePage: entry.continuesOutsidePage,
         },
       };
+      placed.get(node.parent)!.children.push(position);
       placed.set(node, position);
       positions.push(position);
       (levels[node.depth - 1] ??= []).push(position);
@@ -237,38 +242,96 @@ export function layoutEllipticalTree(
     return { depth: index + 1, rx: radius * unitX, ry: radius * unitY };
   });
 
+  // Use the original depth so expanding a chain can reveal more of the same arc.
+  const reach = Math.max(radius, originalDepth * MIN_RING_GAP) * Math.max(unitX, unitY);
   const links: EllipticalTreeLink[] = [];
-  for (const target of positions) {
-    const source = target.parent;
-    if (!source) continue;
-    const { x: sourceX, y: sourceY } = source.node;
-    const { x: targetX, y: targetY } = target.node;
-    let firstX = (sourceX + targetX) / 2;
-    let firstY = sourceY;
-    let secondX = firstX;
-    let secondY = targetY;
-    if (source.parent) {
-      const previous = source.parent.node;
-      const incomingX = sourceX - previous.x;
-      const incomingY = previous.depth === 0 ? 0 : sourceY - previous.y;
-      const dx = targetX - sourceX;
-      const dy = targetY - sourceY;
-      const handleScale = Math.hypot(dx, dy) / (3 * Math.hypot(incomingX, incomingY));
-      // Continue the incoming tangent and let aligned links follow one line.
-      firstX = sourceX + incomingX * handleScale;
-      firstY = sourceY + incomingY * handleScale;
-      secondX = targetX - dx / 3;
-      secondY = targetY - dy / 3;
+  function drawBranch(source: Placement, first: Placement, incomingDirection?: number): void {
+    const branch = [first];
+    let tip = first;
+    while (true) {
+      const continuation = tip.children.find(child => child.arc === tip.arc);
+      if (!continuation) break;
+      branch.push(continuation);
+      tip = continuation;
     }
-    links.push({
-      source: source.node,
-      target: target.node,
-      path: `M${sourceX},${sourceY} C${firstX},${firstY} ${secondX},${secondY} ${targetX},${targetY}`,
-      fold: target.entry.fold,
-      x: (sourceX + 3 * (firstX + secondX) + targetX) / 8,
-      y: (sourceY + 3 * (firstY + secondY) + targetY) / 8,
+
+    const anchor = incomingDirection === undefined ? first.node : tip.node;
+    const dx = anchor.x - source.node.x;
+    const dy = anchor.y - source.node.y;
+    const chord = Math.hypot(dx, dy);
+    const chordAngle = Math.atan2(dy, dx);
+    const side = anchor.x > centerX ? 1 : -1;
+    let arcRadius: number;
+    let halfTurn: number;
+    let bearing: number;
+    if (incomingDirection === undefined) {
+      // Pass through the original first-level position and bow towards the top of each side.
+      const room = Math.atan2(Math.abs(dx), Math.abs(dy));
+      halfTurn = -side * Math.min(ROOT_BRANCH_HALF_TURN, room / 2);
+      arcRadius = reach / (2 * Math.abs(Math.sin(halfTurn)));
+      bearing = chordAngle - Math.sign(halfTurn) * Math.asin(chord / (2 * arcRadius));
+    } else {
+      const delta = chordAngle - incomingDirection;
+      const turn = Math.atan2(Math.sin(delta), Math.cos(delta));
+      const sign = Math.sign(turn) || -side;
+      let limit = FORK_HALF_TURN_LIMIT;
+      if (branch.length > 1) {
+        // Bound the bow to one eighth of the ring gap when the arc moves intermediate nodes.
+        limit = Math.min(limit, 2 * Math.atan(MIN_RING_GAP / (4 * chord)));
+      }
+      if (side * sign * Math.sin(chordAngle) < 0) {
+        // Keep the inward bow of a fork within the same half of the graph.
+        const clearance = Math.min(Math.abs(source.node.x - centerX), Math.abs(anchor.x - centerX));
+        limit = Math.min(limit, 2 * Math.atan(2 * clearance / Math.abs(dy)));
+      }
+      halfTurn = sign * Math.min(limit, Math.max(Math.abs(turn), Math.PI / 180));
+      arcRadius = chord / (2 * Math.abs(Math.sin(halfTurn)));
+      bearing = chordAngle - halfTurn;
+    }
+
+    const pointAt = (progress: number) => {
+      const turn = halfTurn * progress;
+      const distance = 2 * arcRadius * Math.abs(Math.sin(turn));
+      return {
+        x: source.node.x + distance * Math.cos(bearing + turn),
+        y: source.node.y + distance * Math.sin(bearing + turn),
+      };
+    };
+    const sweep = halfTurn > 0 ? 1 : 0;
+    let progress = 0;
+    let previous = source;
+    branch.forEach((target, index) => {
+      const start = progress;
+      if (target.node === anchor) {
+        progress = incomingDirection === undefined ? Math.asin(chord / (2 * arcRadius)) / Math.abs(halfTurn) : 1;
+      } else {
+        // Intersect the shared arc with this node's level ellipse.
+        const ring = rings[target.node.depth - 1];
+        let low = start;
+        let high = 1;
+        for (let step = 0; step < 28; step++) {
+          progress = (low + high) / 2;
+          const point = pointAt(progress);
+          const distance = Math.hypot((point.x - centerX) / ring.rx, (point.y - centerY) / ring.ry);
+          if (distance < 1) low = progress;
+          else high = progress;
+        }
+        Object.assign(target.node, pointAt(progress));
+      }
+      links.push({
+        source: previous.node,
+        target: target.node,
+        path: `M${previous.node.x},${previous.node.y} A${arcRadius},${arcRadius} 0 0 ${sweep} ${target.node.x},${target.node.y}`,
+        fold: target.entry.fold,
+        ...pointAt((start + progress) / 2),
+      });
+      previous = target;
+      for (const child of target.children) {
+        if (child !== branch[index + 1]) drawBranch(target, child, bearing + 2 * halfTurn * progress);
+      }
     });
   }
+  for (const child of center.children) drawBranch(center, child);
   const fitScale = Math.min(1, viewWidth / (2 * radius * unitX + 108), viewHeight / (2 * radius * unitY + 86));
   return { nodes: positions.map(position => position.node), links, rings, centerX, centerY, fitScale, brokenCycles };
 }
