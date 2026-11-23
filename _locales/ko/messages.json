@@ -3719,6 +3719,18 @@
     "message": "노드: {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "필터 복원",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "실제 크기",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "전체 보기",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "숨김: {0}",
     "description": "已隐藏节点数量状态项"
@@ -5282,5 +5294,44 @@
   },
   "recording_metadata_not_saved": {
     "message": "페이지 정보가 저장되지 않았습니다. 기록 상태를 확인하세요."
+  },
+  "tree_day_density": {
+    "message": "창 크기에 맞춰 그룹화",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "다른 기록을 보려면 그룹 하나를 먼저 접으세요.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
+  "tree_day_collapse": {
+    "message": "가지 접기",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "새로고침 {0}회",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "기록 {0}개 펼치기",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "이 날짜의 최신 기록 {0}개",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
+  "tree_chain_expand": {
+    "message": "중간 페이지 {0}개 펼치기"
+  },
+  "tree_chain_collapse": {
+    "message": "중간 페이지 {0}개 접기"
+  },
+  "tree_visible_level": {
+    "message": "표시 깊이 {0}"
+  },
+  "tree_original_level": {
+    "message": "접기 전 깊이 {0}"
+  },
+  "tree_continues_outside_page": {
+    "message": "상위 페이지가 현재 범위 밖에 있습니다"
   }
 }

@@ -23,6 +23,7 @@ const logger = new Logger('FilterManager');
  */
 export class FilterManager {
   private filterConfigs: FilterConfig[] = getInitialFilters();
+  private previousFilters: FilterConfig[] | null = null;
   private dataProcessor: DataProcessor;
   private uiManager: UIManager;
   private visualizer: NavigationVisualizer;
@@ -64,6 +65,7 @@ export class FilterManager {
    */
   /** History entries without filters restore defaults rather than retaining the previous entry. */
   restoreFromUrl(): void {
+    this.previousFilters = null;
     this.filterConfigs = getInitialFilters();
     this.loadFilterConfigFromUrl();
     this.updateFilterUI();
@@ -152,6 +154,7 @@ export class FilterManager {
    */
   handleFilterChange(filterId: string, checked: boolean): void {
     // 更新筛选器
+    this.previousFilters = null;
     this.updateFilter(filterId, checked);
     
     // 查找对应的筛选器配置用于日志记录
@@ -163,6 +166,24 @@ export class FilterManager {
     // 触发可视化刷新
     void this.visualizer.loadGraphPage(0).catch(error => this.uiManager.showError(String(error)));
   }
+
+  get canRestoreFilters(): boolean {
+    return this.previousFilters !== null;
+  }
+
+  toggleHiddenNodes(): void {
+    if (this.previousFilters) {
+      this.filterConfigs = this.previousFilters;
+      this.previousFilters = null;
+    } else {
+      const info = this.visualizer.graphCounts;
+      if (!info || info.matched === info.total) return;
+      this.previousFilters = this.filterConfigs;
+      this.filterConfigs = this.filterConfigs.map(filter => ({ ...filter, enabled: true }));
+    }
+    this.updateFilterUI();
+    void this.visualizer.loadGraphPage(0).catch(error => this.uiManager.showError(String(error)));
+  }
   
   /**
    * 重置所有筛选器为默认值
@@ -171,6 +192,7 @@ export class FilterManager {
     logger.log(_('filter_reset_start', '重置所有筛选器...'));
     
     // 重置为初始配置
+    this.previousFilters = null;
     this.filterConfigs = getInitialFilters();
     
     // 更新UI

@@ -3719,6 +3719,18 @@
     "message": "Nœud : {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "Rétablir les filtres",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "Taille réelle",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "Vue d’ensemble",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "Masqué : {0}",
     "description": "已隐藏节点数量状态项"
@@ -5282,5 +5294,44 @@
   },
   "recording_metadata_not_saved": {
     "message": "Les informations de la page n’ont pas été enregistrées. Vérifiez l’état de l’enregistrement."
+  },
+  "tree_day_density": {
+    "message": "Regroupement adapté à la fenêtre",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "Repliez un groupe pour afficher d’autres entrées.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
+  "tree_day_collapse": {
+    "message": "Replier la branche",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "{0} actualisations",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "Afficher {0} entrées",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "{0} entrées les plus récentes du jour",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
+  "tree_chain_expand": {
+    "message": "Déplier {0} pages intermédiaires"
+  },
+  "tree_chain_collapse": {
+    "message": "Replier {0} pages intermédiaires"
+  },
+  "tree_visible_level": {
+    "message": "Niveau visible {0}"
+  },
+  "tree_original_level": {
+    "message": "Niveau {0} avant le repli"
+  },
+  "tree_continues_outside_page": {
+    "message": "La page parente est hors de la plage actuelle"
   }
 }

@@ -217,12 +217,12 @@ export class ThemeManager {
         }
       });
 
-      // 更新连接线颜色
-      const links = svg.querySelectorAll(".link");
-      links.forEach((link) => {
-        (link as SVGElement).style.stroke =
-          theme === "dark" ? "var(--svg-link)" : "var(--svg-link)";
-      });
+      // 树形图的连线颜色随导航类型和主题样式变化。
+      if (svg.dataset.view !== "tree") {
+        svg.querySelectorAll<SVGElement>(".link").forEach((link) => {
+          link.style.stroke = "var(--svg-link)";
+        });
+      }
 
       // 更新文本颜色
       const texts = svg.querySelectorAll("text");

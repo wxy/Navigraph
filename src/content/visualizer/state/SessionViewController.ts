@@ -46,8 +46,8 @@ export class SessionViewController {
       }
       
       // 订阅会话加载事件
-      sessionServiceClient.onSessionLoaded((session) => 
-        this.handleSessionLoaded(session)
+      sessionServiceClient.onSessionLoaded((session, fitToView) =>
+        this.handleSessionLoaded(session, fitToView)
       );
       sessionServiceClient.onSessionsListLoaded((sessionList) => 
         this.handleSessionListLoaded(sessionList)
@@ -57,7 +57,8 @@ export class SessionViewController {
       await this.loadSessionList();
       
       // 加载当前会话
-      await this.loadCurrentSession();
+      if (this.visualizer.currentView === 'tree') await this.visualizer.loadTreeDay();
+      else await this.loadCurrentSession();
 
       // 获取最新会话ID (不需要单独加载，仅获取ID用于视觉区分)
       await sessionServiceClient.loadLatestSession();
@@ -174,7 +175,7 @@ export class SessionViewController {
   /**
    * 处理会话加载
    */
-  handleSessionLoaded(session: SessionDetails | null): void {
+  handleSessionLoaded(session: SessionDetails | null, fitToView = false): void {
     // 防止递归调用
     if (this.isHandlingSessionLoaded) {
       logger.debug(_('session_load_handling_in_progress', '会话加载处理已在进行中，跳过重复处理'));
@@ -212,6 +213,7 @@ export class SessionViewController {
       // 刷新可视化，但不触发会话相关事件
       this.visualizer.refreshVisualization(undefined, { 
         restoreTransform: true,
+        fitToView,
         skipSessionEvents: true // 防止会话事件循环
       });
       

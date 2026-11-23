@@ -1,5 +1,6 @@
 import type { GraphPageQuery } from '../../../lib/graph/query.js';
 import { DEFAULT_GRAPH_FILTERS } from '../../../lib/graph/query.js';
+import { localDayRange, TREE_NODE_BATCH } from '../../../lib/graph/tree-day.js';
 import { getNavigationManager } from '../../navigation/navigation-manager.js';
 import { Logger } from "../../../lib/utils/logger.js";
 import { BackgroundMessageService } from "../../messaging/bg-message-service.js";
@@ -39,6 +40,28 @@ export class SessionMessageHandler {
         if (typeof input.filters?.[key] === 'boolean') query.filters[key] = input.filters[key];
       }
       void getNavigationManager().getNavigationStorage().getSessionPage(query).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
+      return true;
+    });
+
+    messageService.registerHandler<BackgroundMessages.GetTreeDayRequest, BackgroundResponses.GetTreeDayResponse>('getTreeDay', (message, sender, sendResponse) => {
+      const ctx = messageService.createMessageContext(message, sender, sendResponse);
+      const { date } = message;
+      if (date !== undefined && typeof date !== 'number') return ctx.error('Invalid date');
+      const range = date === undefined ? undefined : localDayRange(date);
+      if (range && !range.every(Number.isFinite)) {
+        return ctx.error('Invalid date');
+      }
+      void getNavigationManager().getNavigationStorage().getTreeDay(range).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
+      return true;
+    });
+
+    messageService.registerHandler<BackgroundMessages.GetTreeNodesRequest, BackgroundResponses.GetTreeNodesResponse>('getTreeNodes', (message, sender, sendResponse) => {
+      const ctx = messageService.createMessageContext(message, sender, sendResponse);
+      const { ids } = message;
+      if (!Array.isArray(ids) || ids.length > TREE_NODE_BATCH || !ids.every(id => typeof id === 'string' && id.length > 0)) {
+        return ctx.error('Invalid tree nodes');
+      }
+      void getNavigationManager().getNavigationStorage().getTreeNodes(ids).then(nodes => ctx.success({ nodes })).catch(error => ctx.error(String(error)));
       return true;
     });
 

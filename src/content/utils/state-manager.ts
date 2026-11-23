@@ -13,6 +13,7 @@ const logger = new Logger('StateManager');
 // 状态类型定义
 export interface ViewState {
   viewType: string;  // 'tree' | 'timeline' | 'waterfall'
+  layoutScope?: string;
   transform?: {
     x: number;
     y: number;

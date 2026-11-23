@@ -3,7 +3,7 @@ import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
-import { BaseRenderer } from './BaseRenderer.js';
+import type { BaseRenderer, GraphRenderOptions } from './BaseRenderer.js';
 import { saveViewState, getViewState } from '../../utils/state-manager.js';
 
 const d3 = window.d3;
@@ -135,6 +135,7 @@ export class WaterfallRenderer implements BaseRenderer {
   };
 
   // 泳道配置常量
+  private readonly TIME_AXIS_HEIGHT = 100;
   private readonly SWIMLANE_HEIGHT = 50; // 每个泳道的高度（包含间距）
   private readonly SWIMLANE_NODE_HEIGHT = 40; // 泳道内节点的实际高度
   private readonly SWIMLANE_SEPARATOR_DASH = '5,3'; // 虚线样式
@@ -149,10 +150,10 @@ export class WaterfallRenderer implements BaseRenderer {
   private container: HTMLElement | null = null;
   private width: number = 0;
   private height: number = 0;
+  private viewportWidth = 0;
   
   // 存储原始数据，用于拖动时重新计算布局
   private allSegments: TimeSegment[] = [];
-  private renderOptions: any = null;
   private lastDragSnapped: boolean = false; // 记录拖动时是否吸附
   private observationStartIndex: number = 0; // 当前观察窗口起始索引
   private strips: any[] = []; // 存储所有条带的D3选择器，用于拖动时更新
@@ -1010,6 +1011,7 @@ export class WaterfallRenderer implements BaseRenderer {
     this.container = container;
     this.width = width;
     this.height = height;
+    this.viewportWidth = width;
   }
 
   private timers = new Set<ReturnType<typeof setTimeout>>();
@@ -1032,7 +1034,7 @@ export class WaterfallRenderer implements BaseRenderer {
     this.wheelScrollTimeout = null;
     const svgNode = this.svg?.node();
     if (svgNode && this.svgWheelHandler) svgNode.removeEventListener('wheel', this.svgWheelHandler, true);
-    this.svg?.on('.zoom', null);
+    this.svg?.on('.zoom', null).attr('viewBox', null);
     this.svg?.selectAll('*').interrupt();
     this.currentLayout = null;
     this.observationWindow = null;
@@ -1075,7 +1077,7 @@ export class WaterfallRenderer implements BaseRenderer {
     return `${startTime} - ${endTime}`;
   }
 
-  render(nodes: NavNode[], edges: NavLink[], options?: any): void {
+  render(nodes: NavNode[], edges: NavLink[], options: GraphRenderOptions & { filters?: { closed?: boolean } } = {}): void {
     // 清空容器
     this.svg.selectAll('*').remove();
     
@@ -1109,35 +1111,31 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-    // 🔄 恢复观察窗口位置
-    // 优先级：内存中的值 > localStorage 中的值 > 默认值 0
-    let savedObservationIndex = this.visualizer.waterfallObservationIndex;
-    
-    // 如果内存中没有值，尝试从 localStorage 恢复
-    if (savedObservationIndex === undefined && options?.restoreTransform) {
-      const savedState = getViewState(this.visualizer.tabId || '', 'waterfall');
-      
-      if (savedState && savedState.waterfallObservationIndex !== undefined) {
-        savedObservationIndex = savedState.waterfallObservationIndex;
-        // 同步到内存
-        this.visualizer.waterfallObservationIndex = savedObservationIndex;
-      }
-    }
-    
-    const useRestoredPosition = options?.restoreTransform && savedObservationIndex !== undefined;
-    
-    if (useRestoredPosition && savedObservationIndex !== 0) {
-      this.observationStartIndex = savedObservationIndex!;
-    } else if (savedObservationIndex === 0 && options?.restoreTransform) {
-      this.observationStartIndex = 0;
-    } else {
-      this.observationStartIndex = 0;
+    const tabId = this.visualizer.tabId || '';
+    if (options.restoreTransform) {
+      this.observationStartIndex = this.visualizer.waterfallObservationIndex
+        ?? getViewState(tabId, 'waterfall')?.waterfallObservationIndex ?? 0;
+      this.visualizer.waterfallObservationIndex = this.observationStartIndex;
+    } else if (options.fitToView) {
+      this.visualizer.waterfallObservationIndex = 0;
+      saveViewState(tabId, { viewType: 'waterfall', waterfallObservationIndex: 0 });
     }
 
     // 1. 🎯 智能泳道分配（支持复用）
     this.laneAllocation = this.allocateSwimlanesWithReuse(validNodes);
     this.swimlanes = this.laneAllocation.swimlanes;
     this.closureMarkers = this.laneAllocation.closureMarkers;
+
+    if (options.fitToView) {
+      const contentHeight = this.TIME_AXIS_HEIGHT + this.swimlaneContentHeight();
+      const availableHeight = Math.max(1, this.height - (options.viewportBottomInset ?? 0));
+      const scale = Math.min(1, availableHeight / contentHeight);
+      if (scale < 1) {
+        this.width /= scale;
+        this.height /= scale;
+        this.svg.attr('viewBox', `0 0 ${this.width} ${this.height}`);
+      }
+    }
 
     // 2. 计算时间分段和布局（使用保存的观察窗口位置）
     const layout = this.calculateSegmentLayout(validNodes, this.width, this.observationStartIndex);
@@ -1175,8 +1173,6 @@ export class WaterfallRenderer implements BaseRenderer {
       }
     } catch(e) {}
     
-    // 8. 存储选项供后续使用
-    this.renderOptions = options;
   }
 
   /**
@@ -1601,10 +1597,9 @@ export class WaterfallRenderer implements BaseRenderer {
       
       // 如果还有剩余空间，在右侧添加空白区段
       let allSegments = [...segments];
-      let totalUsedWidth = contentWidth;
-      
-      if (contentWidth < availableWidth) {
-        const remainingWidth = availableWidth - contentWidth;
+      // Zooming out expands SVG units without adding blank time strips.
+      const remainingWidth = this.viewportWidth - 100 - contentWidth;
+      if (remainingWidth > 0) {
         const additionalSegmentCount = Math.floor(remainingWidth / standardSegmentWidth);
         
         // 生成空白区段（时间递减，从左到右）
@@ -1624,7 +1619,6 @@ export class WaterfallRenderer implements BaseRenderer {
           allSegments.push(emptySegment);
         }
         
-        totalUsedWidth = allSegments.length * standardSegmentWidth;
       }
       
       // 设置所有段的位置
@@ -1731,7 +1725,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * 创建SVG分组结构 - 重新设计：明确的viewport和完整内容渲染
    */
   private createSVGGroups(container: any) {
-    const timeAxisHeight = 100;
+    const timeAxisHeight = this.TIME_AXIS_HEIGHT;
     
     // 时间轴组（固定在顶部，不参与滚动）
     const timeAxisGroup = container.append('g').attr('class', 'time-axis-group');
@@ -4226,25 +4220,12 @@ export class WaterfallRenderer implements BaseRenderer {
    * 计算最大垂直滚动距离 - 新版本：基于viewport架构
    */
   private calculateMaxVerticalScroll(): void {
-    if (!this.swimlanes || this.swimlanes.length === 0) {
-      this.maxVerticalScroll = 0;
-      
-      return;
-    }
+    this.maxVerticalScroll = Math.max(0, this.swimlaneContentHeight() - (this.height - this.TIME_AXIS_HEIGHT));
+  }
 
-    // 计算内容总高度（包括顶部间距）
-    const startY = 20;
-    const swimlaneHeight = this.SWIMLANE_HEIGHT;
-    const totalContentHeight = startY + (this.swimlanes.length * swimlaneHeight);
-    
-    // viewport可视高度
-    const timeAxisHeight = 100;
-    const viewportHeight = this.height - timeAxisHeight;
-    
-    // 如果内容高度超过viewport高度，则需要滚动
-    this.maxVerticalScroll = Math.max(0, totalContentHeight - viewportHeight);
-    
-    
+  private swimlaneContentHeight(): number {
+    const lastLane = this.swimlanes[this.swimlanes.length - 1];
+    return lastLane ? lastLane.y + lastLane.height : 0;
   }
 
   /**

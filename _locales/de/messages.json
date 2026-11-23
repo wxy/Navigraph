@@ -3719,6 +3719,18 @@
     "message": "Knoten: {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "Filter wiederherstellen",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "Originalgröße",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "Gesamtansicht",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "Versteckt: {0}",
     "description": "已隐藏节点数量状态项"
@@ -5282,5 +5294,44 @@
   },
   "recording_metadata_not_saved": {
     "message": "Seiteninformationen wurden nicht gespeichert. Prüfen Sie den Aufzeichnungsstatus."
+  },
+  "tree_day_density": {
+    "message": "Wegen des verfügbaren Platzes gruppiert",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "Viele Einträge sind geöffnet. Klappen Sie zuerst eine Gruppe ein.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
+  "tree_day_collapse": {
+    "message": "Zweig einklappen",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "{0} Neuladungen",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "{0} Einträge anzeigen",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "Neueste {0} Einträge des Tages",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
+  "tree_chain_expand": {
+    "message": "{0} Zwischenseiten aufklappen"
+  },
+  "tree_chain_collapse": {
+    "message": "{0} Zwischenseiten einklappen"
+  },
+  "tree_visible_level": {
+    "message": "Sichtbare Ebene {0}"
+  },
+  "tree_original_level": {
+    "message": "Ebene {0} vor dem Einklappen"
+  },
+  "tree_continues_outside_page": {
+    "message": "Die übergeordnete Seite liegt außerhalb des aktuellen Bereichs"
   }
 }

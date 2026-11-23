@@ -7,12 +7,15 @@ import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { RendererFactory } from './RendererFactory.js';
+import type { GraphRenderOptions } from './BaseRenderer.js';
+import type { TreeExpansionState } from './TreeRenderer.js';
 import type { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
 import type { ViewStateManager } from '../state/ViewStateManager.js';
 import type { UIManager } from '../ui/UIManager.js';
 import type { SessionDetails } from '../../types/session.js';
 
 const logger = new Logger('RenderingManager');
+const RANGE_CONTROLS_BOTTOM = 42;
 
 export class RenderingManager {
   private visualizer: Visualizer;
@@ -26,8 +29,10 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
-  private restoreTimer?: ReturnType<typeof setTimeout>;
+  private treeExpansion: TreeExpansionState = { opened: new Set() };
+  private treeDate?: number;
   private rangeControls: HTMLDivElement | null = null;
+  private waterfallFitToView = false;
 
   
   /**
@@ -68,7 +73,7 @@ export class RenderingManager {
    */
   refreshVisualization(
     data?: any,
-    options: { restoreTransform?: boolean } = {}
+    options: GraphRenderOptions = {}
   ): void {
     logger.log(_('visualization_refresh_start', '开始刷新可视化：{0}'), data ? _('using_provided_data', '使用提供的数据') : _('using_existing_data', '使用现有数据'));
 
@@ -84,9 +89,7 @@ export class RenderingManager {
       this.visualizer.applyFilters();
 
       // 重新渲染可视化
-      this.renderVisualization({
-        restoreTransform: options.restoreTransform === true,
-      });
+      this.renderVisualization(options);
 
       // 更新URL和状态栏
       this.updateUrlAndUI();
@@ -140,7 +143,7 @@ export class RenderingManager {
   /**
    * 渲染可视化
    */
-  renderVisualization(options: { restoreTransform?: boolean } = {}): void {
+  renderVisualization(options: GraphRenderOptions = {}): void {
     if (!this.container || !this.viewStateManager.svg) {
       logger.error(_('render_failed_no_container_svg', '渲染失败：容器或SVG元素不存在'));
       return;
@@ -157,17 +160,23 @@ export class RenderingManager {
       const svg = this.viewStateManager.svg;
       svg.classed('motion-disabled', !animationsEnabled()).classed('hide-node-labels', !labelsEnabled());
       const currentSession = this.visualizer.currentSession;
-      const ids = new Set(this.visualizer.nodes.map(node => node.id));
-      // Only this rendering copy promotes page-external parents to roots; details retain the actual parentId.
-      const nodes = this.visualizer.nodes.map(node => ({ ...node,
+      const view = this.viewStateManager.currentView as 'tree' | 'waterfall';
+      const treeDay = view === 'tree' ? this.visualizer.treeDay : null;
+      if (view === 'tree' && (this.treeDate !== treeDay?.start || options.fitToView)) {
+        this.treeExpansion = { opened: new Set() };
+        this.treeDate = treeDay?.start;
+      }
+      if (options.fitToView && view === 'waterfall') this.waterfallFitToView = true;
+      const pageNodes = view === 'waterfall' ? this.visualizer.nodes : [];
+      const ids = new Set(pageNodes.map(node => node.id));
+      const nodes = pageNodes.map(node => ({ ...node,
         parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
         timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
-      const edges = this.visualizer.edges;
+      const edges = view === 'waterfall' ? this.visualizer.edges : [];
       this.updateRangeControls();
 
       this.currentRenderer?.cleanup();
       this.currentRenderer = null;
-      clearTimeout(this.restoreTimer);
       svg.interrupt();
       svg.selectAll('*').interrupt();
       // 清除现有可视化
@@ -179,23 +188,25 @@ export class RenderingManager {
       const nodesGroup = mainGroup.append("g").attr("class", "nodes-group");
 
       // 检查是否有数据可渲染
-      const hasData = nodes && nodes.length > 0;
+      const nodeCount = treeDay?.nodes.length ?? nodes.length;
+      const hasData = nodeCount > 0;
 
       logger.log(_('visualization_render_start', '开始渲染可视化：视图={0}，节点数={1}，边数={2}，尺寸={3}'),
         this.viewStateManager.currentView,
-        String(hasData ? nodes.length : 0),
+        String(nodeCount),
         String(hasData ? edges.length : 0),
         `${width}x${height}`
       );
 
       // 如果没有数据，创建一个会话节点
       if (!hasData) {
-        this.renderEmptySession(nodesGroup, width, height, currentSession);
+        this.renderEmptySession(nodesGroup, width, height, view === 'waterfall' ? currentSession : undefined, treeDay?.start);
       } else {
         // 使用渲染器工厂创建相应的渲染器
         const renderer = RendererFactory.createRenderer(
-          this.viewStateManager.currentView as 'tree' | 'waterfall',
-          this.visualizer
+          view,
+          this.visualizer,
+          this.treeExpansion
         );
         
         // 保存当前渲染器引用
@@ -211,16 +222,10 @@ export class RenderingManager {
         
         // 渲染视图
         renderer.render(nodes, edges, {
-          restoreTransform: options.restoreTransform
+          restoreTransform: options.restoreTransform && !options.fitToView,
+          fitToView: view === 'waterfall' ? this.waterfallFitToView : options.fitToView,
+          viewportBottomInset: this.rangeControls ? this.rangeControls.offsetHeight + RANGE_CONTROLS_BOTTOM + 8 : 0,
         });
-      }
-
-      // 在可视化渲染后，尝试恢复视图状态
-      if (options.restoreTransform) {
-        // 尝试恢复视图缩放状态
-        this.restoreTimer = setTimeout(() => {
-          this.viewStateManager.restoreViewState();
-        }, 50);
       }
 
       // 更新状态栏
@@ -246,13 +251,24 @@ export class RenderingManager {
   private updateRangeControls(): void {
     this.rangeControls?.remove();
     this.rangeControls = null;
+    if (!this.container) return;
     const info = this.visualizer.pageInfo;
-    if (!info || !this.container) return;
-    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
-    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
+    const tree = this.viewStateManager.currentView === 'tree';
+    const day = this.visualizer.treeDay;
+    if (tree ? !day?.truncated : !info) return;
     const controls = document.createElement('div');
     controls.className = 'navigation-range-controls';
-    controls.style.cssText = 'position:absolute;left:50%;bottom:42px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px';
+    controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px`;
+    if (tree && day) {
+      const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      controls.textContent = `${_('tree_day_limit', '仅显示当天最新 {0} 条记录', day.total.toLocaleString())} · ${time(day.oldest!)}–${time(day.newest!)}`;
+      this.container.append(controls);
+      this.rangeControls = controls;
+      return;
+    }
+    if (!info) return;
+    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
+    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
     const en = chrome.i18n.getUILanguage().startsWith('en');
     const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
     const label = document.createElement('span');
@@ -276,6 +292,21 @@ export class RenderingManager {
         controls.append(button);
       }
     }
+    if (this.viewStateManager.currentView === 'waterfall' && this.visualizer.nodes.length > 0) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'waterfall-fit-toggle';
+      button.textContent = this.waterfallFitToView
+        ? _('content_waterfall_actual_size', '实际大小')
+        : _('content_waterfall_fit_view', '显示全图');
+      button.addEventListener('click', () => {
+        const hadFocus = document.activeElement === button;
+        this.waterfallFitToView = !this.waterfallFitToView;
+        this.renderVisualization({ restoreTransform: true, fitToView: this.waterfallFitToView });
+        if (hadFocus) this.rangeControls?.querySelector<HTMLButtonElement>('.waterfall-fit-toggle')?.focus();
+      });
+      controls.append(button);
+    }
     this.container.append(controls);
     this.rangeControls = controls;
   }
@@ -287,7 +318,8 @@ export class RenderingManager {
     nodesGroup: any, 
     width: number, 
     height: number, 
-    currentSession?: SessionDetails
+    currentSession?: SessionDetails,
+    dayStart?: number
   ): void {
     // 创建一个会话节点
     const sessionNode = nodesGroup
@@ -312,7 +344,8 @@ export class RenderingManager {
       .attr("href", chrome.runtime.getURL("images/logo-48.png"));
 
     // 添加提示文字 - 本地化
-    const sessionTitle = currentSession?.title || _('content_current_session', '当前会话');
+    const sessionTitle = dayStart !== undefined ? new Date(dayStart).toLocaleDateString()
+      : currentSession?.title || _('content_current_session', '当前会话');
     sessionNode
       .append("text")
       .attr("class", "node-label empty-node-label node-title-label")
@@ -558,7 +591,7 @@ export class RenderingManager {
     const sizeChanged = this.updateContainerSize();
     
     // 如果尺寸有显著变化且有数据，重新渲染
-    if (sizeChanged && this.visualizer.nodes.length > 0) {
+    if (sizeChanged && (this.visualizer.currentView === 'tree' ? this.visualizer.treeDay : this.visualizer.nodes.length)) {
       this.renderVisualization({ restoreTransform: true });
     }
   }
@@ -568,7 +601,6 @@ export class RenderingManager {
    */
   cleanup(): void {
     logger.log(_('rendering_manager_cleanup', '正在清理渲染管理器资源'));
-    clearTimeout(this.restoreTimer);
     this.currentRenderer?.cleanup();
     this.currentRenderer = null;
     this.rangeControls?.remove();

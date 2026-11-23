@@ -238,6 +238,14 @@ body.loading-session #visualization-container::before {
   transition: all 0.2s ease;
 }
 
+button.day-cell {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 /* 折叠组抽屉：阻止滚动链到父容器，优先使用 CSS 来避免非被动 wheel 监听警告 */
 .collapsed-nodes-drawer .drawer-body {
   overscroll-behavior: contain; /* 阻止滚动链到父容器/页面 */
@@ -1091,8 +1099,13 @@ path.link.closed, .edge.closed {
 
 /* 状态栏中的过滤指示器 */
 #status-filtered {
-  /* 颜色由 JavaScript 动态控制：有隐藏节点时为红色，无隐藏时为默认颜色 */
+  box-sizing: content-box;
+  font: inherit;
   font-weight: 500;
+}
+
+#status-filtered:enabled {
+  cursor: pointer;
 }
 
 /* 根节点样式 */
@@ -1747,6 +1760,14 @@ svg .node-label {
   right: 0;
 }
 
+.main-container:has(#navigation-svg[data-view="tree"]) {
+  overflow: clip;
+}
+
+.main-container:has(#navigation-svg[data-view="tree"]) .control-panel:not(.visible) {
+  visibility: hidden;
+}
+
 /* 控制面板滚动条美化 - 仅保留基础样式 */
 .control-panel::-webkit-scrollbar {
   width: 6px;
@@ -2054,6 +2075,81 @@ svg .node-label {
 
 /* Display preferences affect graph decoration, never axis/control text or hit targets. */
 .visualization-svg.hide-node-labels .node-title-label { display: none !important; }
+
+.visualization-svg[data-view="tree"] .node-title-label {
+  stroke: none;
+}
+
+[data-theme="dark"] .visualization-svg[data-view="tree"] .link:is(.initial, .unknown) {
+  stroke: var(--label-color);
+}
+
+.tree-levels {
+  pointer-events: none;
+}
+
+.tree-level-gradient {
+  --tree-halo-opacity: 0.12;
+}
+
+[data-theme="dark"] .tree-level-gradient {
+  --tree-halo-opacity: 0.19;
+}
+
+.tree-level-gradient stop {
+  stop-color: var(--btn-primary, #4a6ee0);
+  stop-opacity: calc(var(--tree-halo-opacity) * var(--tree-level-strength));
+}
+
+.tree-level {
+  fill: none;
+  stroke: var(--svg-text);
+  stroke-opacity: 0.34;
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.selected-tree-level {
+  stroke: var(--btn-primary, #4285f4);
+  stroke-opacity: 0.8;
+  stroke-width: 1px;
+}
+
+.link.tree-link-continuation {
+  stroke-dasharray: 4 5;
+  stroke-opacity: 0.5;
+}
+
+.tree-chain-guide {
+  stroke: var(--svg-text);
+  stroke-opacity: .38;
+  pointer-events: none;
+}
+
+.tree-chain-toggle {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
+  margin: 3px 4px;
+  padding: 0;
+  border: 1px solid var(--svg-node-stroke);
+  border-radius: 999px;
+  background: var(--svg-background);
+  color: var(--svg-text);
+  font: 600 13px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.tree-chain-toggle:hover {
+  background: var(--svg-node-fill);
+  border-color: var(--btn-primary, #4285f4);
+}
+
+.tree-chain-toggle:focus-visible {
+  outline: 2px solid var(--svg-text);
+  outline-offset: 1px;
+}
 .visualization-svg.motion-disabled, .visualization-svg.motion-disabled * {
   animation: none !important;
   transition: none !important;
