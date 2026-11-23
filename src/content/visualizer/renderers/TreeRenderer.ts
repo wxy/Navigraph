@@ -136,12 +136,23 @@ export class TreeRenderer implements BaseRenderer {
           const fold = projection.folds.get(id);
           return !fold || (fold.expanded && !fold.summary);
         };
-        const missing = projection.nodes.filter(node => needsDetails(node.id) && !metadata.has(node.id)).map(node => node.id);
+        const missingIds = new Set<string>();
+        for (const { id } of projection.nodes) {
+          const fold = projection.folds.get(id);
+          const sourceId = fold?.summary ? fold.faviconPageId : id;
+          if (sourceId && !metadata.has(sourceId)) missingIds.add(sourceId);
+        }
+        const missing = [...missingIds];
         for (let i = 0; i < missing.length; i += TREE_NODE_BATCH) {
           const response: BackgroundResponses.GetTreeNodesResponse = await sendMessage('getTreeNodes',
             { ids: missing.slice(i, i + TREE_NODE_BATCH) });
           if (this.svg !== svg) return;
           for (const node of response.nodes) metadata.set(node.id, node);
+        }
+        const faviconPageUrls = new Map<string, string>();
+        for (const [id, { faviconPageId }] of projection.folds) {
+          const url = faviconPageId ? metadata.get(faviconPageId)?.url : undefined;
+          if (url) faviconPageUrls.set(id, url);
         }
         const positioned = projection.nodes.map(node => {
           const details = needsDetails(node.id) ? metadata.get(node.id) : undefined;
@@ -187,7 +198,7 @@ export class TreeRenderer implements BaseRenderer {
           else next.add(id);
           void draw(next, { id, focus, overview: { scope: layoutScope, transform: d3.zoomTransform(svg.node()!) } });
         };
-        drawNodes(pages, layout.nodes, day.start, visualizer, (node) => {
+        drawNodes(pages, layout.nodes, day.start, visualizer, faviconPageUrls, (node) => {
           const fold = groups.get(node.data.id);
           if (fold && (!fold.expanded || fold.summary)) {
             toggle(node.data.id, fold, false);
@@ -288,6 +299,7 @@ function drawNodes(
   nodes: EllipticalTreeNode[],
   sessionStart: number | undefined,
   visualizer: Visualizer,
+  faviconPageUrls: ReadonlyMap<string, string>,
   onSelect: (node: EllipticalTreeNode) => void,
 ): void {
   group.selectAll('*').remove();
@@ -324,9 +336,10 @@ function drawNodes(
 
   const pages = selection.filter(node => node.depth > 0).on('click', (_event, node) => onSelect(node));
   pages.append('circle').attr('r', 20);
-  pages.filter(node => !!node.data.favicon)
+  pages.filter(node => !!node.data.favicon || faviconPageUrls.has(node.data.id))
     .append('image')
-    .attr('href', node => UrlUtils.getFaviconUrl(node.data.url))
+    .attr('aria-hidden', 'true')
+    .attr('href', node => UrlUtils.getFaviconUrl(faviconPageUrls.get(node.data.id) ?? node.data.url))
     .attr('x', -8).attr('y', -8).attr('width', 16).attr('height', 16)
     .on('error', function () {
       d3.select(this).attr('href', chrome.runtime.getURL('images/logo-48.png')).classed('default-icon', true);

@@ -6,6 +6,7 @@ interface Branch {
   parent?: Branch;
   children: Branch[];
   count: number;
+  commonSite: string;
 }
 
 export interface TreeDayFold {
@@ -13,6 +14,7 @@ export interface TreeDayFold {
   expanded: boolean;
   summary: boolean;
   reloads?: number;
+  faviconPageId?: string;
 }
 
 export function indexTreeDay(rows: TreeDayNode[]) {
@@ -20,7 +22,7 @@ export function indexTreeDay(rows: TreeDayNode[]) {
   // The day query returns newest first. Keep siblings chronological in the tree.
   for (let i = rows.length - 1; i >= 0; i--) {
     const row = rows[i];
-    byId.set(row.id, { row, children: [], count: 1 });
+    byId.set(row.id, { row, children: [], count: 1, commonSite: row.site });
   }
   for (const branch of byId.values()) branch.parent = byId.get(branch.row.parentId ?? '');
 
@@ -49,8 +51,11 @@ export function indexTreeDay(rows: TreeDayNode[]) {
     for (const child of ordered[i].children) ordered.push(child);
   }
   for (let i = ordered.length - 1; i >= 0; i--) {
-    const { parent, count } = ordered[i];
-    if (parent) parent.count += count;
+    const { parent, count, commonSite } = ordered[i];
+    if (parent) {
+      parent.count += count;
+      if (parent.commonSite !== commonSite) parent.commonSite = '';
+    }
   }
   return { roots, byId, brokenCycles };
 }
@@ -87,21 +92,25 @@ export function projectTreeDay(
   const depthSlots = Math.max(2, Math.floor((width - 52) / 28));
   const overviewBudget = 2 * siblingSlots;
 
-  const addFold = (id: string, kind: 'branches' | 'run', branches: Branch[], summary: boolean) => {
+  const addFold = (id: string, kind: 'branches' | 'run', branches: Branch[], summary: boolean, faviconPageId?: string) => {
     const count = kind === 'run' ? branches.length : branches.reduce((sum, branch) => sum + branch.count, 0);
-    folds.set(id, { count, expanded: false, summary,
+    folds.set(id, { count, expanded: false, summary, faviconPageId,
       reloads: kind === 'run' ? branches.filter(branch => branch.row.type === 'reload').length : undefined });
     if (opened.has(id)) candidates.set(id, { kind, branches });
   };
 
-  const addGroup = (branches: Branch[], kind: 'branches' | 'run', parentId?: string): string => {
+  const addGroup = (branches: Branch[], kind: 'branches' | 'run', parentId?: string, faviconPageId?: string): string => {
     const first = branches[0].row;
     const last = branches[branches.length - 1].row;
     const id = `tree-day:${kind}:${first.id}:${last.id}`;
     const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const title = first.id === last.id ? first.site || time(first.timestamp) : `${time(first.timestamp)}–${time(last.timestamp)}`;
     nodes.push({ id, type: 'unknown', timestamp: first.timestamp, parentId, title });
-    addFold(id, kind, branches, true);
+    const site = branches[0].commonSite;
+    if (kind === 'branches' && site && branches.every(branch => branch.commonSite === site)) {
+      faviconPageId = first.id;
+    }
+    addFold(id, kind, branches, true, faviconPageId);
     return id;
   };
 
@@ -137,7 +146,7 @@ export function projectTreeDay(
       }
       const outsideParent = !tree.byId.has(first.row.parentId ?? '') ? first.row.parentId : undefined;
       nodes.push(visibleNode(first, parentId ?? outsideParent));
-      if (middle.length) addFold(first.row.id, 'run', middle, false);
+      if (middle.length) addFold(first.row.id, 'run', middle, false, first.row.id);
       if (tail.children.length) enqueue(tail.children, remaining - 1, depth + 1, first.row.id);
     }
   };
@@ -150,7 +159,8 @@ export function projectTreeDay(
     const remaining = overviewBudget + siblingSlots - nodes.length;
     const { kind, branches } = candidate;
     if (remaining < 2 && !(remaining === 1 && kind === 'run' && branches.length === 1)) continue;
-    folds.get(id)!.expanded = true;
+    const fold = folds.get(id)!;
+    fold.expanded = true;
     if (kind === 'branches') {
       projectBranches(branches, Math.min(siblingSlots, remaining), id);
       continue;
@@ -167,7 +177,7 @@ export function projectTreeDay(
         nodes.push(visibleNode(part[0], parentId));
         parentId = part[0].row.id;
       } else {
-        parentId = addGroup(part, 'run', parentId);
+        parentId = addGroup(part, 'run', parentId, fold.faviconPageId);
       }
     }
     for (const successor of successors) successor.parentId = parentId;

@@ -127,8 +127,8 @@ export class ViewStateManager {
           }
         });
 
-      this._svg.call(zoom);
       this._zoom = zoom;
+      this._svg.call(zoom).call(zoom.transform, d3.zoomIdentity);
       
       logger.debug(_('basic_zoom_setup_complete', '基本缩放功能已设置'));
     } catch (error) {
