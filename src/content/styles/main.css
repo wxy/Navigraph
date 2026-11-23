@@ -2146,10 +2146,6 @@ svg .node-label {
   border-color: var(--btn-primary, #4285f4);
 }
 
-.tree-day-back {
-  width: 160px;
-}
-
 .tree-chain-toggle:focus-visible {
   outline: 2px solid var(--svg-text);
   outline-offset: 1px;

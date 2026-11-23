@@ -5295,6 +5295,14 @@
   "recording_metadata_not_saved": {
     "message": "페이지 정보가 저장되지 않았습니다. 기록 상태를 확인하세요."
   },
+  "tree_day_density": {
+    "message": "창 크기에 맞춰 그룹화",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "다른 기록을 보려면 그룹 하나를 먼저 접으세요.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
   "tree_day_collapse": {
     "message": "가지 접기",
     "description": "收起展开的平衡树分支"

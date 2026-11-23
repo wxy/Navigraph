@@ -5295,6 +5295,14 @@
   "recording_metadata_not_saved": {
     "message": "ページ情報を保存できませんでした。記録状態を確認してください。"
   },
+  "tree_day_density": {
+    "message": "画面の広さに合わせてグループ化",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "先にグループを一つ折りたたんでください。",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
   "tree_day_collapse": {
     "message": "枝を折りたたむ",
     "description": "收起展开的平衡树分支"

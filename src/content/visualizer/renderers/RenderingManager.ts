@@ -29,7 +29,7 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
-  private treeExpansion: TreeExpansionState = { frames: [] };
+  private treeExpansion: TreeExpansionState = { opened: new Set() };
   private treeDate?: number;
   private rangeControls: HTMLDivElement | null = null;
   private waterfallFitToView = false;
@@ -163,7 +163,7 @@ export class RenderingManager {
       const view = this.viewStateManager.currentView as 'tree' | 'waterfall';
       const treeDay = view === 'tree' ? this.visualizer.treeDay : null;
       if (view === 'tree' && (this.treeDate !== treeDay?.start || options.fitToView)) {
-        this.treeExpansion.frames = [];
+        this.treeExpansion = { opened: new Set() };
         this.treeDate = treeDay?.start;
       }
       if (options.fitToView && view === 'waterfall') this.waterfallFitToView = true;

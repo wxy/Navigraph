@@ -1,7 +1,7 @@
 import type { NavNode } from '../../types/session-types.js';
 
 export const TREE_DAY_LIMIT = 10_000;
-export const TREE_LAYOUT_LIMIT = 50;
+export const TREE_NODE_BATCH = 50;
 
 export interface TreeDayNode extends Pick<NavNode, 'id' | 'parentId' | 'sessionId' | 'tabId' | 'timestamp' | 'type' | 'isClosed'> {
   site: string;

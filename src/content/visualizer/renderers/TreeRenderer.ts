@@ -6,7 +6,8 @@ import { animationDuration, labelsEnabled } from '../../utils/display-settings.j
 import { getViewState, saveViewState } from '../../utils/state-manager.js';
 import { sendMessage } from '../../messaging/content-message-service.js';
 import type { BackgroundResponses } from '../../../types/messages/background.js';
-import { indexTreeDay, projectTreeDay, type TreeDayFocus, type TreeDayFold } from './tree-day-projection.js';
+import { TREE_NODE_BATCH } from '../../../lib/graph/tree-day.js';
+import { indexTreeDay, projectTreeDay, type TreeDayFold } from './tree-day-projection.js';
 import { isTrackingPage } from '../../utils/visualization-utils.js';
 import type { BaseRenderer, GraphRenderOptions } from './BaseRenderer.js';
 import { layoutEllipticalTree, treeNodeTitle } from './elliptical-tree-layout.js';
@@ -18,19 +19,26 @@ const SESSION_ROOT = 'session-root';
 const VIEW_STATE = 'balanced-elliptical-tree';
 const HALO_ID = 'tree-level-halo-gradient';
 const FOLD_BUTTON_OFFSET = 26;
+const FOLD_CONTROL_HEIGHT = 36;
+const MIN_FOLD_BUTTON_SCALE = 0.75;
 
 type TreeTransform = Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>;
 type FoldLink = EllipticalTreeLink & { fold: TreeDayFold };
 
-interface TreeFrame {
-  focus: TreeDayFocus;
-  sourceId: string;
+interface Overview {
   scope: string;
   transform: TreeTransform;
 }
 
 export interface TreeExpansionState {
-  frames: TreeFrame[];
+  opened: Set<string>;
+  overview?: Overview;
+}
+
+interface FoldAction {
+  id: string;
+  focus: boolean;
+  overview: Overview;
 }
 
 export class TreeRenderer implements BaseRenderer {
@@ -66,20 +74,14 @@ export class TreeRenderer implements BaseRenderer {
     const links = main.select<SVGGElement>('.links-group');
     const pages = main.select<SVGGElement>('.nodes-group');
     const folds = main.append('g').attr('class', 'tree-chain-controls');
-    const back = svg.append('foreignObject')
-      .attr('x', (width - 168) / 2).attr('y', 12).attr('width', 168).attr('height', 36)
-      .append<HTMLButtonElement>('xhtml:button')
-      .attr('type', 'button').attr('class', 'tree-chain-toggle tree-day-back')
-      .style('display', 'none')
-      .attr('aria-expanded', 'true')
-      .text(_('tree_day_collapse', '收起分支'));
     let selectedNodeId: string | undefined;
     let pending = false;
     let groups = new Map<string, TreeDayFold>();
     const metadata = new Map<string, NavNode>();
 
     const tabId = visualizer.tabId || '';
-    const layoutScope = `day:${day.start}:${width}x${height}`;
+    const layoutScope = `panorama:${day.start}:${width}x${height}`;
+    const viewportHeight = Math.max(1, height - (options.viewportBottomInset ?? 0));
     const saved = options.fitToView ? undefined : getViewState(tabId, VIEW_STATE);
     const restored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
     const applyViewport = (transform: d3.ZoomTransform) => {
@@ -88,7 +90,7 @@ export class TreeRenderer implements BaseRenderer {
       const scale = transform.k;
       pages.selectAll<SVGTextElement, EllipticalTreeNode>('.node-title-label')
         .style('display', page => labelsEnabled() && (scale >= 0.5 || (scale >= 0.35 && groups.has(page.data.id))) ? null : 'none');
-      const factor = Math.max(1, 0.75 / scale);
+      const factor = Math.max(1, MIN_FOLD_BUTTON_SCALE / scale);
       folds.selectAll<SVGForeignObjectElement, FoldLink>('foreignObject').attr('transform', link => {
         const y = link.y - FOLD_BUTTON_OFFSET * factor;
         return `translate(${link.x},${y}) scale(${factor}) translate(${-link.x},${-link.y})`;
@@ -105,7 +107,7 @@ export class TreeRenderer implements BaseRenderer {
       })
       .on('zoom', event => applyViewport(event.transform))
       .on('end', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        if (event.sourceEvent && !this.expansion.frames.length) {
+        if (event.sourceEvent && !this.expansion.opened.size) {
           saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: event.transform });
         }
       });
@@ -120,31 +122,36 @@ export class TreeRenderer implements BaseRenderer {
         .classed('highlighted', page => page.data.id === selectedNodeId);
     };
 
-    const draw = async (frames: TreeFrame[], camera?: TreeTransform, focusId?: string) => {
+    const draw = async (opened: Set<string>, action?: FoldAction) => {
       if (pending) return;
       pending = true;
       try {
-        let projection = projectTreeDay(tree, frames[frames.length - 1]?.focus);
-        while (!projection.nodes.length && frames.length) {
-          frames = frames.slice(0, -1);
-          projection = projectTreeDay(tree, frames[frames.length - 1]?.focus);
+        const projection = projectTreeDay(tree, width, viewportHeight, opened);
+        if (action && opened.has(action.id) && !projection.folds.get(action.id)?.expanded) {
+          visualizer.showError(_('tree_day_view_full', '图上展开的记录较多，请先收起一组'));
+          return;
         }
-        const ids = projection.nodes.filter(node => !projection.folds.has(node.id)).map(node => node.id);
-        const missing = ids.filter(id => !metadata.has(id));
-        if (missing.length) {
-          const response: BackgroundResponses.GetTreeNodesResponse = await sendMessage('getTreeNodes', { ids: missing });
+
+        const needsDetails = (id: string) => {
+          const fold = projection.folds.get(id);
+          return !fold || (fold.expanded && !fold.summary);
+        };
+        const missing = projection.nodes.filter(node => needsDetails(node.id) && !metadata.has(node.id)).map(node => node.id);
+        for (let i = 0; i < missing.length; i += TREE_NODE_BATCH) {
+          const response: BackgroundResponses.GetTreeNodesResponse = await sendMessage('getTreeNodes',
+            { ids: missing.slice(i, i + TREE_NODE_BATCH) });
           if (this.svg !== svg) return;
           for (const node of response.nodes) metadata.set(node.id, node);
         }
         const positioned = projection.nodes.map(node => {
-          const details = projection.folds.has(node.id) ? undefined : metadata.get(node.id);
+          const details = needsDetails(node.id) ? metadata.get(node.id) : undefined;
           return details ? { ...node, ...details, parentId: node.parentId } : node;
         });
         const layout = layoutEllipticalTree(positioned, sessionNode, width, height);
-        this.expansion.frames = frames;
+        const overview = this.expansion.overview ?? action?.overview;
+        this.expansion.opened = new Set([...opened].filter(id => projection.folds.get(id)?.expanded));
+        this.expansion.overview = this.expansion.opened.size ? overview : undefined;
         groups = projection.folds;
-        back.style('display', () => frames.length ? null : 'none');
-        back.attr('tabindex', frames.length ? null : -1);
         const outer = layout.rings[layout.rings.length - 1];
         halo.attr('cx', layout.centerX).attr('cy', layout.centerY).attr('rx', outer.rx).attr('ry', outer.ry);
         const stops = layout.rings.flatMap((ring, index) => {
@@ -174,14 +181,17 @@ export class TreeRenderer implements BaseRenderer {
           .classed('tree-link-continuation', link => link.target.continuesOutsidePage)
           .attr('d', link => link.path);
 
-        const open = (id: string, fold: TreeDayFold, focused: boolean) => {
-          void draw([...this.expansion.frames, { focus: fold.focus, sourceId: id,
-            scope: layoutScope, transform: d3.zoomTransform(svg.node()!) }], undefined, focused ? 'back' : undefined);
+        const toggle = (id: string, fold: TreeDayFold, focus: boolean) => {
+          const next = new Set(this.expansion.opened);
+          if (fold.expanded) next.delete(id);
+          else next.add(id);
+          void draw(next, { id, focus, overview: { scope: layoutScope, transform: d3.zoomTransform(svg.node()!) } });
         };
         drawNodes(pages, layout.nodes, day.start, visualizer, (node) => {
           const fold = groups.get(node.data.id);
-          if (fold) open(node.data.id, fold, false);
-          else {
+          if (fold && (!fold.expanded || fold.summary)) {
+            toggle(node.data.id, fold, false);
+          } else {
             selectedNodeId = node.data.id;
             const details = metadata.get(node.data.id);
             if (details) visualizer.showNodeDetails(details);
@@ -204,25 +214,28 @@ export class TreeRenderer implements BaseRenderer {
           .data(foldedLinks, link => link.target.data.id)
           .join(enter => enter.append('foreignObject')
             .attr('width', 64)
-            .attr('height', 36)
+            .attr('height', FOLD_CONTROL_HEIGHT)
             .call(objects => objects.append('xhtml:button')
               .attr('type', 'button')
               .attr('class', 'tree-chain-toggle')))
           .attr('x', link => link.x - 32)
-          .attr('y', link => link.y - 18);
+          .attr('y', link => link.y - FOLD_CONTROL_HEIGHT / 2);
 
         const label = (link: FoldLink) => {
+          const action = link.fold.expanded ? _('tree_day_collapse', '收起分支')
+            : _('tree_day_expand', '展开 {0} 条记录', String(link.fold.count));
           const reloads = link.fold.reloads
             ? ' · ' + _('tree_day_reload_count', '刷新 {0} 次', String(link.fold.reloads)) : '';
-          return `${link.target.data.title || ''} · ${_('tree_day_expand', '展开 {0} 条记录', String(link.fold.count))}${reloads}`;
+          const density = link.fold.summary ? ' · ' + _('tree_day_density', '窗口空间有限，分组显示') : '';
+          return `${link.target.data.title || ''} · ${action}${reloads}${density}`;
         };
         const buttons = controls.select<HTMLButtonElement>('button')
-          .attr('aria-expanded', 'false')
+          .attr('aria-expanded', link => String(link.fold.expanded))
           .attr('title', label)
           .attr('aria-label', label)
-          .text(link => `+${link.fold.count}`)
+          .text(link => `${link.fold.expanded ? '−' : '+'}${link.fold.count}`)
           .on('click', (event: MouseEvent, link) => {
-            open(link.target.data.id, link.fold, event.currentTarget === document.activeElement);
+            toggle(link.target.data.id, link.fold, event.currentTarget === document.activeElement);
           });
         svg.selectAll<SVGTextElement, number>('text.cycle-message')
           .data(tree.brokenCycles ? [tree.brokenCycles] : [])
@@ -233,35 +246,32 @@ export class TreeRenderer implements BaseRenderer {
           .attr('text-anchor', 'end')
           .text(count => _('fixed_cycle_connections', '已移除 {0} 个循环连接', String(count)));
 
-        const viewportHeight = Math.max(1, height - (options.viewportBottomInset ?? 0));
-        const scale = Math.min(layout.fitScale, viewportHeight / (2 * outer.ry));
+        // The controls have a minimum screen size even when the tree is zoomed out.
+        const foldMargin = foldedLinks.length ? (FOLD_BUTTON_OFFSET + FOLD_CONTROL_HEIGHT / 2) * MIN_FOLD_BUTTON_SCALE : 0;
+        const scale = Math.min(layout.fitScale, Math.max(1, viewportHeight - 2 * foldMargin) / (2 * outer.ry));
         const initial = d3.zoomIdentity
           .translate(layout.centerX * (1 - scale), viewportHeight / 2 - layout.centerY * scale)
           .scale(scale);
+        const camera = this.expansion.opened.size ? undefined
+          : overview?.scope === layoutScope ? overview.transform : action ? undefined : restored;
         const transform = camera && Number.isFinite(camera.x) && Number.isFinite(camera.y) && Number.isFinite(camera.k) && camera.k > 0
           ? d3.zoomIdentity.translate(camera.x, camera.y).scale(camera.k) : initial;
-        if (options.fitToView && !frames.length && !camera) {
+        if (options.fitToView && !this.expansion.opened.size && !camera) {
           saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform });
         }
         zoom.scaleExtent([Math.min(0.1, scale, transform.k), 8]);
         svg.call(zoom.transform, transform);
         if (visualizer.currentTransform !== transform) applyViewport(transform);
-        if (focusId === 'back') back.node()?.focus({ preventScroll: true });
-        else if (focusId) buttons.filter(link => link.target.data.id === focusId).node()?.focus({ preventScroll: true });
+        if (action?.focus) {
+          buttons.filter(link => link.target.data.id === action.id).node()?.focus({ preventScroll: true });
+        }
       } catch (error) {
         if (this.svg === svg) visualizer.showError(String(error));
       } finally {
         pending = false;
       }
     };
-    back.on('click', (event: MouseEvent) => {
-      const frames = this.expansion.frames;
-      const frame = frames[frames.length - 1];
-      if (!frame) return;
-      void draw(frames.slice(0, -1), frame.scope === layoutScope ? frame.transform : undefined,
-        event.currentTarget === document.activeElement ? frame.sourceId : undefined);
-    });
-    void draw(this.expansion.frames, this.expansion.frames.length ? undefined : restored);
+    void draw(this.expansion.opened);
   }
 
   cleanup(): void {

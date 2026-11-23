@@ -5295,6 +5295,14 @@
   "recording_metadata_not_saved": {
     "message": "页面信息未保存，请检查记录状态。"
   },
+  "tree_day_density": {
+    "message": "窗口空间有限，分组显示",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "图上展开的记录较多，请先收起一组",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
   "tree_day_collapse": {
     "message": "收起分支",
     "description": "收起展开的平衡树分支"

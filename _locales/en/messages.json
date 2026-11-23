@@ -5298,6 +5298,14 @@
   "content_unknown_time": {
     "message": "Unknown time"
   },
+  "tree_day_density": {
+    "message": "Grouped to fit this window",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "Collapse a group to make room for more records.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
   "tree_day_collapse": {
     "message": "Collapse branch",
     "description": "收起展开的平衡树分支"

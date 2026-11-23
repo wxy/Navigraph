@@ -1,5 +1,4 @@
-import { _ } from '../../../lib/utils/i18n.js';
-import { TREE_LAYOUT_LIMIT, type TreeDayNode } from '../../../lib/graph/tree-day.js';
+import type { TreeDayNode } from '../../../lib/graph/tree-day.js';
 import type { NavNode } from '../../types/navigation.js';
 
 interface Branch {
@@ -9,11 +8,10 @@ interface Branch {
   count: number;
 }
 
-export type TreeDayFocus = { kind: 'branches' | 'run'; ids: string[] };
-
 export interface TreeDayFold {
-  focus: TreeDayFocus;
   count: number;
+  expanded: boolean;
+  summary: boolean;
   reloads?: number;
 }
 
@@ -67,69 +65,112 @@ function visibleNode({ row }: Branch, parentId?: string): NavNode {
     isSelfLoop: row.parentId === row.id };
 }
 
-export function projectTreeDay(tree: ReturnType<typeof indexTreeDay>, focus?: TreeDayFocus) {
+function partition(branches: Branch[], slots: number): Branch[][] {
+  const size = Math.min(branches.length, slots);
+  return Array.from({ length: size }, (_, i) =>
+    branches.slice(Math.floor(i * branches.length / size), Math.floor((i + 1) * branches.length / size)));
+}
+
+export function projectTreeDay(
+  tree: ReturnType<typeof indexTreeDay>,
+  width: number,
+  height: number,
+  opened: ReadonlySet<string>,
+) {
   const nodes: NavNode[] = [];
   const folds = new Map<string, TreeDayFold>();
-  const roots = focus ? focus.ids.flatMap(id => {
-    const branch = tree.byId.get(id);
-    return branch ? [branch] : [];
-  }) : tree.roots;
+  const candidates = new Map<string, { kind: 'branches' | 'run'; branches: Branch[] }>();
+  const span = Math.min(width - 52, height - 60);
+  const siblingSlots = Math.max(2, Math.floor(span / 6));
+  // Summary controls keep their screen size when the rings shrink to fit.
+  const summarySlots = Math.max(2, Math.floor(span / 48));
+  const depthSlots = Math.max(2, Math.floor((width - 52) / 28));
+  const overviewBudget = 2 * siblingSlots;
 
-  const addGroup = (branches: Branch[], kind: TreeDayFocus['kind'], parentId?: string) => {
-    const first = branches[0].row;
-    const id = `tree-day:${kind}:${first.id}`;
+  const addFold = (id: string, kind: 'branches' | 'run', branches: Branch[], summary: boolean) => {
     const count = kind === 'run' ? branches.length : branches.reduce((sum, branch) => sum + branch.count, 0);
-    nodes.push({ id, type: 'unknown', timestamp: first.timestamp, parentId,
-      title: new Date(first.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-    folds.set(id, { count, focus: { kind, ids: branches.map(branch => branch.row.id) } });
+    folds.set(id, { count, expanded: false, summary,
+      reloads: kind === 'run' ? branches.filter(branch => branch.row.type === 'reload').length : undefined });
+    if (opened.has(id)) candidates.set(id, { kind, branches });
   };
 
-  if (focus?.kind === 'run') {
-    if (roots.length <= TREE_LAYOUT_LIMIT) {
-      roots.forEach(branch => nodes.push(visibleNode(branch, branch.parent?.row.id)));
-    } else {
-      const size = Math.ceil(roots.length / TREE_LAYOUT_LIMIT);
-      for (let i = 0; i < roots.length; i += size) addGroup(roots.slice(i, i + size), 'run');
-    }
-    return { nodes, folds };
-  }
-
-  const pending: { branches: Branch[]; parentId?: string }[] = [];
-  const enqueue = (branches: Branch[], slots: number, parentId?: string) => {
-    const size = Math.ceil(branches.length / slots);
-    for (let i = 0; i < branches.length; i += size) pending.push({ branches: branches.slice(i, i + size), parentId });
+  const addGroup = (branches: Branch[], kind: 'branches' | 'run', parentId?: string): string => {
+    const first = branches[0].row;
+    const last = branches[branches.length - 1].row;
+    const id = `tree-day:${kind}:${first.id}:${last.id}`;
+    const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const title = first.id === last.id ? first.site || time(first.timestamp) : `${time(first.timestamp)}–${time(last.timestamp)}`;
+    nodes.push({ id, type: 'unknown', timestamp: first.timestamp, parentId, title });
+    addFold(id, kind, branches, true);
+    return id;
   };
-  enqueue(roots, TREE_LAYOUT_LIMIT);
-  for (let i = 0; i < pending.length; i++) {
-    const { branches, parentId } = pending[i];
-    const first = branches[0];
-    if (branches.length > 1) {
-      addGroup(branches, 'branches', parentId);
+
+  const projectBranches = (roots: Branch[], budget: number, parentId?: string) => {
+    const pending: { branches: Branch[]; parentId?: string; depth: number }[] = [];
+    const enqueue = (branches: Branch[], available: number, depth: number, parent?: string) => {
+      const slots = Math.min(available, siblingSlots);
+      const limit = branches.length >= 2 * slots ? Math.min(slots, summarySlots) : slots;
+      for (const bucket of partition(branches, limit)) pending.push({ branches: bucket, parentId: parent, depth });
+    };
+    enqueue(roots, budget, 1, parentId);
+    const start = nodes.length;
+    for (let i = 0; i < pending.length; i++) {
+      const { branches, parentId, depth } = pending[i];
+      const first = branches[0];
+      if (branches.length > 1) {
+        addGroup(branches, 'branches', parentId);
+        continue;
+      }
+      const middle: Branch[] = [];
+      let tail = first;
+      while (tail.children.length === 1) {
+        const child = tail.children[0];
+        if (!first.row.site || child.row.site !== first.row.site || !sameTab(first, child) ||
+            child.row.keep || child.children.length > 1 || child.children.some(next => !sameTab(child, next))) break;
+        middle.push(child);
+        tail = child;
+      }
+      const remaining = budget - (nodes.length - start) - (pending.length - i - 1);
+      if ((remaining === 1 || depth >= depthSlots) && tail.children.length) {
+        addGroup(branches, 'branches', parentId);
+        continue;
+      }
+      const outsideParent = !tree.byId.has(first.row.parentId ?? '') ? first.row.parentId : undefined;
+      nodes.push(visibleNode(first, parentId ?? outsideParent));
+      if (middle.length) addFold(first.row.id, 'run', middle, false);
+      if (tail.children.length) enqueue(tail.children, remaining - 1, depth + 1, first.row.id);
+    }
+  };
+
+  projectBranches(tree.roots, overviewBudget);
+  // Materialize requested details after placing the overview. An open group cannot evict its neighbors.
+  for (const id of opened) {
+    const candidate = candidates.get(id);
+    if (!candidate) continue;
+    const remaining = overviewBudget + siblingSlots - nodes.length;
+    const { kind, branches } = candidate;
+    if (remaining < 2 && !(remaining === 1 && kind === 'run' && branches.length === 1)) continue;
+    folds.get(id)!.expanded = true;
+    if (kind === 'branches') {
+      projectBranches(branches, Math.min(siblingSlots, remaining), id);
       continue;
     }
-    const run = [first];
-    let tail = first;
-    while (tail.children.length === 1) {
-      const child = tail.children[0];
-      if (!first.row.site || child.row.site !== first.row.site || !sameTab(first, child) ||
-          child.row.keep || child.children.length > 1 || child.children.some(next => !sameTab(child, next))) break;
-      run.push(child);
-      tail = child;
+
+    const successors = nodes.filter(node => node.parentId === id);
+    let parentId = id;
+    const runSlots = Math.max(2, Math.floor((width - 52) / 96));
+    // Short runs use the actual pages. Large runs reveal selectable ranges on the same branch.
+    const parts = branches.length <= Math.min(depthSlots, remaining)
+      ? partition(branches, branches.length) : partition(branches, Math.min(runSlots, remaining));
+    for (const part of parts) {
+      if (part.length === 1) {
+        nodes.push(visibleNode(part[0], parentId));
+        parentId = part[0].row.id;
+      } else {
+        parentId = addGroup(part, 'run', parentId);
+      }
     }
-    const remaining = TREE_LAYOUT_LIMIT - nodes.length - (pending.length - i - 1);
-    if (remaining === 1 && tail.children.length) {
-      // At the viewport budget, give the rest of the subtree one selectable representative.
-      addGroup(branches, 'branches', parentId);
-      continue;
-    }
-    const outsideParent = !focus && !tree.byId.has(first.row.parentId ?? '') ? first.row.parentId : undefined;
-    nodes.push(visibleNode(first, parentId ?? outsideParent));
-    if (run.length > 1) {
-      folds.set(first.row.id, { count: run.length - 1,
-        reloads: run.slice(1).filter(branch => branch.row.type === 'reload').length,
-        focus: { kind: 'run', ids: run.map(branch => branch.row.id) } });
-    }
-    if (tail.children.length) enqueue(tail.children, remaining - 1, first.row.id);
+    for (const successor of successors) successor.parentId = parentId;
   }
   return { nodes, folds };
 }

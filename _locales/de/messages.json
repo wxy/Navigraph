@@ -5295,6 +5295,14 @@
   "recording_metadata_not_saved": {
     "message": "Seiteninformationen wurden nicht gespeichert. Prüfen Sie den Aufzeichnungsstatus."
   },
+  "tree_day_density": {
+    "message": "Wegen des verfügbaren Platzes gruppiert",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "Viele Einträge sind geöffnet. Klappen Sie zuerst eine Gruppe ein.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
   "tree_day_collapse": {
     "message": "Zweig einklappen",
     "description": "收起展开的平衡树分支"
