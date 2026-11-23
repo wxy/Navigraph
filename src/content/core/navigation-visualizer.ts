@@ -1,7 +1,10 @@
 import { defaultView, validView } from '../utils/display-settings.js';
 import type { NavigraphSettings } from '../../lib/settings/types.js';
 import { sessionServiceClient } from './session-service-client.js';
-import type { GraphPageInfo } from '../../lib/graph/query.js';
+import { matchesGraphFilters, type GraphPageInfo } from '../../lib/graph/query.js';
+import type { FilteredTreeDay, TreeDay } from '../../lib/graph/tree-day.js';
+import type { BackgroundResponses } from '../../types/messages/background.js';
+import { sendMessage } from '../messaging/content-message-service.js';
 /**
  * 导航图谱可视化器核心类
  */
@@ -29,7 +32,39 @@ const logger = new Logger('NavigationVisualizer');
  */ 
 export class NavigationVisualizer implements Visualizer {
   get pageInfo(): GraphPageInfo | null { return sessionServiceClient.pageInfo; }
+  get graphCounts(): Pick<GraphPageInfo, 'total' | 'matched'> | null {
+    if (this.currentView !== 'tree') return this.pageInfo;
+    return this.treeDay ? { total: this.treeDay.total, matched: this.treeDay.nodes.length } : null;
+  }
+
+  treeDay: FilteredTreeDay | null = null;
+  private treeSnapshot: TreeDay | null = null;
+  private treeDate?: number;
+  private treeRequest = 0;
+
+  async loadTreeDay(fit = false): Promise<void> {
+    const request = ++this.treeRequest;
+    const response: BackgroundResponses.GetTreeDayResponse = await sendMessage('getTreeDay', { date: this.treeDate });
+    if (request !== this.treeRequest || this.currentView !== 'tree') return;
+    const { start, nodes, truncated } = response;
+    const fitToView = fit || this.treeSnapshot?.start !== start;
+    this.treeSnapshot = { start, nodes, truncated };
+    this.refreshVisualization(undefined, { restoreTransform: true, fitToView });
+    this.sessionViewController.updateSessionSelector();
+  }
+
+  async selectTreeDay(date: number): Promise<void> {
+    this.treeDate = date;
+    await this.loadTreeDay(true);
+    if (this.currentView === 'tree' && this.treeDate === date) this.uiManager.hideControlPanel();
+  }
+
   async loadGraphPage(page = 0, edgePage = 0): Promise<void> {
+    if (this.currentView === 'tree') {
+      if (this.treeSnapshot) this.refreshVisualization(undefined, { fitToView: true });
+      else await this.loadTreeDay(true);
+      return;
+    }
     await sessionServiceClient.loadPage(page, edgePage);
   }
 
@@ -77,9 +112,10 @@ export class NavigationVisualizer implements Visualizer {
   get hasExplicitView(): boolean { return this.explicitView; }
   private readonly popstateHandler = () => {
     const view = this.resolveLocationView();
+    const viewChanged = view !== this.currentView;
     this.filterManager.restoreFromUrl();
     this.renderCurrentView(view);
-    void this.loadGraphPage(0).catch(error => this.showError(String(error)));
+    if (view === 'waterfall' && !viewChanged) void this.loadGraphPage(0).catch(error => this.showError(String(error)));
   };
 
 
@@ -295,7 +331,7 @@ export class NavigationVisualizer implements Visualizer {
     const target = !this.explicitView ? defaultView() : this.currentView;
     const viewChanged = target !== this.currentView;
     if (viewChanged) this.renderCurrentView(target as 'tree' | 'waterfall');
-    if (pageSizeChanged) {
+    if (pageSizeChanged && target === 'waterfall' && !viewChanged) {
       void this.loadGraphPage(0).catch(error => this.showError(String(error)));
     } else if (!viewChanged && (previous.animationEnabled !== next.animationEnabled || previous.showLabels !== next.showLabels)) {
       this.refreshVisualization(undefined, { restoreTransform: true });
@@ -442,6 +478,7 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   private renderCurrentView(view: 'tree' | 'waterfall'): void {
+    const viewChanged = view !== this.currentView;
     // 使用视图状态管理器切换视图
     this.viewStateManager.switchView(view as "tree" | "waterfall");
 
@@ -460,6 +497,12 @@ export class NavigationVisualizer implements Visualizer {
 
       // 使用渲染管理器重新渲染
       this.refreshVisualization(undefined, { fitToView: true });
+      if (view === 'tree') {
+        void this.loadTreeDay().catch(error => this.showError(String(error)));
+      } else if (viewChanged) {
+        this.treeRequest++;
+        void this.sessionViewController.loadCurrentSession().catch(error => this.showError(String(error)));
+      }
     } catch (error) {
       logger.error(_('reinit_view_failed', '重新初始化视图失败'), error);
       this.showError(_('content_view_switch_failed', '切换视图失败') + ": " + (error instanceof Error ? error.message : String(error)));
@@ -471,6 +514,13 @@ export class NavigationVisualizer implements Visualizer {
    * 修改为使用FilterManager
    */
   public applyFilters(): void {
+    if (this.currentView === 'tree' && this.treeSnapshot) {
+      const { start, nodes, truncated } = this.treeSnapshot;
+      const filters = this.filters;
+      this.treeDay = { start, truncated, total: nodes.length,
+        oldest: nodes[nodes.length - 1]?.timestamp, newest: nodes[0]?.timestamp,
+        nodes: nodes.filter(node => matchesGraphFilters(node.type, node.isClosed === true, node.tracking, filters)) };
+    }
     this.nodes = this.allNodes;
     this.edges = this.allEdges;
   }
@@ -518,6 +568,10 @@ export class NavigationVisualizer implements Visualizer {
    * 切换到当天的会话
    */
   public switchToToday(): void {
+    if (this.currentView === 'tree') {
+      void this.selectTreeDay(Date.now()).catch(error => this.showError(String(error)));
+      return;
+    }
     logger.log(_('switch_to_today', '切换到当天'));
     
     // 使用 SessionViewController 切换到当天
@@ -560,7 +614,7 @@ export class NavigationVisualizer implements Visualizer {
    * @param node 节点数据
    */
   public showNodeDetails(node: NavNode): void {
-    this.uiManager.showNodeDetails(this.nodeMap.get(node.id) || node);
+    this.uiManager.showNodeDetails(this.currentView === 'tree' ? node : this.nodeMap.get(node.id) || node);
   }
   public showDetailedError(
     title: string,
@@ -706,6 +760,11 @@ export class NavigationVisualizer implements Visualizer {
    */
   async refreshData(): Promise<void> {
     try {
+      if (this.currentView === 'tree') {
+        await this.sessionViewController.loadSessionList();
+        if (this.currentView === 'tree') await this.loadTreeDay();
+        return;
+      }
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log(_('data_refresh_complete', '刷新数据完成'));

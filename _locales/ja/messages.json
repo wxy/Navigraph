@@ -5295,6 +5295,22 @@
   "recording_metadata_not_saved": {
     "message": "ページ情報を保存できませんでした。記録状態を確認してください。"
   },
+  "tree_day_collapse": {
+    "message": "枝を折りたたむ",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "再読み込み {0} 回",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "{0} 件の記録を展開",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "この日の最新 {0} 件を表示",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
   "tree_chain_expand": {
     "message": "途中の {0} ページを展開"
   },

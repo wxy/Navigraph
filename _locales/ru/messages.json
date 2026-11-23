@@ -5295,6 +5295,22 @@
   "recording_metadata_not_saved": {
     "message": "Информация о странице не сохранена. Проверьте статус записи."
   },
+  "tree_day_collapse": {
+    "message": "Свернуть ветвь",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "Перезагрузок: {0}",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "Развернуть {0} записей",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "Последние {0} записей за день",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
   "tree_chain_expand": {
     "message": "Развернуть промежуточные страницы ({0})"
   },

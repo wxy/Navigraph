@@ -1,4 +1,5 @@
 import type { GraphPageInfo } from '../../lib/graph/query.js';
+import type { FilteredTreeDay } from '../../lib/graph/tree-day.js';
 /**
  * 导航图谱公共类型定义
  */
@@ -82,6 +83,9 @@ export interface D3TreeLink {
 export interface Visualizer {
   readonly hasExplicitView?: boolean;
   readonly pageInfo?: GraphPageInfo | null;
+  readonly treeDay: FilteredTreeDay | null;
+  readonly graphCounts: Pick<GraphPageInfo, 'total' | 'matched'> | null;
+  selectTreeDay(date: number): Promise<void>;
   loadGraphPage(page?: number, edgePage?: number): Promise<void>;
   // 原有的基本属性和方法
   
@@ -114,6 +118,7 @@ export interface Visualizer {
   // 常用方法
   refreshVisualization(): void;
   showNodeDetails(data: any): void;
+  showError(message: string): void;
   switchView(viewName: "tree" | "timeline" | "waterfall"): void;
   updateStatusBar(): void;
   isTrackingPage(node: NavNode): boolean;

@@ -381,16 +381,10 @@ export class UIManager {
    * @param currentSessionId 当前会话ID
    */
   public updateSessionSelector(sessions: any[], currentSessionId?: string, latestSessionId?: string): void {
-    // 显示加载状态
-    this.setLoadingState(true);
-    
-    // 通过控制面板更新会话选择器
+    const showLoading = this.visualizer.currentView !== 'tree';
+    if (showLoading) this.setLoadingState(true);
     this.controlPanel.updateSessionSelector(sessions, currentSessionId, latestSessionId);
-    
-    // 更新完成后隐藏加载状态
-    setTimeout(() => {
-      this.setLoadingState(false);
-    }, 100); // 短暂延迟以确保视觉上的平滑过渡
+    if (showLoading) setTimeout(() => this.setLoadingState(false), 100);
   }
 
   /**

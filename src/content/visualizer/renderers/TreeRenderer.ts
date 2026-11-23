@@ -4,6 +4,9 @@ import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import type { ExtendedNavNode, NavLink, NavNode, Visualizer } from '../../types/navigation.js';
 import { animationDuration, labelsEnabled } from '../../utils/display-settings.js';
 import { getViewState, saveViewState } from '../../utils/state-manager.js';
+import { sendMessage } from '../../messaging/content-message-service.js';
+import type { BackgroundResponses } from '../../../types/messages/background.js';
+import { indexTreeDay, projectTreeDay, type TreeDayFocus, type TreeDayFold } from './tree-day-projection.js';
 import { isTrackingPage } from '../../utils/visualization-utils.js';
 import type { BaseRenderer, GraphRenderOptions } from './BaseRenderer.js';
 import { layoutEllipticalTree, treeNodeTitle } from './elliptical-tree-layout.js';
@@ -17,17 +20,17 @@ const HALO_ID = 'tree-level-halo-gradient';
 const FOLD_BUTTON_OFFSET = 26;
 
 type TreeTransform = Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>;
-type ChainLink = EllipticalTreeLink & { fold: NonNullable<EllipticalTreeLink['fold']> };
+type FoldLink = EllipticalTreeLink & { fold: TreeDayFold };
 
-export interface TreeExpansionState {
-  expandedChains: Set<string>;
-  overviews: Map<number, { layoutScope: string; transform: TreeTransform }>;
+interface TreeFrame {
+  focus: TreeDayFocus;
+  sourceId: string;
+  scope: string;
+  transform: TreeTransform;
 }
 
-interface FoldAction {
-  id: string;
-  closing: boolean;
-  focus: boolean;
+export interface TreeExpansionState {
+  frames: TreeFrame[];
 }
 
 export class TreeRenderer implements BaseRenderer {
@@ -44,18 +47,17 @@ export class TreeRenderer implements BaseRenderer {
     this.height = height;
   }
 
-  render(nodes: NavNode[], edges: NavLink[], options: GraphRenderOptions = {}): void {
+  render(_nodes: NavNode[], _edges: NavLink[], options: GraphRenderOptions = {}): void {
     const svg = this.svg;
-    if (!svg || !nodes.length) return;
+    const day = this.visualizer.treeDay;
+    if (!svg || !day?.nodes.length) return;
     const { visualizer, width, height } = this;
-    const currentSession = visualizer.currentSession;
+    const tree = indexTreeDay(day.nodes);
     const sessionNode: ExtendedNavNode = {
       id: SESSION_ROOT,
       type: 'session',
-      title: currentSession
-        ? _('session_date', '会话日期: {0}', new Date(currentSession.startTime).toLocaleString())
-        : _('current_session', '当前会话'),
-      timestamp: currentSession?.startTime ?? 0,
+      title: new Date(day.start).toLocaleDateString(),
+      timestamp: day.start,
     };
     const main = svg.select<SVGGElement>('.main-group');
     const rings = main.insert('g', ':first-child').attr('class', 'tree-levels').attr('aria-hidden', 'true');
@@ -64,35 +66,35 @@ export class TreeRenderer implements BaseRenderer {
     const links = main.select<SVGGElement>('.links-group');
     const pages = main.select<SVGGElement>('.nodes-group');
     const folds = main.append('g').attr('class', 'tree-chain-controls');
+    const back = svg.append('foreignObject')
+      .attr('x', (width - 168) / 2).attr('y', 12).attr('width', 168).attr('height', 36)
+      .append<HTMLButtonElement>('xhtml:button')
+      .attr('type', 'button').attr('class', 'tree-chain-toggle tree-day-back')
+      .style('display', 'none')
+      .attr('aria-expanded', 'true')
+      .text(_('tree_day_collapse', '收起分支'));
     let selectedNodeId: string | undefined;
-    let activeChain: ChainLink | undefined;
+    let pending = false;
+    let groups = new Map<string, TreeDayFold>();
+    const metadata = new Map<string, NavNode>();
 
     const tabId = visualizer.tabId || '';
-    const pageIndex = visualizer.pageInfo?.page ?? 0;
-    const layoutScope = `v2:${currentSession?.id ?? ''}:${pageIndex}:${width}x${height}`;
+    const layoutScope = `day:${day.start}:${width}x${height}`;
     const saved = options.fitToView ? undefined : getViewState(tabId, VIEW_STATE);
-    const stored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
-    const restored = stored && Number.isFinite(stored.x) && Number.isFinite(stored.y) && Number.isFinite(stored.k) && stored.k > 0
-      ? d3.zoomIdentity.translate(stored.x, stored.y).scale(stored.k)
-      : undefined;
-    const updateLabels = (scale: number) => {
-      const display = scale >= 0.5 && labelsEnabled() ? null : 'none';
-      pages.selectAll<SVGTextElement, EllipticalTreeNode>('.node-title-label')
-        .style('display', () => display);
-    };
+    const restored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
     const applyViewport = (transform: d3.ZoomTransform) => {
       main.attr('transform', transform.toString());
       visualizer.currentTransform = transform;
       const scale = transform.k;
-      updateLabels(scale);
-      const buttonScale = (link: ChainLink) => link === activeChain ? Math.max(1, 0.9 / scale) : 1;
-      folds.selectAll<SVGForeignObjectElement, ChainLink>('foreignObject').attr('transform', link => {
-        const factor = buttonScale(link);
+      pages.selectAll<SVGTextElement, EllipticalTreeNode>('.node-title-label')
+        .style('display', page => labelsEnabled() && (scale >= 0.5 || (scale >= 0.35 && groups.has(page.data.id))) ? null : 'none');
+      const factor = Math.max(1, 0.75 / scale);
+      folds.selectAll<SVGForeignObjectElement, FoldLink>('foreignObject').attr('transform', link => {
         const y = link.y - FOLD_BUTTON_OFFSET * factor;
         return `translate(${link.x},${y}) scale(${factor}) translate(${-link.x},${-link.y})`;
       });
-      folds.selectAll<SVGLineElement, ChainLink>('line')
-        .attr('y2', link => link.y - (FOLD_BUTTON_OFFSET - 15) * buttonScale(link));
+      folds.selectAll<SVGLineElement, FoldLink>('line')
+        .attr('y2', link => link.y - (FOLD_BUTTON_OFFSET - 15) * factor);
       visualizer.updateStatusBar();
     };
     const zoom: d3.ZoomBehavior<SVGSVGElement, unknown> = d3.zoom();
@@ -103,7 +105,7 @@ export class TreeRenderer implements BaseRenderer {
       })
       .on('zoom', event => applyViewport(event.transform))
       .on('end', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        if (event.sourceEvent && (!activeChain || !this.expansion.overviews.has(pageIndex))) {
+        if (event.sourceEvent && !this.expansion.frames.length) {
           saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: event.transform });
         }
       });
@@ -118,130 +120,148 @@ export class TreeRenderer implements BaseRenderer {
         .classed('highlighted', page => page.data.id === selectedNodeId);
     };
 
-    const draw = (action?: FoldAction) => {
-      const { expandedChains, overviews } = this.expansion;
-      const layout = layoutEllipticalTree(nodes, edges, sessionNode, expandedChains, width, height);
-      const outer = layout.rings[layout.rings.length - 1];
-      halo.attr('cx', layout.centerX).attr('cy', layout.centerY).attr('rx', outer.rx).attr('ry', outer.ry);
-      const stops = layout.rings.flatMap((ring, index) => {
-        const progress = index / Math.max(1, layout.rings.length - 1);
-        const strength = 1 - 0.6 * progress;
-        const innerRadius = index === 0 ? 0 : layout.rings[index - 1].rx;
-        return [innerRadius, ring.rx].map(radius => ({ offset: radius / outer.rx, strength }));
-      });
-      gradient.selectAll<SVGStopElement, typeof stops[number]>('stop')
-        .data(stops)
-        .join('stop')
-        .attr('offset', stop => stop.offset)
-        .style('--tree-level-strength', stop => String(stop.strength));
-      rings.selectAll<SVGEllipseElement, typeof layout.rings[number]>('ellipse.tree-level')
-        .data(layout.rings, ring => ring.depth)
-        .join('ellipse')
-        .attr('class', 'tree-level')
-        .attr('data-depth', ring => ring.depth)
-        .attr('cx', layout.centerX)
-        .attr('cy', layout.centerY)
-        .attr('rx', ring => ring.rx)
-        .attr('ry', ring => ring.ry);
-      links.selectAll<SVGPathElement, EllipticalTreeLink>('path')
-        .data(layout.links, link => link.target.data.id)
-        .join('path')
-        .attr('class', link => `link ${link.target.data.type}`)
-        .classed('tree-link-continuation', link => link.target.continuesOutsidePage)
-        .attr('d', link => link.path);
-
-      drawNodes(pages, layout.nodes, currentSession?.startTime, visualizer, (node) => {
-        selectedNodeId = node.data.id;
-        visualizer.showNodeDetails?.(node.data);
-        updateSelection(node.depth);
-      });
-      updateSelection(layout.nodes.find(node => node.data.id === selectedNodeId)?.depth);
-
-      const foldedLinks = layout.links.filter((link): link is ChainLink => link.fold !== undefined);
-      const byFoldId = new Map(foldedLinks.map(link => [link.fold.id, link]));
-      const activeId = Array.from(expandedChains).reverse().find(id => byFoldId.has(id));
-      activeChain = activeId === undefined ? undefined : byFoldId.get(activeId);
-      folds.selectAll<SVGLineElement, ChainLink>('line')
-        .data(foldedLinks, link => link.fold.id)
-        .join(enter => enter.insert('line', ':first-child').attr('class', 'tree-chain-guide'))
-        .attr('x1', link => link.x)
-        .attr('x2', link => link.x)
-        .attr('y1', link => link.y);
-      const controls = folds.selectAll<SVGForeignObjectElement, ChainLink>('foreignObject')
-        .data(foldedLinks, link => link.fold.id)
-        .join(enter => enter.append('foreignObject')
-          .attr('width', 64)
-          .attr('height', 36)
-          .call(objects => objects.append('xhtml:button')
-            .attr('type', 'button')
-            .attr('class', 'tree-chain-toggle')))
-        .attr('x', link => link.x - 32)
-        .attr('y', link => link.y - 18);
-
-      function actionText(link: ChainLink): string {
-        return link.fold.expanded
-          ? _('tree_chain_collapse', '收起 {0} 个中间页面', String(link.fold.count))
-          : _('tree_chain_expand', '展开 {0} 个中间页面', String(link.fold.count));
-      }
-
-      const buttons = controls.select<HTMLButtonElement>('button')
-        .attr('aria-expanded', link => String(link.fold.expanded))
-        .attr('title', actionText)
-        .attr('aria-label', link => {
-          const label = link.target.data.title || link.target.data.url;
-          return `${link.fold.expanded ? '−' : '+'}${link.fold.count} ${actionText(link)}${label ? ` · ${label}` : ''}`;
-        })
-        .text(link => `${link.fold.expanded ? '−' : '+'}${link.fold.count}`)
-        .on('click', (event: MouseEvent, link) => {
-          const fold = link.fold;
-          const focus = event.currentTarget === document.activeElement;
-          if (fold.expanded) {
-            expandedChains.delete(fold.id);
-          } else {
-            if (!activeChain || !overviews.has(pageIndex)) {
-              overviews.set(pageIndex, { layoutScope, transform: d3.zoomTransform(svg.node()!) });
-            }
-            expandedChains.add(fold.id);
-          }
-          draw({ id: fold.id, closing: fold.expanded, focus });
+    const draw = async (frames: TreeFrame[], camera?: TreeTransform, focusId?: string) => {
+      if (pending) return;
+      pending = true;
+      try {
+        let projection = projectTreeDay(tree, frames[frames.length - 1]?.focus);
+        while (!projection.nodes.length && frames.length) {
+          frames = frames.slice(0, -1);
+          projection = projectTreeDay(tree, frames[frames.length - 1]?.focus);
+        }
+        const ids = projection.nodes.filter(node => !projection.folds.has(node.id)).map(node => node.id);
+        const missing = ids.filter(id => !metadata.has(id));
+        if (missing.length) {
+          const response: BackgroundResponses.GetTreeNodesResponse = await sendMessage('getTreeNodes', { ids: missing });
+          if (this.svg !== svg) return;
+          for (const node of response.nodes) metadata.set(node.id, node);
+        }
+        const positioned = projection.nodes.map(node => {
+          const details = projection.folds.has(node.id) ? undefined : metadata.get(node.id);
+          return details ? { ...node, ...details, parentId: node.parentId } : node;
         });
+        const layout = layoutEllipticalTree(positioned, sessionNode, width, height);
+        this.expansion.frames = frames;
+        groups = projection.folds;
+        back.style('display', () => frames.length ? null : 'none');
+        back.attr('tabindex', frames.length ? null : -1);
+        const outer = layout.rings[layout.rings.length - 1];
+        halo.attr('cx', layout.centerX).attr('cy', layout.centerY).attr('rx', outer.rx).attr('ry', outer.ry);
+        const stops = layout.rings.flatMap((ring, index) => {
+          const progress = index / Math.max(1, layout.rings.length - 1);
+          const strength = 1 - 0.6 * progress;
+          const innerRadius = index === 0 ? 0 : layout.rings[index - 1].rx;
+          return [innerRadius, ring.rx].map(radius => ({ offset: radius / outer.rx, strength }));
+        });
+        gradient.selectAll<SVGStopElement, typeof stops[number]>('stop')
+          .data(stops)
+          .join('stop')
+          .attr('offset', stop => stop.offset)
+          .style('--tree-level-strength', stop => String(stop.strength));
+        rings.selectAll<SVGEllipseElement, typeof layout.rings[number]>('ellipse.tree-level')
+          .data(layout.rings, ring => ring.depth)
+          .join('ellipse')
+          .attr('class', 'tree-level')
+          .attr('data-depth', ring => ring.depth)
+          .attr('cx', layout.centerX)
+          .attr('cy', layout.centerY)
+          .attr('rx', ring => ring.rx)
+          .attr('ry', ring => ring.ry);
+        links.selectAll<SVGPathElement, EllipticalTreeLink>('path')
+          .data(layout.links, link => link.target.data.id)
+          .join('path')
+          .attr('class', link => `link ${link.target.data.type}`)
+          .classed('tree-link-continuation', link => link.target.continuesOutsidePage)
+          .attr('d', link => link.path);
 
-      svg.selectAll<SVGTextElement, number>('text.cycle-message')
-        .data(layout.brokenCycles ? [layout.brokenCycles] : [])
-        .join('text')
-        .attr('class', 'cycle-message')
-        .attr('x', width - 22)
-        .attr('y', 24)
-        .attr('text-anchor', 'end')
-        .text(count => _('fixed_cycle_connections', '已移除 {0} 个循环连接', String(count)));
+        const open = (id: string, fold: TreeDayFold, focused: boolean) => {
+          void draw([...this.expansion.frames, { focus: fold.focus, sourceId: id,
+            scope: layoutScope, transform: d3.zoomTransform(svg.node()!) }], undefined, focused ? 'back' : undefined);
+        };
+        drawNodes(pages, layout.nodes, day.start, visualizer, (node) => {
+          const fold = groups.get(node.data.id);
+          if (fold) open(node.data.id, fold, false);
+          else {
+            selectedNodeId = node.data.id;
+            const details = metadata.get(node.data.id);
+            if (details) visualizer.showNodeDetails(details);
+            updateSelection(node.depth);
+          }
+        });
+        updateSelection(layout.nodes.find(node => node.data.id === selectedNodeId)?.depth);
 
-      const fit = options.fitToView && !action;
-      const viewportHeight = fit ? Math.max(1, height - (options.viewportBottomInset ?? 0)) : height;
-      const scale = Math.min(layout.fitScale, viewportHeight / (2 * outer.ry));
-      const initial = d3.zoomIdentity
-        .translate(layout.centerX * (1 - scale), viewportHeight / 2 - layout.centerY * scale)
-        .scale(scale);
-      const overview = overviews.get(pageIndex);
-      let transform = fit || action?.closing ? initial : restored ?? initial;
-      if (activeChain && overview) {
-        transform = fitExpandedChain(activeChain, layout.links, width, height);
-      } else if (overview?.layoutScope === layoutScope) {
-        const { x, y, k } = overview.transform;
-        transform = d3.zoomIdentity.translate(x, y).scale(k);
-      }
-      if (action?.closing && !activeChain) overviews.delete(pageIndex);
-      if (fit) saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: initial });
+        const foldedLinks = layout.links.flatMap(link => {
+          const fold = groups.get(link.target.data.id);
+          return fold ? [{ ...link, fold }] : [];
+        });
+        folds.selectAll<SVGLineElement, FoldLink>('line')
+          .data(foldedLinks, link => link.target.data.id)
+          .join(enter => enter.insert('line', ':first-child').attr('class', 'tree-chain-guide'))
+          .attr('x1', link => link.x)
+          .attr('x2', link => link.x)
+          .attr('y1', link => link.y);
+        const controls = folds.selectAll<SVGForeignObjectElement, FoldLink>('foreignObject')
+          .data(foldedLinks, link => link.target.data.id)
+          .join(enter => enter.append('foreignObject')
+            .attr('width', 64)
+            .attr('height', 36)
+            .call(objects => objects.append('xhtml:button')
+              .attr('type', 'button')
+              .attr('class', 'tree-chain-toggle')))
+          .attr('x', link => link.x - 32)
+          .attr('y', link => link.y - 18);
 
-      zoom.scaleExtent([Math.min(0.1, scale, transform.k), 8]);
-      svg.call(zoom.transform, transform);
-      // A wheel gesture may still belong to the previous renderer after a resize.
-      if (visualizer.currentTransform !== transform) applyViewport(transform);
-      if (action?.focus) {
-        const focusId = activeChain?.fold.id ?? action.id;
-        buttons.filter(link => link.fold.id === focusId).node()?.focus({ preventScroll: true });
+        const label = (link: FoldLink) => {
+          const reloads = link.fold.reloads
+            ? ' · ' + _('tree_day_reload_count', '刷新 {0} 次', String(link.fold.reloads)) : '';
+          return `${link.target.data.title || ''} · ${_('tree_day_expand', '展开 {0} 条记录', String(link.fold.count))}${reloads}`;
+        };
+        const buttons = controls.select<HTMLButtonElement>('button')
+          .attr('aria-expanded', 'false')
+          .attr('title', label)
+          .attr('aria-label', label)
+          .text(link => `+${link.fold.count}`)
+          .on('click', (event: MouseEvent, link) => {
+            open(link.target.data.id, link.fold, event.currentTarget === document.activeElement);
+          });
+        svg.selectAll<SVGTextElement, number>('text.cycle-message')
+          .data(tree.brokenCycles ? [tree.brokenCycles] : [])
+          .join('text')
+          .attr('class', 'cycle-message')
+          .attr('x', width - 22)
+          .attr('y', 24)
+          .attr('text-anchor', 'end')
+          .text(count => _('fixed_cycle_connections', '已移除 {0} 个循环连接', String(count)));
+
+        const viewportHeight = Math.max(1, height - (options.viewportBottomInset ?? 0));
+        const scale = Math.min(layout.fitScale, viewportHeight / (2 * outer.ry));
+        const initial = d3.zoomIdentity
+          .translate(layout.centerX * (1 - scale), viewportHeight / 2 - layout.centerY * scale)
+          .scale(scale);
+        const transform = camera && Number.isFinite(camera.x) && Number.isFinite(camera.y) && Number.isFinite(camera.k) && camera.k > 0
+          ? d3.zoomIdentity.translate(camera.x, camera.y).scale(camera.k) : initial;
+        if (options.fitToView && !frames.length && !camera) {
+          saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform });
+        }
+        zoom.scaleExtent([Math.min(0.1, scale, transform.k), 8]);
+        svg.call(zoom.transform, transform);
+        if (visualizer.currentTransform !== transform) applyViewport(transform);
+        if (focusId === 'back') back.node()?.focus({ preventScroll: true });
+        else if (focusId) buttons.filter(link => link.target.data.id === focusId).node()?.focus({ preventScroll: true });
+      } catch (error) {
+        if (this.svg === svg) visualizer.showError(String(error));
+      } finally {
+        pending = false;
       }
     };
-    draw();
+    back.on('click', (event: MouseEvent) => {
+      const frames = this.expansion.frames;
+      const frame = frames[frames.length - 1];
+      if (!frame) return;
+      void draw(frames.slice(0, -1), frame.scope === layoutScope ? frame.transform : undefined,
+        event.currentTarget === document.activeElement ? frame.sourceId : undefined);
+    });
+    void draw(this.expansion.frames, this.expansion.frames.length ? undefined : restored);
   }
 
   cleanup(): void {
@@ -251,31 +271,6 @@ export class TreeRenderer implements BaseRenderer {
     this.zoom = undefined;
     this.svg = null;
   }
-}
-
-function fitExpandedChain(chain: ChainLink, links: EllipticalTreeLink[], width: number, height: number): d3.ZoomTransform {
-  const byTarget = new Map(links.map(link => [link.target.data.id, link]));
-  const ancestor = chain.source.depth === 1 ? byTarget.get(chain.source.data.id)?.source : undefined;
-  const start = ancestor ?? chain.source;
-  let minX = Math.min(start.x, chain.source.x, chain.x);
-  let maxX = Math.max(start.x, chain.source.x, chain.x);
-  let minY = Math.min(start.y, chain.source.y, chain.y);
-  let maxY = Math.max(start.y, chain.source.y, chain.y);
-  for (let link = byTarget.get(chain.fold.endpointId); link; link = byTarget.get(link.source.data.id)) {
-    minX = Math.min(minX, link.target.x);
-    maxX = Math.max(maxX, link.target.x);
-    minY = Math.min(minY, link.target.y);
-    maxY = Math.max(maxY, link.target.y);
-    if (link === chain) break;
-  }
-  // Reserve space for node labels and keep the chain clear of graph controls.
-  const top = 54;
-  const bottom = 88;
-  const scale = Math.min(1, Math.max(1, width - 80) / (maxX - minX + 140),
-    Math.max(1, height - top - bottom) / (maxY - minY + 92));
-  return d3.zoomIdentity
-    .translate(width / 2 - (minX + maxX) * scale / 2, (height + top - bottom) / 2 - (minY + maxY) * scale / 2)
-    .scale(scale);
 }
 
 function drawNodes(

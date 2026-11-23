@@ -5298,6 +5298,22 @@
   "content_unknown_time": {
     "message": "Unknown time"
   },
+  "tree_day_collapse": {
+    "message": "Collapse branch",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "{0} reloads",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "Expand {0} records",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "Latest {0} records for this day",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
   "tree_chain_expand": {
     "message": "Expand {0} intermediate pages"
   },

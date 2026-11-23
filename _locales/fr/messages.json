@@ -5295,6 +5295,22 @@
   "recording_metadata_not_saved": {
     "message": "Les informations de la page n’ont pas été enregistrées. Vérifiez l’état de l’enregistrement."
   },
+  "tree_day_collapse": {
+    "message": "Replier la branche",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "{0} actualisations",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "Afficher {0} entrées",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "{0} entrées les plus récentes du jour",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
   "tree_chain_expand": {
     "message": "Déplier {0} pages intermédiaires"
   },

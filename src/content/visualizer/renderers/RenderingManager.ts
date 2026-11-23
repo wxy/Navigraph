@@ -29,8 +29,8 @@ export class RenderingManager {
   
   // 当前渲染器引用
   private currentRenderer: any = null;
-  private treeExpansion: TreeExpansionState = { expandedChains: new Set(), overviews: new Map() };
-  private treeSessionId?: string;
+  private treeExpansion: TreeExpansionState = { frames: [] };
+  private treeDate?: number;
   private rangeControls: HTMLDivElement | null = null;
   private waterfallFitToView = false;
 
@@ -161,21 +161,18 @@ export class RenderingManager {
       svg.classed('motion-disabled', !animationsEnabled()).classed('hide-node-labels', !labelsEnabled());
       const currentSession = this.visualizer.currentSession;
       const view = this.viewStateManager.currentView as 'tree' | 'waterfall';
-      if (this.treeSessionId !== currentSession?.id) {
-        this.treeExpansion.expandedChains.clear();
-        this.treeExpansion.overviews.clear();
-        this.treeSessionId = currentSession?.id;
+      const treeDay = view === 'tree' ? this.visualizer.treeDay : null;
+      if (view === 'tree' && (this.treeDate !== treeDay?.start || options.fitToView)) {
+        this.treeExpansion.frames = [];
+        this.treeDate = treeDay?.start;
       }
-      if (options.fitToView) {
-        this.treeExpansion.overviews.clear();
-        if (view === 'waterfall') this.waterfallFitToView = true;
-      }
-      const ids = new Set(this.visualizer.nodes.map(node => node.id));
-      // The tree uses the original parent ID to mark continuations beyond this page.
-      const nodes = this.visualizer.nodes.map(node => ({ ...node,
-        parentId: view === 'tree' || (node.parentId && ids.has(node.parentId)) ? node.parentId : '',
+      if (options.fitToView && view === 'waterfall') this.waterfallFitToView = true;
+      const pageNodes = view === 'waterfall' ? this.visualizer.nodes : [];
+      const ids = new Set(pageNodes.map(node => node.id));
+      const nodes = pageNodes.map(node => ({ ...node,
+        parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
         timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
-      const edges = this.visualizer.edges;
+      const edges = view === 'waterfall' ? this.visualizer.edges : [];
       this.updateRangeControls();
 
       this.currentRenderer?.cleanup();
@@ -191,18 +188,19 @@ export class RenderingManager {
       const nodesGroup = mainGroup.append("g").attr("class", "nodes-group");
 
       // 检查是否有数据可渲染
-      const hasData = nodes && nodes.length > 0;
+      const nodeCount = treeDay?.nodes.length ?? nodes.length;
+      const hasData = nodeCount > 0;
 
       logger.log(_('visualization_render_start', '开始渲染可视化：视图={0}，节点数={1}，边数={2}，尺寸={3}'),
         this.viewStateManager.currentView,
-        String(hasData ? nodes.length : 0),
+        String(nodeCount),
         String(hasData ? edges.length : 0),
         `${width}x${height}`
       );
 
       // 如果没有数据，创建一个会话节点
       if (!hasData) {
-        this.renderEmptySession(nodesGroup, width, height, currentSession);
+        this.renderEmptySession(nodesGroup, width, height, view === 'waterfall' ? currentSession : undefined, treeDay?.start);
       } else {
         // 使用渲染器工厂创建相应的渲染器
         const renderer = RendererFactory.createRenderer(
@@ -253,13 +251,24 @@ export class RenderingManager {
   private updateRangeControls(): void {
     this.rangeControls?.remove();
     this.rangeControls = null;
+    if (!this.container) return;
     const info = this.visualizer.pageInfo;
-    if (!info || !this.container) return;
-    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
-    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
+    const tree = this.viewStateManager.currentView === 'tree';
+    const day = this.visualizer.treeDay;
+    if (tree ? !day?.truncated : !info) return;
     const controls = document.createElement('div');
     controls.className = 'navigation-range-controls';
     controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px`;
+    if (tree && day) {
+      const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      controls.textContent = `${_('tree_day_limit', '仅显示当天最新 {0} 条记录', day.total.toLocaleString())} · ${time(day.oldest!)}–${time(day.newest!)}`;
+      this.container.append(controls);
+      this.rangeControls = controls;
+      return;
+    }
+    if (!info) return;
+    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
+    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
     const en = chrome.i18n.getUILanguage().startsWith('en');
     const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
     const label = document.createElement('span');
@@ -309,7 +318,8 @@ export class RenderingManager {
     nodesGroup: any, 
     width: number, 
     height: number, 
-    currentSession?: SessionDetails
+    currentSession?: SessionDetails,
+    dayStart?: number
   ): void {
     // 创建一个会话节点
     const sessionNode = nodesGroup
@@ -334,7 +344,8 @@ export class RenderingManager {
       .attr("href", chrome.runtime.getURL("images/logo-48.png"));
 
     // 添加提示文字 - 本地化
-    const sessionTitle = currentSession?.title || _('content_current_session', '当前会话');
+    const sessionTitle = dayStart !== undefined ? new Date(dayStart).toLocaleDateString()
+      : currentSession?.title || _('content_current_session', '当前会话');
     sessionNode
       .append("text")
       .attr("class", "node-label empty-node-label node-title-label")
@@ -580,7 +591,7 @@ export class RenderingManager {
     const sizeChanged = this.updateContainerSize();
     
     // 如果尺寸有显著变化且有数据，重新渲染
-    if (sizeChanged && this.visualizer.nodes.length > 0) {
+    if (sizeChanged && (this.visualizer.currentView === 'tree' ? this.visualizer.treeDay : this.visualizer.nodes.length)) {
       this.renderVisualization({ restoreTransform: true });
     }
   }

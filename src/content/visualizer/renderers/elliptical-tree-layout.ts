@@ -1,25 +1,16 @@
-import type { ExtendedNavNode, NavLink, NavNode } from '../../types/navigation.js';
+import type { ExtendedNavNode, NavNode } from '../../types/navigation.js';
 
 const ROOT_RING_GAP = 128;
 const MIN_RING_GAP = 86;
-const MIN_FOLDED_PAGES = 3;
 const TRACK_GAP = 80;
 const NODE_BOX_HEIGHT = 66;
 const BEND_LENGTH = 72;
-
-interface ChainFold {
-  id: string;
-  count: number;
-  expanded: boolean;
-  endpointId: string;
-}
 
 interface TreeEntry {
   data: ExtendedNavNode;
   children: TreeEntry[];
   originalDepth: number;
   continuesOutsidePage: boolean;
-  fold?: ChainFold;
 }
 
 export interface EllipticalTreeNode {
@@ -62,39 +53,12 @@ export interface EllipticalTreeLink {
   source: EllipticalTreeNode;
   target: EllipticalTreeNode;
   path: string;
-  fold?: ChainFold;
   x: number;
   y: number;
 }
 
 function byTime(a: TreeEntry, b: TreeEntry): number {
   return a.data.timestamp - b.data.timestamp || a.data.id.localeCompare(b.data.id);
-}
-
-function compactChains(entry: TreeEntry, protectedIds: ReadonlySet<string>, expanded: ReadonlySet<string>): TreeEntry {
-  const children = entry.children.map(first => {
-    const tabId = entry.data.tabId;
-    const middle: TreeEntry[] = [];
-    let endpoint = first;
-    while (typeof tabId === 'number' && endpoint.data.tabId === tabId &&
-      endpoint.children.length === 1 && endpoint.children[0].data.tabId === tabId &&
-      !protectedIds.has(endpoint.data.id)) {
-      middle.push(endpoint);
-      endpoint = endpoint.children[0];
-    }
-
-    if (middle.length < MIN_FOLDED_PAGES) return compactChains(first, protectedIds, expanded);
-
-    const fold = {
-      id: first.data.id, count: middle.length, expanded: expanded.has(first.data.id), endpointId: endpoint.data.id,
-    };
-    const tail = compactChains(endpoint, protectedIds, expanded);
-    const visible = fold.expanded
-      ? middle.reduceRight((child, page) => ({ ...page, children: [child] }), tail)
-      : tail;
-    return { ...visible, fold };
-  });
-  return { ...entry, children };
 }
 
 function countLeaves(entry: TreeEntry): number {
@@ -188,7 +152,7 @@ function overlaps(placements: Placement[]): boolean {
   return false;
 }
 
-function placeTree(root: TreeEntry, tracks: ReadonlyMap<string, Track>, aspect: number, minimumRadii: number[] = []) {
+function placeTree(root: TreeEntry, tracks: ReadonlyMap<string, Track>, aspect: number) {
   const center: Placement = {
     entry: root, track: { side: 1, y: 0, halfWidth: 36 }, guide: { startX: 0, startY: 0, targetY: 0 },
     depth: 0, x: 0, y: 0,
@@ -211,7 +175,7 @@ function placeTree(root: TreeEntry, tracks: ReadonlyMap<string, Track>, aspect: 
       return { entry, track, guide, parent, depth, x: 0, y: 0 };
     }));
     if (!level.length) break;
-    radius = Math.max(radius + (depth === 1 ? ROOT_RING_GAP : gap), minimumRadii[depth - 1] ?? 0);
+    radius += depth === 1 ? ROOT_RING_GAP : gap;
     for (const placement of level) {
       if (placement.entry.children.length > 1) {
         // Reach the middle of the reserved track before splitting in opposite directions.
@@ -242,10 +206,6 @@ function placeTree(root: TreeEntry, tracks: ReadonlyMap<string, Track>, aspect: 
   return { placements, radii };
 }
 
-function hasChainFold(entry: TreeEntry): boolean {
-  return entry.fold !== undefined || entry.children.some(hasChainFold);
-}
-
 function branchPath(source: Placement, target: Placement, centerX: number, centerY: number): string {
   const { guide, track } = target;
   const length = target.x - source.x;
@@ -270,9 +230,7 @@ function branchPath(source: Placement, target: Placement, centerX: number, cente
 
 export function layoutEllipticalTree(
   nodes: NavNode[],
-  edges: NavLink[],
   session: ExtendedNavNode,
-  expanded: ReadonlySet<string>,
   width: number,
   height: number
 ) {
@@ -304,31 +262,13 @@ export function layoutEllipticalTree(
   for (const entry of entries.values()) attach(entry);
   for (const entry of [root, ...entries.values()]) entry.children.sort(byTime);
 
-  // Preserve endpoints of links that leave the parent-child chain.
-  const protectedIds = new Set<string>();
-  for (const edge of edges) {
-    const source = entries.get(edge.source);
-    const target = entries.get(edge.target);
-    if (source && target && (target.data.parentId !== source.data.id ||
-      source.data.tabId !== target.data.tabId || source === target)) {
-      protectedIds.add(source.data.id);
-      protectedIds.add(target.data.id);
-    }
-  }
-  for (const entry of entries.values()) {
-    if (entry.data.isSelfLoop || entry.data.hasFilteredChildren) protectedIds.add(entry.data.id);
-  }
-
-  const visibleTree = compactChains(root, protectedIds, expanded);
   const viewWidth = Math.max(1, width - 52);
   const viewHeight = Math.max(1, height - 60);
   const aspect = Math.max(1.2, Math.min(2.5, viewWidth / viewHeight));
   const centerX = width / 2;
   const centerY = height / 2;
   const tracks = allocateTracks(root);
-  // Reserve the unfolded ring spacing so changing a chain leaves neighboring tracks in place.
-  const minimumRadii = hasChainFold(visibleTree) ? placeTree(root, tracks, aspect).radii : [];
-  const { placements, radii } = placeTree(visibleTree, tracks, aspect, minimumRadii);
+  const { placements, radii } = placeTree(root, tracks, aspect);
   const treeNodes = new Map<Placement, EllipticalTreeNode>(placements.map(placement => [
     placement, {
       data: placement.entry.data,
@@ -348,7 +288,6 @@ export function layoutEllipticalTree(
       source: treeNodes.get(source)!,
       target: treeNodes.get(target)!,
       path: branchPath(source, target, centerX, centerY),
-      fold: target.entry.fold,
       x: centerX + target.track.side * middle,
       y: centerY + guideY(target.guide, middle),
     });

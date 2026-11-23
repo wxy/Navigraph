@@ -5295,6 +5295,22 @@
   "recording_metadata_not_saved": {
     "message": "頁面資訊未儲存，請檢查記錄狀態。"
   },
+  "tree_day_collapse": {
+    "message": "收合分支",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "重新整理 {0} 次",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "展開 {0} 筆記錄",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "僅顯示當天最新 {0} 筆記錄",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
   "tree_chain_expand": {
     "message": "展開 {0} 個中間頁面"
   },

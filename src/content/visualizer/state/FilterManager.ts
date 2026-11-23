@@ -176,7 +176,7 @@ export class FilterManager {
       this.filterConfigs = this.previousFilters;
       this.previousFilters = null;
     } else {
-      const info = this.visualizer.pageInfo;
+      const info = this.visualizer.graphCounts;
       if (!info || info.matched === info.total) return;
       this.previousFilters = this.filterConfigs;
       this.filterConfigs = this.filterConfigs.map(filter => ({ ...filter, enabled: true }));

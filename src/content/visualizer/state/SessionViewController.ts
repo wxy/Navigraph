@@ -57,7 +57,8 @@ export class SessionViewController {
       await this.loadSessionList();
       
       // 加载当前会话
-      await this.loadCurrentSession();
+      if (this.visualizer.currentView === 'tree') await this.visualizer.loadTreeDay();
+      else await this.loadCurrentSession();
 
       // 获取最新会话ID (不需要单独加载，仅获取ID用于视觉区分)
       await sessionServiceClient.loadLatestSession();

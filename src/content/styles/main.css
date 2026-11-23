@@ -238,6 +238,14 @@ body.loading-session #visualization-container::before {
   transition: all 0.2s ease;
 }
 
+button.day-cell {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 /* 折叠组抽屉：阻止滚动链到父容器，优先使用 CSS 来避免非被动 wheel 监听警告 */
 .collapsed-nodes-drawer .drawer-body {
   overscroll-behavior: contain; /* 阻止滚动链到父容器/页面 */
@@ -1752,6 +1760,14 @@ svg .node-label {
   right: 0;
 }
 
+.main-container:has(#navigation-svg[data-view="tree"]) {
+  overflow: clip;
+}
+
+.main-container:has(#navigation-svg[data-view="tree"]) .control-panel:not(.visible) {
+  visibility: hidden;
+}
+
 /* 控制面板滚动条美化 - 仅保留基础样式 */
 .control-panel::-webkit-scrollbar {
   width: 6px;
@@ -2128,6 +2144,10 @@ svg .node-label {
 .tree-chain-toggle:hover {
   background: var(--svg-node-fill);
   border-color: var(--btn-primary, #4285f4);
+}
+
+.tree-day-back {
+  width: 160px;
 }
 
 .tree-chain-toggle:focus-visible {
