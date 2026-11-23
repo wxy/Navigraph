@@ -1091,8 +1091,13 @@ path.link.closed, .edge.closed {
 
 /* 状态栏中的过滤指示器 */
 #status-filtered {
-  /* 颜色由 JavaScript 动态控制：有隐藏节点时为红色，无隐藏时为默认颜色 */
+  box-sizing: content-box;
+  font: inherit;
   font-weight: 500;
+}
+
+#status-filtered:enabled {
+  cursor: pointer;
 }
 
 /* 根节点样式 */

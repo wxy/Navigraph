@@ -7,6 +7,7 @@ import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { RendererFactory } from './RendererFactory.js';
+import type { GraphRenderOptions } from './BaseRenderer.js';
 import type { TreeExpansionState } from './TreeRenderer.js';
 import type { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
 import type { ViewStateManager } from '../state/ViewStateManager.js';
@@ -14,6 +15,7 @@ import type { UIManager } from '../ui/UIManager.js';
 import type { SessionDetails } from '../../types/session.js';
 
 const logger = new Logger('RenderingManager');
+const RANGE_CONTROLS_BOTTOM = 42;
 
 export class RenderingManager {
   private visualizer: Visualizer;
@@ -30,6 +32,7 @@ export class RenderingManager {
   private treeExpansion: TreeExpansionState = { expandedChains: new Set(), overviews: new Map() };
   private treeSessionId?: string;
   private rangeControls: HTMLDivElement | null = null;
+  private waterfallFitToView = false;
 
   
   /**
@@ -70,7 +73,7 @@ export class RenderingManager {
    */
   refreshVisualization(
     data?: any,
-    options: { restoreTransform?: boolean } = {}
+    options: GraphRenderOptions = {}
   ): void {
     logger.log(_('visualization_refresh_start', '开始刷新可视化：{0}'), data ? _('using_provided_data', '使用提供的数据') : _('using_existing_data', '使用现有数据'));
 
@@ -86,9 +89,7 @@ export class RenderingManager {
       this.visualizer.applyFilters();
 
       // 重新渲染可视化
-      this.renderVisualization({
-        restoreTransform: options.restoreTransform === true,
-      });
+      this.renderVisualization(options);
 
       // 更新URL和状态栏
       this.updateUrlAndUI();
@@ -142,7 +143,7 @@ export class RenderingManager {
   /**
    * 渲染可视化
    */
-  renderVisualization(options: { restoreTransform?: boolean } = {}): void {
+  renderVisualization(options: GraphRenderOptions = {}): void {
     if (!this.container || !this.viewStateManager.svg) {
       logger.error(_('render_failed_no_container_svg', '渲染失败：容器或SVG元素不存在'));
       return;
@@ -164,6 +165,10 @@ export class RenderingManager {
         this.treeExpansion.expandedChains.clear();
         this.treeExpansion.overviews.clear();
         this.treeSessionId = currentSession?.id;
+      }
+      if (options.fitToView) {
+        this.treeExpansion.overviews.clear();
+        if (view === 'waterfall') this.waterfallFitToView = true;
       }
       const ids = new Set(this.visualizer.nodes.map(node => node.id));
       // The tree uses the original parent ID to mark continuations beyond this page.
@@ -219,7 +224,9 @@ export class RenderingManager {
         
         // 渲染视图
         renderer.render(nodes, edges, {
-          restoreTransform: options.restoreTransform
+          restoreTransform: options.restoreTransform && !options.fitToView,
+          fitToView: view === 'waterfall' ? this.waterfallFitToView : options.fitToView,
+          viewportBottomInset: this.rangeControls ? this.rangeControls.offsetHeight + RANGE_CONTROLS_BOTTOM + 8 : 0,
         });
       }
 
@@ -252,7 +259,7 @@ export class RenderingManager {
     const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
     const controls = document.createElement('div');
     controls.className = 'navigation-range-controls';
-    controls.style.cssText = 'position:absolute;left:50%;bottom:42px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px';
+    controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px`;
     const en = chrome.i18n.getUILanguage().startsWith('en');
     const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
     const label = document.createElement('span');
@@ -275,6 +282,21 @@ export class RenderingManager {
         button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page, info.edgePage + delta).catch(error => this.uiManager.showError(String(error))); });
         controls.append(button);
       }
+    }
+    if (this.viewStateManager.currentView === 'waterfall' && this.visualizer.nodes.length > 0) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'waterfall-fit-toggle';
+      button.textContent = this.waterfallFitToView
+        ? _('content_waterfall_actual_size', '实际大小')
+        : _('content_waterfall_fit_view', '显示全图');
+      button.addEventListener('click', () => {
+        const hadFocus = document.activeElement === button;
+        this.waterfallFitToView = !this.waterfallFitToView;
+        this.renderVisualization({ restoreTransform: true, fitToView: this.waterfallFitToView });
+        if (hadFocus) this.rangeControls?.querySelector<HTMLButtonElement>('.waterfall-fit-toggle')?.focus();
+      });
+      controls.append(button);
     }
     this.container.append(controls);
     this.rangeControls = controls;

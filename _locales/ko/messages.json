@@ -3719,6 +3719,18 @@
     "message": "노드: {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "필터 복원",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "실제 크기",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "전체 보기",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "숨김: {0}",
     "description": "已隐藏节点数量状态项"

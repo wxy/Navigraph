@@ -51,23 +51,7 @@ export class StatusBar {
       return;
     }
 
-    // 添加点击样式
-    filteredElement.style.cursor = 'pointer';
-    filteredElement.style.userSelect = 'none';
-
-    // 添加点击事件监听器
-    filteredElement.addEventListener('click', () => {
-      logger.log(_('status_filtered_clicked', '已隐藏状态被点击'));
-      
-      // 切换 closed 筛选器（显示/隐藏已关闭页面）
-      const visualizer = this.visualizer as any;
-      if (visualizer.toggleClosedFilter) {
-        visualizer.toggleClosedFilter();
-      } else {
-        logger.warn(_('status_filtered_toggle_unavailable', '切换筛选器功能不可用'));
-      }
-    });
-
+    filteredElement.addEventListener('click', () => this.visualizer.toggleHiddenNodes());
     logger.log(_('status_filtered_click_handler_setup', '已隐藏元素点击处理器已设置'));
   }
 
@@ -167,17 +151,15 @@ export class StatusBar {
       }
 
       // 更新已过滤节点计数
-      const filteredElement = document.getElementById("status-filtered");
+      const filteredElement = document.querySelector<HTMLButtonElement>("#status-filtered");
       if (filteredElement) {
         const filteredCount = Math.max(0, allNodesCount - (visualizer.pageInfo?.matched ?? nodeCount));
-        filteredElement.textContent = _('content_hidden_count', '已隐藏: {0}', filteredCount.toString());
-        
-        // 根据隐藏数量设置文本颜色
-        if (filteredCount > 0) {
-          filteredElement.style.color = '#d32f2f'; // 红色 - 有隐藏节点
-        } else {
-          filteredElement.style.color = 'inherit'; // 默认颜色 - 无隐藏节点
-        }
+        const canRestore = visualizer.canRestoreFilters;
+        filteredElement.textContent = canRestore
+          ? _('content_restore_filters', '恢复筛选')
+          : _('content_hidden_count', '已隐藏: {0}', filteredCount.toString());
+        filteredElement.disabled = filteredCount === 0 && !canRestore;
+        filteredElement.style.color = filteredCount > 0 && !canRestore ? '#d32f2f' : 'inherit';
       }
 
       // 更新会话日期

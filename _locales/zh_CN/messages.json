@@ -3719,6 +3719,18 @@
     "message": "节点: {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "恢复筛选",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "实际大小",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "显示全图",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "已隐藏: {0}",
     "description": "已隐藏节点数量状态项"

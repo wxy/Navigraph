@@ -119,6 +119,8 @@ export interface Visualizer {
   isTrackingPage(node: NavNode): boolean;
 
   // 添加筛选器相关方法
+  readonly canRestoreFilters: boolean;
+  toggleHiddenNodes(): void;
   updateFilter(filterId: string, value: boolean): void;
   applyFilters(): void;
   updateData(data: any): void;

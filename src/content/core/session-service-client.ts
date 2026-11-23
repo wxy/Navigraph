@@ -11,7 +11,7 @@ async function requestGraphPage(query: GraphPageQuery): Promise<BackgroundRespon
   return sendMessage(request.action, query);
 }
 
-type SessionEventCallback = (session: SessionDetails | null) => void;
+type SessionEventCallback = (session: SessionDetails | null, fitToView?: boolean) => void;
 /** Owns one bounded page. A new query invalidates every earlier response before any state is applied. */
 export class SessionServiceClient {
   private static instance: SessionServiceClient | null = null;
@@ -28,6 +28,7 @@ export class SessionServiceClient {
   private readLimit: () => number = () => 100;
   private requestedPage = 0;
   private requestedEdgePage = 0;
+  private appliedPageOptions?: string;
   public pageInfo: GraphPageInfo | null = null;
 
   public static getInstance(): SessionServiceClient {
@@ -77,11 +78,15 @@ export class SessionServiceClient {
         this.setCurrentSessionId(null);
         return this.loadCurrentSession();
       }
+      // Compare accepted queries so live updates cannot lose a pending filter change.
+      const pageOptions = JSON.stringify([query.limit, query.filters]);
+      const fitToView = this.currentSession?.id === sessionId && this.appliedPageOptions !== pageOptions;
+      this.appliedPageOptions = pageOptions;
       this.pageInfo = response.pageInfo;
       this.requestedPage = response.pageInfo.page; this.requestedEdgePage = response.pageInfo.edgePage;
       this.currentSession = { ...response.session };
       nodeManager.processPageData(response.nodes, response.edges);
-      for (const listener of this.sessionLoadListeners) listener(this.currentSession);
+      for (const listener of this.sessionLoadListeners) listener(this.currentSession, fitToView);
       return this.currentSession;
     } catch (error) {
       if (generation !== this.generation) return this.currentSession;

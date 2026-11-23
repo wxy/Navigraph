@@ -20,6 +20,7 @@ import { NavigationMessageHandler } from '../messaging/handlers/navigation-messa
 import { FilterManager } from '../visualizer/state/FilterManager.js';
 import type { FilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RenderingManager } from '../visualizer/renderers/RenderingManager.js';
+import type { GraphRenderOptions } from '../visualizer/renderers/BaseRenderer.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -396,7 +397,7 @@ export class NavigationVisualizer implements Visualizer {
   /**
    * 刷新可视化
    */
-  public refreshVisualization(data?: any, options: any = {}): void {
+  public refreshVisualization(data?: any, options: GraphRenderOptions & { skipSessionEvents?: boolean } = {}): void {
     // 获取控制选项
     const skipSessionEvents = options.skipSessionEvents === true;
     
@@ -458,7 +459,7 @@ export class NavigationVisualizer implements Visualizer {
       }
 
       // 使用渲染管理器重新渲染
-      this.refreshVisualization(undefined, { restoreTransform: true });
+      this.refreshVisualization(undefined, { fitToView: true });
     } catch (error) {
       logger.error(_('reinit_view_failed', '重新初始化视图失败'), error);
       this.showError(_('content_view_switch_failed', '切换视图失败') + ": " + (error instanceof Error ? error.message : String(error)));
@@ -485,6 +486,14 @@ export class NavigationVisualizer implements Visualizer {
     
     // 切换状态
     this.filterManager.handleFilterChange('filter-closed', !currentState);
+  }
+
+  get canRestoreFilters(): boolean {
+    return this.filterManager.canRestoreFilters;
+  }
+
+  public toggleHiddenNodes(): void {
+    this.filterManager.toggleHiddenNodes();
   }
 
   /**

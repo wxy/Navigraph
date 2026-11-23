@@ -5,7 +5,7 @@ import type { ExtendedNavNode, NavLink, NavNode, Visualizer } from '../../types/
 import { animationDuration, labelsEnabled } from '../../utils/display-settings.js';
 import { getViewState, saveViewState } from '../../utils/state-manager.js';
 import { isTrackingPage } from '../../utils/visualization-utils.js';
-import type { BaseRenderer } from './BaseRenderer.js';
+import type { BaseRenderer, GraphRenderOptions } from './BaseRenderer.js';
 import { layoutEllipticalTree, treeNodeTitle } from './elliptical-tree-layout.js';
 import type { EllipticalTreeLink, EllipticalTreeNode } from './elliptical-tree-layout.js';
 
@@ -44,7 +44,7 @@ export class TreeRenderer implements BaseRenderer {
     this.height = height;
   }
 
-  render(nodes: NavNode[], edges: NavLink[]): void {
+  render(nodes: NavNode[], edges: NavLink[], options: GraphRenderOptions = {}): void {
     const svg = this.svg;
     if (!svg || !nodes.length) return;
     const { visualizer, width, height } = this;
@@ -70,7 +70,7 @@ export class TreeRenderer implements BaseRenderer {
     const tabId = visualizer.tabId || '';
     const pageIndex = visualizer.pageInfo?.page ?? 0;
     const layoutScope = `v2:${currentSession?.id ?? ''}:${pageIndex}:${width}x${height}`;
-    const saved = getViewState(tabId, VIEW_STATE);
+    const saved = options.fitToView ? undefined : getViewState(tabId, VIEW_STATE);
     const stored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
     const restored = stored && Number.isFinite(stored.x) && Number.isFinite(stored.y) && Number.isFinite(stored.k) && stored.k > 0
       ? d3.zoomIdentity.translate(stored.x, stored.y).scale(stored.k)
@@ -103,7 +103,7 @@ export class TreeRenderer implements BaseRenderer {
       })
       .on('zoom', event => applyViewport(event.transform))
       .on('end', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        if (event.sourceEvent && !activeChain) {
+        if (event.sourceEvent && (!activeChain || !this.expansion.overviews.has(pageIndex))) {
           saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: event.transform });
         }
       });
@@ -198,7 +198,9 @@ export class TreeRenderer implements BaseRenderer {
           if (fold.expanded) {
             expandedChains.delete(fold.id);
           } else {
-            if (!activeChain) overviews.set(pageIndex, { layoutScope, transform: d3.zoomTransform(svg.node()!) });
+            if (!activeChain || !overviews.has(pageIndex)) {
+              overviews.set(pageIndex, { layoutScope, transform: d3.zoomTransform(svg.node()!) });
+            }
             expandedChains.add(fold.id);
           }
           draw({ id: fold.id, closing: fold.expanded, focus });
@@ -213,19 +215,22 @@ export class TreeRenderer implements BaseRenderer {
         .attr('text-anchor', 'end')
         .text(count => _('fixed_cycle_connections', '已移除 {0} 个循环连接', String(count)));
 
-      const scale = layout.fitScale;
+      const fit = options.fitToView && !action;
+      const viewportHeight = fit ? Math.max(1, height - (options.viewportBottomInset ?? 0)) : height;
+      const scale = Math.min(layout.fitScale, viewportHeight / (2 * outer.ry));
       const initial = d3.zoomIdentity
-        .translate(layout.centerX * (1 - scale), layout.centerY * (1 - scale))
+        .translate(layout.centerX * (1 - scale), viewportHeight / 2 - layout.centerY * scale)
         .scale(scale);
       const overview = overviews.get(pageIndex);
-      let transform = restored ?? initial;
-      if (activeChain) {
+      let transform = fit || action?.closing ? initial : restored ?? initial;
+      if (activeChain && overview) {
         transform = fitExpandedChain(activeChain, layout.links, width, height);
       } else if (overview?.layoutScope === layoutScope) {
         const { x, y, k } = overview.transform;
         transform = d3.zoomIdentity.translate(x, y).scale(k);
       }
       if (action?.closing && !activeChain) overviews.delete(pageIndex);
+      if (fit) saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: initial });
 
       zoom.scaleExtent([Math.min(0.1, scale, transform.k), 8]);
       svg.call(zoom.transform, transform);
