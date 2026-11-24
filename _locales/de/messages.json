@@ -5303,6 +5303,18 @@
     "message": "Viele Einträge sind geöffnet. Klappen Sie zuerst eine Gruppe ein.",
     "description": "展开内容超出窗口可布局的数量时的提示"
   },
+  "tree_day_collapse_all": {
+    "message": "Alle einklappen",
+    "description": "一键收起平衡树中已展开的分组"
+  },
+  "tree_day_expand_all": {
+    "message": "Alle ausklappen",
+    "description": "一键展开平衡树的所有分组"
+  },
+  "tree_day_expand_all_limit": {
+    "message": "Zu viele Knoten. Einzelne Gruppen lassen sich im Baum mit +N öffnen.",
+    "description": "无法一次展开全图时的操作提示"
+  },
   "tree_day_collapse": {
     "message": "Zweig einklappen",
     "description": "收起展开的平衡树分支"

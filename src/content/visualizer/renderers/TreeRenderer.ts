@@ -36,9 +36,10 @@ export interface TreeExpansionState {
 }
 
 interface FoldAction {
-  id: string;
-  focus: boolean;
-  overview: Overview;
+  id?: string;
+  focus?: boolean;
+  overview?: Overview;
+  fitOverview?: boolean;
 }
 
 export class TreeRenderer implements BaseRenderer {
@@ -74,6 +75,9 @@ export class TreeRenderer implements BaseRenderer {
     const links = main.select<SVGGElement>('.links-group');
     const pages = main.select<SVGGElement>('.nodes-group');
     const folds = main.append('g').attr('class', 'tree-chain-controls');
+    const collapseAll = d3.select('#tree-collapse-all');
+    const expandAll = d3.select('#tree-expand-all');
+    const foldLimit = d3.select('#tree-fold-limit');
     let selectedNodeId: string | undefined;
     let pending = false;
     let groups = new Map<string, TreeDayFold>();
@@ -81,6 +85,7 @@ export class TreeRenderer implements BaseRenderer {
 
     const tabId = visualizer.tabId || '';
     const layoutScope = `panorama:${day.start}:${width}x${height}`;
+    const captureOverview = (): Overview => ({ scope: layoutScope, transform: d3.zoomTransform(svg.node()!) });
     const viewportHeight = Math.max(1, height - (options.viewportBottomInset ?? 0));
     const saved = options.fitToView ? undefined : getViewState(tabId, VIEW_STATE);
     const restored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
@@ -127,7 +132,7 @@ export class TreeRenderer implements BaseRenderer {
       pending = true;
       try {
         const projection = projectTreeDay(tree, width, viewportHeight, opened);
-        if (action && opened.has(action.id) && !projection.folds.get(action.id)?.expanded) {
+        if (action?.id && opened.has(action.id) && !projection.folds.get(action.id)?.expanded) {
           visualizer.showError(_('tree_day_view_full', '图上展开的记录较多，请先收起一组'));
           return;
         }
@@ -163,6 +168,20 @@ export class TreeRenderer implements BaseRenderer {
         this.expansion.opened = new Set([...opened].filter(id => projection.folds.get(id)?.expanded));
         this.expansion.overview = this.expansion.opened.size ? overview : undefined;
         groups = projection.folds;
+        const hasOpened = this.expansion.opened.size > 0;
+        const hasClosed = [...groups.values()].some(fold => !fold.expanded);
+        const canExpandAll = hasClosed && projection.canExpandAll;
+        const showLimit = hasClosed && !projection.canExpandAll;
+        collapseAll.attr('aria-disabled', String(!hasOpened))
+          .on('click.tree-fold', () => {
+            if (hasOpened) void draw(new Set(), { fitOverview: true });
+          });
+        expandAll.attr('aria-disabled', String(!canExpandAll))
+          .attr('aria-describedby', showLimit ? 'tree-fold-limit' : null)
+          .on('click.tree-fold', () => {
+            if (canExpandAll) void draw(new Set(groups.keys()), { overview: captureOverview() });
+          });
+        foldLimit.property('hidden', !showLimit);
         const outer = layout.rings[layout.rings.length - 1];
         halo.attr('cx', layout.centerX).attr('cy', layout.centerY).attr('rx', outer.rx).attr('ry', outer.ry);
         const stops = layout.rings.flatMap((ring, index) => {
@@ -196,7 +215,7 @@ export class TreeRenderer implements BaseRenderer {
           const next = new Set(this.expansion.opened);
           if (fold.expanded) next.delete(id);
           else next.add(id);
-          void draw(next, { id, focus, overview: { scope: layoutScope, transform: d3.zoomTransform(svg.node()!) } });
+          void draw(next, { id, focus, overview: captureOverview() });
         };
         drawNodes(pages, layout.nodes, day.start, visualizer, faviconPageUrls, (node) => {
           const fold = groups.get(node.data.id);
@@ -263,11 +282,11 @@ export class TreeRenderer implements BaseRenderer {
         const initial = d3.zoomIdentity
           .translate(layout.centerX * (1 - scale), viewportHeight / 2 - layout.centerY * scale)
           .scale(scale);
-        const camera = this.expansion.opened.size ? undefined
+        const camera = hasOpened || action?.fitOverview ? undefined
           : overview?.scope === layoutScope ? overview.transform : action ? undefined : restored;
         const transform = camera && Number.isFinite(camera.x) && Number.isFinite(camera.y) && Number.isFinite(camera.k) && camera.k > 0
           ? d3.zoomIdentity.translate(camera.x, camera.y).scale(camera.k) : initial;
-        if (options.fitToView && !this.expansion.opened.size && !camera) {
+        if ((options.fitToView || action?.fitOverview) && !hasOpened && !camera) {
           saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform });
         }
         zoom.scaleExtent([Math.min(0.1, scale, transform.k), 8]);
@@ -286,6 +305,11 @@ export class TreeRenderer implements BaseRenderer {
   }
 
   cleanup(): void {
+    d3.selectAll('#tree-fold-actions button')
+      .on('click.tree-fold', null)
+      .attr('aria-disabled', 'true')
+      .attr('aria-describedby', null);
+    d3.select('#tree-fold-limit').property('hidden', true);
     this.zoom?.on('zoom end', null);
     this.svg?.on('.zoom', null);
     this.svg?.selectAll('*').interrupt();

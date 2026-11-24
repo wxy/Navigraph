@@ -5303,6 +5303,18 @@
     "message": "先にグループを一つ折りたたんでください。",
     "description": "展开内容超出窗口可布局的数量时的提示"
   },
+  "tree_day_collapse_all": {
+    "message": "すべて折りたたむ",
+    "description": "一键收起平衡树中已展开的分组"
+  },
+  "tree_day_expand_all": {
+    "message": "すべて展開",
+    "description": "一键展开平衡树的所有分组"
+  },
+  "tree_day_expand_all_limit": {
+    "message": "ノードが多いため、ツリーの +N でグループごとに展開してください。",
+    "description": "无法一次展开全图时的操作提示"
+  },
   "tree_day_collapse": {
     "message": "枝を折りたたむ",
     "description": "收起展开的平衡树分支"

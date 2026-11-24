@@ -5306,6 +5306,18 @@
     "message": "Collapse a group to make room for more records.",
     "description": "展开内容超出窗口可布局的数量时的提示"
   },
+  "tree_day_collapse_all": {
+    "message": "Collapse all",
+    "description": "一键收起平衡树中已展开的分组"
+  },
+  "tree_day_expand_all": {
+    "message": "Expand all",
+    "description": "一键展开平衡树的所有分组"
+  },
+  "tree_day_expand_all_limit": {
+    "message": "Too many nodes. Use +N in the tree to expand each group.",
+    "description": "无法一次展开全图时的操作提示"
+  },
   "tree_day_collapse": {
     "message": "Collapse branch",
     "description": "收起展开的平衡树分支"

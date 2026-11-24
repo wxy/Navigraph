@@ -91,6 +91,7 @@ export function projectTreeDay(
   const summarySlots = Math.max(2, Math.floor(span / 48));
   const depthSlots = Math.max(2, Math.floor((width - 52) / 28));
   const overviewBudget = 2 * siblingSlots;
+  const expandedBudget = overviewBudget + siblingSlots;
 
   const addFold = (id: string, kind: 'branches' | 'run', branches: Branch[], summary: boolean, faviconPageId?: string) => {
     const count = kind === 'run' ? branches.length : branches.reduce((sum, branch) => sum + branch.count, 0);
@@ -152,11 +153,15 @@ export function projectTreeDay(
   };
 
   projectBranches(tree.roots, overviewBudget);
+  // Density summaries and oversized runs still need progressive expansion.
+  const canExpandAll = tree.byId.size <= expandedBudget &&
+    [...folds.values()].every(fold => !fold.summary && fold.count <= depthSlots);
+
   // Materialize requested details after placing the overview. An open group cannot evict its neighbors.
   for (const id of opened) {
     const candidate = candidates.get(id);
     if (!candidate) continue;
-    const remaining = overviewBudget + siblingSlots - nodes.length;
+    const remaining = expandedBudget - nodes.length;
     const { kind, branches } = candidate;
     if (remaining < 2 && !(remaining === 1 && kind === 'run' && branches.length === 1)) continue;
     const fold = folds.get(id)!;
@@ -182,5 +187,5 @@ export function projectTreeDay(
     }
     for (const successor of successors) successor.parentId = parentId;
   }
-  return { nodes, folds };
+  return { nodes, folds, canExpandAll };
 }

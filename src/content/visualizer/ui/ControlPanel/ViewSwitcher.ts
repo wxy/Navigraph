@@ -74,6 +74,7 @@ export class ViewSwitcher {
    * @param currentView 当前视图
    */
   public updateButtonsState(currentView: string): void {
+    document.getElementById('tree-fold-actions')?.toggleAttribute('hidden', currentView !== 'tree');
     if (!this.treeViewButton || !this.waterfallViewButton) {
       return;
     }

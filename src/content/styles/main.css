@@ -1651,12 +1651,25 @@ svg .node-label {
   fill: #999;
 }
 
+/* 画布左上角 */
+.canvas-header {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 15px;
+  z-index: 10;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  max-inline-size: calc(100% - 30px);
+  pointer-events: none;
+}
+
+.canvas-header > * {
+  pointer-events: auto;
+}
+
 /* Logo 容器 - 使用专用变量 */
 .logo-container {
-  position: absolute;
-  top: 10px;
-  left: 15px;
-  z-index: 10;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1677,6 +1690,42 @@ svg .node-label {
   margin: 0;
   font-weight: 500;
   color: var(--logo-text-color, inherit);
+}
+
+#tree-fold-actions {
+  max-inline-size: min(16rem, 100%);
+}
+
+#tree-fold-actions .view-mode {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+#tree-fold-actions button {
+  min-block-size: 28px;
+  padding: 4px 10px;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+#tree-fold-actions button:hover:not([aria-disabled="true"]) {
+  background-color: var(--color-bg-hover);
+}
+
+#tree-fold-actions button[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.6;
+}
+
+#tree-fold-limit {
+  margin: 6px 0 0;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background-color: var(--color-bg-panel, #f5f7fa);
+  font-size: 12px;
 }
 
 /* 控制面板抓手 */
