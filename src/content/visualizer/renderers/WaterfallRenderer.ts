@@ -883,8 +883,7 @@ export class WaterfallRenderer implements BaseRenderer {
     this.visibleLaneEnd = -1;
     this.calculateMaxVerticalScroll();
     this.verticalScrollOffset = Math.min(this.verticalScrollOffset, this.maxVerticalScroll);
-    const pannable = !this.densityOnly && (layout.compressedSegments.length > 0 || this.maxVerticalScroll > 0);
-    const groups = this.createSVGGroups(this.svg, pannable);
+    const groups = this.createSVGGroups(this.svg, layout);
     this.renderTimeAxis(groups.timeAxisGroup, layout);
     this.renderTimeDensity(groups.timeAxisGroup, this.densityOnly ? this.allSegments : layout.compressedSegments);
 
@@ -897,7 +896,7 @@ export class WaterfallRenderer implements BaseRenderer {
       return;
     }
 
-    this.renderTimeStrips(groups.timeStripsGroup, layout);
+    this.renderTimeStrips(groups.timeStripsGroup, groups.nodesGroup, layout);
     this.renderVisibleLanes();
     this.renderObservationWindowSlider(groups.focusOverlayGroup, layout);
   }
@@ -1339,8 +1338,10 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 创建SVG分组结构 - 重新设计：明确的viewport和完整内容渲染
    */
-  private createSVGGroups(container: any, pannable: boolean) {
+  private createSVGGroups(container: any, layout: LayoutResult) {
     const timeAxisHeight = this.TIME_AXIS_HEIGHT;
+    const canPanCards = !this.densityOnly && layout.compressedSegments.length > 0;
+    const canScrollLanes = !this.densityOnly && this.maxVerticalScroll > 0;
     
     // 时间轴组（固定在顶部，不参与滚动）
     const timeAxisGroup = container.append('g').attr('class', 'time-axis-group');
@@ -1362,11 +1363,12 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', viewportHeight);
     
     // 应用裁剪到viewport
-    viewportGroup.attr('clip-path', 'url(#viewport-clip)');
+    viewportGroup.attr('clip-path', 'url(#viewport-clip)')
+      .classed('waterfall-pannable', canPanCards || canScrollLanes);
 
-    if (pannable) {
-      viewportGroup.classed('waterfall-pannable', true);
-      // Capture a grab in the gaps between cards and across compressed time ranges.
+    if (canScrollLanes) {
+      // Keep vertical scrolling available in the gaps between cards.
+      viewportGroup.classed('waterfall-lane-scroll', true);
       viewportGroup.append('rect')
         .attr('width', this.width)
         .attr('height', viewportHeight)
@@ -1390,7 +1392,14 @@ export class WaterfallRenderer implements BaseRenderer {
   const closureMarkersGroup = contentGroup.append('g').attr('class', 'closure-markers-group');
   const timeStripsGroup = contentGroup.append('g').attr('class', 'time-strips-group');
     
-  const nodesGroup = contentGroup.append('g').attr('class', 'nodes-group');
+    // Keep sliding cards inside the timeline, clear of the lane number gutter.
+    const { startX, endX } = layout.timeAxisData;
+    viewportDefs.append('clipPath').attr('id', 'waterfall-cards-clip')
+      .append('rect').attr('x', startX).attr('width', endX - startX)
+      .attr('height', this.swimlaneContentHeight());
+    const nodesGroup = contentGroup.append('g').attr('clip-path', 'url(#waterfall-cards-clip)')
+      .append('g').attr('class', 'nodes-group')
+      .classed('waterfall-card-pan', canPanCards);
     
     // 🎯 重新设计：拖拽层放在节点层之后，这样节点可以直接接收点击事件
     const dragLayerGroup = contentGroup.append('g').attr('class', 'drag-layer-group');
@@ -1561,9 +1570,9 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * � 渲染独立的时间条带背景
    */
-  private renderTimeStrips(group: any, layout: LayoutResult): void {
+  private renderTimeStrips(background: any, cards: any, layout: LayoutResult): void {
     for (const segment of layout.normalDisplaySegments) {
-      group.append('rect')
+      background.append('rect')
         .attr('class', `strip-background strip-${segment.originalIndex}`)
         .attr('data-segment-index', segment.originalIndex)
         .attr('x', segment.startX)
@@ -1572,7 +1581,7 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('height', this.swimlaneContentHeight())
         .attr('fill', segment.originalIndex % 2 === 0 ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
         .attr('opacity', 0.6);
-      group.append('g')
+      cards.append('g')
         .attr('class', 'time-strip')
         .attr('data-time', new Date(segment.endTime).toISOString())
         .attr('data-segment-index', segment.originalIndex)
@@ -2127,15 +2136,14 @@ export class WaterfallRenderer implements BaseRenderer {
     }
 
     // 🎯 添加点击事件
-    group.style('cursor', 'pointer')
-      .on('click', () => {
-        void this.loadNodeDetails([node.id]).then(() => {
-          const detail = this.nodeDetails.get(node.id);
-          if (!this.disposed && detail && group.node()?.isConnected) this.visualizer.showNodeDetails(detail);
-        }).catch(error => {
-          if (!this.disposed) this.visualizer.showError(String(error));
-        });
+    group.on('click', () => {
+      void this.loadNodeDetails([node.id]).then(() => {
+        const detail = this.nodeDetails.get(node.id);
+        if (!this.disposed && detail && group.node()?.isConnected) this.visualizer.showNodeDetails(detail);
+      }).catch(error => {
+        if (!this.disposed) this.visualizer.showError(String(error));
       });
+    });
   }
 
   /**
@@ -2379,15 +2387,11 @@ export class WaterfallRenderer implements BaseRenderer {
     rect.call(drag);
   }
 
-  private reRenderWithObservationWindow(index: number, persist = true): void {
+  private reRenderWithObservationWindow(index: number): void {
     this.observationStartIndex = index;
     this.drawLayout();
-    if (persist) this.saveObservationWindow();
-    this.visualizer.updateStatusBar();
-  }
-
-  private saveObservationWindow(): void {
     saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: this.observationStartIndex });
+    this.visualizer.updateStatusBar();
   }
 
   private getNodeLabel(node: NavNode): string {
@@ -2535,13 +2539,20 @@ export class WaterfallRenderer implements BaseRenderer {
         const initialIndex = this.observationStartIndex;
         const initialOffset = this.verticalScrollOffset;
         const lastIndex = layout.compressedSegments.length;
-        const segmentWidth = layout.normalDisplaySegments[0].allocatedWidth;
+        const fromCard = (start.sourceEvent.target as Element).closest('.navigation-node') !== null;
+        // One step shifts a shared card by the difference between the two segment widths.
+        const cardStep = lastIndex > 0
+          ? layout.normalDisplaySegments[0].allocatedWidth - layout.compressedSegments[0].allocatedWidth
+          : 0;
+        const minPreviewX = -(lastIndex - initialIndex) * cardStep;
+        const maxPreviewX = initialIndex * cardStep;
+        const cards = this.scrollableGroup.select('.nodes-group');
         let axis: 'horizontal' | 'vertical' | null = null;
-        let nextIndex = initialIndex;
+        let previewX = 0;
 
-        const updateWindow = () => {
+        const updatePreview = () => {
           this.panFrame = null;
-          if (nextIndex !== this.observationStartIndex) this.reRenderWithObservationWindow(nextIndex, false);
+          cards.style('transform', `translateX(${previewX}px)`);
         };
 
         start.on('drag', (event: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
@@ -2551,7 +2562,7 @@ export class WaterfallRenderer implements BaseRenderer {
           if (axis === null) {
             if (Math.hypot(dx, dy) <= dragThreshold) return;
             const horizontal = Math.abs(dx) >= Math.abs(dy);
-            if (horizontal ? lastIndex === 0 : this.maxVerticalScroll === 0) return;
+            if (horizontal ? !fromCard || lastIndex === 0 : this.maxVerticalScroll === 0) return;
             axis = horizontal ? 'horizontal' : 'vertical';
             this.isDraggingCanvas = true;
             svg.classed('waterfall-panning', true);
@@ -2563,22 +2574,22 @@ export class WaterfallRenderer implements BaseRenderer {
             return;
           }
 
-          const segments = Math.round(-dx * unitsPerPixel / segmentWidth);
-          nextIndex = Math.max(0, Math.min(lastIndex, initialIndex + segments));
-          if (this.panFrame === null && nextIndex !== this.observationStartIndex) {
-            this.panFrame = requestAnimationFrame(updateWindow);
-          }
+          const offset = Math.max(minPreviewX, Math.min(maxPreviewX, dx * unitsPerPixel));
+          if (offset === previewX) return;
+          previewX = offset;
+          if (this.panFrame === null) this.panFrame = requestAnimationFrame(updatePreview);
         });
 
         start.on('end', () => {
           if (this.disposed || axis === null) return;
-          if (this.panFrame !== null) {
-            cancelAnimationFrame(this.panFrame);
-            updateWindow();
-          }
           this.isDraggingCanvas = false;
           svg.classed('waterfall-panning', false);
-          if (this.observationStartIndex !== initialIndex) this.saveObservationWindow();
+          if (axis === 'vertical') return;
+          if (this.panFrame !== null) cancelAnimationFrame(this.panFrame);
+          this.panFrame = null;
+          cards.style('transform', null);
+          const nextIndex = initialIndex + Math.round(-previewX / cardStep);
+          if (nextIndex !== initialIndex) this.reRenderWithObservationWindow(nextIndex);
         });
       });
     svg.call(drag);

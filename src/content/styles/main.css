@@ -1741,8 +1741,16 @@ svg .node-label {
   opacity: 1;
 }
 
-.waterfall-pannable {
+.waterfall-card {
+  cursor: pointer;
+}
+
+.waterfall-card-pan .waterfall-card {
   cursor: grab;
+}
+
+.waterfall-lane-scroll {
+  cursor: ns-resize;
 }
 
 .waterfall-panning .waterfall-pannable,
