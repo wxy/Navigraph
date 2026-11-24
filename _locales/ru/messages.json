@@ -5271,12 +5271,36 @@
     "message": "При скрытых заголовках оси, значки и сведения об узлах остаются доступны.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "Последние {0} записей в сеансе",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "Обзор сеанса. Переключитесь в реальный размер, чтобы увидеть дорожки.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "Записей: {0}",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "Страница группы",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "Предыдущая страница",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "Следующая страница",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "Узлов на странице",
+    "message": "Узлов на странице группы в каскаде",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500; ограничивает видимые узлы, не удаляя историю.",
+    "message": "Узлов на странице открытой группы. От 1 до 500, по умолчанию 100.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {

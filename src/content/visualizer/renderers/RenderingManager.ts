@@ -167,11 +167,7 @@ export class RenderingManager {
         this.treeDate = treeDay?.start;
       }
       if (options.fitToView && view === 'waterfall') this.waterfallFitToView = true;
-      const pageNodes = view === 'waterfall' ? this.visualizer.nodes : [];
-      const ids = new Set(pageNodes.map(node => node.id));
-      const nodes = pageNodes.map(node => ({ ...node,
-        parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
-        timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
+      const nodes = view === 'waterfall' ? this.visualizer.nodes : [];
       const edges = view === 'waterfall' ? this.visualizer.edges : [];
       this.updateRangeControls();
 
@@ -252,10 +248,10 @@ export class RenderingManager {
     this.rangeControls?.remove();
     this.rangeControls = null;
     if (!this.container) return;
-    const info = this.visualizer.pageInfo;
+    const timeline = this.visualizer.waterfallTimeline;
     const tree = this.viewStateManager.currentView === 'tree';
     const day = this.visualizer.treeDay;
-    if (tree ? !day?.truncated : !info) return;
+    if (tree ? !day?.truncated : !timeline || (!timeline.truncated && !this.visualizer.nodes.length)) return;
     const controls = document.createElement('div');
     controls.className = 'navigation-range-controls';
     controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px`;
@@ -266,31 +262,10 @@ export class RenderingManager {
       this.rangeControls = controls;
       return;
     }
-    if (!info) return;
-    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
-    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
-    const en = chrome.i18n.getUILanguage().startsWith('en');
-    const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
-    const label = document.createElement('span');
-    label.textContent = en ? `${start}–${end} / ${info.matched} · newest first` : `${start}–${end} / ${info.matched} · 从新到旧`;
-    controls.append(label);
-    for (const [text, delta] of [[en ? 'Newer' : '较新', -1], [en ? 'Older' : '较早', 1]] as const) {
-      const button = document.createElement('button'); button.textContent = text;
-      button.disabled = info.page + delta < 0 || info.page + delta >= pages;
-      button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page + delta).catch(error => this.uiManager.showError(String(error))); });
-      controls.append(button);
-    }
-    if (edgePages > 1) {
-      const label = document.createElement('span');
-      label.className = 'edge-range';
-      label.textContent = `${en ? 'Edges' : '边'} ${info.edgePage * info.edgeLimit + 1}–${Math.min(info.edgeTotal, (info.edgePage + 1) * info.edgeLimit)} / ${info.edgeTotal}`;
-      controls.append(label);
-      for (const delta of [-1, 1]) {
-        const button = document.createElement('button'); button.textContent = delta < 0 ? '←' : '→';
-        button.disabled = info.edgePage + delta < 0 || info.edgePage + delta >= edgePages;
-        button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page, info.edgePage + delta).catch(error => this.uiManager.showError(String(error))); });
-        controls.append(button);
-      }
+    if (timeline?.truncated) {
+      const range = document.createElement('span');
+      range.textContent = _('waterfall_timeline_limit', '仅显示会话最新 {0} 条记录', timeline.total.toLocaleString());
+      controls.append(range);
     }
     if (this.viewStateManager.currentView === 'waterfall' && this.visualizer.nodes.length > 0) {
       const button = document.createElement('button');

@@ -5271,12 +5271,36 @@
     "message": "隐藏标题时，刻度、徽标与节点详情仍可使用。",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "仅显示会话最新 {0} 条记录",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "会话活动概览。切换到实际大小可查看各泳道。",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} 条记录",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "抽屉页码",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "上一页",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "下一页",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "每页节点数",
+    "message": "瀑布图抽屉每页节点数",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500；仅限制同时显示的节点，不删除历史记录。",
+    "message": "设置展开分组后每页显示的节点数。范围 1–500，默认 100。",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {

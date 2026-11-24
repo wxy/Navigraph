@@ -5271,12 +5271,36 @@
     "message": "When titles are hidden, axes, badges, and node details remain available.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "Showing the latest {0} records in this session",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "Session activity overview. Switch to Actual size to browse lanes.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} records",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "Drawer page",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "Previous page",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "Next page",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "Nodes per page",
+    "message": "Waterfall drawer page size",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500; limits visible nodes without deleting history.",
+    "message": "Nodes per page when opening a group. From 1 to 500. Default 100.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {

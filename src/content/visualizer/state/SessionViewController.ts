@@ -8,7 +8,6 @@ import { sessionServiceClient } from '../../core/session-service-client.js';
 import type { UIManager } from '../ui/UIManager.js';
 import type { NavigationVisualizer } from '../../core/navigation-visualizer.js';
 import type { SessionDetails } from '../../types/session.js';
-import { nodeManager } from '../../core/node-manager.js';
 
 const logger = new Logger('SessionViewController');
 
@@ -196,16 +195,13 @@ export class SessionViewController {
         return;
       }
 
-      // 保存当前会话到可视化器
+      if (this.visualizer.currentSession && this.visualizer.currentSession.id !== session.id) {
+        this.visualizer.waterfallObservationIndex = 0;
+      }
       this.visualizer.currentSession = session;
 
-      // 从节点管理器获取处理好的数据
-      const nodes = [...nodeManager.getNodes()];
-      const edges = [...nodeManager.getEdges()];
-      const nodeMap = nodeManager.getNodeMap();
-      
-      // 设置可视化器数据
-      this.visualizer.setRawData(nodes, edges, nodeMap);
+      const nodes = (sessionServiceClient.timeline?.nodes ?? []).map(node => ({ ...node, title: node.site }));
+      this.visualizer.setRawData(nodes, [], new Map(nodes.map(node => [node.id, node])));
 
       // 更新会话相关UI
       this.updateSessionUI();
@@ -221,7 +217,6 @@ export class SessionViewController {
         id: session.id, 
         title: session.title,
         nodes: nodes.length,
-        edges: edges.length
       });
     } catch (error) {
       logger.error(_('session_load_processing_failed', '处理会话加载失败: {0}'), error);

@@ -1728,6 +1728,31 @@ svg .node-label {
   font-size: 12px;
 }
 
+.waterfall-drawer-pager {
+  position: absolute;
+  z-index: 21;
+  inset-block-end: 86px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-panel, #f5f7fa);
+  font-size: 13px;
+}
+
+.waterfall-drawer-pager input {
+  width: 5em;
+}
+
+.waterfall-drawer-pager button {
+  min-width: 26px;
+  min-height: 26px;
+}
+
 /* 控制面板抓手 */
 .control-panel-handle {
   position: absolute;

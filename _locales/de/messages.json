@@ -5271,12 +5271,36 @@
     "message": "Bei ausgeblendeten Titeln bleiben Achsen, Abzeichen und Knotendetails verfügbar.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "Die neuesten {0} Einträge dieser Sitzung",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "Sitzungsübersicht. In Originalgröße sind die Spuren sichtbar.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} Einträge",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "Gruppenseite",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "Vorherige Seite",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "Nächste Seite",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "Knoten pro Seite",
+    "message": "Knoten pro Seite in der Wasserfall-Gruppe",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500; begrenzt sichtbare Knoten, ohne den Verlauf zu löschen.",
+    "message": "Knoten pro Seite in einer geöffneten Gruppe. 1 bis 500, Standard 100.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {

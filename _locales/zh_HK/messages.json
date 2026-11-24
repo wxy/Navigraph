@@ -5271,12 +5271,36 @@
     "message": "隱藏標題時，刻度、徽章與節點詳情仍可使用。",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "僅顯示工作階段最新 {0} 條記錄",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "工作階段活動概覽。切換到實際大小可查看各泳道。",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} 條記錄",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "抽屜頁碼",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "上一頁",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "下一頁",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "每頁節點數",
+    "message": "瀑布圖抽屜每頁節點數",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500；只限制同時顯示的節點，不刪除歷史記錄。",
+    "message": "設定展開分組後每頁顯示的節點數。範圍 1–500，預設 100。",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {

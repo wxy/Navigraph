@@ -31,10 +31,10 @@ const logger = new Logger('NavigationVisualizer');
  * 负责可视化导航数据
  */ 
 export class NavigationVisualizer implements Visualizer {
-  get pageInfo(): GraphPageInfo | null { return sessionServiceClient.pageInfo; }
+  get waterfallTimeline() { return sessionServiceClient.timeline; }
   get graphCounts(): Pick<GraphPageInfo, 'total' | 'matched'> | null {
-    if (this.currentView !== 'tree') return this.pageInfo;
-    return this.treeDay ? { total: this.treeDay.total, matched: this.treeDay.nodes.length } : null;
+    const graph = this.currentView === 'tree' ? this.treeDay : this.waterfallTimeline;
+    return graph ? { total: graph.total, matched: graph.nodes.length } : null;
   }
 
   treeDay: FilteredTreeDay | null = null;
@@ -59,13 +59,13 @@ export class NavigationVisualizer implements Visualizer {
     if (this.currentView === 'tree' && this.treeDate === date) this.uiManager.hideControlPanel();
   }
 
-  async loadGraphPage(page = 0, edgePage = 0): Promise<void> {
+  async reloadGraph(): Promise<void> {
     if (this.currentView === 'tree') {
       if (this.treeSnapshot) this.refreshVisualization(undefined, { fitToView: true });
       else await this.loadTreeDay(true);
       return;
     }
-    await sessionServiceClient.loadPage(page, edgePage);
+    await sessionServiceClient.loadTimeline();
   }
 
   // 可视化容器
@@ -115,7 +115,7 @@ export class NavigationVisualizer implements Visualizer {
     const viewChanged = view !== this.currentView;
     this.filterManager.restoreFromUrl();
     this.renderCurrentView(view);
-    if (view === 'waterfall' && !viewChanged) void this.loadGraphPage(0).catch(error => this.showError(String(error)));
+    if (view === 'waterfall' && !viewChanged) void this.reloadGraph().catch(error => this.showError(String(error)));
   };
 
 
@@ -144,7 +144,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 初始化筛选器管理器 - 新增
     this.filterManager = new FilterManager(this, this.dataProcessor, this.uiManager);
-    sessionServiceClient.configure(() => this.filters, () => window.navigraphSettings?.maxNodes || 100);
+    sessionServiceClient.configure(() => this.filters);
     
     // 初始化渲染管理器
     this.renderingManager = new RenderingManager(this, this.viewStateManager, this.uiManager);
@@ -327,13 +327,10 @@ export class NavigationVisualizer implements Visualizer {
       this.applyGlobalConfig();
       return;
     }
-    const pageSizeChanged = Math.floor(Math.min(500, previous.maxNodes)) !== Math.floor(Math.min(500, next.maxNodes));
     const target = !this.explicitView ? defaultView() : this.currentView;
     const viewChanged = target !== this.currentView;
     if (viewChanged) this.renderCurrentView(target as 'tree' | 'waterfall');
-    if (pageSizeChanged && target === 'waterfall' && !viewChanged) {
-      void this.loadGraphPage(0).catch(error => this.showError(String(error)));
-    } else if (!viewChanged && (previous.animationEnabled !== next.animationEnabled || previous.showLabels !== next.showLabels)) {
+    if (!viewChanged && (previous.animationEnabled !== next.animationEnabled || previous.showLabels !== next.showLabels)) {
       this.refreshVisualization(undefined, { restoreTransform: true });
     }
   }
@@ -614,7 +611,7 @@ export class NavigationVisualizer implements Visualizer {
    * @param node 节点数据
    */
   public showNodeDetails(node: NavNode): void {
-    this.uiManager.showNodeDetails(this.currentView === 'tree' ? node : this.nodeMap.get(node.id) || node);
+    this.uiManager.showNodeDetails(node);
   }
   public showDetailedError(
     title: string,

@@ -3,6 +3,7 @@ import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
 import { QueryCache } from './query-cache.js';
 import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, isTrackingUrl, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
 import { localDayRange, TREE_DAY_LIMIT, type TreeDay } from '../../lib/graph/tree-day.js';
+import { WATERFALL_TIMELINE_LIMIT, type WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
  * 导航存储类
@@ -195,6 +196,43 @@ export class NavigationStorage {
         this.sessionCounts.set(query.sessionId, revision, result.pageInfo.total);
       }
       return result;
+    });
+  }
+
+  public async getWaterfallTimeline(sessionId: string, filters: GraphPageQuery['filters']): Promise<WaterfallTimeline> {
+    await this.ensureInitialized();
+    return this.db.readTransaction<WaterfallTimeline>(['sessions', 'nodes'], (tx, done) => {
+      const result: WaterfallTimeline = { session: null, nodes: [], total: 0, truncated: false };
+      done(result);
+      const metadata = tx.objectStore('sessions').get(sessionId);
+      metadata.onsuccess = () => {
+        if (!metadata.result) return;
+        const session = sessionMetadata(metadata.result);
+        result.session = session;
+        const timeOrder = tx.objectStore('nodes').index('pageOrder');
+        const request = timeOrder.openCursor(IDBKeyRange.bound([sessionId], [sessionId, []]));
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor || result.total === WATERFALL_TIMELINE_LIMIT) {
+            result.truncated = cursor !== null;
+            return;
+          }
+          const row = cursor.value as ReturnType<typeof indexedNode>;
+          result.total++;
+          const tracking = row._pageTracking === undefined ? isTrackingUrl(row.url || '') : row._pageTracking === 1;
+          if (matchesGraphFilters(row.type, row.isClosed === true, tracking, filters)) {
+            result.nodes.push({
+              id: row.id,
+              tabId: row.tabId,
+              timestamp: row._timeUnknown ? session.startTime : row.timestamp,
+              type: row.type,
+              isClosed: row.isClosed,
+              site: row._statsDomain ?? nodeUrlDomain(row.url),
+            });
+          }
+          cursor.continue();
+        };
+      };
     });
   }
 

@@ -1,5 +1,6 @@
 import type { GraphPageInfo } from '../../lib/graph/query.js';
 import type { FilteredTreeDay } from '../../lib/graph/tree-day.js';
+import type { WaterfallTimeline } from '../../lib/graph/waterfall.js';
 /**
  * 导航图谱公共类型定义
  */
@@ -82,11 +83,11 @@ export interface D3TreeLink {
  */
 export interface Visualizer {
   readonly hasExplicitView?: boolean;
-  readonly pageInfo?: GraphPageInfo | null;
+  readonly waterfallTimeline: WaterfallTimeline | null;
   readonly treeDay: FilteredTreeDay | null;
   readonly graphCounts: Pick<GraphPageInfo, 'total' | 'matched'> | null;
   selectTreeDay(date: number): Promise<void>;
-  loadGraphPage(page?: number, edgePage?: number): Promise<void>;
+  reloadGraph(): Promise<void>;
   // 原有的基本属性和方法
   
   // 状态栏相关

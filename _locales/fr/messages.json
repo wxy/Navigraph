@@ -5271,12 +5271,36 @@
     "message": "Les axes, badges et détails restent disponibles lorsque les titres sont masqués.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "Les {0} entrées les plus récentes de cette session",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "Vue d’ensemble de la session. Passez à la taille réelle pour voir les couloirs.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} entrées",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "Page du groupe",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "Page précédente",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "Page suivante",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "Nœuds par page",
+    "message": "Nœuds par page dans le groupe de la cascade",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500 ; limite les nœuds visibles sans supprimer l’historique.",
+    "message": "Nœuds par page du groupe ouvert. De 1 à 500, 100 par défaut.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {

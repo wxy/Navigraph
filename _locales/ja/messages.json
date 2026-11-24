@@ -5271,12 +5271,36 @@
     "message": "タイトルを非表示にしても、軸、バッジ、ノードの詳細は利用できます。",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "このセッションの最新 {0} 件を表示",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "セッションの概要です。実際のサイズに切り替えるとレーンを表示できます。",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} 件",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "グループのページ番号",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "前のページ",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "次のページ",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "1ページのノード数",
+    "message": "ウォーターフォールのグループのページ件数",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1～500。表示数のみを制限し、履歴は削除しません。",
+    "message": "グループを開いたときの 1 ページのノード数。1〜500、既定値 100。",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
