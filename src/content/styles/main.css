@@ -1741,6 +1741,23 @@ svg .node-label {
   opacity: 1;
 }
 
+.waterfall-pannable {
+  cursor: grab;
+}
+
+.waterfall-panning .waterfall-pannable,
+.waterfall-panning .waterfall-pannable * {
+  cursor: grabbing !important;
+}
+
+.visualization-svg[data-view="waterfall"] .group-badge:focus {
+  outline: none;
+}
+
+.visualization-svg[data-view="waterfall"] .group-badge:focus-visible > path {
+  fill: #767676;
+}
+
 .waterfall-range-controls,
 .waterfall-drawer-pager {
   color-scheme: light;

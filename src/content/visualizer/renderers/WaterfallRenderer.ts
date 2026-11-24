@@ -7,6 +7,7 @@ import type { BaseRenderer, GraphRenderOptions } from './BaseRenderer.js';
 import { saveViewState, getViewState } from '../../utils/state-manager.js';
 import { TREE_NODE_BATCH } from '../../../lib/graph/tree-day.js';
 import { sendMessage } from '../../messaging/content-message-service.js';
+import type { D3DragEvent } from 'd3';
 
 const d3 = window.d3;
 const logger = new Logger('WaterfallRenderer_v3');
@@ -157,6 +158,7 @@ export class WaterfallRenderer implements BaseRenderer {
   private visibleLaneStart = -1;
   private visibleLaneEnd = -1;
   private scrollFrame: number | null = null;
+  private panFrame: number | null = null;
   private nodeDetails = new Map<string, NavNode>();
   private detailRequests = new Map<string, Promise<void>>();
   
@@ -164,7 +166,7 @@ export class WaterfallRenderer implements BaseRenderer {
   private verticalScrollOffset: number = 0; // 垂直滚动偏移量（像素）
   private maxVerticalScroll: number = 0; // 最大垂直滚动距离
   private scrollableGroup: any = null; // 可滚动组的引用
-  private isDraggingVertical: boolean = false; // 是否正在拖拽垂直滚动
+  private isDraggingCanvas = false;
   private isDraggingObservationWindow: boolean = false; // 是否正在拖拽观察窗口
   
   // 泳道数据 - V2版本：支持复用
@@ -809,9 +811,10 @@ export class WaterfallRenderer implements BaseRenderer {
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
     if (this.scrollFrame !== null) cancelAnimationFrame(this.scrollFrame);
+    if (this.panFrame !== null) cancelAnimationFrame(this.panFrame);
     const svgNode = this.svg?.node();
     if (svgNode && this.svgWheelHandler) svgNode.removeEventListener('wheel', this.svgWheelHandler, true);
-    this.svg?.on('.zoom', null).attr('viewBox', null);
+    this.svg?.on('.zoom', null).on('.drag', null).classed('waterfall-panning', false).attr('viewBox', null);
     this.svg?.selectAll('*').interrupt();
     this.currentLayout = null;
     this.svg = null;
@@ -862,6 +865,10 @@ export class WaterfallRenderer implements BaseRenderer {
 
     this.allSegments = this.buildTimeSegments(nodes);
     this.drawLayout();
+    if (!this.densityOnly) {
+      this.setupWheelScroll();
+      this.setupCanvasDrag();
+    }
   }
 
   private drawLayout(): void {
@@ -876,7 +883,8 @@ export class WaterfallRenderer implements BaseRenderer {
     this.visibleLaneEnd = -1;
     this.calculateMaxVerticalScroll();
     this.verticalScrollOffset = Math.min(this.verticalScrollOffset, this.maxVerticalScroll);
-    const groups = this.createSVGGroups(this.svg);
+    const pannable = !this.densityOnly && (layout.compressedSegments.length > 0 || this.maxVerticalScroll > 0);
+    const groups = this.createSVGGroups(this.svg, pannable);
     this.renderTimeAxis(groups.timeAxisGroup, layout);
     this.renderTimeDensity(groups.timeAxisGroup, this.densityOnly ? this.allSegments : layout.compressedSegments);
 
@@ -892,8 +900,6 @@ export class WaterfallRenderer implements BaseRenderer {
     this.renderTimeStrips(groups.timeStripsGroup, layout);
     this.renderVisibleLanes();
     this.renderObservationWindowSlider(groups.focusOverlayGroup, layout);
-    this.setupWheelScroll();
-    this.setupVerticalDragScroll();
   }
 
   private addSVGDefinitions(): void {
@@ -1333,7 +1339,7 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 创建SVG分组结构 - 重新设计：明确的viewport和完整内容渲染
    */
-  private createSVGGroups(container: any) {
+  private createSVGGroups(container: any, pannable: boolean) {
     const timeAxisHeight = this.TIME_AXIS_HEIGHT;
     
     // 时间轴组（固定在顶部，不参与滚动）
@@ -1357,6 +1363,15 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 应用裁剪到viewport
     viewportGroup.attr('clip-path', 'url(#viewport-clip)');
+
+    if (pannable) {
+      viewportGroup.classed('waterfall-pannable', true);
+      // Capture a grab in the gaps between cards and across compressed time ranges.
+      viewportGroup.append('rect')
+        .attr('width', this.width)
+        .attr('height', viewportHeight)
+        .attr('fill', 'transparent');
+    }
     
     // 在viewport内创建内容容器（这个容器会滚动）
     const contentGroup = viewportGroup.append('g').attr('class', 'content-group')
@@ -2263,8 +2278,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('stroke', 'var(--waterfall-accent, #4A90E2)')
       .attr('stroke-width', 1)
       .attr('filter', 'url(#observationShadow)')
-      .style('cursor', 'grab')
-      .style('transition', 'all 0.2s ease');
+      .style('cursor', 'grab');
 
     // 添加渐变定义
     const defs = group.append('defs');
@@ -2365,12 +2379,15 @@ export class WaterfallRenderer implements BaseRenderer {
     rect.call(drag);
   }
 
-  private reRenderWithObservationWindow(index: number): void {
+  private reRenderWithObservationWindow(index: number, persist = true): void {
     this.observationStartIndex = index;
-    this.visualizer.waterfallObservationIndex = index;
-    saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: index });
     this.drawLayout();
+    if (persist) this.saveObservationWindow();
     this.visualizer.updateStatusBar();
+  }
+
+  private saveObservationWindow(): void {
+    saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: this.observationStartIndex });
   }
 
   private getNodeLabel(node: NavNode): string {
@@ -2414,8 +2431,8 @@ export class WaterfallRenderer implements BaseRenderer {
       const node = this.svg.node();
       if (node) {
         const handler = (ev: WheelEvent) => {
-          // 如果正在拖拽观察窗口或垂直拖拽，阻止默认并停止传播
-          if (self.isDraggingObservationWindow || self.isDraggingVertical) {
+          // Ignore wheel scrolling while either drag is in progress.
+          if (self.isDraggingObservationWindow || self.isDraggingCanvas) {
             try { ev.preventDefault(); ev.stopPropagation(); } catch(e) {}
             return;
           }
@@ -2500,110 +2517,71 @@ export class WaterfallRenderer implements BaseRenderer {
   
   }
 
-  /**
-   * 设置垂直拖拽滚动 - 升级版本：整个泳道区域都可以拖拽
-   */
-  private setupVerticalDragScroll(): void {
-  
-  
-    
-    if (!this.scrollableGroup) {
-      logger.warn(_('waterfall_no_scrollable_group', '⚠️ scrollableGroup 不存在，无法设置拖拽'));
-      return;
-    }
-    
-    if (this.maxVerticalScroll <= 0) {
-      
-      return;
-    }
+  private setupCanvasDrag(): void {
+    const svg = this.svg;
+    const dragThreshold = 4;
+    const unitsPerPixel = this.width / this.viewportWidth;
+    const drag = d3.drag()
+      .touchable(() => false)
+      .clickDistance(dragThreshold)
+      .filter((event: MouseEvent) => {
+        const target = event.target as Element;
+        return event.button === 0 && !event.ctrlKey
+          && target.closest('.waterfall-pannable') !== null
+          && target.closest('.group-badge, .collapsed-drawer') === null;
+      })
+      .on('start', (start: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
+        const layout = this.currentLayout!;
+        const initialIndex = this.observationStartIndex;
+        const initialOffset = this.verticalScrollOffset;
+        const lastIndex = layout.compressedSegments.length;
+        const segmentWidth = layout.normalDisplaySegments[0].allocatedWidth;
+        let axis: 'horizontal' | 'vertical' | null = null;
+        let nextIndex = initialIndex;
 
-  
-    
-    const timeAxisHeight = 100;
-    const self = this;
-    let startY = 0;
-    let startOffset = 0;
-    let isDragging = false;
+        const updateWindow = () => {
+          this.panFrame = null;
+          if (nextIndex !== this.observationStartIndex) this.reRenderWithObservationWindow(nextIndex, false);
+        };
 
-    // 🎯 新策略：直接在时间条带上设置拖拽，避免覆盖层
-    const timeStripsGroup = this.scrollableGroup.select('.time-strips-group');
-    
-    if (timeStripsGroup.empty()) {
-      logger.warn(_('waterfall_time_strips_group_missing', '⚠️ 时间条带组不存在，无法设置拖拽'));
-      return;
-    }
-
-    // 🎯 为每个时间条带的背景添加拖拽功能
-    const timeStripBackgrounds = timeStripsGroup.selectAll('rect.strip-background');
-  
-    
-    timeStripBackgrounds.on('mousedown', function(this: SVGElement, event: any, d: any) {
-      // 🎯 关键：只有当点击的是时间条带本身时才启动拖拽
-      if (event.target === this) {
-        
-        startDrag(event);
-      }
-    });
-
-    // 🎯 为时间条带设置拖拽光标
-    timeStripBackgrounds
-      .style('cursor', 'ns-resize')
-      .on('mousemove', function(this: SVGElement, event: any) {
-        if (!self.isDraggingVertical) {
-          // 检查鼠标是否在空白区域
-          if (event.target === this) {
-            d3.select(this).style('cursor', 'ns-resize');
+        start.on('drag', (event: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
+          if (this.disposed) return;
+          const dx = event.x - start.x;
+          const dy = event.y - start.y;
+          if (axis === null) {
+            if (Math.hypot(dx, dy) <= dragThreshold) return;
+            const horizontal = Math.abs(dx) >= Math.abs(dy);
+            if (horizontal ? lastIndex === 0 : this.maxVerticalScroll === 0) return;
+            axis = horizontal ? 'horizontal' : 'vertical';
+            this.isDraggingCanvas = true;
+            svg.classed('waterfall-panning', true);
+            this.closeCurrentDrawer();
           }
-        }
+
+          if (axis === 'vertical') {
+            this.setVerticalScrollOffset(initialOffset - dy * unitsPerPixel);
+            return;
+          }
+
+          const segments = Math.round(-dx * unitsPerPixel / segmentWidth);
+          nextIndex = Math.max(0, Math.min(lastIndex, initialIndex + segments));
+          if (this.panFrame === null && nextIndex !== this.observationStartIndex) {
+            this.panFrame = requestAnimationFrame(updateWindow);
+          }
+        });
+
+        start.on('end', () => {
+          if (this.disposed || axis === null) return;
+          if (this.panFrame !== null) {
+            cancelAnimationFrame(this.panFrame);
+            updateWindow();
+          }
+          this.isDraggingCanvas = false;
+          svg.classed('waterfall-panning', false);
+          if (this.observationStartIndex !== initialIndex) this.saveObservationWindow();
+        });
       });
-
-    function startDrag(event: any) {
-      
-      
-      event.preventDefault();
-      event.stopPropagation();
-      
-      isDragging = false;
-      self.isDraggingVertical = false;
-      startY = event.clientY;
-      startOffset = self.verticalScrollOffset;
-      
-      // 鼠标移动事件
-      const mousemove = function(moveEvent: any) {
-        const deltaY = Math.abs(moveEvent.clientY - startY);
-        
-        if (!isDragging && deltaY > 3) {
-          isDragging = true;
-          self.isDraggingVertical = true;
-          d3.select('body').style('cursor', 'ns-resize');
-          
-        }
-        
-        if (isDragging) {
-          const deltaY = moveEvent.clientY - startY;
-          const newOffset = startOffset - deltaY;
-          self.setVerticalScrollOffset(newOffset);
-        }
-      };
-      
-      // 鼠标释放事件
-      const mouseup = function() {
-        if (isDragging) {
-          
-          isDragging = false;
-          self.isDraggingVertical = false;
-          d3.select('body').style('cursor', 'default');
-        }
-        
-        d3.select(window).on('mousemove.vscroll', null);
-        d3.select(window).on('mouseup.vscroll', null);
-      };
-      
-      d3.select(window).on('mousemove.vscroll', mousemove);
-      d3.select(window).on('mouseup.vscroll', mouseup);
-    }
-
-    
+    svg.call(drag);
   }
 
   /**
