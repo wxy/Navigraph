@@ -253,9 +253,11 @@ export class RenderingManager {
     const day = this.visualizer.treeDay;
     if (tree ? !day?.truncated : !timeline || (!timeline.truncated && !this.visualizer.nodes.length)) return;
     const controls = document.createElement('div');
-    controls.className = 'navigation-range-controls';
-    controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px`;
+    controls.className = tree ? 'navigation-range-controls' : 'navigation-range-controls waterfall-range-controls';
+    controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px`;
     if (tree && day) {
+      controls.style.backgroundColor = 'var(--bg-primary,#fff)';
+      controls.style.border = '1px solid #888';
       const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       controls.textContent = `${_('tree_day_limit', '仅显示当天最新 {0} 条记录', day.total.toLocaleString())} · ${time(day.oldest!)}–${time(day.newest!)}`;
       this.container.append(controls);

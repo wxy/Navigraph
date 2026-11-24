@@ -447,6 +447,36 @@ svg text.group-badge-text {
   background-color: var(--svg-background);
 }
 
+[data-theme="dark"] .visualization-svg[data-view="waterfall"] {
+  --waterfall-strip-even-top: var(--card-bg);
+  --waterfall-strip-even-bottom: var(--svg-background);
+  --waterfall-strip-odd-top: var(--svg-node-fill);
+  --waterfall-strip-odd-bottom: var(--card-bg);
+  --waterfall-axis: var(--label-color);
+  --waterfall-separator: var(--svg-link);
+  --waterfall-accent: var(--accent-color);
+  --waterfall-control-surface: var(--popup-header);
+}
+
+[data-theme="dark"] .waterfall-card-background {
+  fill: var(--svg-node-fill);
+  stroke: var(--waterfall-type-color);
+  stroke-opacity: 0.75;
+}
+
+[data-theme="dark"] .waterfall-card-background:hover {
+  fill: var(--btn-hover);
+}
+
+[data-theme="dark"] :is(.waterfall-range-controls, .waterfall-drawer-pager) {
+  color-scheme: dark;
+  background-color: var(--popup-header);
+}
+
+[data-theme="dark"] .waterfall-drawer-pager input {
+  background-color: var(--svg-node-fill);
+}
+
 
 /* ========== 特定组件样式覆盖 ========== */
 /* 针对深色主题的特定修复 */

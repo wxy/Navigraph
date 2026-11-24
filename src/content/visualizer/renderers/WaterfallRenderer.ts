@@ -137,7 +137,6 @@ export class WaterfallRenderer implements BaseRenderer {
   private readonly SWIMLANE_HEIGHT = 50; // 每个泳道的高度（包含间距）
   private readonly SWIMLANE_NODE_HEIGHT = 40; // 泳道内节点的实际高度
   private readonly SWIMLANE_SEPARATOR_DASH = '5,3'; // 虚线样式
-  private readonly SWIMLANE_SEPARATOR_COLOR = '#333333'; // 虚线颜色（加深以免被抽屉遮挡时不清晰）
   private readonly MAX_SWIMLANES = 20; // 最大泳道数量（防止过多标签页导致布局溢出）
   private readonly COLLAPSE_THRESHOLD = 2; // 折叠阈值：>=2个节点时折叠
 
@@ -1121,11 +1120,11 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y2', '100%');
     stripGradientEven.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#fafafa')
+      .attr('stop-color', 'var(--waterfall-strip-even-top, #fafafa)')
       .attr('stop-opacity', 1);
     stripGradientEven.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#f0f0f0')
+      .attr('stop-color', 'var(--waterfall-strip-even-bottom, #f0f0f0)')
       .attr('stop-opacity', 1);
     
     // 条带背景渐变 - 奇数行
@@ -1137,11 +1136,11 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y2', '100%');
     stripGradientOdd.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#f8f8f8')
+      .attr('stop-color', 'var(--waterfall-strip-odd-top, #f8f8f8)')
       .attr('stop-opacity', 1);
     stripGradientOdd.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#e8e8e8')
+      .attr('stop-color', 'var(--waterfall-strip-odd-bottom, #e8e8e8)')
       .attr('stop-opacity', 1);
     
     // 节点背景渐变
@@ -1664,7 +1663,7 @@ export class WaterfallRenderer implements BaseRenderer {
           .attr('x2', rightBoundary) // 到条带右边界结束
           .attr('y1', separatorY)
           .attr('y2', separatorY)
-          .attr('stroke', this.SWIMLANE_SEPARATOR_COLOR)
+          .attr('stroke', 'var(--waterfall-separator, #333333)')
           .attr('stroke-width', 1)
           .attr('stroke-dasharray', this.SWIMLANE_SEPARATOR_DASH)
     .attr('opacity', 0.9);
@@ -1704,7 +1703,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y1', timeAxisY)
       .attr('x2', lineEndX)
       .attr('y2', timeAxisY)
-      .attr('stroke', '#666')
+      .attr('stroke', 'var(--waterfall-axis, #666)')
       .attr('stroke-width', 2)
       .attr('class', 'time-axis-main-line');
     
@@ -1713,7 +1712,7 @@ export class WaterfallRenderer implements BaseRenderer {
     const arrowSize = 8;
     axisLineGroup.append('polygon')
       .attr('points', `${lineEndX},${timeAxisY} ${lineEndX - arrowSize},${timeAxisY - arrowSize/2} ${lineEndX - arrowSize},${timeAxisY + arrowSize/2}`)
-      .attr('fill', '#666')
+      .attr('fill', 'var(--waterfall-axis, #666)')
       .attr('class', 'time-axis-arrow');
 
     const labels = this.densityOnly
@@ -1740,7 +1739,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y1', timeAxisY)
       .attr('x2', centerX)
       .attr('y2', timeAxisY - 8)
-      .attr('stroke', '#666')
+      .attr('stroke', 'var(--waterfall-axis, #666)')
       .attr('stroke-width', 1);
 
     // 时间标签在横线上方
@@ -1802,7 +1801,7 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('y', bottom - barHeight)
         .attr('width', binWidth * 0.8)
         .attr('height', barHeight)
-        .attr('fill', 'var(--color-accent, #4285f4)')
+        .attr('fill', 'var(--waterfall-accent, var(--color-accent, #4285f4))')
         .attr('data-record-count', bin.count)
         .append('title')
         .text(`${format.format(bin.start)} – ${format.format(bin.end)} · ${_('waterfall_record_count', '{0} 条记录', bin.count.toLocaleString())}`);
@@ -2017,7 +2016,8 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('opacity', 0).style('pointer-events', 'none');
     body.append('rect').attr('class', 'drawer-bg')
       .attr('x', x).attr('y', y).attr('width', width).attr('height', height)
-      .attr('fill', '#e6f2ff').attr('stroke', 'rgba(74, 144, 226, 0.6)')
+      .attr('fill', 'var(--waterfall-control-surface, #e6f2ff)')
+      .attr('stroke', 'var(--waterfall-accent, rgba(74, 144, 226, 0.6))')
       .style('pointer-events', 'none');
     const items = body.append('g').attr('class', 'drawer-scroll').append('g').attr('class', 'drawer-items');
     const cards = pageNodes.map((node, index) => {
@@ -2193,36 +2193,15 @@ export class WaterfallRenderer implements BaseRenderer {
     // 应用裁剪路径到整个节点组
     group.attr('clip-path', `url(#${clipId})`);
     
-    // �🎨 根据导航类型获取颜色
     const nodeColor = this.getNodeColor(node);
-    const strokeColor = this.adjustBrightness(nodeColor, -30);
-    const hoverColor = this.adjustBrightness(nodeColor, -20);
-    
-    // 背景矩形
-    const bgRect = group.append('rect')
+    group.append('rect')
+      .attr('class', 'waterfall-card-background')
       .attr('width', width)
       .attr('height', height)
       .attr('rx', 4)
-      .attr('fill', nodeColor)
-      .attr('stroke', strokeColor)
-      .attr('stroke-width', 1)
-      .style('cursor', 'pointer')
-      .attr('opacity', 0.95);
-    
-    // 悬停效果
-    bgRect.on('mouseenter', function(this: SVGRectElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(200))
-        .attr('fill', hoverColor)
-        .attr('opacity', 1);
-    }).on('mouseleave', function(this: SVGRectElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(200))
-        .attr('fill', nodeColor)
-        .attr('opacity', 0.95);
-    });
+      .style('--waterfall-type-color', nodeColor)
+      .style('--waterfall-type-stroke', this.adjustBrightness(nodeColor, -30))
+      .style('--waterfall-type-hover', this.adjustBrightness(nodeColor, -20));
 
     // 🎯 图标（favicon）
     const iconSize = 16;
@@ -2461,8 +2440,8 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('height', sliderHeight)
         .attr('rx', sliderHeight / 2)
         .attr('ry', sliderHeight / 2)
-        .attr('fill', 'rgba(0, 123, 255, 0.1)')
-        .attr('stroke', '#007bff')
+        .attr('fill', 'var(--waterfall-control-surface, rgba(0, 123, 255, 0.1))')
+        .attr('stroke', 'var(--waterfall-accent, #007bff)')
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '4,4')
         .style('cursor', 'default');
@@ -2493,7 +2472,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('rx', sliderHeight / 2)
       .attr('ry', sliderHeight / 2)
       .attr('fill', 'url(#observationGradient)')
-      .attr('stroke', '#4A90E2')
+      .attr('stroke', 'var(--waterfall-accent, #4A90E2)')
       .attr('stroke-width', 1)
       .attr('filter', 'url(#observationShadow)')
       .style('cursor', 'grab')
@@ -2512,12 +2491,12 @@ export class WaterfallRenderer implements BaseRenderer {
     
     gradient.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#E3F2FD')
+      .attr('stop-color', 'var(--waterfall-control-surface, #E3F2FD)')
       .attr('stop-opacity', 0.4);
     
     gradient.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#BBDEFB')
+      .attr('stop-color', 'var(--waterfall-accent, #BBDEFB)')
       .attr('stop-opacity', 0.6);
     
     // 阴影效果

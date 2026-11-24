@@ -1728,6 +1728,27 @@ svg .node-label {
   font-size: 12px;
 }
 
+.waterfall-card-background {
+  fill: var(--waterfall-type-color);
+  stroke: var(--waterfall-type-stroke);
+  stroke-width: 1;
+  opacity: 0.95;
+  transition: fill 0.2s ease, opacity 0.2s ease;
+}
+
+.waterfall-card-background:hover {
+  fill: var(--waterfall-type-hover);
+  opacity: 1;
+}
+
+.waterfall-range-controls,
+.waterfall-drawer-pager {
+  color-scheme: light;
+  color: var(--text-color, #333);
+  background-color: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
 .waterfall-drawer-pager {
   position: absolute;
   z-index: 21;
@@ -1738,7 +1759,6 @@ svg .node-label {
   align-items: center;
   gap: 4px;
   padding: 5px;
-  border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-bg-panel, #f5f7fa);
   font-size: 13px;
