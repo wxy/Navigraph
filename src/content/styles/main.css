@@ -1745,14 +1745,28 @@ svg .node-label {
   cursor: pointer;
 }
 
-.waterfall-card-pan .waterfall-card {
+.waterfall-window-movable .strip-background,
+.waterfall-observation-frame.is-movable {
   cursor: grab;
+}
+
+.waterfall-observation-frame {
+  fill: none;
+  stroke: var(--waterfall-accent, #4a90e2);
+  stroke-opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.waterfall-observation-frame.is-movable {
+  pointer-events: stroke;
 }
 
 .waterfall-lane-scroll {
   cursor: ns-resize;
 }
 
+.waterfall-panning .waterfall-observation-frame.is-movable,
 .waterfall-panning .waterfall-pannable,
 .waterfall-panning .waterfall-pannable * {
   cursor: grabbing !important;

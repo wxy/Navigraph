@@ -69,6 +69,14 @@ interface LayoutResult {
   };
 }
 
+interface ObservationWindowBounds {
+  x: number;
+  width: number;
+  minX: number;
+  maxX: number;
+  maxIndex: number;
+}
+
 /**
  * 标签页生命周期 - 一个标签页从打开到关闭的完整周期
  */
@@ -158,7 +166,6 @@ export class WaterfallRenderer implements BaseRenderer {
   private visibleLaneStart = -1;
   private visibleLaneEnd = -1;
   private scrollFrame: number | null = null;
-  private panFrame: number | null = null;
   private nodeDetails = new Map<string, NavNode>();
   private detailRequests = new Map<string, Promise<void>>();
   
@@ -811,7 +818,6 @@ export class WaterfallRenderer implements BaseRenderer {
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
     if (this.scrollFrame !== null) cancelAnimationFrame(this.scrollFrame);
-    if (this.panFrame !== null) cancelAnimationFrame(this.panFrame);
     const svgNode = this.svg?.node();
     if (svgNode && this.svgWheelHandler) svgNode.removeEventListener('wheel', this.svgWheelHandler, true);
     this.svg?.on('.zoom', null).on('.drag', null).classed('waterfall-panning', false).attr('viewBox', null);
@@ -898,7 +904,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     this.renderTimeStrips(groups.timeStripsGroup, groups.nodesGroup, layout);
     this.renderVisibleLanes();
-    this.renderObservationWindowSlider(groups.focusOverlayGroup, layout);
+    this.renderObservationWindow(groups.focusOverlayGroup, layout);
   }
 
   private addSVGDefinitions(): void {
@@ -1340,7 +1346,7 @@ export class WaterfallRenderer implements BaseRenderer {
    */
   private createSVGGroups(container: any, layout: LayoutResult) {
     const timeAxisHeight = this.TIME_AXIS_HEIGHT;
-    const canPanCards = !this.densityOnly && layout.compressedSegments.length > 0;
+    const canMoveWindow = !this.densityOnly && layout.compressedSegments.length > 0;
     const canScrollLanes = !this.densityOnly && this.maxVerticalScroll > 0;
     
     // 时间轴组（固定在顶部，不参与滚动）
@@ -1364,7 +1370,8 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 应用裁剪到viewport
     viewportGroup.attr('clip-path', 'url(#viewport-clip)')
-      .classed('waterfall-pannable', canPanCards || canScrollLanes);
+      .classed('waterfall-pannable', canMoveWindow || canScrollLanes)
+      .classed('waterfall-window-movable', canMoveWindow);
 
     if (canScrollLanes) {
       // Keep vertical scrolling available in the gaps between cards.
@@ -1392,14 +1399,7 @@ export class WaterfallRenderer implements BaseRenderer {
   const closureMarkersGroup = contentGroup.append('g').attr('class', 'closure-markers-group');
   const timeStripsGroup = contentGroup.append('g').attr('class', 'time-strips-group');
     
-    // Keep sliding cards inside the timeline, clear of the lane number gutter.
-    const { startX, endX } = layout.timeAxisData;
-    viewportDefs.append('clipPath').attr('id', 'waterfall-cards-clip')
-      .append('rect').attr('x', startX).attr('width', endX - startX)
-      .attr('height', this.swimlaneContentHeight());
-    const nodesGroup = contentGroup.append('g').attr('clip-path', 'url(#waterfall-cards-clip)')
-      .append('g').attr('class', 'nodes-group')
-      .classed('waterfall-card-pan', canPanCards);
+  const nodesGroup = contentGroup.append('g').attr('class', 'nodes-group');
     
     // 🎯 重新设计：拖拽层放在节点层之后，这样节点可以直接接收点击事件
     const dragLayerGroup = contentGroup.append('g').attr('class', 'drag-layer-group');
@@ -2219,35 +2219,43 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 渲染连接线 - V2样式：连接同一标签页的节点
    */
-  /**
-   * 渲染观察窗口滑块 - 在时间轴横线上滑动
-   */
-  private renderObservationWindowSlider(group: any, layout: LayoutResult): void {
-  
+  private getObservationWindowBounds(layout: LayoutResult): ObservationWindowBounds {
+    const segments = layout.normalDisplaySegments;
+    const x = segments[0].startX;
+    const last = segments[segments.length - 1];
+    const width = last.startX + last.allocatedWidth - x;
+    return {
+      x, width,
+      minX: layout.timeAxisData.startX,
+      maxX: layout.timeAxisData.endX - width,
+      maxIndex: layout.compressedSegments.length,
+    };
+  }
+
+  private renderObservationWindow(group: any, layout: LayoutResult): void {
+    const bounds = this.getObservationWindowBounds(layout);
+    const laneHeight = Math.min(this.height - this.TIME_AXIS_HEIGHT, this.swimlaneContentHeight());
+    group.append('rect')
+      .attr('class', 'waterfall-observation-frame')
+      .classed('is-movable', bounds.maxIndex > 0)
+      .attr('aria-hidden', 'true')
+      .attr('x', bounds.x)
+      .attr('y', this.TIME_AXIS_HEIGHT + 0.5)
+      .attr('width', bounds.width)
+      .attr('height', Math.max(0, laneHeight - 1))
+      .attr('rx', 6);
 
     const timeAxisY = 80; // 时间轴横线的Y坐标（与renderTimeAxis保持一致）
     const sliderHeight = 16; // 滑块高度（更扁平，适合在线上）
     const sliderY = timeAxisY - sliderHeight / 2; // 居中在时间轴线上
 
-    // 🎯 关键逻辑：判断是否有压缩段
-    const hasCompression = layout.compressedSegments.length > 0;
-    
-    if (!hasCompression) {
-      // ✅ 无压缩情况：观察窗口覆盖所有条带的实际宽度
-  
-      
-      const firstSegment = layout.segments[0];
-      const lastSegment = layout.segments[layout.segments.length - 1];
-      const windowStartX = firstSegment.startX;
-      const windowEndX = lastSegment.startX + lastSegment.allocatedWidth;
-      const windowWidth = windowEndX - windowStartX;
-
+    if (bounds.maxIndex === 0) {
       // 观察窗口滑块 - 虚线边框表示全覆盖
       group.append('rect')
         .attr('class', 'observation-slider-full')
-        .attr('x', windowStartX)
+        .attr('x', bounds.x)
         .attr('y', sliderY)
-        .attr('width', windowWidth)
+        .attr('width', bounds.width)
         .attr('height', sliderHeight)
         .attr('rx', sliderHeight / 2)
         .attr('ry', sliderHeight / 2)
@@ -2256,29 +2264,15 @@ export class WaterfallRenderer implements BaseRenderer {
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '4,4')
         .style('cursor', 'default');
-
-      
       return;
     }
-
-    // ⚠️ 有压缩情况：观察窗口只覆盖正常显示区域，可拖动
-  
-    
-    if (layout.normalDisplaySegments.length === 0) {
-      return;
-    }
-
-    const windowStartX = layout.normalDisplaySegments[0].startX;
-    const windowEndX = layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].startX + 
-                      layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].allocatedWidth;
-    const windowWidth = windowEndX - windowStartX;
 
     // 可拖动的观察窗口滑块 - 现代化设计
     const observationRect = group.append('rect')
       .attr('class', 'observation-slider')
-      .attr('x', windowStartX)
+      .attr('x', bounds.x)
       .attr('y', sliderY)
-      .attr('width', windowWidth)
+      .attr('width', bounds.width)
       .attr('height', sliderHeight)
       .attr('rx', sliderHeight / 2)
       .attr('ry', sliderHeight / 2)
@@ -2336,55 +2330,39 @@ export class WaterfallRenderer implements BaseRenderer {
     feMerge.append('feMergeNode')
       .attr('in', 'SourceGraphic');
 
-    // 去掉文字标签，保持简洁
-
-
-    // 🎯 添加拖动功能（不再需要text参数）
-    this.setupObservationWindowDrag(observationRect, layout);
+    this.setupObservationCapsuleDrag(observationRect, bounds);
   }
 
   /**
    * 设置观察窗口拖动功能
    */
-  private setupObservationWindowDrag(rect: any, layout: LayoutResult): void {
-    const initialX = Number(rect.attr('x'));
-    const width = Number(rect.attr('width'));
-    const first = this.allSegments[0];
-    const last = this.allSegments[this.allSegments.length - 1];
-    const minX = first.startX;
-    const maxX = last.startX + last.allocatedWidth - width;
-    const count = layout.normalDisplaySegments.length;
-    const maxIndex = this.allSegments.length - count;
-    let x = initialX;
+  private setupObservationCapsuleDrag(rect: any, bounds: ObservationWindowBounds): void {
+    let x = bounds.x;
 
     const drag = d3.drag()
       .on('start', () => {
-        x = initialX;
+        x = bounds.x;
         this.isDraggingObservationWindow = true;
         rect.style('cursor', 'grabbing');
       })
       .on('drag', (event: { dx: number }) => {
-        x = Math.max(minX, Math.min(maxX, x + event.dx));
+        x = Math.max(bounds.minX, Math.min(bounds.maxX, x + event.dx));
         rect.attr('x', x);
       })
       .on('end', () => {
         this.isDraggingObservationWindow = false;
         rect.style('cursor', 'grab');
         if (this.disposed) return;
-        let index = this.observationStartIndex;
-        if (x <= minX + 1) index = 0;
-        else if (x >= maxX - 1) index = maxIndex;
-        else if (x !== initialX) {
-          const rightward = x > initialX;
-          const edge = rightward ? x + width - 0.01 : x;
-          const segment = this.allSegments.findIndex(section => edge < section.startX + section.allocatedWidth);
-          const start = rightward ? segment - count + 1 : segment;
-          index = Math.max(0, Math.min(maxIndex, start));
-        }
-        if (index !== this.observationStartIndex) this.reRenderWithObservationWindow(index);
-        else rect.attr('x', initialX);
+        this.dropObservationWindow(rect, bounds, x);
       });
     rect.call(drag);
+  }
+
+  private dropObservationWindow(rect: any, bounds: ObservationWindowBounds, x: number): void {
+    const fraction = (x - bounds.minX) / (bounds.maxX - bounds.minX);
+    const index = Math.round(fraction * bounds.maxIndex);
+    if (index !== this.observationStartIndex) this.reRenderWithObservationWindow(index);
+    else rect.attr('x', bounds.x);
   }
 
   private reRenderWithObservationWindow(index: number): void {
@@ -2531,29 +2509,20 @@ export class WaterfallRenderer implements BaseRenderer {
       .filter((event: MouseEvent) => {
         const target = event.target as Element;
         return event.button === 0 && !event.ctrlKey
-          && target.closest('.waterfall-pannable') !== null
+          && target.closest('.waterfall-pannable, .waterfall-observation-frame.is-movable') !== null
           && target.closest('.group-badge, .collapsed-drawer') === null;
       })
       .on('start', (start: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
-        const layout = this.currentLayout!;
-        const initialIndex = this.observationStartIndex;
+        const bounds = this.getObservationWindowBounds(this.currentLayout!);
         const initialOffset = this.verticalScrollOffset;
-        const lastIndex = layout.compressedSegments.length;
-        const fromCard = (start.sourceEvent.target as Element).closest('.navigation-node') !== null;
-        // One step shifts a shared card by the difference between the two segment widths.
-        const cardStep = lastIndex > 0
-          ? layout.normalDisplaySegments[0].allocatedWidth - layout.compressedSegments[0].allocatedWidth
-          : 0;
-        const minPreviewX = -(lastIndex - initialIndex) * cardStep;
-        const maxPreviewX = initialIndex * cardStep;
-        const cards = this.scrollableGroup.select('.nodes-group');
+        const frame = svg.select('.waterfall-observation-frame');
+        const frameRect = frame.node().getBoundingClientRect();
+        const pointer = start.sourceEvent as MouseEvent;
+        const fromWindow = pointer.target === frame.node()
+          || (pointer.clientX >= frameRect.left && pointer.clientX <= frameRect.right
+            && pointer.clientY >= frameRect.top && pointer.clientY <= frameRect.bottom);
         let axis: 'horizontal' | 'vertical' | null = null;
-        let previewX = 0;
-
-        const updatePreview = () => {
-          this.panFrame = null;
-          cards.style('transform', `translateX(${previewX}px)`);
-        };
+        let previewX = bounds.x;
 
         start.on('drag', (event: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
           if (this.disposed) return;
@@ -2562,11 +2531,11 @@ export class WaterfallRenderer implements BaseRenderer {
           if (axis === null) {
             if (Math.hypot(dx, dy) <= dragThreshold) return;
             const horizontal = Math.abs(dx) >= Math.abs(dy);
-            if (horizontal ? !fromCard || lastIndex === 0 : this.maxVerticalScroll === 0) return;
+            if (horizontal ? !fromWindow || bounds.maxIndex === 0 : this.maxVerticalScroll === 0) return;
             axis = horizontal ? 'horizontal' : 'vertical';
             this.isDraggingCanvas = true;
             svg.classed('waterfall-panning', true);
-            this.closeCurrentDrawer();
+            if (axis === 'vertical') this.closeCurrentDrawer();
           }
 
           if (axis === 'vertical') {
@@ -2574,22 +2543,15 @@ export class WaterfallRenderer implements BaseRenderer {
             return;
           }
 
-          const offset = Math.max(minPreviewX, Math.min(maxPreviewX, dx * unitsPerPixel));
-          if (offset === previewX) return;
-          previewX = offset;
-          if (this.panFrame === null) this.panFrame = requestAnimationFrame(updatePreview);
+          previewX = Math.max(bounds.minX, Math.min(bounds.maxX, bounds.x + dx * unitsPerPixel));
+          frame.attr('x', previewX);
         });
 
         start.on('end', () => {
           if (this.disposed || axis === null) return;
           this.isDraggingCanvas = false;
           svg.classed('waterfall-panning', false);
-          if (axis === 'vertical') return;
-          if (this.panFrame !== null) cancelAnimationFrame(this.panFrame);
-          this.panFrame = null;
-          cards.style('transform', null);
-          const nextIndex = initialIndex + Math.round(-previewX / cardStep);
-          if (nextIndex !== initialIndex) this.reRenderWithObservationWindow(nextIndex);
+          if (axis === 'horizontal') this.dropObservationWindow(frame, bounds, previewX);
         });
       });
     svg.call(drag);
