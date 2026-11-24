@@ -5303,6 +5303,18 @@
     "message": "图上展开的记录较多，请先收起一组",
     "description": "展开内容超出窗口可布局的数量时的提示"
   },
+  "tree_day_collapse_all": {
+    "message": "全部折叠",
+    "description": "一键收起平衡树中已展开的分组"
+  },
+  "tree_day_expand_all": {
+    "message": "全部展开",
+    "description": "一键展开平衡树的所有分组"
+  },
+  "tree_day_expand_all_limit": {
+    "message": "节点太多，请用图上的 +N 逐组展开。",
+    "description": "无法一次展开全图时的操作提示"
+  },
   "tree_day_collapse": {
     "message": "收起分支",
     "description": "收起展开的平衡树分支"

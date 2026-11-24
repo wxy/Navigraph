@@ -1834,6 +1834,17 @@ svg .node-label {
   font-weight: bold;
 }
 
+#tree-fold-actions button[aria-disabled="true"] {
+  background-color: var(--color-bg-tertiary);
+  cursor: default;
+  opacity: 0.6;
+}
+
+#tree-fold-limit {
+  margin: 4px 0 8px;
+  font-size: 12px;
+}
+
 /* 会话选择器容器 */
 .session-selector-container {
   margin-bottom: 15px;
