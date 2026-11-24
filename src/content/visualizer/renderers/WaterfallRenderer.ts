@@ -2333,10 +2333,13 @@ export class WaterfallRenderer implements BaseRenderer {
     this.setupObservationCapsuleDrag(observationRect, bounds);
   }
 
-  /**
-   * 设置观察窗口拖动功能
-   */
+  private selectObservationIndicators(): any {
+    return this.svg.select('.focus-overlay-group')
+      .selectAll('.waterfall-observation-frame, .observation-slider');
+  }
+
   private setupObservationCapsuleDrag(rect: any, bounds: ObservationWindowBounds): void {
+    const indicators = this.selectObservationIndicators();
     let x = bounds.x;
 
     const drag = d3.drag()
@@ -2347,22 +2350,22 @@ export class WaterfallRenderer implements BaseRenderer {
       })
       .on('drag', (event: { dx: number }) => {
         x = Math.max(bounds.minX, Math.min(bounds.maxX, x + event.dx));
-        rect.attr('x', x);
+        indicators.attr('x', x);
       })
       .on('end', () => {
         this.isDraggingObservationWindow = false;
         rect.style('cursor', 'grab');
         if (this.disposed) return;
-        this.dropObservationWindow(rect, bounds, x);
+        this.dropObservationWindow(indicators, bounds, x);
       });
     rect.call(drag);
   }
 
-  private dropObservationWindow(rect: any, bounds: ObservationWindowBounds, x: number): void {
+  private dropObservationWindow(indicators: any, bounds: ObservationWindowBounds, x: number): void {
     const fraction = (x - bounds.minX) / (bounds.maxX - bounds.minX);
     const index = Math.round(fraction * bounds.maxIndex);
     if (index !== this.observationStartIndex) this.reRenderWithObservationWindow(index);
-    else rect.attr('x', bounds.x);
+    else indicators.attr('x', bounds.x);
   }
 
   private reRenderWithObservationWindow(index: number): void {
@@ -2515,10 +2518,11 @@ export class WaterfallRenderer implements BaseRenderer {
       .on('start', (start: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
         const bounds = this.getObservationWindowBounds(this.currentLayout!);
         const initialOffset = this.verticalScrollOffset;
-        const frame = svg.select('.waterfall-observation-frame');
-        const frameRect = frame.node().getBoundingClientRect();
+        const indicators = this.selectObservationIndicators();
+        const frame = indicators.filter('.waterfall-observation-frame').node() as SVGRectElement;
+        const frameRect = frame.getBoundingClientRect();
         const pointer = start.sourceEvent as MouseEvent;
-        const fromWindow = pointer.target === frame.node()
+        const fromWindow = pointer.target === frame
           || (pointer.clientX >= frameRect.left && pointer.clientX <= frameRect.right
             && pointer.clientY >= frameRect.top && pointer.clientY <= frameRect.bottom);
         let axis: 'horizontal' | 'vertical' | null = null;
@@ -2544,14 +2548,14 @@ export class WaterfallRenderer implements BaseRenderer {
           }
 
           previewX = Math.max(bounds.minX, Math.min(bounds.maxX, bounds.x + dx * unitsPerPixel));
-          frame.attr('x', previewX);
+          indicators.attr('x', previewX);
         });
 
         start.on('end', () => {
           if (this.disposed || axis === null) return;
           this.isDraggingCanvas = false;
           svg.classed('waterfall-panning', false);
-          if (axis === 'horizontal') this.dropObservationWindow(frame, bounds, previewX);
+          if (axis === 'horizontal') this.dropObservationWindow(indicators, bounds, previewX);
         });
       });
     svg.call(drag);
