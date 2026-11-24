@@ -24,6 +24,8 @@ const logger = new Logger('WaterfallRenderer_v3');
 interface DrawerOwner {
   drawer: any;
   body: any;
+  anchor: SVGGElement;
+  anchorMarker: Comment;
   container: HTMLElement | null;
   key: string;
   active: boolean;
@@ -190,6 +192,12 @@ export class WaterfallRenderer implements BaseRenderer {
     return !this.disposed && owner.active && this.drawerOwner === owner;
   }
 
+  private moveDrawerAnchor(anchor: SVGGElement, move: () => void): void {
+    const focus = document.activeElement;
+    move();
+    if (focus instanceof SVGElement && anchor.contains(focus)) focus.focus({ preventScroll: true });
+  }
+
   /** Invalidate first: interrupted transitions and late frames must not revive this drawer. */
   private releaseDrawer(owner: DrawerOwner): void {
     if (!owner.active) return;
@@ -231,6 +239,7 @@ export class WaterfallRenderer implements BaseRenderer {
       if (container?.__drawerDebugDocHandler === owner.debugDocument) delete container.__drawerDebugDocHandler;
     }
     owner.pager?.remove();
+    this.moveDrawerAnchor(owner.anchor, () => owner.anchorMarker.replaceWith(owner.anchor));
     owner.drawer.remove();
     this.svg?.selectAll('clipPath').filter(function(this: Element) {
       return this.id === `drawer-clip-${owner.key}`;
@@ -276,11 +285,6 @@ export class WaterfallRenderer implements BaseRenderer {
             }
           }
 
-          // Let the current badge's own toggle run the animated/immediate close cleanup.
-          const badge = (e.target as Element | null)?.closest?.('.group-badge');
-          if (this.currentOpenCollapseId && badge?.getAttribute('data-collapse-group') === this.currentOpenCollapseId) {
-            clickedInside = true;
-          }
           if (!clickedInside) {
             this.closeCurrentDrawer();
           }
@@ -309,9 +313,9 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * Animate the current drawer, created when its group is opened.
    */
-  private togglePrebuiltDrawer(
+  private toggleDrawer(
+    anchor: SVGGElement,
     collapsedGroup: CollapsedNodeGroup,
-    segment: TimeSegment,
     nodeX: number,
     nodeY: number,
     nodeWidth: number,
@@ -329,17 +333,15 @@ export class WaterfallRenderer implements BaseRenderer {
   const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapseKey}"]`);
       if (drawerSel.empty()) return;
 
-      const itemsGroup = drawerSel.select('.drawer-items');
-      // use data-open attr + opacity/pointer-events instead of display:none so that
-      // the contained display node remains visible (drawer contains the display node)
       const isOpen = drawerSel.attr('data-open') === 'true';
 
       if (!isOpen) {
         if (this.drawerTransitioning) return;
         this.closeCurrentDrawer();
+        const anchorMarker = document.createComment('waterfall drawer anchor');
         const owner: DrawerOwner = {
           drawer: drawerSel, body: drawerSel.select('.drawer-body'), container: this.container,
-          key: collapseKey, active: true, closing: false, timers: new Set()
+          anchor, anchorMarker, key: collapseKey, active: true, closing: false, timers: new Set()
         };
         operationOwner = owner;
         const ownsDrawer = () => this.ownsDrawer(owner);
@@ -350,283 +352,71 @@ export class WaterfallRenderer implements BaseRenderer {
         // Register before any open animation so outside clicks can also cancel pending opens.
         this.bindDocumentClickToClose();
 
-  // open: do down-direction expand animation (background stretch + per-item move)
-        // keep the outer drawer container non-interactive so it doesn't block
-        // clicks to sibling nodes; the inner body/items will be enabled
-        // for pointer events after the open animation completes.
-        drawerSel.attr('data-open', 'true')
-          .style('pointer-events', 'none');
+        // Keep the original card above the backdrop in the same coordinate system.
+        anchor.before(anchorMarker);
+        this.moveDrawerAnchor(anchor, () => drawerSel.node().appendChild(anchor));
+        drawerSel.attr('data-open', 'true');
 
-        // find the body and bg
-        const body = drawerSel.select('.drawer-body');
+        const body = owner.body;
         const bg = body.select('.drawer-bg');
-        // bring drawer to front within its current parent (avoid reparenting)
-        try {
-          try { drawerSel.raise(); } catch (e) {}
-        } catch (e) {}
+        const itemNodes: SVGGElement[] = body.selectAll('.drawer-item').nodes();
 
-        // compute item targets using slot-based layout anchored at swimlane top
-  const items = body.selectAll('.drawer-item');
-        const itemNodes = items.nodes();
-        if (itemNodes.length === 0) {
-          body.transition().duration(animationDuration(120)).style('opacity', 1 as any).on('end', () => {
-            if (!ownsDrawer()) return;
-            try { body.style('pointer-events', 'all'); } catch(e) {}
-            try { this.bindDocumentClickToClose(); } catch(e) {}
-            this.drawerTransitioning = false;
-          });
-        } else {
-          // Prefer CSS-based scroll isolation (overscroll-behavior). Do not attach non-passive wheel handlers here.
-          // If needed later, a carefully added passive:false handler can be introduced in a later step.
-          try { /* no-op: CSS should handle scroll isolation */ } catch(e) {}
-
-          // ensure x alignment with swimlane nodes by using same centerOffset calculation
-          const nodeWidthLocal = this.NODE_WIDTHS[segment.displayMode];
-          const centerOffset = (segment.allocatedWidth - nodeWidthLocal) / 2;
-          const baseX = segment.startX + Math.max(0, centerOffset);
-
-                const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
-            try { const firstChildRect = d3.select(itemNodes[0]).select('rect'); if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0; } catch(e) {}
-            return nodeHeight || 0;
-          })() : nodeHeight || 0);
-
-          // slot layout params
+        if (itemNodes.length > 0) {
           const slots = collapsedGroup.nodes.length;
-          // VISIBLE_FOLDED_CHILDREN_LIMIT represents how many folded children we want
-          // to show in addition to the display node. Per Option B we show display + up to 5 children.
-          const VISIBLE_FOLDED_CHILDREN_LIMIT = 5;
-          const visibleSlots = Math.min(slots, 1 + VISIBLE_FOLDED_CHILDREN_LIMIT); // include display slot
           const slotHeight = this.SWIMLANE_HEIGHT;
-          const paddingAround = 0; // no vertical padding to align to swimlane boundaries
-          const preferredTop = collapsedGroup.swimlaneY || (drawerSel.attr('data-lane-index') ? (this.swimlanes[parseInt(drawerSel.attr('data-lane-index'), 10)]?.y || 0) : 0);
-
-          const drawerFullHeight = visibleSlots * slotHeight + paddingAround * 2; // cap visible height
-          const svgHeight = this.height;
-          const availableDownSpace = this.verticalScrollOffset + svgHeight - this.TIME_AXIS_HEIGHT - preferredTop;
-          const availableUpSpace = preferredTop - this.verticalScrollOffset;
-          let expandUp = false;
-          let drawerTop = preferredTop;
-          if (availableDownSpace < drawerFullHeight && availableUpSpace >= drawerFullHeight) {
-            expandUp = true;
-            drawerTop = preferredTop - (drawerFullHeight - slotHeight);
-          }
-
-          const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
-          let maxScroll = Math.max(0, (slots * slotHeight + paddingAround * 2) - actualDrawerHeight);
-          // Edge-case guard: if there are hidden slots but computed maxScroll is 0 due to rounding/space constraints,
-          // ensure scrolling is possible for the hidden items.
-              try {
-                const hiddenCountLocal = Math.max(0, slots - visibleSlots);
-                if (hiddenCountLocal > 0 && maxScroll === 0) {
-                  maxScroll = hiddenCountLocal * slotHeight;
-                  try { logger.log(`drawer ${collapseKey} adjusted maxScroll fallback=${maxScroll}`); } catch(e) {}
-                }
-              } catch(e) {}
-          // local scroll offset for this drawer instance
+          const preferredTop = collapsedGroup.swimlaneY;
+          const drawerFullHeight = Math.min(slots, 6) * slotHeight;
+          const availableDownSpace = this.verticalScrollOffset + this.height - this.TIME_AXIS_HEIGHT - preferredTop;
+          const availableUpSpace = preferredTop - this.verticalScrollOffset + slotHeight;
+          const expandUp = availableDownSpace < drawerFullHeight && availableUpSpace > availableDownSpace;
+          const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? availableUpSpace : availableDownSpace);
+          const drawerTop = expandUp ? preferredTop + slotHeight - actualDrawerHeight : preferredTop;
+          const maxScroll = Math.max(0, slots * slotHeight - actualDrawerHeight);
           let drawerScrollOffset = 0;
 
-          // animate bg to cover full slot area (horizontally bg x/width already set when prebuilt)
-          try {
-            body.style('pointer-events', 'none');
-            body.attr('opacity', 1);
-            // ensure bg is fully opaque
-            try { bg.attr('fill-opacity', 1); } catch(e) {}
-            // create a clipPath for the visible drawer area so labels/items outside are masked
-            try {
-              const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-              const clipId = `drawer-clip-${collapseKey}`;
-                if (DRAWER_DEBUG) {
-                  try {
-                    const dbg = {
-                      tabId: collapseKey,
-                      nodeX: nodeX,
-                      nodeY: nodeY,
-                      nodeWidth: nodeWidth,
-                      drawerTop: drawerTop,
-                      actualDrawerHeight: actualDrawerHeight,
-                      slots: slots,
-                      slotHeight: slotHeight,
-                      preferredTop: preferredTop
-                    };
-                    // debug info removed
-                  } catch(e) {}
-                }
-              if (defsSel && !defsSel.empty()) {
-                try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
-                try {
-                  defsSel.append('clipPath')
-                    .attr('id', clipId)
-                    .attr('clipPathUnits', 'userSpaceOnUse')
-                    .append('rect')
-                    .attr('x', parseFloat(bg.attr('x')) || nodeX)
-                    .attr('y', drawerTop)
-                    .attr('width', parseFloat(bg.attr('width')) || nodeWidth)
-                    .attr('height', actualDrawerHeight);
-                } catch(e) {}
-                try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
-                  if (DRAWER_DEBUG) {
-                    try {
-                      const bgNode: any = body.select && body.select('.drawer-bg') && body.select('.drawer-bg').node && body.select('.drawer-bg').node();
-                      // debug info removed
-                    } catch(e) {}
-                  }
-              } else if (this.svg.append) {
-                // create defs if missing
-                try {
-                  const newDefs = this.svg.append('defs');
-                  newDefs.append('clipPath')
-                    .attr('id', clipId)
-                    .attr('clipPathUnits', 'userSpaceOnUse')
-                    .append('rect')
-                    .attr('x', parseFloat(bg.attr('x')) || nodeX)
-                    .attr('y', drawerTop)
-                    .attr('width', parseFloat(bg.attr('width')) || nodeWidth)
-                    .attr('height', actualDrawerHeight);
-                  try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
-                } catch(e) {}
-              }
-            } catch(e) {}
-            bg.transition().duration(animationDuration(200)).attr('y', drawerTop).attr('height', actualDrawerHeight);
-          } catch(e) {}
+          // Clip only the scrolling records, leaving the anchor's slot fixed.
+          const clipTop = expandUp ? drawerTop : nodeY + nodeHeight;
+          const clipBottom = expandUp ? nodeY : drawerTop + actualDrawerHeight;
+          const clipId = `drawer-clip-${collapseKey}`;
+          this.svg.select('defs').append('clipPath')
+            .attr('id', clipId)
+            .append('rect')
+            .attr('x', nodeX)
+            .attr('y', clipTop)
+            .attr('width', nodeWidth)
+            .attr('height', Math.max(0, clipBottom - clipTop));
+          body.select('.drawer-viewport').attr('clip-path', `url(#${clipId})`);
+          body.attr('opacity', 1).style('pointer-events', 'all');
+          bg.transition().duration(animationDuration(200)).attr('y', drawerTop).attr('height', actualDrawerHeight);
 
-          // compute slot centers for all slots (we want to position all hidden nodes
-          // at their target slots so a future internal scroll can reveal them)
-          const fullSlotYs: number[] = [];
-          for (let i = 0; i < slots; i++) {
-            const slotTop = drawerTop + i * slotHeight;
-            const slotCenter = slotTop + slotHeight / 2;
-            fullSlotYs.push(slotCenter);
-          }
-          // visible slot centers (first visibleSlots entries)
-          const slotYs = fullSlotYs.slice(0, visibleSlots);
-
-          if (DRAWER_DEBUG) {
-            try {
-              const itemInitialTransforms = itemNodes.map((n: any) => {
-                try { return d3.select(n).attr('transform'); } catch(e) { return null; }
-              });
-              // debug info removed
-            } catch(e) {}
-          }
-
-          // render time-diff labels between slots (centered horizontally on bg)
-            try {
-            // remove any existing labels group
-            body.selectAll('.drawer-labels').remove();
-            // Prefer placing labels inside the scroll group so they translate with items
-            const scrollGroupForLabels = body.select && body.select('.drawer-scroll') ? body.select('.drawer-scroll') : null;
-            const labelsGroup = (scrollGroupForLabels && !scrollGroupForLabels.empty()) ? scrollGroupForLabels.append('g').attr('class', 'drawer-labels') : body.append('g').attr('class', 'drawer-labels');
-            const otherNodes = collapsedGroup.nodes.filter(n => n.id !== collapsedGroup.displayNode.id);
-            // labels between display slot (slot 0) and each child slot — use fullSlotYs so labels for offscreen slots are still computed
-            for (let j = 0; j < otherNodes.length; j++) {
-              const slotA = fullSlotYs[j];
-              const slotB = fullSlotYs[j + 1] || fullSlotYs[fullSlotYs.length - 1];
-              const labelY = Math.round((slotA + slotB) / 2);
-              const timeDiff = Math.abs(otherNodes[j].timestamp - (collapsedGroup.displayNode.timestamp || 0));
-              this.renderTimeDiffLabel(labelsGroup, bg.attr && parseFloat(bg.attr('x')) || (nodeX), labelY, (bg.attr && parseFloat(bg.attr('width')) ) || nodeWidth, timeDiff);
-            }
-          } catch(e) {}
-
-          // animate items into their slots (children occupy slot 1..N-1)
+          const fullSlotYs = Array.from({ length: slots }, (_, index) => drawerTop + (index + 0.5) * slotHeight);
+          const firstChildSlot = expandUp ? 0 : 1;
+          const maxVisibleChildren = Math.min(itemNodes.length, Math.ceil((actualDrawerHeight - slotHeight) / slotHeight));
+          const labelY = expandUp ? (slotHeight + nodeHeight) / 2 : (nodeHeight - slotHeight) / 2;
           const itemDuration = 180;
           const stagger = 40;
-          // Only animate up to visibleSlots-1 children into visible slots (slot 0 is display); keep extras hidden
-          const maxVisibleChildren = Math.max(0, visibleSlots - 1);
-          // Before animating, try to elevate the swimlane-group (so drawer items aren't occluded)
-          try {
-            const laneIndexAttr = drawerSel.attr && drawerSel.attr('data-lane-index');
-            if (laneIndexAttr != null) {
-              const laneIndex = parseInt(laneIndexAttr, 10);
-              // find the swimlane-group within the same time-strip that matches this lane
-              try {
-                const swimlaneSelector = `.swimlane-${laneIndex}`;
-                // locate swimlane group node relative to drawerSel
-                let swimlaneNode: any = null;
-                try {
-                  swimlaneNode = (drawerSel.node && drawerSel.node().parentNode) ? drawerSel.node().parentNode.querySelector(swimlaneSelector) : null;
-                } catch (e) {
-                  swimlaneNode = null;
-                }
-                // fallback: search up to nearest .time-strip ancestor and then query inside it
-                if (!swimlaneNode) {
-                  let parent: any = drawerSel.node && drawerSel.node().parentNode;
-                  while (parent && parent !== document && !parent.classList.contains('time-strip')) {
-                    parent = parent.parentNode;
-                  }
-                  if (parent && parent.classList && parent.classList.contains('time-strip')) {
-                    try { swimlaneNode = parent.querySelector(swimlaneSelector); } catch(e) { swimlaneNode = null; }
-                  }
-                }
 
-                if (swimlaneNode) {
-                  // append swimlaneNode to its time-strip parent to bring it to front within same coordinate system
-                  const timeStrip = swimlaneNode.parentNode;
-                  try {
-                    if (timeStrip && timeStrip.appendChild) {
-                      timeStrip.appendChild(swimlaneNode);
-                      // also try to append the display node element (if present) to the swimlane so it sits above the drawer
-                      try {
-                        const displayNodeId = collapsedGroup && collapsedGroup.displayNode && collapsedGroup.displayNode.id;
-                        if (displayNodeId) {
-                          const displaySelector = `.navigation-node[data-node-id="${displayNodeId}"]`;
-                          let displayNodeEl: any = null;
-                          try { displayNodeEl = timeStrip.querySelector(displaySelector); } catch(e) { displayNodeEl = null; }
-                          // if not found directly under timeStrip, try within swimlaneNode
-                          if (!displayNodeEl) {
-                            try { displayNodeEl = swimlaneNode.querySelector(displaySelector); } catch(e) { displayNodeEl = null; }
-                          }
-                          if (displayNodeEl && swimlaneNode.appendChild) {
-                            try { swimlaneNode.appendChild(displayNodeEl); } catch(e) { /* ignore */ }
-                          }
-                        }
-                      } catch(e) { /* ignore */ }
-                    } else {
-                      // fallback to d3.raise if appendChild not possible
-                      try { d3.select(swimlaneNode).raise(); } catch(e) {}
-                    }
-                  } catch (e) {
-                    try { d3.select(swimlaneNode).raise(); } catch(e) {}
-                  }
-                } else {
-                  // final fallback: try to raise the drawer itself
-                  try { drawerSel.raise(); } catch(e) {}
-                }
-              } catch (e) {
-                try { drawerSel.raise(); } catch(e) {}
-              }
+          itemNodes.forEach((element, index) => {
+            const item = d3.select(element);
+            const record = collapsedGroup.nodes[index + 1];
+            this.renderTimeDiffLabel(item, 0, labelY, nodeWidth, Math.abs(record.timestamp - collapsedGroup.displayNode.timestamp));
+            item.on('click.drawerItem', (event: MouseEvent) => event.stopPropagation());
+            const target = `translate(${nodeX}, ${fullSlotYs[index + firstChildSlot] - nodeHeight / 2})`;
+            if (index < maxVisibleChildren) {
+              item.transition()
+                .delay(animationDuration(index * stagger))
+                .duration(animationDuration(itemDuration))
+                .attr('transform', target)
+                .attr('opacity', 1)
+                .on('end', () => { if (ownsDrawer()) item.style('pointer-events', 'all'); });
+            } else {
+              item.attr('transform', target);
             }
-          } catch (e) {}
-
-          items.each(function(this: any, d: any, i: number) {
-            try {
-              const childIndex = i; // order corresponds to otherNodes
-              // target slot index for this child (slot 0 is display node)
-              const slotIndex = Math.min(childIndex + 1, fullSlotYs.length - 1);
-              const targetCenter = fullSlotYs[slotIndex];
-              const targetTop = targetCenter - (nodeHeightLocal / 2);
-              if (childIndex < maxVisibleChildren) {
-                // animate visible children into place
-                d3.select(this)
-                  .style('pointer-events', 'none')
-                  .attr('opacity', 0)
-                  .transition()
-                  .delay(animationDuration(i * stagger))
-                  .duration(animationDuration(itemDuration))
-                  .attr('transform', `translate(${baseX}, ${targetTop})`)
-                  .attr('opacity', 1)
-                  .on('end', function(this: any) { if (!ownsDrawer()) return; try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
-                d3.select(this).on('click.drawerItem', function(event: MouseEvent) { try { event.stopPropagation(); } catch(e) {} });
-              } else {
-                // position offscreen/hidden children at their target slots so they can be revealed by scrolling later
-                try { d3.select(this).attr('transform', `translate(${baseX}, ${targetTop})`).attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
-              }
-            } catch(e) {}
           });
 
-          const totalAnim = 220 + Math.min(itemNodes.length, VISIBLE_FOLDED_CHILDREN_LIMIT) * stagger + itemDuration;
+          const totalAnim = 220 + maxVisibleChildren * stagger + itemDuration;
           this.schedule(() => {
-            try { body.style('pointer-events', 'all'); } catch(e) {}
-            // set the display node's collapse badge text to 0 while drawer is open
+            // Show the close affordance once the drawer is open.
             try {
               const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapseKey}"]`) : null;
               if (badgeSel && !badgeSel.empty()) {
@@ -723,15 +513,13 @@ export class WaterfallRenderer implements BaseRenderer {
                       const updateVisibility = () => {
                         try {
                           const itemsSel = scrollGroupSel.selectAll('.drawer-item');
-                          const visibleTop = drawerTop + drawerScrollOffset;
-                          const visibleBottom = drawerTop + drawerScrollOffset + actualDrawerHeight;
+                          const visibleTop = clipTop + drawerScrollOffset;
+                          const visibleBottom = clipBottom + drawerScrollOffset;
                           itemsSel.each(function(this: any, d: any, i: number) {
                             try {
-                              const childIndex = i;
-                              const slotIndex = Math.min(childIndex + 1, fullSlotYs.length - 1);
-                              const originalCenter = fullSlotYs[slotIndex];
-                              const originalTop = originalCenter - (nodeHeightLocal / 2);
-                              const originalBottom = originalTop + nodeHeightLocal;
+                              const originalCenter = fullSlotYs[i + firstChildSlot];
+                              const originalTop = originalCenter - nodeHeight / 2;
+                              const originalBottom = originalTop + nodeHeight;
                               const isVisible = (originalBottom > visibleTop) && (originalTop < visibleBottom);
                               const sel = d3.select(this);
                               if (isVisible) {
@@ -1853,7 +1641,7 @@ export class WaterfallRenderer implements BaseRenderer {
             tabId: String(node.tabId ?? 'unknown'), nodes: records, displayNode: node,
             swimlaneY: lane.y, count: records.length
           };
-          this.renderCollapseBadge(group, collapsed, segment, x, y, width, height, lane.laneIndex);
+          this.renderCollapseBadge(group, collapsed, x, y, width, height, lane.laneIndex);
         }
       }
     }
@@ -1962,7 +1750,6 @@ export class WaterfallRenderer implements BaseRenderer {
   private renderCollapseBadge(
     group: any,
     collapsed: CollapsedNodeGroup,
-    segment: TimeSegment,
     x: number,
     y: number,
     width: number,
@@ -1974,13 +1761,14 @@ export class WaterfallRenderer implements BaseRenderer {
       corner: 'bottom', fixedWidth: 22, minHeight: badgeHeight, fontSize: 7
     });
     const id = collapsed.displayNode.id;
+    const anchor = group.node() as SVGGElement;
     const activate = (event: Event) => {
       event.preventDefault();
       event.stopPropagation();
       if (this.currentOpenCollapseId === id) {
-        this.togglePrebuiltDrawer(collapsed, segment, x, y, width, height);
+        this.toggleDrawer(anchor, collapsed, x, y, width, height);
       } else {
-        this.openDrawerPage(collapsed, segment, x, y, width, height, lane, 0);
+        this.openDrawerPage(anchor, collapsed, x, y, width, height, lane, 0);
       }
     };
     badge.attr('class', 'group-badge')
@@ -1998,7 +1786,7 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   private openDrawerPage(
-    group: CollapsedNodeGroup, segment: TimeSegment, x: number, y: number,
+    anchor: SVGGElement, group: CollapsedNodeGroup, x: number, y: number,
     width: number, height: number, lane: number, page: number
   ): void {
     this.closeCurrentDrawer();
@@ -2010,16 +1798,15 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('class', 'collapsed-drawer')
       .attr('data-collapse-group', group.displayNode.id)
       .attr('data-lane-index', lane)
-      .attr('data-open', 'false')
-      .style('pointer-events', 'none');
+      .attr('data-open', 'false');
     const body = drawer.append('g').attr('class', 'drawer-body')
       .attr('opacity', 0).style('pointer-events', 'none');
     body.append('rect').attr('class', 'drawer-bg')
       .attr('x', x).attr('y', y).attr('width', width).attr('height', height)
       .attr('fill', 'var(--waterfall-control-surface, #e6f2ff)')
-      .attr('stroke', 'var(--waterfall-accent, rgba(74, 144, 226, 0.6))')
-      .style('pointer-events', 'none');
-    const items = body.append('g').attr('class', 'drawer-scroll').append('g').attr('class', 'drawer-items');
+      .attr('stroke', 'var(--waterfall-accent, rgba(74, 144, 226, 0.6))');
+    const items = body.append('g').attr('class', 'drawer-viewport')
+      .append('g').attr('class', 'drawer-scroll').append('g').attr('class', 'drawer-items');
     const cards = pageNodes.map((node, index) => {
       const item = items.append('g').attr('class', 'drawer-item').attr('data-node-id', node.id)
         .attr('transform', `translate(${x}, ${y})`).attr('opacity', 0).style('pointer-events', 'none');
@@ -2027,10 +1814,10 @@ export class WaterfallRenderer implements BaseRenderer {
       const badgeHeight = Math.max(12, Math.floor(height / 2));
       this.appendBadge(item, width - 22, height - badgeHeight, String(first + index), {
         corner: 'bottom', fixedWidth: 22, minHeight: badgeHeight, fontSize: 7
-      }).attr('class', 'drawer-item-index-badge').style('pointer-events', 'none');
+      }).attr('class', 'drawer-item-index-badge');
       return card;
     });
-    this.togglePrebuiltDrawer({ ...group, nodes: [group.displayNode, ...pageNodes] }, segment, x, y, width, height);
+    this.toggleDrawer(anchor, { ...group, nodes: [group.displayNode, ...pageNodes] }, x, y, width, height);
     this.hydrateCards(cards);
     const owner = this.drawerOwner;
     if (!owner || pageCount <= 1 || !this.container) return;
@@ -2042,7 +1829,7 @@ export class WaterfallRenderer implements BaseRenderer {
         field.value = String(page + 1);
         return;
       }
-      this.openDrawerPage(group, segment, x, y, width, height, lane, index);
+      this.openDrawerPage(anchor, group, x, y, width, height, lane, index);
       this.drawerOwner?.pager?.querySelector('input')?.focus();
     };
     const field = document.createElement('input');
@@ -2164,6 +1951,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 渲染标签（极小的灰色文字，稍微下移一点）
     container.append('text')
+      .attr('class', 'drawer-time-label')
       .attr('x', x + width / 2)
       .attr('y', y + 1) // 向下偏移1px
       .attr('text-anchor', 'middle')
