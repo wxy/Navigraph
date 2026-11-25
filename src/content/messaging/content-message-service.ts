@@ -19,7 +19,6 @@ export class ContentMessageService extends BaseMessageService<"content"> {
    */
   private constructor() {
     super("content");
-    this.initialize();
   }
 
   /**
