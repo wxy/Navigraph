@@ -161,7 +161,7 @@ export class WaterfallRenderer implements BaseRenderer {
   
   // 存储原始数据，用于拖动时重新计算布局
   private allSegments: TimeSegment[] = [];
-  private observationStartIndex: number = 0; // 当前观察窗口起始索引
+  private observationOffsetFromLatest = 0;
   private densityOnly = false;
   private visibleLaneStart = -1;
   private visibleLaneEnd = -1;
@@ -834,8 +834,8 @@ export class WaterfallRenderer implements BaseRenderer {
   getObservationWindowTimeRange(): string | null {
     const segments = this.densityOnly ? this.allSegments : this.currentLayout?.normalDisplaySegments;
     if (!segments?.length) return null;
-    const start = new Date(segments[segments.length - 1].startTime);
-    const end = new Date(segments[0].endTime);
+    const start = new Date(segments[0].startTime);
+    const end = new Date(segments[segments.length - 1].endTime);
     const format = new Intl.DateTimeFormat(undefined, {
       hour: '2-digit', minute: '2-digit',
       ...(start.toDateString() !== end.toDateString() ? { month: 'short', day: 'numeric' } : {}),
@@ -848,7 +848,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     const tabId = this.visualizer.tabId || '';
     if (options.restoreTransform) {
-      this.observationStartIndex = this.visualizer.waterfallObservationIndex
+      this.observationOffsetFromLatest = this.visualizer.waterfallObservationIndex
         ?? getViewState(tabId, 'waterfall')?.waterfallObservationIndex ?? 0;
     }
 
@@ -881,10 +881,10 @@ export class WaterfallRenderer implements BaseRenderer {
     this.closeCurrentDrawer();
     this.svg.selectAll('*').interrupt().remove();
     this.addSVGDefinitions();
-    const layout = this.allocateSegmentLayout(this.allSegments, this.width, this.observationStartIndex);
+    const layout = this.allocateSegmentLayout(this.allSegments, this.width, this.observationOffsetFromLatest);
     this.currentLayout = layout;
-    this.observationStartIndex = layout.normalDisplaySegments[0].originalIndex;
-    this.visualizer.waterfallObservationIndex = this.observationStartIndex;
+    this.observationOffsetFromLatest = Math.min(this.observationOffsetFromLatest, layout.compressedSegments.length);
+    this.visualizer.waterfallObservationIndex = this.observationOffsetFromLatest;
     this.visibleLaneStart = -1;
     this.visibleLaneEnd = -1;
     this.calculateMaxVerticalScroll();
@@ -1162,24 +1162,24 @@ export class WaterfallRenderer implements BaseRenderer {
       if (laneNodes) laneNodes.push(node);
       else segment.nodesByLane!.set(lane, [node]);
     }
-    const ordered = [...occupied.values()].sort((a, b) => b.startTime - a.startTime);
+    const ordered = [...occupied.values()].sort((a, b) => a.startTime - b.startTime);
     const segments: TimeSegment[] = [];
-    const compactGaps = ordered[0].startTime - ordered[ordered.length - 1].startTime >= 1000 * this.SEGMENT_DURATION;
-    let previousStart = ordered[0].endTime;
+    const compactGaps = ordered[ordered.length - 1].startTime - ordered[0].startTime >= 1000 * this.SEGMENT_DURATION;
+    let previousEnd = ordered[0].startTime;
     for (const segment of ordered) {
       // A long idle span takes one strip rather than dropping records beyond the old time limit.
-      while (previousStart > segment.endTime) {
-        const start = compactGaps ? segment.endTime : previousStart - this.SEGMENT_DURATION;
+      while (previousEnd < segment.startTime) {
+        const end = compactGaps ? segment.startTime : previousEnd + this.SEGMENT_DURATION;
         segments.push({
-          startTime: start, endTime: previousStart, nodes: [], displayMode: 'full',
+          startTime: previousEnd, endTime: end, nodes: [], displayMode: 'full',
           allocatedWidth: 0, startX: 0, originalIndex: segments.length
         });
-        previousStart = start;
+        previousEnd = end;
       }
       segment.originalIndex = segments.length;
       segment.nodesByLane!.forEach(laneNodes => laneNodes.sort((a, b) => a.timestamp - b.timestamp || a.id.localeCompare(b.id)));
       segments.push(segment);
-      previousStart = segment.startTime;
+      previousEnd = segment.endTime;
     }
     return segments;
   }
@@ -1188,12 +1188,12 @@ export class WaterfallRenderer implements BaseRenderer {
    * 分配段的布局空间
    * @param segments 所有时间段
    * @param containerWidth 容器宽度
-   * @param observationStartIndex 观察窗口起始段索引（默认0）
+   * @param offsetFromLatest 观察窗口与最新端相隔的时段数
    */
   private allocateSegmentLayout(
     segments: TimeSegment[], 
     containerWidth: number, 
-    observationStartIndex: number = 0
+    offsetFromLatest: number
   ): LayoutResult {
     const availableWidth = Math.max(1, containerWidth - 100); // 留出边距
     const startX = 50;
@@ -1208,38 +1208,28 @@ export class WaterfallRenderer implements BaseRenderer {
     let currentX = startX;
 
     if (!needCompression) {
-      // ✅ 不需要压缩：所有段都以full模式显示
-      // 🎯 修复：保持标准宽度，在右侧填充空白区段来铺满空间
+      // 保留标准宽度，在较早一侧填充空白，最新时段仍居右。
       const standardSegmentWidth = this.NODE_WIDTHS.full;
-      
-      // 计算实际内容占用的宽度
       const contentWidth = segments.length * standardSegmentWidth;
-      
-      // 如果还有剩余空间，在右侧添加空白区段
-      let allSegments = [...segments];
       // Zooming out expands SVG units without adding blank time strips.
       const remainingWidth = this.viewportWidth - 100 - contentWidth;
-      if (remainingWidth > 0) {
-        const additionalSegmentCount = Math.floor(remainingWidth / standardSegmentWidth);
-        
-        // 生成空白区段（时间递减，从左到右）
-        for (let i = 0; i < additionalSegmentCount; i++) {
-          const lastRealSegment = segments[segments.length - 1]; // 使用原始数据段
-          const emptySegment: TimeSegment = {
-            // 🎯 瀑布视图是逆时间轴：空白段时间应该更早（递减）
-            startTime: lastRealSegment.startTime - ((i + 1) * this.TIME_SEGMENT_DURATION),
-            endTime: lastRealSegment.startTime - (i * this.TIME_SEGMENT_DURATION),
-            nodes: [], // 空白段没有节点
-            displayMode: 'full',
-            allocatedWidth: standardSegmentWidth,
-            startX: 0, // 将在下面设置
-            originalIndex: lastRealSegment.originalIndex + i + 1, // 继续索引序列
-            isFiller: true // 🎯 标识为填充段
-          };
-          allSegments.push(emptySegment);
-        }
-        
+      const fillerCount = Math.max(0, Math.floor(remainingWidth / standardSegmentWidth));
+      const firstStart = segments[0].startTime;
+      const allSegments: TimeSegment[] = [];
+      for (let index = -fillerCount; index < 0; index++) {
+        const startTime = firstStart + index * this.SEGMENT_DURATION;
+        allSegments.push({
+          startTime,
+          endTime: startTime + this.SEGMENT_DURATION,
+          nodes: [],
+          displayMode: 'full',
+          allocatedWidth: standardSegmentWidth,
+          startX: 0,
+          originalIndex: index,
+          isFiller: true
+        });
       }
+      allSegments.push(...segments);
       
       // 设置所有段的位置
       allSegments.forEach((segment, index) => {
@@ -1262,9 +1252,8 @@ export class WaterfallRenderer implements BaseRenderer {
       // 计算正常显示能容纳多少个段
       const maxNormalSegments = Math.max(1, Math.floor(normalDisplayWidth / this.NODE_WIDTHS.full));
       
-      // 🎯 根据observationStartIndex确定哪些段是正常显示
-      // 确保不会超出范围
-      const safeStartIndex = Math.max(0, Math.min(observationStartIndex, segments.length - maxNormalSegments));
+      const maxStartIndex = segments.length - maxNormalSegments;
+      const safeStartIndex = Math.max(0, maxStartIndex - offsetFromLatest);
       const endIndex = safeStartIndex + maxNormalSegments;
       
       // 分为三部分：前压缩段、正常段、后压缩段
@@ -1519,8 +1508,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('stroke-width', 2)
       .attr('class', 'time-axis-main-line');
     
-    // 时间方向箭头（在最右端 - 指向新时间方向）
-    // 因为时间从右到左（最新在左），时间轴从旧到新，所以箭头在右端指向右
+    // 时间从左到右，箭头指向较晚的时段。
     const arrowSize = 8;
     axisLineGroup.append('polygon')
       .attr('points', `${lineEndX},${timeAxisY} ${lineEndX - arrowSize},${timeAxisY - arrowSize/2} ${lineEndX - arrowSize},${timeAxisY + arrowSize/2}`)
@@ -1598,7 +1586,7 @@ export class WaterfallRenderer implements BaseRenderer {
       const index = Math.floor((segment.startX + segment.allocatedWidth / 2) / binWidth);
       const bin = bins.get(index) ?? { count: 0, start: segment.startTime, end: segment.endTime };
       bin.count += segment.nodes.length;
-      bin.start = Math.min(bin.start, segment.startTime);
+      bin.end = segment.endTime;
       max = Math.max(max, bin.count);
       bins.set(index, bin);
     }
@@ -2363,15 +2351,15 @@ export class WaterfallRenderer implements BaseRenderer {
 
   private dropObservationWindow(indicators: any, bounds: ObservationWindowBounds, x: number): void {
     const fraction = (x - bounds.minX) / (bounds.maxX - bounds.minX);
-    const index = Math.round(fraction * bounds.maxIndex);
-    if (index !== this.observationStartIndex) this.reRenderWithObservationWindow(index);
+    const offsetFromLatest = Math.round((1 - fraction) * bounds.maxIndex);
+    if (offsetFromLatest !== this.observationOffsetFromLatest) this.reRenderWithObservationWindow(offsetFromLatest);
     else indicators.attr('x', bounds.x);
   }
 
-  private reRenderWithObservationWindow(index: number): void {
-    this.observationStartIndex = index;
+  private reRenderWithObservationWindow(offsetFromLatest: number): void {
+    this.observationOffsetFromLatest = offsetFromLatest;
     this.drawLayout();
-    saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: this.observationStartIndex });
+    saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: this.observationOffsetFromLatest });
     this.visualizer.updateStatusBar();
   }
 
@@ -2567,9 +2555,8 @@ export class WaterfallRenderer implements BaseRenderer {
   public moveObservationWindow(direction: 'left' | 'right'): void {
     const layout = this.currentLayout;
     if (!layout || this.densityOnly || !layout.compressedSegments.length) return;
-    const last = this.allSegments.length - layout.normalDisplaySegments.length;
-    const step = direction === 'left' ? -1 : 1;
-    const index = Math.max(0, Math.min(last, this.observationStartIndex + step));
-    if (index !== this.observationStartIndex) this.reRenderWithObservationWindow(index);
+    const step = direction === 'left' ? 1 : -1;
+    const offsetFromLatest = Math.max(0, Math.min(layout.compressedSegments.length, this.observationOffsetFromLatest + step));
+    if (offsetFromLatest !== this.observationOffsetFromLatest) this.reRenderWithObservationWindow(offsetFromLatest);
   }
 }

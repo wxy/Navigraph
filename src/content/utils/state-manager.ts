@@ -19,7 +19,7 @@ export interface ViewState {
     y: number;
     k: number;
   };
-  waterfallObservationIndex?: number;  // 瀑布视图的观察窗口索引
+  waterfallObservationIndex?: number;  // 瀑布视图观察窗口与最新端相隔的时段数
   lastUpdated?: number;
 }
 
