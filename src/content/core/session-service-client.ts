@@ -33,7 +33,9 @@ export class SessionServiceClient {
   async loadSessionList(): Promise<SessionMetadata[]> {
     if (this.pendingListRequest) return this.pendingListRequest;
     this.pendingListRequest = (async () => {
-      const response = await sendMessage('getSessions');
+      const response = await sendMessage('getSessions', {
+        options: { sortBy: 'startTime', sortOrder: 'desc' },
+      });
       if (!response?.success) throw new Error(response?.error || 'Session list unavailable');
       this.sessionList = response.sessions;
       for (const listener of this.sessionsListLoadedListeners) listener(this.sessionList);
