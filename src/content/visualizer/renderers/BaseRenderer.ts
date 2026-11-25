@@ -7,7 +7,6 @@ import type { NavNode, NavLink } from '../../types/navigation.js';
 export interface GraphRenderOptions {
   restoreTransform?: boolean;
   fitToView?: boolean;
-  viewportBottomInset?: number;
 }
 
 export interface BaseRenderer {

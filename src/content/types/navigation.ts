@@ -90,9 +90,6 @@ export interface Visualizer {
   reloadGraph(): Promise<void>;
   // 原有的基本属性和方法
   
-  // 状态栏相关
-  statusBar?: HTMLElement;
-  
   // 视图相关
   currentView: string;
   currentTransform?: {x: number, y: number, k: number};
@@ -121,7 +118,9 @@ export interface Visualizer {
   showNodeDetails(data: any): void;
   showError(message: string): void;
   switchView(viewName: "tree" | "timeline" | "waterfall"): void;
-  updateStatusBar(): void;
+  switchToToday(): void;
+  getObservationWindowTimeRange(): string | null;
+  updateToolbar(): void;
   isTrackingPage(node: NavNode): boolean;
 
   // 添加筛选器相关方法

@@ -468,7 +468,7 @@ svg text.group-badge-text {
   fill: var(--btn-hover);
 }
 
-[data-theme="dark"] :is(.waterfall-range-controls, .waterfall-drawer-pager) {
+[data-theme="dark"] .waterfall-drawer-pager {
   color-scheme: dark;
   background-color: var(--popup-header);
 }
@@ -492,8 +492,8 @@ svg text.group-badge-text {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .logo-container {
-  background-color: rgba(var(--color-bg-primary-rgb), 0.8);
+[data-theme="dark"] :is(.graph-toolbar, .control-panel) {
+  color-scheme: dark;
 }
 
 [data-theme="dark"] #no-data #status-text {

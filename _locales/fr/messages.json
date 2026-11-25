@@ -5369,5 +5369,17 @@
   },
   "tree_continues_outside_page": {
     "message": "La page parente est hors de la plage actuelle"
+  },
+  "graph_toolbar_filter": {
+    "message": "Filtrer",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "Aujourd’hui",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "Ajuster à la fenêtre",
+    "description": "Graph toolbar"
   }
 }

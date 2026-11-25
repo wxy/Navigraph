@@ -5369,5 +5369,17 @@
   },
   "tree_continues_outside_page": {
     "message": "상위 페이지가 현재 범위 밖에 있습니다"
+  },
+  "graph_toolbar_filter": {
+    "message": "필터",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "오늘",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "화면에 맞추기",
+    "description": "Graph toolbar"
   }
 }

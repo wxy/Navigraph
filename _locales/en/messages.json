@@ -5372,5 +5372,17 @@
   },
   "tree_continues_outside_page": {
     "message": "The parent page is outside the current range"
+  },
+  "graph_toolbar_filter": {
+    "message": "Filter",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "Today",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "Fit to view",
+    "description": "Graph toolbar"
   }
 }
