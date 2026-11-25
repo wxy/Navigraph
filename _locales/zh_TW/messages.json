@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "以互動式圖形展示瀏覽歷史節點和鏈接，幫助用戶直觀分析訪問模式和行為。",
+    "message": "以樹狀圖與瀑布圖回顧瀏覽記錄。依日期或工作階段查找造訪記錄，查看頁面關聯與造訪順序。",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {

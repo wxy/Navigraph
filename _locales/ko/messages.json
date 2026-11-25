@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "대화형 그래픽으로 탐색 기록 노드와 링크를 표시하여 사용자가 탐색 패턴과 행동을 시각적으로 분석할 수 있도록 돕습니다.",
+    "message": "탐색 기록을 트리와 워터폴에서 살펴보세요. 날짜나 세션을 선택해 방문 순서와 페이지의 연결을 확인할 수 있습니다.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2052,7 +2052,7 @@
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "내비게이션 기록 보기",
+    "message": "뒤로·앞으로 이동 표시",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2464,7 +2464,7 @@
     "description": "显示通知消息失败错误"
   },
   "content_tree_view": {
-    "message": "나무 나무",
+    "message": "트리 뷰",
     "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "전망",
+    "message": "워터폴",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {

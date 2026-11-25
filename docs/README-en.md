@@ -14,8 +14,8 @@ Navigraph: Visualizing Browsing History
 ### Quick Start
 
 1. Open the extension page (click the Navigraph icon in the toolbar).
-2. Hover briefly or click the control panel handle on the right side of the page to open the sidebar. From the sidebar, you can select session dates, switch views, or filter nodes.
-3. Use the status bar to switch views or toggle the visibility of hidden/closed nodes.
+2. Use the date in the top toolbar to open the calendar. Pick a day in Tree view or a session in Waterfall view. Use the adjacent buttons to switch views.
+3. Open Filter on the right to select conditions. The record count and Hidden or Restore filters controls are in the top toolbar.
 4. Click on nodes to view detailed information.
 
 ## User Guide (Overview)
@@ -32,25 +32,11 @@ Navigraph: Visualizing Browsing History
 1. Visit the [Navigraph page on Edge Add-ons Store](https://microsoftedge.microsoft.com/addons/detail/ibcpeknflplfaljendadfkhmflhfnhdh)
 2. Click "Get" to install the extension
 
-### Sidebar
+### Graph toolbar
 
-The sidebar is primarily used for session selection and node filtering:
-
-- View Switching: Switch the current view (Tree Diagram / Waterfall Diagram) from the top of the sidebar
-- Session Calendar: Displays sessions by date and allows you to select and load session histories. If multiple sessions exist on the same day, they are displayed individually
-- Filtering Controls: Filter results based on navigation types or actions (e.g., show only link clicks, form submissions, etc.)
-
-Tip: The sidebar serves as the main entry point for switching data ranges or identifying analysis scopes. It is recommended to select a session first and then switch views.
-
-### Status Bar
-
-The status bar provides concise context and interactions within the interface:
-
-- Displays and switches the current view (Tree Diagram / Waterfall Diagram)
-- Shows session statistics (e.g., number of nodes, session duration) and provides quick actions related to the view (e.g., toggling the visibility of hidden nodes)
-- Click the date to quickly return to today's session
-
-Explanation: The controls in the status bar are direct interaction entry points related to the current view. More complex filtering continues to be performed through the sidebar.
+- Use the date in the top toolbar to open the calendar. Pick a day in Tree view or a session in Waterfall view. Use the adjacent buttons to switch views.
+- Open Filter on the right to select conditions. The record count and Hidden or Restore filters controls are in the top toolbar.
+- In Tree view, use the fold controls at the upper left and Fit to view at the lower right. In Waterfall view, the visible time range and fit control sit above the timeline.
 
 ### View Interactions
 

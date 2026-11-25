@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Zeigt Browsing-Verlaufsknoten und -verbindungen in interaktiven Grafiken an und hilft Benutzern dabei, Navigationsmuster und -verhalten visuell zu analysieren.",
+    "message": "Browserverlauf als Baum oder Wasserfall ansehen. Besuche nach Datum oder Sitzung öffnen und filtern.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,7 +2048,7 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "Seite neu laden anzeigen",
+    "message": "Neu geladene Seiten anzeigen",
     "description": "页面重载选项"
   },
   "content_show_history": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "Tracking-Seite anzeigen",
+    "message": "Tracking-Seiten anzeigen",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "Wasserfallblick",
+    "message": "Wasserfall",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {

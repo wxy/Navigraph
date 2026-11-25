@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Отображает узлы и ссылки истории просмотров в интерактивной графике, помогая пользователям наглядно анализировать модели и поведение при навигации.",
+    "message": "Просматривайте историю в виде дерева и временной диаграммы. Выбирайте дату или сессию и фильтруйте посещения.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,11 +2048,11 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "Показать страницу Перезагрузить",
+    "message": "Перезагрузки страниц",
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "Показать историю Навигация",
+    "message": "Переходы по истории",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "Показать страницу отслеживания",
+    "message": "Страницы отслеживания",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -2464,7 +2464,7 @@
     "description": "显示通知消息失败错误"
   },
   "content_tree_view": {
-    "message": "Древовидная карта",
+    "message": "Дерево",
     "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
@@ -4228,7 +4228,7 @@
     "description": "标签文本 <label> 文本"
   },
   "options_option_tree": {
-    "message": "Древовидное представление",
+    "message": "Дерево",
     "description": "下拉选项文本 <option> 文本"
   },
   "options_session_group_title": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "Вид на водопад",
+    "message": "Водопад",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {
