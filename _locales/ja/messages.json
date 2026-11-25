@@ -5369,5 +5369,17 @@
   },
   "tree_continues_outside_page": {
     "message": "親ページは現在の表示範囲外です"
+  },
+  "graph_toolbar_filter": {
+    "message": "フィルター",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "今日",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "全体を表示",
+    "description": "Graph toolbar"
   }
 }

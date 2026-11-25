@@ -234,11 +234,8 @@ export class SessionViewController {
     // 更新会话选择器
     this.updateSessionSelector();
 
-    // 更新状态栏
-    this.visualizer.updateStatusBar();
-
-    // 使用 UIManager 隐藏控制面板
-    this.uiManager.hideControlPanel();
+    // 更新工具栏
+    this.visualizer.updateToolbar();
   }
   
   /**

@@ -5369,5 +5369,17 @@
   },
   "tree_continues_outside_page": {
     "message": "Родительская страница вне текущего диапазона"
+  },
+  "graph_toolbar_filter": {
+    "message": "Фильтр",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "Сегодня",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "Вписать в окно",
+    "description": "Graph toolbar"
   }
 }

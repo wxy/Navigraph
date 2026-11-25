@@ -858,7 +858,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
     if (options.fitToView) {
       const contentHeight = this.TIME_AXIS_HEIGHT + this.swimlaneContentHeight();
-      const availableHeight = Math.max(1, this.height - (options.viewportBottomInset ?? 0));
+      const availableHeight = Math.max(1, this.height);
       const scale = Math.min(1, availableHeight / contentHeight);
       // Below half size the 50 px lanes become a density overview.
       this.densityOnly = scale < 0.5;
@@ -2360,7 +2360,7 @@ export class WaterfallRenderer implements BaseRenderer {
     this.observationOffsetFromLatest = offsetFromLatest;
     this.drawLayout();
     saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: this.observationOffsetFromLatest });
-    this.visualizer.updateStatusBar();
+    this.visualizer.updateToolbar();
   }
 
   private getNodeLabel(node: NavNode): string {

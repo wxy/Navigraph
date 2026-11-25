@@ -613,9 +613,10 @@ button.day-cell {
 /* 主体内容区域 */
 .main-container {
   display: grid;
-  grid-template-columns: 1fr auto; /* 默认只有主视图和右侧详情面板 */
+  grid-template-columns: minmax(0, 1fr) auto;
   position: relative;
-  height: 100%;
+  flex: 1;
+  min-block-size: 0;
   overflow: hidden;
   background-color: var(--background-color);
   color: var(--text-color);
@@ -702,7 +703,7 @@ button.day-cell {
   flex: 1;
   position: relative;
   overflow: hidden;
-  min-height: 500px;
+  min-height: 0;
   border: 1px solid var(--border-color, #333);
   background-color: var(--background-color);
 }
@@ -961,47 +962,6 @@ svg {
   opacity: 1;
 }
 
-/* ========== Windows风格状态栏 ========== */
-.windows-status-bar {
-  display: flex;
-  background-color: var(--status-bg, #f0f0f0);
-  border-top: 1px solid var(--status-border, #ddd);
-  height: 24px;
-  align-items: stretch;
-  font-size: 12px;
-  color: var(--status-text, #333);
-  user-select: none;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
-  flex: 0 0 auto;
-}
-
-.status-cell {
-  padding: 0 8px;
-  border: 1px solid;
-  border-color: var(--status-border-dark, #808080) var(--status-border-light, #fff) var(--status-border-light, #fff) var(--status-border-dark, #808080);
-  background-color: var(--status-cell-bg, #e0e0e0);
-  display: flex;
-  align-items: center;
-  margin-right: 2px;
-  min-width: 80px;
-  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-.status-cell-stretch {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-cell-highlight {
-  font-weight: 500;
-}
-
 /* ========== 工具提示 ========== */
 #tooltip {
   position: absolute;
@@ -1095,17 +1055,6 @@ path.link.closed, .edge.closed {
 .node:hover .filtered-indicator {
   transform: scale(1.2);
   opacity: 1;
-}
-
-/* 状态栏中的过滤指示器 */
-#status-filtered {
-  box-sizing: content-box;
-  font: inherit;
-  font-weight: 500;
-}
-
-#status-filtered:enabled {
-  cursor: pointer;
 }
 
 /* 根节点样式 */
@@ -1651,81 +1600,228 @@ svg .node-label {
   fill: #999;
 }
 
-/* 画布左上角 */
-.canvas-header {
+
+.graph-toolbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background-color: var(--toolbar-bg, #fff);
+  border-block-end: 1px solid var(--color-border, #ddd);
+  color: var(--text-color, #333);
+}
+
+.graph-button {
+  min-block-size: 32px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 6px;
+  background-color: var(--toolbar-bg, #fff);
+  color: var(--text-color, #333);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.graph-button:hover:not(:disabled, [aria-disabled="true"]) {
+  background-color: var(--toolbar-button-hover, var(--color-bg-hover));
+}
+
+.graph-button:disabled,
+.graph-button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.graph-date-control {
+  position: relative;
+  min-inline-size: 10em;
+}
+
+#graph-date-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-color: transparent;
+}
+
+.graph-date-chevron {
+  inline-size: 5px;
+  block-size: 5px;
+  border-inline-end: 1px solid currentColor;
+  border-block-end: 1px solid currentColor;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.graph-calendar {
   position: absolute;
-  inset-block-start: 10px;
-  inset-inline-start: 15px;
-  z-index: 10;
-  display: grid;
-  justify-items: start;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 0;
+  inline-size: min(296px, calc(100vw - 24px));
+  max-block-size: calc(100vh - 52px);
+  overflow: auto;
+  padding: 10px;
+  background-color: var(--toolbar-bg, #fff);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+}
+
+.graph-calendar .session-list-item {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+}
+
+.graph-calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  max-inline-size: calc(100% - 30px);
-  pointer-events: none;
+  padding: 6px 4px 0;
+  color: var(--label-color, #555);
+  font-size: 12px;
 }
 
-.canvas-header > * {
-  pointer-events: auto;
-}
-
-/* Logo 容器 - 使用专用变量 */
-.logo-container {
+.graph-view-switcher,
+.graph-summary,
+.tree-fold-buttons {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background-color: var(--logo-bg-color, rgba(255, 255, 255, 0.8));
-  border: var(--logo-border, 1px solid rgba(0, 0, 0, 0.1));
-  padding: 5px 10px;
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
+  gap: 5px;
 }
 
-.logo-container img {
-  width: 28px;
-  height: 28px;
+.graph-view-switcher .graph-button,
+#graph-show-hidden {
+  border-color: transparent;
 }
 
-.logo-container h1 {
-  font-size: 16px;
-  margin: 0;
-  font-weight: 500;
-  color: var(--logo-text-color, inherit);
+.graph-view-switcher .graph-button[aria-pressed="true"] {
+  position: relative;
+  background-color: var(--toolbar-button, #f5f7fa);
+}
+
+.graph-view-switcher .graph-button[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 8px 2px;
+  border-block-end: 2px solid var(--btn-primary, #4285f4);
+}
+
+.graph-summary {
+  margin-inline-start: auto;
+  color: var(--label-color, #555);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+#graph-filter-toggle[aria-expanded="true"],
+#graph-date-toggle[aria-expanded="true"] {
+  border-color: var(--btn-primary, #4285f4);
+  background-color: var(--toolbar-button, #f5f7fa);
+}
+
+#tree-fold-actions,
+#tree-viewport-tools,
+#waterfall-toolbar {
+  position: absolute;
+  z-index: 10;
 }
 
 #tree-fold-actions {
-  max-inline-size: min(16rem, 100%);
+  inset: 10px auto auto 12px;
+  max-inline-size: min(22rem, calc(100% - 24px));
+  pointer-events: none;
 }
 
-#tree-fold-actions .view-mode {
+.tree-fold-buttons {
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
 }
 
-#tree-fold-actions button {
-  min-block-size: 28px;
-  padding: 4px 10px;
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text);
+.tree-fold-buttons button {
+  pointer-events: auto;
+}
+
+#tree-fold-limit,
+#tree-fold-actions .graph-range-limit {
+  inline-size: fit-content;
+  margin-block-start: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 5px;
+  background-color: var(--toolbar-bg, #fff);
+  font-size: 12px;
+}
+
+#tree-viewport-tools {
+  inset: auto 12px 10px auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--toolbar-bg, #fff);
+  color: var(--label-color, #555);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 6px;
+  padding: 2px 3px 2px 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+#tree-viewport-tools .graph-button {
+  border-color: transparent;
+}
+
+#waterfall-toolbar {
+  inset: 8px 50px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+  pointer-events: none;
+  color: var(--label-color, #555);
   font-size: 13px;
 }
 
-#tree-fold-actions button:hover:not([aria-disabled="true"]) {
-  background-color: var(--color-bg-hover);
+#waterfall-toolbar .graph-button {
+  pointer-events: auto;
 }
 
-#tree-fold-actions button[aria-disabled="true"] {
-  cursor: default;
-  opacity: 0.6;
+#waterfall-observation-range {
+  font-variant-numeric: tabular-nums;
 }
 
-#tree-fold-limit {
-  margin: 6px 0 0;
-  padding: 5px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background-color: var(--color-bg-panel, #f5f7fa);
+#waterfall-range-limit {
   font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .graph-toolbar {
+    gap: 4px 7px;
+  }
+
+  .graph-summary {
+    margin-inline-start: 0;
+  }
+
+  #graph-filter-toggle {
+    margin-inline-start: auto;
+  }
+
+  #waterfall-toolbar {
+    inset-inline: 12px;
+  }
+}
+
+.graph-toolbar [hidden],
+#tree-viewport-tools[hidden],
+#waterfall-toolbar[hidden] {
+  display: none;
 }
 
 .waterfall-card-background {
@@ -1780,7 +1876,6 @@ svg .node-label {
   fill: #767676;
 }
 
-.waterfall-range-controls,
 .waterfall-drawer-pager {
   color-scheme: light;
   color: var(--text-color, #333);
@@ -1812,93 +1907,18 @@ svg .node-label {
   min-height: 26px;
 }
 
-/* 控制面板抓手 */
-.control-panel-handle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 80px;
-  background-color: var(--color-bg-secondary);
-  border-radius: 6px 0 0 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 1001;
-  opacity: 0.7; /* 默认时有点透明 */
-  transition: right 0.3s ease-in-out, background-color 0.2s ease, opacity 0.2s ease;
-}
-
-.control-panel-handle:hover {
-  background-color: var(--color-accent);
-  opacity: 1;
-}
-
-/* 面板可见时，抓手更明显 */
-.control-panel-handle.panel-visible {
-  opacity: 0.9;
-}
-
-/* 当面板可见时，抓手位置需要变化 */
-.control-panel.visible + .control-panel-handle,
-.control-panel-handle.panel-visible {
-  right: 300px; /* 与面板宽度相同 */
-}
-
-.control-panel-handle {
-  right: 0; /* 默认位置在右侧边缘 */
-  transition: right 0.3s ease-in-out;
-}
-
-.control-panel.visible ~ .control-panel-handle {
-  right: 300px; /* 当控制面板可见时，抓手也跟着移动 */
-}
-
-.handle-icon {
-  font-size: 18px;
-  color: var(--color-text);
-  font-weight: bold;
-  transition: transform 0.3s ease;
-}
-
-/* 面板可见时，箭头方向变化 */
-.control-panel-handle.panel-visible .handle-icon {
-  transform: rotate(180deg); /* 箭头方向反转 */
-}
-
-/* 控制面板 */
 .control-panel {
   position: absolute;
-  top: 0;
-  right: -320px; /* 默认隐藏 */
-  width: 300px;
-  height: 100%;
-  background-color: var(--color-bg-panel, #f5f7fa); /* 定义一个专用颜色变量，默认值为浅灰色 */
-  border-left: 1px solid var(--color-border);
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
-  padding: 20px 15px;
-  z-index: 1000; /* 确保高于SVG */
-  overflow-y: auto;
-  transition: right 0.3s ease-in-out, background-color 0.3s ease;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.control-panel.visible {
-  right: 0;
-}
-
-.main-container:has(#navigation-svg[data-view="tree"]) {
-  overflow: clip;
-}
-
-.main-container:has(#navigation-svg[data-view="tree"]) .control-panel:not(.visible) {
-  visibility: hidden;
+  inset: 8px 8px auto auto;
+  inline-size: min(290px, calc(100% - 16px));
+  max-block-size: calc(100% - 16px);
+  z-index: 15;
+  overflow: auto;
+  background-color: var(--toolbar-bg, #fff);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  padding: 12px;
 }
 
 /* 控制面板滚动条美化 - 仅保留基础样式 */
@@ -1989,8 +2009,12 @@ svg .node-label {
 
 /* 筛选面板调整 */
 .control-panel .filters-panel {
-  padding: 15px;
-  border-top: 1px solid var(--color-border);
+  display: flex;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .control-panel .filters-panel h2 {
@@ -2010,13 +2034,6 @@ svg .node-label {
 
 .control-panel .filter-option {
   margin-bottom: 6px;
-}
-
-/* 在小屏幕上调整控制面板 */
-@media (max-width: 768px) {
-  .control-panel {
-    width: 260px;
-  }
 }
 
 /* 增加CSS变量定义以支持明暗主题 */

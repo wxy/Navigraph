@@ -5369,5 +5369,17 @@
   },
   "tree_continues_outside_page": {
     "message": "上游页面不在当前范围"
+  },
+  "graph_toolbar_filter": {
+    "message": "筛选",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "今天",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "适配全图",
+    "description": "Graph toolbar"
   }
 }

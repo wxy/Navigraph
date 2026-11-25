@@ -1,7 +1,7 @@
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js'; // 新增 I18nError
 import type { Visualizer, NavNode, NavLink } from '../../types/navigation.js';
-import { StatusBar } from './StatusBar.js';
+import { GraphToolbar } from './GraphToolbar.js';
 import { NodeDetails } from './NodeDetails.js';
 import { ErrorNotification } from './ErrorNotification.js';
 import { ControlPanel } from './ControlPanel.js';
@@ -18,7 +18,7 @@ export class UIManager {
   private visualizer: Visualizer;
 
   // 顶层UI组件
-  private statusBar: StatusBar;
+  private graphToolbar: GraphToolbar;
   private nodeDetails: NodeDetails;
   private errorNotification: ErrorNotification;
   private controlPanel: ControlPanel;
@@ -41,7 +41,7 @@ export class UIManager {
     this.visualizer = visualizer;
 
     // 初始化顶层UI组件
-    this.statusBar = new StatusBar(visualizer);
+    this.graphToolbar = new GraphToolbar(visualizer);
     this.nodeDetails = new NodeDetails(visualizer);
     this.errorNotification = new ErrorNotification();
     this.loadingIndicator = new LoadingIndicator();
@@ -185,7 +185,7 @@ export class UIManager {
     logger.groupCollapsed(_('ui_manager_init_components', '初始化UI组件'));
     
     // 初始化顶层组件
-    this.statusBar.initialize();
+    this.graphToolbar.initialize();
     this.nodeDetails.initialize();
     this.errorNotification.initialize();
     this.loadingIndicator.initialize();
@@ -202,11 +202,10 @@ export class UIManager {
   }
 
   /**
-   * 更新状态栏
+   * 更新图谱工具栏
    */
-  public updateStatusBar(): void {
-    // 状态栏直接从 visualizer 实例获取数据
-    this.statusBar.update();
+  public updateToolbar(): void {
+    this.graphToolbar.update();
   }
 
   /**
@@ -306,46 +305,12 @@ export class UIManager {
 
     logger.log(_('ui_manager_handle_resize', 'UI管理器处理大小变化: {0}x{1}'), `${width}`, `${height}`);
 
-    // 通知各个需要响应大小变化的组件
-    if (typeof this.controlPanel.handleResize === "function") {
-      this.controlPanel.handleResize(width, height);
-    }
-
-    if (typeof this.statusBar.handleResize === "function") {
-      this.statusBar.handleResize(width, height);
-    }
-
     // 可能的节点详情面板位置调整
     if (
       this.nodeDetails.isVisible() &&
       typeof this.nodeDetails.adjustPosition === "function"
     ) {
       this.nodeDetails.adjustPosition();
-    }
-  }
-
-  /**
-   * 隐藏控制面板
-   */
-  public hideControlPanel(): void {
-    // 委托给控制面板组件处理
-    if (this.controlPanel && typeof this.controlPanel.hide === "function") {
-      this.controlPanel.hide();
-      logger.log(_('ui_manager_control_panel_hidden', '已隐藏控制面板'));
-    } else {
-      logger.warn(_('ui_manager_cannot_hide_control_panel', '无法隐藏控制面板：组件不可用或没有hide方法'));
-    }
-  }
-
-  /**
-   * 显示控制面板
-   */
-  public showControlPanel(): void {
-    if (this.controlPanel && typeof this.controlPanel.show === "function") {
-      this.controlPanel.show();
-      logger.log(_('ui_manager_control_panel_shown', '已显示控制面板'));
-    } else {
-      logger.warn(_('ui_manager_cannot_show_control_panel', '无法显示控制面板：组件不可用或没有show方法'));
     }
   }
 

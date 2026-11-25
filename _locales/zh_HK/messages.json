@@ -5369,5 +5369,17 @@
   },
   "tree_continues_outside_page": {
     "message": "上一層頁面不在目前範圍"
+  },
+  "graph_toolbar_filter": {
+    "message": "篩選",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "今天",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "縮放至全圖",
+    "description": "Graph toolbar"
   }
 }

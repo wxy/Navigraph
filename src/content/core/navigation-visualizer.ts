@@ -56,7 +56,6 @@ export class NavigationVisualizer implements Visualizer {
   async selectTreeDay(date: number): Promise<void> {
     this.treeDate = date;
     await this.loadTreeDay(true);
-    if (this.currentView === 'tree' && this.treeDate === date) this.uiManager.hideControlPanel();
   }
 
   async reloadGraph(): Promise<void> {
@@ -84,7 +83,6 @@ export class NavigationVisualizer implements Visualizer {
   width: number = 0;
   height: number = 0;
   currentSession?: SessionDetails = undefined; // 修改为可选属性，与Visualizer接口匹配
-  statusBar?: HTMLElement; // 修改为可选属性，与Visualizer接口匹配
 
   private dataProcessor: DataProcessor = new DataProcessor();
   private uiManager: UIManager = new UIManager(this);
@@ -152,7 +150,7 @@ export class NavigationVisualizer implements Visualizer {
     // 设置缩放变化回调
     this.viewStateManager.setOnZoomChangeCallback(
       // 使用NavigationVisualizer中的节流函数
-      () => this.updateStatusBarThrottled()
+      () => this.updateToolbarThrottled()
     );
     // 检查d3是否已加载
     if (typeof window.d3 === "undefined") {
@@ -285,9 +283,9 @@ export class NavigationVisualizer implements Visualizer {
     }
   }
 
-  // 更新状态栏
-  public updateStatusBar(): void {
-    this.uiManager.updateStatusBar();
+  // 更新图谱工具栏
+  public updateToolbar(): void {
+    this.uiManager.updateToolbar();
   }
 
   /**
@@ -383,14 +381,14 @@ export class NavigationVisualizer implements Visualizer {
     this.renderingManager.updateContainerSize();
   }
   /**
-   * 节流更新状态栏
+   * 节流更新工具栏
    */
-  private updateStatusBarThrottled = (() => {
+  private updateToolbarThrottled = (() => {
     let ticking = false;
     return () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          this.updateStatusBar();
+          this.updateToolbar();
           ticking = false;
         });
         ticking = true;

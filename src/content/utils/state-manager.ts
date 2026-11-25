@@ -198,7 +198,7 @@ export function applyTransform(visualizer: Visualizer, transform: {x: number, y:
     visualizer.svg.call(visualizer.zoom.transform, d3Transform);
     
     // 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateToolbar();
     
   } catch (err) {
     logger.error(_('state_manager_apply_transform_failed', '应用变换状态失败：{0}'), err);
@@ -226,7 +226,7 @@ function debounceSaveState(transform: any, visualizer: Visualizer): void {
     });
     
     // 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateToolbar();
   }, 300); // 300ms防抖
 }
 
@@ -341,150 +341,6 @@ function handleDOMFiltering(
 }
 
 /**
- * 初始化状态栏
- * @param visualizer 可视化器实例
- */
-export function initStatusBar(visualizer: Visualizer): void {
-  logger.log(_('state_manager_statusbar_init', '初始化状态栏...'));
-  
-  // 获取状态栏元素
-  const statusBar = document.querySelector('.windows-status-bar') as HTMLElement;
-  
-  if (!statusBar) {
-    logger.log(_('state_manager_statusbar_create_new', '创建新的状态栏元素'));
-    const newStatusBar = document.createElement('div');
-    newStatusBar.className = 'windows-status-bar';
-    
-    // 添加HTML结构
-    newStatusBar.innerHTML = `
-      <div class="status-cell" id="status-date">${_('state_manager_statusbar_no_date', '会话日期: --')}</div>
-      <div class="status-cell" id="status-duration">${_('state_manager_statusbar_duration', '时长: {0}', '0')}</div>
-      <div class="status-cell" id="status-nodes">${_('state_manager_statusbar_nodes', "节点: {0}", '0')}</div>
-      <div class="status-cell" id="status-filtered">${_('state_manager_statusbar_filtered', "已过滤: {0}", '0')}</div>
-      <div class="status-cell" id="status-view">${visualizer.currentView === 'tree' ? _('state_manager_view_tree', '树形图') : _('state_manager_view_timeline', '时间线')}</div>
-      <div class="status-cell" id="status-zoom">${_('state_manager_statusbar_zoom', "缩放: {0}%", '100')}</div>
-      <div class="status-cell status-cell-stretch" id="status-message">${_('state_manager_statusbar_ready', '就绪')}</div>
-    `;
-    
-    // 添加基本样式
-    newStatusBar.style.display = 'flex';
-    newStatusBar.style.backgroundColor = '#f0f0f0';
-    newStatusBar.style.borderTop = '1px solid #ccc';
-    newStatusBar.style.padding = '2px 0';
-    newStatusBar.style.fontSize = '12px';
-    newStatusBar.style.color = '#333';
-    newStatusBar.style.width = '100%';
-    
-    // 附加到页面
-    const appContainer = document.querySelector('.app-container') || document.body;
-    appContainer.appendChild(newStatusBar);
-    
-    visualizer.statusBar = newStatusBar;
-  } else {
-    visualizer.statusBar = statusBar;
-  }
-  
-  // 设置初始状态
-  updateStatusBar(visualizer);
-  
-  logger.log(_('state_manager_statusbar_init_complete', '状态栏初始化完成'));
-}
-
-/**
- * 更新状态栏元素内容
- * @param visualizer 可视化器实例
- * @param status 状态信息键值对
- */
-export function updateStatusElements(visualizer: Visualizer, status: Record<string, string>): void {
-  if (!visualizer.statusBar) return;
-  
-  for (const [id, text] of Object.entries(status)) {
-    const element = visualizer.statusBar.querySelector(`#${id}`);
-    if (element) {
-      element.textContent = text;
-    }
-  }
-}
-
-/**
- * 更新状态栏显示
- * @param visualizer 可视化器实例
- */
-export function updateStatusBar(visualizer: Visualizer): void {
-  if (!visualizer.statusBar) {
-    logger.warn(_('state_manager_statusbar_not_found', '状态栏元素未找到'));
-    return;
-  }
-  
-  try {
-    // 获取当前变换信息
-    let transform = null;
-    // 优先使用visualizer中存储的currentTransform（通过缩放事件更新）
-    if (visualizer.currentTransform) {
-      transform = visualizer.currentTransform;
-    }
-    // 如果没有存储的transform，根据当前视图类型获取变换
-    else if (visualizer.svg) {
-      transform = d3.zoomTransform(visualizer.svg.node());
-    } else {
-      logger.warn(_('state_manager_transform_not_available', '无法获取当前变换状态'));
-      return;
-    }
-    
-    // 计算缩放百分比
-    const zoom = transform ? Math.round(transform.k * 100) : 100;
-    
-    // 获取节点数量
-    const nodeElements = document.querySelectorAll('.node');
-    const nodeCount = nodeElements.length - 1; // 减去根节点
-    const visibleNodeCount = Array.from(nodeElements).filter(
-      node => (node as HTMLElement).style.display !== 'none'
-    ).length;
-    
-    // 更新状态信息
-    const viewTypeName = visualizer.currentView === 'tree' ? 
-      _('state_manager_view_tree', '树形图') : _('state_manager_view_timeline', '时间线');
-    
-    // 准备状态信息
-    const status: Record<string, string> = {
-      'status-nodes': _('state_manager_statusbar_nodes', "节点: {0}", nodeCount.toString()),
-      'status-view': _('state_manager_statusbar_view', '视图: {0}', viewTypeName),
-      'status-zoom': _('state_manager_statusbar_zoom',"缩放: {0}%", zoom.toString())
-    };
-    
-    // 如果有过滤节点，显示过滤信息
-    if (visibleNodeCount < nodeCount) {
-      status['status-filtered'] = _('state_manager_statusbar_filtered', "已过滤: {0}", (nodeCount - visibleNodeCount).toString());
-    } else {
-      status['status-filtered'] = _('state_manager_statusbar_filtered', "已过滤: {0}", '0');
-    }
-    
-    // 如果当前会话存在，显示会话信息
-    if (visualizer.currentSession) {
-      const startDate = new Date(visualizer.currentSession.startTime);
-      const durationMinutes = (Date.now() - visualizer.currentSession.startTime) / (1000 * 60);
-      
-      // 将分钟数转换为小时:分钟格式
-      const hours = Math.floor(durationMinutes / 60);
-      const minutes = Math.floor(durationMinutes % 60);
-      const formattedDuration = `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
-      
-      status['status-date'] = _('state_manager_statusbar_date', '会话日期: {0}', startDate.toLocaleDateString());
-      status['status-duration'] = _('state_manager_statusbar_duration', "时长: {0}", formattedDuration);
-    }
-    
-    // 添加消息
-    status['status-message'] = _('state_manager_statusbar_message', '{0}视图 | 缩放: {1}%', viewTypeName, zoom.toString());
-    
-    // 更新状态栏
-    updateStatusElements(visualizer, status);
-    
-  } catch (err) {
-    logger.warn(_('state_manager_statusbar_update_failed', '更新状态栏失败'), err);
-  }
-}
-
-/**
  * 显示过滤指示器
  */
 export function showFilteringIndicator(visualizer: Visualizer, hiddenCount: number): void {
@@ -570,7 +426,7 @@ export function switchViewType(visualizer: Visualizer, viewType: string): void {
     }
     
     // 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateToolbar();
   } catch (err) {
     logger.error(_('state_manager_switch_view_failed', '切换视图类型失败：{0}'), err);
   }
@@ -645,9 +501,6 @@ export function initializeViewToolbar(visualizer: Visualizer): void {
       toolbar.appendChild(showAllBtn);
     }
     
-    // 创建状态栏（如果尚未创建）
-    initStatusBar(visualizer);
-    
     // 恢复上次使用的视图类型
     const savedState = getViewState(visualizer.tabId || '', visualizer.currentView || 'tree');
     if (savedState && savedState.viewType) {
@@ -690,7 +543,7 @@ function resetView(visualizer: Visualizer): void {
     clearViewState(visualizer.tabId || '');
     
     // 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateToolbar();
   } catch (err) {
     logger.error(_('state_manager_reset_view_failed', '重置视图失败：{0}'), err);
   }
@@ -715,7 +568,7 @@ function showAllNodes(visualizer: Visualizer): void {
     hideFilteringIndicator(visualizer);
     
     // 更新状态栏
-    updateStatusBar(visualizer);
+    visualizer.updateToolbar();
   } catch (err) {
     logger.error(_('state_manager_show_all_nodes_failed', '显示所有节点失败：{0}'), err);
   }
