@@ -1,4 +1,6 @@
 import type { GraphPageInfo } from '../../lib/graph/query.js';
+import type { FilteredTreeDay } from '../../lib/graph/tree-day.js';
+import type { WaterfallTimeline } from '../../lib/graph/waterfall.js';
 /**
  * 导航图谱公共类型定义
  */
@@ -81,12 +83,12 @@ export interface D3TreeLink {
  */
 export interface Visualizer {
   readonly hasExplicitView?: boolean;
-  readonly pageInfo?: GraphPageInfo | null;
-  loadGraphPage(page?: number, edgePage?: number): Promise<void>;
+  readonly waterfallTimeline: WaterfallTimeline | null;
+  readonly treeDay: FilteredTreeDay | null;
+  readonly graphCounts: Pick<GraphPageInfo, 'total' | 'matched'> | null;
+  selectTreeDay(date: number): Promise<void>;
+  reloadGraph(): Promise<void>;
   // 原有的基本属性和方法
-  
-  // 状态栏相关
-  statusBar?: HTMLElement;
   
   // 视图相关
   currentView: string;
@@ -114,11 +116,16 @@ export interface Visualizer {
   // 常用方法
   refreshVisualization(): void;
   showNodeDetails(data: any): void;
+  showError(message: string): void;
   switchView(viewName: "tree" | "timeline" | "waterfall"): void;
-  updateStatusBar(): void;
+  switchToToday(): void;
+  getObservationWindowTimeRange(): string | null;
+  updateToolbar(): void;
   isTrackingPage(node: NavNode): boolean;
 
   // 添加筛选器相关方法
+  readonly canRestoreFilters: boolean;
+  toggleHiddenNodes(): void;
   updateFilter(filterId: string, value: boolean): void;
   applyFilters(): void;
   updateData(data: any): void;

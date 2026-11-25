@@ -3,8 +3,11 @@ import { UrlUtils } from '../../../lib/utils/url-utils.js';
 import { Logger } from '../../../lib/utils/logger.js';
 import { _, _Error } from '../../../lib/utils/i18n.js';
 import { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
-import { BaseRenderer } from './BaseRenderer.js';
+import type { BaseRenderer, GraphRenderOptions } from './BaseRenderer.js';
 import { saveViewState, getViewState } from '../../utils/state-manager.js';
+import { TREE_NODE_BATCH } from '../../../lib/graph/tree-day.js';
+import { sendMessage } from '../../messaging/content-message-service.js';
+import type { D3DragEvent } from 'd3';
 
 const d3 = window.d3;
 const logger = new Logger('WaterfallRenderer_v3');
@@ -22,6 +25,8 @@ const logger = new Logger('WaterfallRenderer_v3');
 interface DrawerOwner {
   drawer: any;
   body: any;
+  anchor: SVGGElement;
+  anchorMarker: Comment;
   container: HTMLElement | null;
   key: string;
   active: boolean;
@@ -29,17 +34,26 @@ interface DrawerOwner {
   timers: Set<ReturnType<typeof setTimeout>>;
   containerWheel?: EventListener;
   debugDocument?: EventListener;
+  pager?: HTMLElement;
 }
 
 interface TimeSegment {
   startTime: number;
   endTime: number;
   nodes: NavNode[];
+  nodesByLane?: Map<number, NavNode[]>;
   displayMode: 'full' | 'short' | 'icon' | 'dot';
   allocatedWidth: number;
   startX: number;
   originalIndex: number;  // 🎯 添加原始索引，用于保持明暗条纹一致性
   isFiller?: boolean;     // 🎯 标识是否为填充段（为了铺满而添加的空白段）
+}
+
+interface WaterfallCard {
+  node: NavNode;
+  body: any;
+  width: number;
+  height: number;
 }
 
 interface LayoutResult {
@@ -54,11 +68,13 @@ interface LayoutResult {
     segments: TimeSegment[];
   };
 }
-interface ObservationWindow {
-  centerSegmentIndex: number;  // 观察窗口中心所在的段索引
-  startX: number;
+
+interface ObservationWindowBounds {
+  x: number;
   width: number;
-  segments: TimeSegment[];     // 观察窗口覆盖的段
+  minX: number;
+  maxX: number;
+  maxIndex: number;
 }
 
 /**
@@ -69,7 +85,6 @@ interface TabLifecycle {
   startTime: number;       // 标签页开始时间
   endTime: number;         // 标签页结束时间（关闭时间）
   isClosed: boolean;       // 是否已明确关闭
-  nodes: NavNode[];        // 该周期内的所有节点
   closureMarkerTime?: number; // 关闭标记显示的时间（下一个时段）
 }
 
@@ -89,9 +104,6 @@ interface Swimlane {
   laneIndex: number;       // 泳道编号
   y: number;               // 泳道的 Y 坐标
   height: number;          // 泳道高度
-  lifecycles: TabLifecycle[]; // 该泳道承载的多个标签页生命周期
-  isAvailable: boolean;    // 当前是否可用于分配新标签页
-  lastActivityTime: number; // 最后活动时间
 }
 
 /**
@@ -100,8 +112,6 @@ interface Swimlane {
 interface LaneAllocation {
   swimlanes: Swimlane[];   // 分配后的泳道列表
   closureMarkers: ClosureMarker[]; // 所有关闭标记
-  totalTabCount: number;   // 总标签页数量
-  reuseCount: number;      // 复用次数
 }
 
 /**
@@ -109,7 +119,6 @@ interface LaneAllocation {
  */
 interface CollapsedNodeGroup {
   tabId: string;                    // 标签页 ID
-  segmentIndex: number;             // 所在条带索引
   nodes: NavNode[];                 // 包含的所有节点
   displayNode: NavNode;             // 显示的节点（最早的）
   swimlaneY: number;                // 所属泳道的 Y 坐标
@@ -135,43 +144,42 @@ export class WaterfallRenderer implements BaseRenderer {
   };
 
   // 泳道配置常量
+  private readonly TIME_AXIS_HEIGHT = 100;
   private readonly SWIMLANE_HEIGHT = 50; // 每个泳道的高度（包含间距）
   private readonly SWIMLANE_NODE_HEIGHT = 40; // 泳道内节点的实际高度
   private readonly SWIMLANE_SEPARATOR_DASH = '5,3'; // 虚线样式
-  private readonly SWIMLANE_SEPARATOR_COLOR = '#333333'; // 虚线颜色（加深以免被抽屉遮挡时不清晰）
   private readonly MAX_SWIMLANES = 20; // 最大泳道数量（防止过多标签页导致布局溢出）
   private readonly COLLAPSE_THRESHOLD = 2; // 折叠阈值：>=2个节点时折叠
 
   private visualizer: Visualizer;
   private currentLayout: LayoutResult | null = null;
-  private observationWindow: ObservationWindow | null = null;
   private svg: any;
   private container: HTMLElement | null = null;
   private width: number = 0;
   private height: number = 0;
+  private viewportWidth = 0;
   
   // 存储原始数据，用于拖动时重新计算布局
   private allSegments: TimeSegment[] = [];
-  private renderOptions: any = null;
-  private lastDragSnapped: boolean = false; // 记录拖动时是否吸附
-  private observationStartIndex: number = 0; // 当前观察窗口起始索引
-  private strips: any[] = []; // 存储所有条带的D3选择器，用于拖动时更新
-  private currentNormalSegmentIndices: Set<number> = new Set(); // 当前在观察窗口内的条带索引
-  private prevWindowCenter: number | undefined; // 🎯 记录上一次观察窗口中心位置，用于检测移动方向
-  private wheelScrollTimeout: number | null = null; // 滚轮滚动防抖定时器
+  private observationOffsetFromLatest = 0;
+  private densityOnly = false;
+  private visibleLaneStart = -1;
+  private visibleLaneEnd = -1;
+  private scrollFrame: number | null = null;
+  private nodeDetails = new Map<string, NavNode>();
+  private detailRequests = new Map<string, Promise<void>>();
   
   // 垂直滚动支持
   private verticalScrollOffset: number = 0; // 垂直滚动偏移量（像素）
   private maxVerticalScroll: number = 0; // 最大垂直滚动距离
   private scrollableGroup: any = null; // 可滚动组的引用
-  private isDraggingVertical: boolean = false; // 是否正在拖拽垂直滚动
+  private isDraggingCanvas = false;
   private isDraggingObservationWindow: boolean = false; // 是否正在拖拽观察窗口
   
   // 泳道数据 - V2版本：支持复用
   private swimlanes: Swimlane[] = []; // 当前渲染的泳道列表（新结构）
   private closureMarkers: ClosureMarker[] = []; // 关闭标记列表
-  private collapsedGroups: CollapsedNodeGroup[] = []; // 折叠的节点组
-  private laneAllocation: LaneAllocation | null = null; // 泳道分配结果
+  private lanesByTab = new Map<string, Swimlane>();
   // 当前打开的抽屉状态
   private currentOpenCollapseId: string | null = null;
   private currentOpenDrawerSel: any = null;
@@ -191,6 +199,12 @@ export class WaterfallRenderer implements BaseRenderer {
 
   private ownsDrawer(owner: DrawerOwner): boolean {
     return !this.disposed && owner.active && this.drawerOwner === owner;
+  }
+
+  private moveDrawerAnchor(anchor: SVGGElement, move: () => void): void {
+    const focus = document.activeElement;
+    move();
+    if (focus instanceof SVGElement && anchor.contains(focus)) focus.focus({ preventScroll: true });
   }
 
   /** Invalidate first: interrupted transitions and late frames must not revive this drawer. */
@@ -233,30 +247,22 @@ export class WaterfallRenderer implements BaseRenderer {
       document.removeEventListener('wheel', owner.debugDocument, true);
       if (container?.__drawerDebugDocHandler === owner.debugDocument) delete container.__drawerDebugDocHandler;
     }
-    owner.body.select('.drawer-scroll').attr('transform', 'translate(0, 0)');
-    owner.body.selectAll('.drawer-item').attr('opacity', 0).style('pointer-events', 'none');
-    owner.body.select('.drawer-bg').attr('height', 0);
-    owner.body.attr('opacity', 0).attr('clip-path', null).style('pointer-events', 'none');
-    owner.drawer.attr('data-open', 'false').style('pointer-events', 'none');
+    owner.pager?.remove();
+    this.moveDrawerAnchor(owner.anchor, () => owner.anchorMarker.replaceWith(owner.anchor));
+    owner.drawer.remove();
     this.svg?.selectAll('clipPath').filter(function(this: Element) {
       return this.id === `drawer-clip-${owner.key}`;
     }).remove();
     const badge = this.svg?.select(`.group-badge[data-collapse-group="${owner.key}"]`);
     if (badge && !badge.empty()) {
-      const count = this.collapsedGroups.find(group => (group.displayNode?.id || group.tabId) === owner.key)?.count;
-      badge.select('text').text(badge.attr('data-original-badge') || String(count ?? ''));
-      badge.attr('data-original-badge', null);
+      const label = badge.attr('data-original-badge');
+      if (label) badge.select('text').text(label);
+      badge.attr('data-original-badge', null).attr('aria-expanded', 'false');
     }
   }
 
   private closeCurrentDrawer(): void {
     if (this.drawerOwner) this.releaseDrawer(this.drawerOwner);
-    // The legacy exception fallback owns only this renderer's SVG namespace and DOM.
-    this.svg?.on('click.drawer', null);
-    const fallback = this.svg?.selectAll('.collapsed-nodes-drawer');
-    fallback?.interrupt();
-    fallback?.selectAll('*').interrupt();
-    fallback?.remove();
   }
 
   // 绑定文档级捕获阶段点击，用于检测“外部点击”并关闭当前抽屉
@@ -273,6 +279,7 @@ export class WaterfallRenderer implements BaseRenderer {
 
           // 使用 composedPath 优先判断（支持 Shadow DOM），否则回退到父链遍历
           const path: any[] = (e as any).composedPath ? (e as any).composedPath() : ((e as any).path || []);
+          if (this.drawerOwner?.pager && path.includes(this.drawerOwner.pager)) return;
           let clickedInside = false;
           if (path && path.length) {
             for (const p of path) {
@@ -287,11 +294,6 @@ export class WaterfallRenderer implements BaseRenderer {
             }
           }
 
-          // Let the current badge's own toggle run the animated/immediate close cleanup.
-          const badge = (e.target as Element | null)?.closest?.('.group-badge');
-          if (this.currentOpenCollapseId && badge?.getAttribute('data-collapse-group') === this.currentOpenCollapseId) {
-            clickedInside = true;
-          }
           if (!clickedInside) {
             this.closeCurrentDrawer();
           }
@@ -318,11 +320,11 @@ export class WaterfallRenderer implements BaseRenderer {
   }
 
   /**
-   * Toggle a prebuilt collapsed drawer (basic show/hide with simple animation)
+   * Animate the current drawer, created when its group is opened.
    */
-  private togglePrebuiltDrawer(
+  private toggleDrawer(
+    anchor: SVGGElement,
     collapsedGroup: CollapsedNodeGroup,
-    segment: TimeSegment,
     nodeX: number,
     nodeY: number,
     nodeWidth: number,
@@ -340,17 +342,15 @@ export class WaterfallRenderer implements BaseRenderer {
   const drawerSel = mount.select(`g.collapsed-drawer[data-collapse-group="${collapseKey}"]`);
       if (drawerSel.empty()) return;
 
-      const itemsGroup = drawerSel.select('.drawer-items');
-      // use data-open attr + opacity/pointer-events instead of display:none so that
-      // the contained display node remains visible (drawer contains the display node)
       const isOpen = drawerSel.attr('data-open') === 'true';
 
       if (!isOpen) {
         if (this.drawerTransitioning) return;
         this.closeCurrentDrawer();
+        const anchorMarker = document.createComment('waterfall drawer anchor');
         const owner: DrawerOwner = {
           drawer: drawerSel, body: drawerSel.select('.drawer-body'), container: this.container,
-          key: collapseKey, active: true, closing: false, timers: new Set()
+          anchor, anchorMarker, key: collapseKey, active: true, closing: false, timers: new Set()
         };
         operationOwner = owner;
         const ownsDrawer = () => this.ownsDrawer(owner);
@@ -361,283 +361,71 @@ export class WaterfallRenderer implements BaseRenderer {
         // Register before any open animation so outside clicks can also cancel pending opens.
         this.bindDocumentClickToClose();
 
-  // open: do down-direction expand animation (background stretch + per-item move)
-        // keep the outer drawer container non-interactive so it doesn't block
-        // clicks to sibling nodes; the inner body/items will be enabled
-        // for pointer events after the open animation completes.
-        drawerSel.attr('data-open', 'true')
-          .style('pointer-events', 'none');
+        // Keep the original card above the backdrop in the same coordinate system.
+        anchor.before(anchorMarker);
+        this.moveDrawerAnchor(anchor, () => drawerSel.node().appendChild(anchor));
+        drawerSel.attr('data-open', 'true');
 
-        // find the body and bg
-        const body = drawerSel.select('.drawer-body');
+        const body = owner.body;
         const bg = body.select('.drawer-bg');
-        // bring drawer to front within its current parent (avoid reparenting)
-        try {
-          try { drawerSel.raise(); } catch (e) {}
-        } catch (e) {}
+        const itemNodes: SVGGElement[] = body.selectAll('.drawer-item').nodes();
 
-        // compute item targets using slot-based layout anchored at swimlane top
-  const items = body.selectAll('.drawer-item');
-        const itemNodes = items.nodes();
-        if (itemNodes.length === 0) {
-          body.transition().duration(animationDuration(120)).style('opacity', 1 as any).on('end', () => {
-            if (!ownsDrawer()) return;
-            try { body.style('pointer-events', 'all'); } catch(e) {}
-            try { this.bindDocumentClickToClose(); } catch(e) {}
-            this.drawerTransitioning = false;
-          });
-        } else {
-          // Prefer CSS-based scroll isolation (overscroll-behavior). Do not attach non-passive wheel handlers here.
-          // If needed later, a carefully added passive:false handler can be introduced in a later step.
-          try { /* no-op: CSS should handle scroll isolation */ } catch(e) {}
-
-          // ensure x alignment with swimlane nodes by using same centerOffset calculation
-          const nodeWidthLocal = this.NODE_WIDTHS[segment.displayMode];
-          const centerOffset = (segment.allocatedWidth - nodeWidthLocal) / 2;
-          const baseX = segment.startX + Math.max(0, centerOffset);
-
-                const nodeHeightLocal = nodeHeight || (itemNodes.length > 0 ? (() => {
-            try { const firstChildRect = d3.select(itemNodes[0]).select('rect'); if (!firstChildRect.empty()) return parseFloat(firstChildRect.attr('height')) || 0; } catch(e) {}
-            return nodeHeight || 0;
-          })() : nodeHeight || 0);
-
-          // slot layout params
+        if (itemNodes.length > 0) {
           const slots = collapsedGroup.nodes.length;
-          // VISIBLE_FOLDED_CHILDREN_LIMIT represents how many folded children we want
-          // to show in addition to the display node. Per Option B we show display + up to 5 children.
-          const VISIBLE_FOLDED_CHILDREN_LIMIT = 5;
-          const visibleSlots = Math.min(slots, 1 + VISIBLE_FOLDED_CHILDREN_LIMIT); // include display slot
           const slotHeight = this.SWIMLANE_HEIGHT;
-          const paddingAround = 0; // no vertical padding to align to swimlane boundaries
-          const preferredTop = collapsedGroup.swimlaneY || (drawerSel.attr('data-lane-index') ? (this.swimlanes[parseInt(drawerSel.attr('data-lane-index'), 10)]?.y || 0) : 0);
-
-          const drawerFullHeight = visibleSlots * slotHeight + paddingAround * 2; // cap visible height
-          const svgHeight = this.height;
-          const availableDownSpace = svgHeight - preferredTop;
-          const availableUpSpace = preferredTop;
-          let expandUp = false;
-          let drawerTop = preferredTop;
-          if (availableDownSpace < drawerFullHeight && availableUpSpace >= drawerFullHeight) {
-            expandUp = true;
-            drawerTop = preferredTop - (drawerFullHeight - slotHeight);
-          }
-
-          const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
-          let maxScroll = Math.max(0, (slots * slotHeight + paddingAround * 2) - actualDrawerHeight);
-          // Edge-case guard: if there are hidden slots but computed maxScroll is 0 due to rounding/space constraints,
-          // ensure scrolling is possible for the hidden items.
-              try {
-                const hiddenCountLocal = Math.max(0, slots - visibleSlots);
-                if (hiddenCountLocal > 0 && maxScroll === 0) {
-                  maxScroll = hiddenCountLocal * slotHeight;
-                  try { logger.log(`drawer ${collapseKey} adjusted maxScroll fallback=${maxScroll}`); } catch(e) {}
-                }
-              } catch(e) {}
-          // local scroll offset for this drawer instance
+          const preferredTop = collapsedGroup.swimlaneY;
+          const drawerFullHeight = Math.min(slots, 6) * slotHeight;
+          const availableDownSpace = this.verticalScrollOffset + this.height - this.TIME_AXIS_HEIGHT - preferredTop;
+          const availableUpSpace = preferredTop - this.verticalScrollOffset + slotHeight;
+          const expandUp = availableDownSpace < drawerFullHeight && availableUpSpace > availableDownSpace;
+          const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? availableUpSpace : availableDownSpace);
+          const drawerTop = expandUp ? preferredTop + slotHeight - actualDrawerHeight : preferredTop;
+          const maxScroll = Math.max(0, slots * slotHeight - actualDrawerHeight);
           let drawerScrollOffset = 0;
 
-          // animate bg to cover full slot area (horizontally bg x/width already set when prebuilt)
-          try {
-            body.style('pointer-events', 'none');
-            body.attr('opacity', 1);
-            // ensure bg is fully opaque
-            try { bg.attr('fill-opacity', 1); } catch(e) {}
-            // create a clipPath for the visible drawer area so labels/items outside are masked
-            try {
-              const defsSel = (this.svg.select && this.svg.select('defs')) ? this.svg.select('defs') : null;
-              const clipId = `drawer-clip-${collapseKey}`;
-                if (DRAWER_DEBUG) {
-                  try {
-                    const dbg = {
-                      tabId: collapseKey,
-                      nodeX: nodeX,
-                      nodeY: nodeY,
-                      nodeWidth: nodeWidth,
-                      drawerTop: drawerTop,
-                      actualDrawerHeight: actualDrawerHeight,
-                      slots: slots,
-                      slotHeight: slotHeight,
-                      preferredTop: preferredTop
-                    };
-                    // debug info removed
-                  } catch(e) {}
-                }
-              if (defsSel && !defsSel.empty()) {
-                try { defsSel.select(`#${clipId}`).remove(); } catch(e) {}
-                try {
-                  defsSel.append('clipPath')
-                    .attr('id', clipId)
-                    .attr('clipPathUnits', 'userSpaceOnUse')
-                    .append('rect')
-                    .attr('x', parseFloat(bg.attr('x')) || nodeX)
-                    .attr('y', drawerTop)
-                    .attr('width', parseFloat(bg.attr('width')) || nodeWidth)
-                    .attr('height', actualDrawerHeight);
-                } catch(e) {}
-                try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
-                  if (DRAWER_DEBUG) {
-                    try {
-                      const bgNode: any = body.select && body.select('.drawer-bg') && body.select('.drawer-bg').node && body.select('.drawer-bg').node();
-                      // debug info removed
-                    } catch(e) {}
-                  }
-              } else if (this.svg.append) {
-                // create defs if missing
-                try {
-                  const newDefs = this.svg.append('defs');
-                  newDefs.append('clipPath')
-                    .attr('id', clipId)
-                    .attr('clipPathUnits', 'userSpaceOnUse')
-                    .append('rect')
-                    .attr('x', parseFloat(bg.attr('x')) || nodeX)
-                    .attr('y', drawerTop)
-                    .attr('width', parseFloat(bg.attr('width')) || nodeWidth)
-                    .attr('height', actualDrawerHeight);
-                  try { body.attr('clip-path', `url(#${clipId})`); } catch(e) {}
-                } catch(e) {}
-              }
-            } catch(e) {}
-            bg.transition().duration(animationDuration(200)).attr('y', drawerTop).attr('height', actualDrawerHeight);
-          } catch(e) {}
+          // Clip only the scrolling records, leaving the anchor's slot fixed.
+          const clipTop = expandUp ? drawerTop : nodeY + nodeHeight;
+          const clipBottom = expandUp ? nodeY : drawerTop + actualDrawerHeight;
+          const clipId = `drawer-clip-${collapseKey}`;
+          this.svg.select('defs').append('clipPath')
+            .attr('id', clipId)
+            .append('rect')
+            .attr('x', nodeX)
+            .attr('y', clipTop)
+            .attr('width', nodeWidth)
+            .attr('height', Math.max(0, clipBottom - clipTop));
+          body.select('.drawer-viewport').attr('clip-path', `url(#${clipId})`);
+          body.attr('opacity', 1).style('pointer-events', 'all');
+          bg.transition().duration(animationDuration(200)).attr('y', drawerTop).attr('height', actualDrawerHeight);
 
-          // compute slot centers for all slots (we want to position all hidden nodes
-          // at their target slots so a future internal scroll can reveal them)
-          const fullSlotYs: number[] = [];
-          for (let i = 0; i < slots; i++) {
-            const slotTop = drawerTop + i * slotHeight;
-            const slotCenter = slotTop + slotHeight / 2;
-            fullSlotYs.push(slotCenter);
-          }
-          // visible slot centers (first visibleSlots entries)
-          const slotYs = fullSlotYs.slice(0, visibleSlots);
-
-          if (DRAWER_DEBUG) {
-            try {
-              const itemInitialTransforms = itemNodes.map((n: any) => {
-                try { return d3.select(n).attr('transform'); } catch(e) { return null; }
-              });
-              // debug info removed
-            } catch(e) {}
-          }
-
-          // render time-diff labels between slots (centered horizontally on bg)
-            try {
-            // remove any existing labels group
-            body.selectAll('.drawer-labels').remove();
-            // Prefer placing labels inside the scroll group so they translate with items
-            const scrollGroupForLabels = body.select && body.select('.drawer-scroll') ? body.select('.drawer-scroll') : null;
-            const labelsGroup = (scrollGroupForLabels && !scrollGroupForLabels.empty()) ? scrollGroupForLabels.append('g').attr('class', 'drawer-labels') : body.append('g').attr('class', 'drawer-labels');
-            const otherNodes = collapsedGroup.nodes.filter(n => n.id !== collapsedGroup.displayNode.id);
-            // labels between display slot (slot 0) and each child slot — use fullSlotYs so labels for offscreen slots are still computed
-            for (let j = 0; j < otherNodes.length; j++) {
-              const slotA = fullSlotYs[j];
-              const slotB = fullSlotYs[j + 1] || fullSlotYs[fullSlotYs.length - 1];
-              const labelY = Math.round((slotA + slotB) / 2);
-              const timeDiff = Math.abs(otherNodes[j].timestamp - (collapsedGroup.displayNode.timestamp || 0));
-              this.renderTimeDiffLabel(labelsGroup, bg.attr && parseFloat(bg.attr('x')) || (nodeX), labelY, (bg.attr && parseFloat(bg.attr('width')) ) || nodeWidth, timeDiff);
-            }
-          } catch(e) {}
-
-          // animate items into their slots (children occupy slot 1..N-1)
+          const fullSlotYs = Array.from({ length: slots }, (_, index) => drawerTop + (index + 0.5) * slotHeight);
+          const firstChildSlot = expandUp ? 0 : 1;
+          const maxVisibleChildren = Math.min(itemNodes.length, Math.ceil((actualDrawerHeight - slotHeight) / slotHeight));
+          const labelY = expandUp ? (slotHeight + nodeHeight) / 2 : (nodeHeight - slotHeight) / 2;
           const itemDuration = 180;
           const stagger = 40;
-          // Only animate up to visibleSlots-1 children into visible slots (slot 0 is display); keep extras hidden
-          const maxVisibleChildren = Math.max(0, visibleSlots - 1);
-          // Before animating, try to elevate the swimlane-group (so drawer items aren't occluded)
-          try {
-            const laneIndexAttr = drawerSel.attr && drawerSel.attr('data-lane-index');
-            if (laneIndexAttr != null) {
-              const laneIndex = parseInt(laneIndexAttr, 10);
-              // find the swimlane-group within the same time-strip that matches this lane
-              try {
-                const swimlaneSelector = `.swimlane-${laneIndex}`;
-                // locate swimlane group node relative to drawerSel
-                let swimlaneNode: any = null;
-                try {
-                  swimlaneNode = (drawerSel.node && drawerSel.node().parentNode) ? drawerSel.node().parentNode.querySelector(swimlaneSelector) : null;
-                } catch (e) {
-                  swimlaneNode = null;
-                }
-                // fallback: search up to nearest .time-strip ancestor and then query inside it
-                if (!swimlaneNode) {
-                  let parent: any = drawerSel.node && drawerSel.node().parentNode;
-                  while (parent && parent !== document && !parent.classList.contains('time-strip')) {
-                    parent = parent.parentNode;
-                  }
-                  if (parent && parent.classList && parent.classList.contains('time-strip')) {
-                    try { swimlaneNode = parent.querySelector(swimlaneSelector); } catch(e) { swimlaneNode = null; }
-                  }
-                }
 
-                if (swimlaneNode) {
-                  // append swimlaneNode to its time-strip parent to bring it to front within same coordinate system
-                  const timeStrip = swimlaneNode.parentNode;
-                  try {
-                    if (timeStrip && timeStrip.appendChild) {
-                      timeStrip.appendChild(swimlaneNode);
-                      // also try to append the display node element (if present) to the swimlane so it sits above the drawer
-                      try {
-                        const displayNodeId = collapsedGroup && collapsedGroup.displayNode && collapsedGroup.displayNode.id;
-                        if (displayNodeId) {
-                          const displaySelector = `.navigation-node[data-node-id="${displayNodeId}"]`;
-                          let displayNodeEl: any = null;
-                          try { displayNodeEl = timeStrip.querySelector(displaySelector); } catch(e) { displayNodeEl = null; }
-                          // if not found directly under timeStrip, try within swimlaneNode
-                          if (!displayNodeEl) {
-                            try { displayNodeEl = swimlaneNode.querySelector(displaySelector); } catch(e) { displayNodeEl = null; }
-                          }
-                          if (displayNodeEl && swimlaneNode.appendChild) {
-                            try { swimlaneNode.appendChild(displayNodeEl); } catch(e) { /* ignore */ }
-                          }
-                        }
-                      } catch(e) { /* ignore */ }
-                    } else {
-                      // fallback to d3.raise if appendChild not possible
-                      try { d3.select(swimlaneNode).raise(); } catch(e) {}
-                    }
-                  } catch (e) {
-                    try { d3.select(swimlaneNode).raise(); } catch(e) {}
-                  }
-                } else {
-                  // final fallback: try to raise the drawer itself
-                  try { drawerSel.raise(); } catch(e) {}
-                }
-              } catch (e) {
-                try { drawerSel.raise(); } catch(e) {}
-              }
+          itemNodes.forEach((element, index) => {
+            const item = d3.select(element);
+            const record = collapsedGroup.nodes[index + 1];
+            this.renderTimeDiffLabel(item, 0, labelY, nodeWidth, Math.abs(record.timestamp - collapsedGroup.displayNode.timestamp));
+            item.on('click.drawerItem', (event: MouseEvent) => event.stopPropagation());
+            const target = `translate(${nodeX}, ${fullSlotYs[index + firstChildSlot] - nodeHeight / 2})`;
+            if (index < maxVisibleChildren) {
+              item.transition()
+                .delay(animationDuration(index * stagger))
+                .duration(animationDuration(itemDuration))
+                .attr('transform', target)
+                .attr('opacity', 1)
+                .on('end', () => { if (ownsDrawer()) item.style('pointer-events', 'all'); });
+            } else {
+              item.attr('transform', target);
             }
-          } catch (e) {}
-
-          items.each(function(this: any, d: any, i: number) {
-            try {
-              const childIndex = i; // order corresponds to otherNodes
-              // target slot index for this child (slot 0 is display node)
-              const slotIndex = Math.min(childIndex + 1, fullSlotYs.length - 1);
-              const targetCenter = fullSlotYs[slotIndex];
-              const targetTop = targetCenter - (nodeHeightLocal / 2);
-              if (childIndex < maxVisibleChildren) {
-                // animate visible children into place
-                d3.select(this)
-                  .style('pointer-events', 'none')
-                  .attr('opacity', 0)
-                  .transition()
-                  .delay(animationDuration(i * stagger))
-                  .duration(animationDuration(itemDuration))
-                  .attr('transform', `translate(${baseX}, ${targetTop})`)
-                  .attr('opacity', 1)
-                  .on('end', function(this: any) { if (!ownsDrawer()) return; try { d3.select(this).style('pointer-events', 'all'); } catch(e) {} });
-                d3.select(this).on('click.drawerItem', function(event: MouseEvent) { try { event.stopPropagation(); } catch(e) {} });
-              } else {
-                // position offscreen/hidden children at their target slots so they can be revealed by scrolling later
-                try { d3.select(this).attr('transform', `translate(${baseX}, ${targetTop})`).attr('opacity', 0).style('pointer-events', 'none'); } catch(e) {}
-              }
-            } catch(e) {}
           });
 
-          const totalAnim = 220 + itemNodes.length * stagger + itemDuration;
+          const totalAnim = 220 + maxVisibleChildren * stagger + itemDuration;
           this.schedule(() => {
-            try { body.style('pointer-events', 'all'); } catch(e) {}
-            // set the display node's collapse badge text to 0 while drawer is open
+            // Show the close affordance once the drawer is open.
             try {
               const badgeSel = (this.svg && this.svg.select) ? this.svg.select(`.group-badge[data-collapse-group="${collapseKey}"]`) : null;
               if (badgeSel && !badgeSel.empty()) {
@@ -650,7 +438,7 @@ export class WaterfallRenderer implements BaseRenderer {
                       try { badgeSel.attr('data-original-badge', origTxt); } catch(e) {}
                     }
                   } catch(e) {}
-                  try { badgeSel.select('text').text('0'); } catch(e) {}
+                  try { badgeSel.attr('aria-expanded', 'true').select('text').text('−'); } catch(e) {}
                 } catch(e) {}
               }
             } catch(e) {}
@@ -734,15 +522,13 @@ export class WaterfallRenderer implements BaseRenderer {
                       const updateVisibility = () => {
                         try {
                           const itemsSel = scrollGroupSel.selectAll('.drawer-item');
-                          const visibleTop = drawerTop + drawerScrollOffset;
-                          const visibleBottom = drawerTop + drawerScrollOffset + actualDrawerHeight;
+                          const visibleTop = clipTop + drawerScrollOffset;
+                          const visibleBottom = clipBottom + drawerScrollOffset;
                           itemsSel.each(function(this: any, d: any, i: number) {
                             try {
-                              const childIndex = i;
-                              const slotIndex = Math.min(childIndex + 1, fullSlotYs.length - 1);
-                              const originalCenter = fullSlotYs[slotIndex];
-                              const originalTop = originalCenter - (nodeHeightLocal / 2);
-                              const originalBottom = originalTop + nodeHeightLocal;
+                              const originalCenter = fullSlotYs[i + firstChildSlot];
+                              const originalTop = originalCenter - nodeHeight / 2;
+                              const originalBottom = originalTop + nodeHeight;
                               const isVisible = (originalBottom > visibleTop) && (originalTop < visibleBottom);
                               const sel = d3.select(this);
                               if (isVisible) {
@@ -966,7 +752,9 @@ export class WaterfallRenderer implements BaseRenderer {
         const body = drawerSel.select('.drawer-body');
         const bg = body.select('.drawer-bg');
   const items = body.selectAll('.drawer-item');
-        const itemNodes = items.nodes();
+        const visibleItems = items.filter(function(this: Element) {
+          return Number(this.getAttribute('opacity')) > 0;
+        });
 
         // compute base pos from first item's current transform (or bg y)
   // compute base pos: use provided nodeX/nodeY
@@ -976,7 +764,7 @@ export class WaterfallRenderer implements BaseRenderer {
         const itemDuration = 140;
         const stagger = 30;
         // animate items back to baseY and fade out
-        items.each(function(this: any, d: any, i: number) {
+        visibleItems.each(function(this: any, d: any, i: number) {
           d3.select(this)
             .style('pointer-events', 'none')
             .transition()
@@ -987,7 +775,7 @@ export class WaterfallRenderer implements BaseRenderer {
         });
 
         // after items collapsed, shrink bg and hide body
-        const totalAnim = itemNodes.length * stagger + itemDuration + 40;
+        const totalAnim = visibleItems.size() * stagger + itemDuration + 40;
         this.schedule(() => {
           try {
             bg.transition().duration(animationDuration(160)).attr('height', 0).on('end', () => {
@@ -1010,6 +798,7 @@ export class WaterfallRenderer implements BaseRenderer {
     this.container = container;
     this.width = width;
     this.height = height;
+    this.viewportWidth = width;
   }
 
   private timers = new Set<ReturnType<typeof setTimeout>>();
@@ -1028,14 +817,12 @@ export class WaterfallRenderer implements BaseRenderer {
     this.closeCurrentDrawer();
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
-    if (this.wheelScrollTimeout) clearTimeout(this.wheelScrollTimeout);
-    this.wheelScrollTimeout = null;
+    if (this.scrollFrame !== null) cancelAnimationFrame(this.scrollFrame);
     const svgNode = this.svg?.node();
     if (svgNode && this.svgWheelHandler) svgNode.removeEventListener('wheel', this.svgWheelHandler, true);
-    this.svg?.on('.zoom', null);
+    this.svg?.on('.zoom', null).on('.drag', null).classed('waterfall-panning', false).attr('viewBox', null);
     this.svg?.selectAll('*').interrupt();
     this.currentLayout = null;
-    this.observationWindow = null;
     this.svg = null;
     this.container = null;
   }
@@ -1045,143 +832,81 @@ export class WaterfallRenderer implements BaseRenderer {
    * @returns 时间范围字符串，格式为 "HH:MM - HH:MM"，如果无法获取则返回 null
    */
   getObservationWindowTimeRange(): string | null {
-    if (!this.allSegments || this.allSegments.length === 0) {
-      return null;
-    }
-
-    if (!this.currentLayout || !this.currentLayout.normalDisplaySegments || this.currentLayout.normalDisplaySegments.length === 0) {
-      return null;
-    }
-
-    // 获取正常显示区域的第一个和最后一个时间段
-    const normalSegments = this.currentLayout.normalDisplaySegments;
-    const firstSegment = normalSegments[0]; // 最新的时间段
-    const lastSegment = normalSegments[normalSegments.length - 1]; // 最旧的时间段
-
-    // 格式化时间为 HH:MM
-    const formatTime = (timestamp: number): string => {
-      const date = new Date(timestamp);
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
-    };
-
-    // 因为时间段是从新到旧排序的，且时间标签显示的是 endTime：
-    // - 观察窗口的起始时间（最旧）= 最后一个段的 endTime（因为标签显示的就是 endTime）
-    // - 观察窗口的结束时间（最新）= 第一个段的 endTime
-    const startTime = formatTime(lastSegment.endTime);   // 最旧条带的标签时间
-    const endTime = formatTime(firstSegment.endTime);     // 最新条带的标签时间
-
-    return `${startTime} - ${endTime}`;
-  }
-
-  render(nodes: NavNode[], edges: NavLink[], options?: any): void {
-    // 清空容器
-    this.svg.selectAll('*').remove();
-    
-    // 🎨 添加SVG渐变和滤镜定义
-    this.addSVGDefinitions();
-    
-    if (!nodes || nodes.length === 0) {
-      logger.warn(_('waterfall_no_nodes', '没有节点数据可渲染'));
-      return;
-    }
-
-    // 🛡️ 安全检查：验证时间戳有效性
-    let validNodes = nodes.filter(node => {
-      if (typeof node.timestamp !== 'number' || !Number.isFinite(node.timestamp)) {
-        logger.warn(_('waterfall_invalid_timestamp_node', '发现无效时间戳的节点，已过滤:'), node);
-        return false;
-      }
-      return true;
+    const segments = this.densityOnly ? this.allSegments : this.currentLayout?.normalDisplaySegments;
+    if (!segments?.length) return null;
+    const start = new Date(segments[0].startTime);
+    const end = new Date(segments[segments.length - 1].endTime);
+    const format = new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit', minute: '2-digit',
+      ...(start.toDateString() !== end.toDateString() ? { month: 'short', day: 'numeric' } : {}),
     });
+    return `${format.format(start)} – ${format.format(end)}`;
+  }
 
-    // 🎯 应用筛选器：处理已关闭节点的显示
-    // 如果没有传入过滤器选项，默认不显示已关闭的节点
-    const showClosed = options?.filters?.closed !== false; // 默认为false（不显示）
-    if (!showClosed) {
-      const beforeFilter = validNodes.length;
-      validNodes = validNodes.filter(node => !node.isClosed);
+  render(nodes: NavNode[], _edges: NavLink[], options: GraphRenderOptions = {}): void {
+    if (!nodes.length) return;
+
+    const tabId = this.visualizer.tabId || '';
+    if (options.restoreTransform) {
+      this.observationOffsetFromLatest = this.visualizer.waterfallObservationIndex
+        ?? getViewState(tabId, 'waterfall')?.waterfallObservationIndex ?? 0;
     }
 
-    if (validNodes.length === 0) {
-      logger.warn(_('waterfall_no_nodes_after_filter', '筛选后没有可显示的节点'));
+    const { swimlanes, closureMarkers } = this.allocateSwimlanesWithReuse(nodes);
+    this.swimlanes = swimlanes;
+    this.closureMarkers = closureMarkers;
+
+    if (options.fitToView) {
+      const contentHeight = this.TIME_AXIS_HEIGHT + this.swimlaneContentHeight();
+      const availableHeight = Math.max(1, this.height);
+      const scale = Math.min(1, availableHeight / contentHeight);
+      // Below half size the 50 px lanes become a density overview.
+      this.densityOnly = scale < 0.5;
+      if (scale < 1 && !this.densityOnly) {
+        this.width /= scale;
+        this.height /= scale;
+        this.svg.attr('viewBox', `0 0 ${this.width} ${this.height}`);
+      }
+    }
+
+    this.allSegments = this.buildTimeSegments(nodes);
+    this.drawLayout();
+    if (!this.densityOnly) {
+      this.setupWheelScroll();
+      this.setupCanvasDrag();
+    }
+  }
+
+  private drawLayout(): void {
+    this.closeCurrentDrawer();
+    this.svg.selectAll('*').interrupt().remove();
+    this.addSVGDefinitions();
+    const layout = this.allocateSegmentLayout(this.allSegments, this.width, this.observationOffsetFromLatest);
+    this.currentLayout = layout;
+    this.observationOffsetFromLatest = Math.min(this.observationOffsetFromLatest, layout.compressedSegments.length);
+    this.visualizer.waterfallObservationIndex = this.observationOffsetFromLatest;
+    this.visibleLaneStart = -1;
+    this.visibleLaneEnd = -1;
+    this.calculateMaxVerticalScroll();
+    this.verticalScrollOffset = Math.min(this.verticalScrollOffset, this.maxVerticalScroll);
+    const groups = this.createSVGGroups(this.svg, layout);
+    this.renderTimeAxis(groups.timeAxisGroup, layout);
+    this.renderTimeDensity(groups.timeAxisGroup, this.densityOnly ? this.allSegments : layout.compressedSegments);
+
+    if (this.densityOnly) {
+      groups.timeAxisGroup.append('text')
+        .attr('x', layout.timeAxisData.startX)
+        .attr('y', this.TIME_AXIS_HEIGHT + 22)
+        .attr('fill', 'currentColor')
+        .text(_('waterfall_density_overview', '会话活动概览。切换到实际大小可查看各泳道。'));
       return;
     }
 
-    // 🔄 恢复观察窗口位置
-    // 优先级：内存中的值 > localStorage 中的值 > 默认值 0
-    let savedObservationIndex = this.visualizer.waterfallObservationIndex;
-    
-    // 如果内存中没有值，尝试从 localStorage 恢复
-    if (savedObservationIndex === undefined && options?.restoreTransform) {
-      const savedState = getViewState(this.visualizer.tabId || '', 'waterfall');
-      
-      if (savedState && savedState.waterfallObservationIndex !== undefined) {
-        savedObservationIndex = savedState.waterfallObservationIndex;
-        // 同步到内存
-        this.visualizer.waterfallObservationIndex = savedObservationIndex;
-      }
-    }
-    
-    const useRestoredPosition = options?.restoreTransform && savedObservationIndex !== undefined;
-    
-    if (useRestoredPosition && savedObservationIndex !== 0) {
-      this.observationStartIndex = savedObservationIndex!;
-    } else if (savedObservationIndex === 0 && options?.restoreTransform) {
-      this.observationStartIndex = 0;
-    } else {
-      this.observationStartIndex = 0;
-    }
-
-    // 1. 🎯 智能泳道分配（支持复用）
-    this.laneAllocation = this.allocateSwimlanesWithReuse(validNodes);
-    this.swimlanes = this.laneAllocation.swimlanes;
-    this.closureMarkers = this.laneAllocation.closureMarkers;
-
-    // 2. 计算时间分段和布局（使用保存的观察窗口位置）
-    const layout = this.calculateSegmentLayout(validNodes, this.width, this.observationStartIndex);
-    this.currentLayout = layout;
-
-    // 3. 识别需要折叠的节点组
-    this.collapsedGroups = this.identifyCollapsedGroups(layout.segments, this.swimlanes);
-
-    // 4. 创建SVG分组
-    const mainGroup = this.createSVGGroups(this.svg);
-
-    // 5. 渲染各个部分（使用新的分离结构）
-    this.renderTimeAxis(mainGroup.timeAxisGroup, layout); // 🕐 时间轴（固定，不滚动）
-    this.renderTimeStrips(mainGroup.timeStripsGroup, layout); // 🎨 垂直时间条带（可滚动）
-    this.renderSwimlaneSeparators(mainGroup.swimlaneSeperatorsGroup, layout); // 🏊 泳道分隔线（可滚动）
-    this.renderSegmentNodes(mainGroup.nodesGroup, layout); // 🎯 纯粹的节点（可滚动）
-    this.renderClosureMarkers(mainGroup.closureMarkersGroup, layout); // 🔴 关闭标记（可滚动）
-    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, layout); // 🎚️ 观察窗口（固定，不滚动）
-    
-    // 6. 设置滚轮事件来滚动泳道（垂直方向）
-    this.setupWheelScroll(); // 🎯 重新启用：只用于垂直滚动泳道
-    
-    // 7. 设置垂直拖拽滚动
-    this.setupVerticalDragScroll();
-    
-    // 确保 drag-layer-group 在 scrollable 内容中位于最上层，优先覆盖 closure markers 等元素，
-    // 但仍保持在 time-strips/swimlane separators 之上。此操作是防御性的，避免某些分支
-    // 在后续渲染中将 closure markers 或其它元素追加到 drag-layer 之上导致遮挡抽屉。
-    try {
-      if (this.scrollableGroup && this.scrollableGroup.select) {
-        const dl = this.scrollableGroup.select('.drag-layer-group');
-        if (dl && !dl.empty && !dl.empty()) {
-          try { dl.raise(); } catch(e) {}
-        }
-      }
-    } catch(e) {}
-    
-    // 8. 存储选项供后续使用
-    this.renderOptions = options;
+    this.renderTimeStrips(groups.timeStripsGroup, groups.nodesGroup, layout);
+    this.renderVisibleLanes();
+    this.renderObservationWindow(groups.focusOverlayGroup, layout);
   }
 
-  /**
-   * 🎨 添加SVG渐变和滤镜定义
-   */
   private addSVGDefinitions(): void {
     const defs = this.svg.append('defs');
     
@@ -1194,11 +919,11 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y2', '100%');
     stripGradientEven.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#fafafa')
+      .attr('stop-color', 'var(--waterfall-strip-even-top, #fafafa)')
       .attr('stop-opacity', 1);
     stripGradientEven.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#f0f0f0')
+      .attr('stop-color', 'var(--waterfall-strip-even-bottom, #f0f0f0)')
       .attr('stop-opacity', 1);
     
     // 条带背景渐变 - 奇数行
@@ -1210,11 +935,11 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y2', '100%');
     stripGradientOdd.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#f8f8f8')
+      .attr('stop-color', 'var(--waterfall-strip-odd-top, #f8f8f8)')
       .attr('stop-opacity', 1);
     stripGradientOdd.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#e8e8e8')
+      .attr('stop-color', 'var(--waterfall-strip-odd-bottom, #e8e8e8)')
       .attr('stop-opacity', 1);
     
     // 节点背景渐变
@@ -1302,7 +1027,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .sort((a, b) => a.startTime - b.startTime);
     
     // 3. 智能分配泳道
-    const { swimlanes, closureMarkers, reuseCount } = this.assignLanesWithReuse(sortedLifecycles);
+    const { swimlanes, closureMarkers } = this.assignLanesWithReuse(sortedLifecycles);
     
     // 4. 分配Y坐标
     this.assignSwimlanePositions(swimlanes);
@@ -1310,9 +1035,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     return {
       swimlanes,
-      closureMarkers,
-      totalTabCount: tabLifecycles.size,
-      reuseCount
+      closureMarkers
     };
   }
 
@@ -1326,22 +1049,20 @@ export class WaterfallRenderer implements BaseRenderer {
     const sortedNodes = [...nodes].sort((a, b) => a.timestamp - b.timestamp);
     
     sortedNodes.forEach(node => {
-      const tabId = node.tabId || 'unknown';
+      const tabId = String(node.tabId ?? 'unknown');
       
       if (!lifecycles.has(tabId)) {
         lifecycles.set(tabId, {
           tabId,
           startTime: node.timestamp,
           endTime: node.timestamp,
-          isClosed: false,
-          nodes: []
+          isClosed: false
         });
       }
       
       const lifecycle = lifecycles.get(tabId)!;
       lifecycle.endTime = node.timestamp;
       lifecycle.isClosed = node.isClosed || false;
-      lifecycle.nodes.push(node);
     });
 
     // 计算关闭标记时间（关闭后的下一个时段）
@@ -1357,27 +1078,23 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 智能分配泳道（支持复用）
    */
-  private assignLanesWithReuse(lifecycles: TabLifecycle[]): {
-    swimlanes: Swimlane[];
-    closureMarkers: ClosureMarker[];
-    reuseCount: number;
-  } {
+  private assignLanesWithReuse(lifecycles: TabLifecycle[]): LaneAllocation {
     const swimlanes: Swimlane[] = [];
     const closureMarkers: ClosureMarker[] = [];
-    let reuseCount = 0;
 
+    // The leftmost available index preserves the existing first-lane reuse order.
+    const leafStart = 2 ** Math.ceil(Math.log2(Math.max(1, lifecycles.length)));
+    const reusableAt = new Float64Array(2 * leafStart).fill(Infinity);
+    this.lanesByTab.clear();
     lifecycles.forEach(lifecycle => {
       let assignedLaneIndex = -1;
-
-      // 🔄 尝试复用已有泳道
-      for (let i = 0; i < swimlanes.length; i++) {
-        const lane = swimlanes[i];
-        
-        if (this.canReuseLane(lane, lifecycle)) {
-          assignedLaneIndex = i;
-          reuseCount++;
-          break;
+      if (reusableAt[1] <= lifecycle.startTime) {
+        let index = 1;
+        while (index < leafStart) {
+          index *= 2;
+          if (reusableAt[index] > lifecycle.startTime) index++;
         }
+        assignedLaneIndex = index - leafStart;
       }
 
       // 如果没有可复用的泳道，创建新泳道
@@ -1386,18 +1103,20 @@ export class WaterfallRenderer implements BaseRenderer {
         swimlanes.push({
           laneIndex: assignedLaneIndex,
           y: 0, // 稍后分配
-          height: this.SWIMLANE_HEIGHT,
-          lifecycles: [],
-          isAvailable: true,
-          lastActivityTime: 0
+          height: this.SWIMLANE_HEIGHT
         });
       }
 
       // 分配标签页到泳道
       const lane = swimlanes[assignedLaneIndex];
-      lane.lifecycles.push(lifecycle);
-      lane.lastActivityTime = lifecycle.endTime;
-      lane.isAvailable = !lifecycle.isClosed || !!lifecycle.closureMarkerTime;
+      this.lanesByTab.set(lifecycle.tabId, lane);
+      let leaf = leafStart + assignedLaneIndex;
+      reusableAt[leaf] = lifecycle.closureMarkerTime === undefined
+        ? Infinity : lifecycle.closureMarkerTime + this.TIME_SEGMENT_DURATION;
+      while (leaf > 1) {
+        leaf = Math.floor(leaf / 2);
+        reusableAt[leaf] = Math.min(reusableAt[2 * leaf], reusableAt[2 * leaf + 1]);
+      }
 
       // 添加关闭标记（如果需要）
       if (lifecycle.isClosed && lifecycle.closureMarkerTime) {
@@ -1410,28 +1129,7 @@ export class WaterfallRenderer implements BaseRenderer {
       }
     });
 
-    return { swimlanes, closureMarkers, reuseCount };
-  }
-
-  /**
-   * 检查泳道是否可以被复用
-   */
-  private canReuseLane(lane: Swimlane, newLifecycle: TabLifecycle): boolean {
-    if (lane.lifecycles.length === 0) return true;
-
-    const lastLifecycle = lane.lifecycles[lane.lifecycles.length - 1];
-    
-    // 必须是已关闭的标签页
-    if (!lastLifecycle.isClosed) return false;
-    
-    // 必须有明确的关闭标记时间
-    if (!lastLifecycle.closureMarkerTime) return false;
-    
-    // 🎯 关键修复：新标签页开始时间必须在关闭标记时间之后
-    // 这确保了关闭标记和新节点不会重合
-    const canReuse = newLifecycle.startTime >= lastLifecycle.closureMarkerTime + this.TIME_SEGMENT_DURATION;
-    
-    return canReuse;
+    return { swimlanes, closureMarkers };
   }
 
   /**
@@ -1446,140 +1144,58 @@ export class WaterfallRenderer implements BaseRenderer {
     });
   }
 
-  /**
-   * 识别需要折叠的节点组
-   * @param segments 所有时间段
-   * @param swimlanes 泳道列表
-   * @returns 需要折叠的节点组列表
-   */
-  private identifyCollapsedGroups(
-    segments: TimeSegment[], 
-    swimlanes: Swimlane[]
-  ): CollapsedNodeGroup[] {
-    const groups: CollapsedNodeGroup[] = [];
-    
-    // 遍历每个时间段
-    segments.forEach((segment, segmentIndex) => {
-      // 按 tabId 分组该段内的节点
-      const tabGroups = new Map<string, NavNode[]>();
-      
-      segment.nodes.forEach(node => {
-        const tabId = node.tabId || 'unknown';
-        if (!tabGroups.has(tabId)) {
-          tabGroups.set(tabId, []);
-        }
-        tabGroups.get(tabId)!.push(node);
-      });
-      
-      // 检查每个 tabId 组的节点数量
-      tabGroups.forEach((nodes, tabId) => {
-        if (nodes.length >= this.COLLAPSE_THRESHOLD) {
-          // 需要折叠：按时间排序，取最早的节点作为显示节点
-          const sortedNodes = nodes.sort((a, b) => a.timestamp - b.timestamp);
-          const displayNode = sortedNodes[0];
-          
-          // 找到对应的泳道 - V2版本：在所有生命周期中查找
-          const swimlane = this.findSwimlaneByTabId(tabId);
-          
-          if (!swimlane) {
-            logger.warn(_('waterfall_swimlane_not_found', '未找到标签页 {0} 对应的泳道'), tabId);
-            return;
-          }
-          
-          groups.push({
-            tabId,
-            segmentIndex,
-            nodes: sortedNodes,
-            displayNode,
-            swimlaneY: swimlane?.y || 0,
-            count: sortedNodes.length
-          });
-        }
-      });
-    });
-    
-    return groups;
-  }
-
-  private calculateSegmentLayout(
-    nodes: NavNode[] | TimeSegment[], 
-    containerWidth: number, 
-    observationStartIndex?: number
-  ): LayoutResult {
-    // 🎯 判断是首次调用还是重新布局
-    let segments: TimeSegment[];
-    
-    if (Array.isArray(nodes) && nodes.length > 0 && 'timestamp' in nodes[0]) {
-      // 首次调用：nodes是NavNode数组，需要创建时间段
-      const navNodes = nodes as NavNode[];
-      
-      // 1. 找到时间范围并对齐到10分钟边界
-      const times = navNodes.map(node => node.timestamp).sort((a, b) => b - a); // 最新的在前
-      const maxTimeRaw = times[0];
-      const minTimeRaw = times[times.length - 1];
-      
-      // 🎯 对齐到10分钟整数边界
-      const maxTime = Math.ceil(maxTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
-      const minTime = Math.floor(minTimeRaw / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
-
-      // 2. 创建时间分段
-      segments = [];
-      let currentTime = maxTime;
-      let safetyCounter = 0;
-      const MAX_ITERATIONS = 1000;
-      let segmentIndex = 0;
-      
-      while (currentTime > minTime && safetyCounter < MAX_ITERATIONS) {
-        safetyCounter++;
-        
-        const segmentEnd = currentTime;
-        const segmentStart = currentTime - this.SEGMENT_DURATION;
-        
-        const segmentNodes = navNodes.filter(node => 
-          node.timestamp < segmentEnd && node.timestamp >= segmentStart
-        );
-
-        segments.push({
-          startTime: segmentStart,
-          endTime: segmentEnd,
-          nodes: segmentNodes,
-          displayMode: 'full',
-          allocatedWidth: 0,
-          startX: 0,
-          originalIndex: segmentIndex++
-        });
-
-        currentTime = segmentStart;
+  private buildTimeSegments(nodes: NavNode[]): TimeSegment[] {
+    const occupied = new Map<number, TimeSegment>();
+    for (const node of nodes) {
+      const start = Math.floor(node.timestamp / this.SEGMENT_DURATION) * this.SEGMENT_DURATION;
+      let segment = occupied.get(start);
+      if (!segment) {
+        segment = {
+          startTime: start, endTime: start + this.SEGMENT_DURATION, nodes: [], nodesByLane: new Map(),
+          displayMode: 'full', allocatedWidth: 0, startX: 0, originalIndex: 0
+        };
+        occupied.set(start, segment);
       }
-      
-      if (safetyCounter >= MAX_ITERATIONS) {
-        logger.error(_('waterfall_segment_loop_max_iter', '⚠️ 时间分段循环达到最大迭代次数，强制终止'));
-      }
-
-
-      // 保存所有段用于后续拖动
-      this.allSegments = segments;
-    } else {
-      // 重新布局：使用已有的segments
-      segments = this.allSegments;
+      segment.nodes.push(node);
+      const lane = this.getSwimlaneForNode(node)!.laneIndex;
+      const laneNodes = segment.nodesByLane!.get(lane);
+      if (laneNodes) laneNodes.push(node);
+      else segment.nodesByLane!.set(lane, [node]);
     }
-
-    // 3. 计算布局分配
-    return this.allocateSegmentLayout(segments, containerWidth, observationStartIndex || 0);
+    const ordered = [...occupied.values()].sort((a, b) => a.startTime - b.startTime);
+    const segments: TimeSegment[] = [];
+    const compactGaps = ordered[ordered.length - 1].startTime - ordered[0].startTime >= 1000 * this.SEGMENT_DURATION;
+    let previousEnd = ordered[0].startTime;
+    for (const segment of ordered) {
+      // A long idle span takes one strip rather than dropping records beyond the old time limit.
+      while (previousEnd < segment.startTime) {
+        const end = compactGaps ? segment.startTime : previousEnd + this.SEGMENT_DURATION;
+        segments.push({
+          startTime: previousEnd, endTime: end, nodes: [], displayMode: 'full',
+          allocatedWidth: 0, startX: 0, originalIndex: segments.length
+        });
+        previousEnd = end;
+      }
+      segment.originalIndex = segments.length;
+      segment.nodesByLane!.forEach(laneNodes => laneNodes.sort((a, b) => a.timestamp - b.timestamp || a.id.localeCompare(b.id)));
+      segments.push(segment);
+      previousEnd = segment.endTime;
+    }
+    return segments;
   }
 
   /**
    * 分配段的布局空间
    * @param segments 所有时间段
    * @param containerWidth 容器宽度
-   * @param observationStartIndex 观察窗口起始段索引（默认0）
+   * @param offsetFromLatest 观察窗口与最新端相隔的时段数
    */
   private allocateSegmentLayout(
     segments: TimeSegment[], 
     containerWidth: number, 
-    observationStartIndex: number = 0
+    offsetFromLatest: number
   ): LayoutResult {
-    const availableWidth = containerWidth - 100; // 留出边距
+    const availableWidth = Math.max(1, containerWidth - 100); // 留出边距
     const startX = 50;
 
     // 🎯 关键逻辑：判断是否需要压缩
@@ -1592,40 +1208,28 @@ export class WaterfallRenderer implements BaseRenderer {
     let currentX = startX;
 
     if (!needCompression) {
-      // ✅ 不需要压缩：所有段都以full模式显示
-      // 🎯 修复：保持标准宽度，在右侧填充空白区段来铺满空间
+      // 保留标准宽度，在较早一侧填充空白，最新时段仍居右。
       const standardSegmentWidth = this.NODE_WIDTHS.full;
-      
-      // 计算实际内容占用的宽度
       const contentWidth = segments.length * standardSegmentWidth;
-      
-      // 如果还有剩余空间，在右侧添加空白区段
-      let allSegments = [...segments];
-      let totalUsedWidth = contentWidth;
-      
-      if (contentWidth < availableWidth) {
-        const remainingWidth = availableWidth - contentWidth;
-        const additionalSegmentCount = Math.floor(remainingWidth / standardSegmentWidth);
-        
-        // 生成空白区段（时间递减，从左到右）
-        for (let i = 0; i < additionalSegmentCount; i++) {
-          const lastRealSegment = segments[segments.length - 1]; // 使用原始数据段
-          const emptySegment: TimeSegment = {
-            // 🎯 瀑布视图是逆时间轴：空白段时间应该更早（递减）
-            startTime: lastRealSegment.startTime - ((i + 1) * this.TIME_SEGMENT_DURATION),
-            endTime: lastRealSegment.startTime - (i * this.TIME_SEGMENT_DURATION),
-            nodes: [], // 空白段没有节点
-            displayMode: 'full',
-            allocatedWidth: standardSegmentWidth,
-            startX: 0, // 将在下面设置
-            originalIndex: lastRealSegment.originalIndex + i + 1, // 继续索引序列
-            isFiller: true // 🎯 标识为填充段
-          };
-          allSegments.push(emptySegment);
-        }
-        
-        totalUsedWidth = allSegments.length * standardSegmentWidth;
+      // Zooming out expands SVG units without adding blank time strips.
+      const remainingWidth = this.viewportWidth - 100 - contentWidth;
+      const fillerCount = Math.max(0, Math.floor(remainingWidth / standardSegmentWidth));
+      const firstStart = segments[0].startTime;
+      const allSegments: TimeSegment[] = [];
+      for (let index = -fillerCount; index < 0; index++) {
+        const startTime = firstStart + index * this.SEGMENT_DURATION;
+        allSegments.push({
+          startTime,
+          endTime: startTime + this.SEGMENT_DURATION,
+          nodes: [],
+          displayMode: 'full',
+          allocatedWidth: standardSegmentWidth,
+          startX: 0,
+          originalIndex: index,
+          isFiller: true
+        });
       }
+      allSegments.push(...segments);
       
       // 设置所有段的位置
       allSegments.forEach((segment, index) => {
@@ -1646,11 +1250,10 @@ export class WaterfallRenderer implements BaseRenderer {
       const normalDisplayWidth = availableWidth - maxCompressedWidth;
 
       // 计算正常显示能容纳多少个段
-      const maxNormalSegments = Math.floor(normalDisplayWidth / this.NODE_WIDTHS.full);
+      const maxNormalSegments = Math.max(1, Math.floor(normalDisplayWidth / this.NODE_WIDTHS.full));
       
-      // 🎯 根据observationStartIndex确定哪些段是正常显示
-      // 确保不会超出范围
-      const safeStartIndex = Math.max(0, Math.min(observationStartIndex, segments.length - maxNormalSegments));
+      const maxStartIndex = segments.length - maxNormalSegments;
+      const safeStartIndex = Math.max(0, maxStartIndex - offsetFromLatest);
       const endIndex = safeStartIndex + maxNormalSegments;
       
       // 分为三部分：前压缩段、正常段、后压缩段
@@ -1730,8 +1333,10 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 创建SVG分组结构 - 重新设计：明确的viewport和完整内容渲染
    */
-  private createSVGGroups(container: any) {
-    const timeAxisHeight = 100;
+  private createSVGGroups(container: any, layout: LayoutResult) {
+    const timeAxisHeight = this.TIME_AXIS_HEIGHT;
+    const canMoveWindow = !this.densityOnly && layout.compressedSegments.length > 0;
+    const canScrollLanes = !this.densityOnly && this.maxVerticalScroll > 0;
     
     // 时间轴组（固定在顶部，不参与滚动）
     const timeAxisGroup = container.append('g').attr('class', 'time-axis-group');
@@ -1753,10 +1358,22 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('height', viewportHeight);
     
     // 应用裁剪到viewport
-    viewportGroup.attr('clip-path', 'url(#viewport-clip)');
+    viewportGroup.attr('clip-path', 'url(#viewport-clip)')
+      .classed('waterfall-pannable', canMoveWindow || canScrollLanes)
+      .classed('waterfall-window-movable', canMoveWindow);
+
+    if (canScrollLanes) {
+      // Keep vertical scrolling available in the gaps between cards.
+      viewportGroup.classed('waterfall-lane-scroll', true);
+      viewportGroup.append('rect')
+        .attr('width', this.width)
+        .attr('height', viewportHeight)
+        .attr('fill', 'transparent');
+    }
     
     // 在viewport内创建内容容器（这个容器会滚动）
-    const contentGroup = viewportGroup.append('g').attr('class', 'content-group');
+    const contentGroup = viewportGroup.append('g').attr('class', 'content-group')
+      .attr('transform', `translate(0, ${-this.verticalScrollOffset})`);
     
     // 保存引用
     this.scrollableGroup = contentGroup;
@@ -1802,7 +1419,7 @@ export class WaterfallRenderer implements BaseRenderer {
    * @param group SVG 分组
    * @param layout 布局信息
    */
-  private renderSwimlaneSeparators(group: any, layout: LayoutResult): void {
+  private renderSwimlaneSeparators(group: any, layout: LayoutResult, lanes: Swimlane[]): void {
     if (this.swimlanes.length === 0) {
       return;
     }
@@ -1817,7 +1434,8 @@ export class WaterfallRenderer implements BaseRenderer {
     const numberGroup = group.append('g').attr('class', 'swimlane-numbers');
 
     // 渲染每个泳道的数字标识和分隔线
-    this.swimlanes.forEach((lane, index) => {
+    lanes.forEach(lane => {
+      const index = lane.laneIndex;
       // 🔢 添加泳道数字标识（左侧空白区域）
       const numberX = 20; // 距离左边缘20px
       const numberY = lane.y + (this.SWIMLANE_HEIGHT / 2); // 泳道中央
@@ -1846,7 +1464,7 @@ export class WaterfallRenderer implements BaseRenderer {
           .attr('x2', rightBoundary) // 到条带右边界结束
           .attr('y1', separatorY)
           .attr('y2', separatorY)
-          .attr('stroke', this.SWIMLANE_SEPARATOR_COLOR)
+          .attr('stroke', 'var(--waterfall-separator, #333333)')
           .attr('stroke-width', 1)
           .attr('stroke-dasharray', this.SWIMLANE_SEPARATOR_DASH)
     .attr('opacity', 0.9);
@@ -1859,33 +1477,8 @@ export class WaterfallRenderer implements BaseRenderer {
    * @param node 节点
    * @returns 泳道对象，如果找不到则返回 null
    */
-  private getSwimlaneForNode(node: NavNode): Swimlane | null {
-    const tabId = node.tabId || 'unknown';
-    
-    // 在所有泳道的所有生命周期中查找包含该节点的泳道
-    for (const lane of this.swimlanes) {
-      for (const lifecycle of lane.lifecycles) {
-        if (lifecycle.tabId === tabId && lifecycle.nodes.includes(node)) {
-          return lane;
-        }
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * 根据标签页ID查找对应的泳道
-   */
-  private findSwimlaneByTabId(tabId: string): Swimlane | null {
-    for (const lane of this.swimlanes) {
-      for (const lifecycle of lane.lifecycles) {
-        if (lifecycle.tabId === tabId) {
-          return lane;
-        }
-      }
-    }
-    return null;
+  private getSwimlaneForNode(node: NavNode): Swimlane | undefined {
+    return this.lanesByTab.get(String(node.tabId ?? 'unknown'));
   }
 
   private renderTimeAxis(group: any, layout: LayoutResult): void {
@@ -1911,26 +1504,21 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y1', timeAxisY)
       .attr('x2', lineEndX)
       .attr('y2', timeAxisY)
-      .attr('stroke', '#666')
+      .attr('stroke', 'var(--waterfall-axis, #666)')
       .attr('stroke-width', 2)
       .attr('class', 'time-axis-main-line');
     
-    // 时间方向箭头（在最右端 - 指向新时间方向）
-    // 因为时间从右到左（最新在左），时间轴从旧到新，所以箭头在右端指向右
+    // 时间从左到右，箭头指向较晚的时段。
     const arrowSize = 8;
     axisLineGroup.append('polygon')
       .attr('points', `${lineEndX},${timeAxisY} ${lineEndX - arrowSize},${timeAxisY - arrowSize/2} ${lineEndX - arrowSize},${timeAxisY + arrowSize/2}`)
-      .attr('fill', '#666')
+      .attr('fill', 'var(--waterfall-axis, #666)')
       .attr('class', 'time-axis-arrow');
 
-    // 🎯 渲染时间标签（在时间轴组中，固定显示）
-    let labelCount = 0;
-    layout.segments.forEach((segment, i) => {
-      if (segment && (segment.displayMode === 'full' || segment.displayMode === 'short')) {
-        this.addTimeLabelToTimeAxis(labelGroup, segment, timeAxisY);
-        labelCount++;
-      }
-    });
+    const labels = this.densityOnly
+      ? new Set([this.allSegments[0], this.allSegments[this.allSegments.length - 1]])
+      : layout.normalDisplaySegments;
+    for (const segment of labels) this.addTimeLabelToTimeAxis(labelGroup, segment, timeAxisY);
   }
 
   /**
@@ -1951,7 +1539,7 @@ export class WaterfallRenderer implements BaseRenderer {
       .attr('y1', timeAxisY)
       .attr('x2', centerX)
       .attr('y2', timeAxisY - 8)
-      .attr('stroke', '#666')
+      .attr('stroke', 'var(--waterfall-axis, #666)')
       .attr('stroke-width', 1);
 
     // 时间标签在横线上方
@@ -1970,248 +1558,145 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * � 渲染独立的时间条带背景
    */
-  private renderTimeStrips(group: any, layout: LayoutResult): void {
-
-    // ⚡ 获取条带相关常量
-    const stripTop = 0; // 条带顶部Y坐标（相对于组）
-    const stripHeight = this.height; // 条带高度（覆盖整个高度）
-    
-    // 🧹 清空并重建strips数组（兼容现有系统）
-    this.strips = [];
-    
-    // 🎨 渲染条带背景和创建strips数组
-    layout.segments.forEach((segment) => {
-      // 🎯 使用原始索引决定明暗，保证条带颜色不会因为拖动而改变
-      const isEven = segment.originalIndex % 2 === 0;
-      
-      // （已移除）误插入的 appendBadge - badge 应由节点渲染函数内部创建
-      const stripBg = group.append('rect')
+  private renderTimeStrips(background: any, cards: any, layout: LayoutResult): void {
+    for (const segment of layout.normalDisplaySegments) {
+      background.append('rect')
         .attr('class', `strip-background strip-${segment.originalIndex}`)
-        .attr('data-time', new Date(segment.endTime).toISOString())
         .attr('data-segment-index', segment.originalIndex)
         .attr('x', segment.startX)
-        .attr('y', stripTop)
+        .attr('y', 0)
         .attr('width', segment.allocatedWidth)
-        .attr('height', stripHeight)
-        .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
-        .attr('opacity', 0.6)
-        .style('transition', 'opacity 0.2s ease');
-      
-      // 不要在 hover 时改变条带透明度，保持稳定视觉（避免覆盖抽屉）
-      
-      // 🎯 为兼容现有系统，创建虚拟的strip组
-      // 这样现有的节点渲染逻辑可以继续工作
-      const stripGroup = group.append('g')
-        .attr('class', `time-strip time-strip-${segment.originalIndex}`)
+        .attr('height', this.swimlaneContentHeight())
+        .attr('fill', segment.originalIndex % 2 === 0 ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
+        .attr('opacity', 0.6);
+      cards.append('g')
+        .attr('class', 'time-strip')
         .attr('data-time', new Date(segment.endTime).toISOString())
-        .attr('data-segment-index', segment.originalIndex);
-      
-      // 添加节点分组（现有系统期望的结构）
-      const nodeGroup = stripGroup.append('g')
-        .attr('class', 'node-group')
-        .attr('transform', `translate(0, 0)`);
-      
-      // 保存到strips数组
-      this.strips.push(stripGroup);
-    });
+        .attr('data-segment-index', segment.originalIndex)
+        .append('g').attr('class', 'node-group');
+    }
   }
 
-  /**
-   * 按段渲染节点
-   */
-  private renderSegmentNodes(group: any, layout: LayoutResult): void {
-
-    let totalNodesRendered = 0;
-    const MAX_NODES_TO_RENDER = Number.POSITIVE_INFINITY; // 防止渲染过多节点
-
-    layout.segments.forEach((segment, segIndex) => {
-      if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
-        return;
-      }
-
-      // 🎯 使用strips数组中对应的条带分组
-      const strip = this.strips[segIndex];
-      if (!strip) {
-        return;
-      }
-      
-      // 获取节点分组
-      const nodeGroup = strip.select('.node-group');
-      
-      // 🎯 找出该段内需要折叠的节点组
-      const collapsedGroupsInSegment = this.collapsedGroups.filter(
-        g => g.segmentIndex === segIndex
-      );
-      
-      // 创建一个 Set 存储应该被折叠（不显示）的节点 ID
-      const hiddenNodeIds = new Set<string>();
-      collapsedGroupsInSegment.forEach(group => {
-        // 除了 displayNode，其他节点都隐藏
-        group.nodes.forEach(node => {
-          if (node.id !== group.displayNode.id) {
-            hiddenNodeIds.add(node.id);
-          }
-        });
-      });
-      
-      segment.nodes.forEach((node, index) => {
-        if (totalNodesRendered >= MAX_NODES_TO_RENDER) {
-          return;
-        }
-        
-        // 🎯 跳过被折叠的节点
-        if (hiddenNodeIds.has(node.id)) {
-          return;
-        }
-        
-        // Ensure nodes are grouped by swimlane inside the strip so we can z-order per-swimlane
-        const swimlane = this.getSwimlaneForNode(node);
-        const laneIndex = swimlane ? swimlane.laneIndex : 0;
-
-        // find or create swimlane subgroup under nodeGroup
-        let swimlaneGroup = nodeGroup.select(`g.swimlane-${laneIndex}`);
-        if (swimlaneGroup.empty()) {
-          swimlaneGroup = nodeGroup.append('g')
-            .attr('class', `swimlane-group swimlane-${laneIndex}`)
-            .attr('data-lane-index', laneIndex);
-        }
-
-        const createdNodeGroup = this.renderSingleNode(swimlaneGroup, node, segment, index);
-        
-        // 🎯 如果这个节点是折叠组的显示节点，渲染折叠角标
-        // 但是 dot 模式不需要折叠角标
-        if (segment.displayMode !== 'dot') {
-          const collapsedGroup = collapsedGroupsInSegment.find(
-            g => g.displayNode.id === node.id
-          );
-          // 无论是否有折叠组，都在节点处预建一个 collapsed-drawer 容器（默认为空/隐藏）
-          try {
-            // Prefer placing prebuilt drawers into the drag-layer so they render above
-            // closure markers / sticks. Fallback to swimlane group when drag-layer is missing.
-            let parentSel: any = null;
-            try {
-              if (this.scrollableGroup && this.scrollableGroup.select) {
-                const dl = this.scrollableGroup.select('.drag-layer-group');
-                if (dl && !dl.empty && !dl.empty()) parentSel = dl;
-              }
-            } catch (e) { parentSel = null; }
-            if (!parentSel) parentSel = d3.select((swimlaneGroup && swimlaneGroup.node()) || nodeGroup.node());
-
-            // when inserting into drag-layer we append; when inserting into swimlaneGroup we keep relative insert
-            const drawerSel = (parentSel && parentSel.attr && (parentSel.attr('class') || '').indexOf('drag-layer-group') !== -1)
-              ? parentSel.append('g')
-              : parentSel.insert('g', () => (createdNodeGroup && createdNodeGroup.node()) as any);
-            drawerSel
-              .attr('class', 'collapsed-drawer')
-              .attr('data-collapse-group', collapsedGroup ? (collapsedGroup.displayNode && collapsedGroup.displayNode.id ? collapsedGroup.displayNode.id : collapsedGroup.tabId) : `none-${node.id}`)
-              .attr('data-open', 'false')
-              .attr('data-lane-index', laneIndex)
-              .style('pointer-events', 'none');
-
-            // 创建 drawer-body（包含背景与 items），默认隐藏（opacity 0 和 pointer-events none）
-            const bodyGroup = drawerSel.append('g')
-              .attr('class', 'drawer-body')
-              .style('pointer-events', 'none')
-              .attr('opacity', 0);
-
-            // 背景矩形（在后面计算 nodeX/nodeY 后创建）
-
-            // NOTE: 不要把 navigation-node 移入 drawer 容器。
-            // 把节点移动到 drawer 会导致当 drawer 的外层容器设置
-            // pointer-events: none 时，节点也变得不可点击（SVG group 的 pointer-events
-            // 会使子元素不可交互）。为避免此副作用，保持节点原位，不在此处 reparent。
-            // 如果需要提升 z-order，请在打开抽屉时在同一父容器内做 append/raise（而不是把节点移动到 drawer 内）。
-
-            // 如果存在折叠组则填充 drawer-items，否则保持空
-            if (collapsedGroup) {
-              this.renderCollapseBadge(createdNodeGroup || nodeGroup, node, segment, collapsedGroup);
-
-              const nodeWidth = this.NODE_WIDTHS[segment.displayMode];
-              const nodeHeight = this.NODE_HEIGHTS[segment.displayMode];
-              const verticalPadding = (this.SWIMLANE_HEIGHT - nodeHeight) / 2;
-              const centerOffset = (segment.allocatedWidth - nodeWidth) / 2;
-              const nodeX = segment.startX + Math.max(0, centerOffset);
-              const nodeY = (this.getSwimlaneForNode(node)?.y || 0) + verticalPadding;
-
-                // 背景矩形（初始化为与 display node 同高，展开时再伸展）
-                const bgRect = bodyGroup.append('rect')
-                  .attr('class', 'drawer-bg')
-                  .attr('x', nodeX)
-                  .attr('y', nodeY)
-                  .attr('width', nodeWidth)
-                  .attr('height', nodeHeight)
-                  .attr('fill', '#e6f2ff')
-                  .attr('fill-opacity', 1)
-                  .attr('stroke', 'rgba(74, 144, 226, 0.6)')
-                  .attr('stroke-width', 1)
-                  .style('pointer-events', 'none');
-
-                // wrap items in a scrollable group so we can translate it for internal scrolling
-                const scrollGroup = bodyGroup.append('g').attr('class', 'drawer-scroll');
-                const itemsGroup = scrollGroup.append('g').attr('class', 'drawer-items');
-
-              // 其他节点按顺序创建（不包含 displayNode），初始都重叠在 displayNode 位置并不可交互
-              const otherNodes = collapsedGroup.nodes.filter(n => n.id !== node.id);
-              otherNodes.forEach((childNode, idx) => {
-                const item = itemsGroup.append('g')
-                  .attr('class', 'drawer-item')
-                  .attr('data-node-id', childNode.id)
-                  .attr('transform', `translate(${nodeX}, ${nodeY})`)
-                  .style('pointer-events', 'none')
-                  .attr('opacity', 0);
-
-                if (segment.displayMode === 'full') {
-                  this.renderFullNode(item, childNode, nodeWidth, nodeHeight);
-                } else if (segment.displayMode === 'short') {
-                  this.renderShortNode(item, childNode, nodeWidth, nodeHeight);
-                } else if (segment.displayMode === 'icon') {
-                  this.renderIconNode(item, childNode, 20, 20);
-                } else if (segment.displayMode === 'dot') {
-                  this.renderDotNode(item, childNode, nodeWidth, nodeHeight);
-                }
-                // add a small right-bottom index badge on each folded child (1..n-1)
-                try {
-                  const badgeText = String(idx + 1);
-                  // Use same sizing as collapse badge for visual consistency
-                  // For icon mode, make the badge width equal to the icon width and height half the icon height
-                  const badgeWidth = (segment.displayMode === 'icon') ? nodeWidth : 22;
-                  const badgeHeight = Math.max(12, Math.floor(nodeHeight / 2));
-                  const badgeGroup = this.appendBadge(item, nodeWidth - badgeWidth, nodeHeight - badgeHeight, badgeText, { corner: 'bottom', fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
-                  badgeGroup.attr('class', 'drawer-item-index-badge').style('pointer-events', 'none');
-                } catch(e) {}
-              });
-
-              // 绑定折叠角标点击到切换预建抽屉
-              try {
-                const badgeSel = (createdNodeGroup || nodeGroup).select('.group-badge');
-                if (!badgeSel.empty()) {
-                  badgeSel.on('click', (event: MouseEvent) => {
-                    event.stopPropagation();
-                    this.togglePrebuiltDrawer(collapsedGroup, segment, nodeX, nodeY, nodeWidth, nodeHeight);
-                  });
-                }
-              } catch (e) {
-                // ignore
-              }
-            }
-          } catch (e) {
-            logger.warn(_('waterfall_prebuild_drawer_error', '预构建抽屉错误'), e);
-          }
-        }
-        
-        totalNodesRendered++;
-      });
-    });
-
-    //logger.log(_('waterfall_total_nodes_rendered', '✅ 总共渲染了 {0} 个节点'), totalNodesRendered);
+  private renderTimeDensity(group: any, segments: TimeSegment[]): void {
+    const binWidth = 5 * this.width / this.viewportWidth;
+    const bins = new Map<number, { count: number; start: number; end: number }>();
+    let max = 1;
+    for (const segment of segments) {
+      if (!segment.nodes.length) continue;
+      const index = Math.floor((segment.startX + segment.allocatedWidth / 2) / binWidth);
+      const bin = bins.get(index) ?? { count: 0, start: segment.startTime, end: segment.endTime };
+      bin.count += segment.nodes.length;
+      bin.end = segment.endTime;
+      max = Math.max(max, bin.count);
+      bins.set(index, bin);
+    }
+    const overview = group.append('g').attr('class', 'waterfall-density');
+    const bottom = this.densityOnly ? 190 : this.TIME_AXIS_HEIGHT - 1;
+    const height = this.densityOnly ? 50 : 9;
+    const format = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    for (const [index, bin] of bins) {
+      const barHeight = Math.max(2, height * Math.sqrt(bin.count / max));
+      overview.append('rect')
+        .attr('x', index * binWidth)
+        .attr('y', bottom - barHeight)
+        .attr('width', binWidth * 0.8)
+        .attr('height', barHeight)
+        .attr('fill', 'var(--waterfall-accent, var(--color-accent, #4285f4))')
+        .attr('data-record-count', bin.count)
+        .append('title')
+        .text(`${format.format(bin.start)} – ${format.format(bin.end)} · ${_('waterfall_record_count', '{0} 条记录', bin.count.toLocaleString())}`);
+    }
   }
 
-  /**
-   * 🎯 渲染关闭标记
-   * @param group SVG 分组  
-   * @param layout 布局信息
-   */
-  private renderClosureMarkers(group: any, layout: LayoutResult): void {
+  private renderVisibleLanes(): void {
+    const layout = this.currentLayout;
+    if (!layout || this.densityOnly) return;
+    const laneHeight = this.SWIMLANE_HEIGHT;
+    const start = Math.max(0, Math.floor((this.verticalScrollOffset - 20) / laneHeight) - 2);
+    const end = Math.min(this.swimlanes.length, Math.ceil(
+      (this.verticalScrollOffset + this.height - this.TIME_AXIS_HEIGHT - 20) / laneHeight
+    ) + 2);
+    if (start === this.visibleLaneStart && end === this.visibleLaneEnd) return;
+    this.closeCurrentDrawer();
+    this.visibleLaneStart = start;
+    this.visibleLaneEnd = end;
+
+    const lanes = this.swimlanes.slice(start, end);
+    const separators = this.scrollableGroup.select('.swimlane-separators-group');
+    const markers = this.scrollableGroup.select('.closure-markers-group');
+    separators.selectAll('*').remove();
+    markers.selectAll('*').remove();
+    this.renderSwimlaneSeparators(separators, layout, lanes);
+    this.renderClosureMarkers(markers, layout, start, end);
+
+    const cards: WaterfallCard[] = [];
+    for (const segment of layout.normalDisplaySegments) {
+      const parent = this.scrollableGroup
+        .select(`.time-strip[data-segment-index="${segment.originalIndex}"] .node-group`);
+      parent.selectAll('*').interrupt().remove();
+      for (const lane of lanes) {
+        const records = segment.nodesByLane?.get(lane.laneIndex);
+        if (!records?.length) continue;
+        const node = records[0];
+        const width = Math.min(this.NODE_WIDTHS.full, segment.allocatedWidth);
+        const height = this.NODE_HEIGHTS.full;
+        const x = segment.startX + (segment.allocatedWidth - width) / 2;
+        const y = lane.y + (laneHeight - height) / 2;
+        const group = parent.append('g')
+          .attr('class', 'navigation-node')
+          .attr('data-node-id', node.id)
+          .attr('data-lane-index', lane.laneIndex)
+          .attr('transform', `translate(${x}, ${y})`);
+        cards.push(this.renderCard(group, node, width, height));
+        if (records.length >= this.COLLAPSE_THRESHOLD) {
+          const collapsed: CollapsedNodeGroup = {
+            tabId: String(node.tabId ?? 'unknown'), nodes: records, displayNode: node,
+            swimlaneY: lane.y, count: records.length
+          };
+          this.renderCollapseBadge(group, collapsed, x, y, width, height, lane.laneIndex);
+        }
+      }
+    }
+    this.hydrateCards(cards);
+  }
+
+  private renderCard(group: any, node: NavNode, width: number, height: number): WaterfallCard {
+    const body = group.append('g').attr('class', 'waterfall-card');
+    this.renderFullNode(body, this.nodeDetails.get(node.id) ?? node, width, height);
+    return { node, body, width, height };
+  }
+
+  private async loadNodeDetails(ids: string[]): Promise<void> {
+    const missing = [...new Set(ids)].filter(id => !this.nodeDetails.has(id) && !this.detailRequests.has(id));
+    for (let i = 0; i < missing.length; i += TREE_NODE_BATCH) {
+      const batch = missing.slice(i, i + TREE_NODE_BATCH);
+      const request = sendMessage('getTreeNodes', { ids: batch }).then(response => {
+        if (!response.success) throw new Error(response.error || 'Node details unavailable');
+        if (this.disposed) return;
+        for (const node of response.nodes) this.nodeDetails.set(node.id, node);
+      }).finally(() => {
+        for (const id of batch) this.detailRequests.delete(id);
+      });
+      for (const id of batch) this.detailRequests.set(id, request);
+    }
+    await Promise.all(new Set(ids.map(id => this.detailRequests.get(id))));
+  }
+
+  private hydrateCards(cards: WaterfallCard[]): void {
+    const missing = cards.filter(({ node }) => !this.nodeDetails.has(node.id));
+    if (!missing.length) return;
+    void this.loadNodeDetails(missing.map(card => card.node.id)).then(() => {
+      if (this.disposed) return;
+      for (const { node, body, width, height } of missing) {
+        const detail = this.nodeDetails.get(node.id);
+        if (!detail || !body.node()?.isConnected) continue;
+        body.selectAll('*').interrupt().remove();
+        this.renderFullNode(body, detail, width, height);
+      }
+    }).catch(error => logger.warn(String(error)));
+  }
+
+  private renderClosureMarkers(group: any, layout: LayoutResult, start: number, end: number): void {
     if (!this.closureMarkers || this.closureMarkers.length === 0) {
       return;
     }
@@ -2222,51 +1707,12 @@ export class WaterfallRenderer implements BaseRenderer {
     const markerGroup = group.append('g').attr('class', 'closure-markers');
 
     this.closureMarkers.forEach(marker => {
-      // 🎯 边界外过滤：跳过超出时间段范围的关闭标记（节省空间）
-      if (layout.segments.length > 0) {
-        const firstSegment = layout.segments[0]; // 最新时间段
-        const lastSegment = layout.segments[layout.segments.length - 1]; // 最早时间段
-        
-        if (marker.timestamp > firstSegment.endTime || marker.timestamp < lastSegment.startTime) {
-          return;
-        }
-      }
-      
-      // 找到标记对应的时间段和泳道
-      const segment = this.findSegmentByTimestamp(marker.timestamp, layout);
+      if (marker.swimlaneIndex < start || marker.swimlaneIndex >= end) return;
+      const segment = layout.normalDisplaySegments.find(section =>
+        !section.isFiller && marker.timestamp >= section.startTime && marker.timestamp < section.endTime
+      );
+      if (!segment) return;
       const swimlane = this.swimlanes[marker.swimlaneIndex];
-      
-      if (!segment || !swimlane) {
-        /*logger.error(_('waterfall_closure_marker_debug', '❌ 关闭标记调试信息:'));
-        logger.error(_('waterfall_closure_marker_id', '   标签ID: {0}'), marker.tabId);
-        logger.error(_('waterfall_closure_marker_timestamp', '   时间戳: {0} ({1})'), marker.timestamp, new Date(marker.timestamp).toLocaleString());
-        logger.error(_('waterfall_closure_marker_swimlane_index', '   泳道索引: {0}'), marker.swimlaneIndex);
-        logger.error(_('waterfall_closure_marker_segment_found', '   找到的段: {0}'), segment ? '是' : '否');
-        logger.error(_('waterfall_closure_marker_swimlane_found', '   找到的泳道: {0}'), swimlane ? '是' : '否');
-        logger.error(_('waterfall_closure_marker_total_segments', '   总段数: {0}'), layout.segments.length);
-        logger.error(_('waterfall_closure_marker_total_swimlanes', '   总泳道数: {0}'), this.swimlanes.length);
-        */
-        if (layout.segments.length > 0) {
-          const firstSegment = layout.segments[0];
-          const lastSegment = layout.segments[layout.segments.length - 1];
-          logger.error(_('waterfall_closure_marker_segment_range', '   段时间范围: {0} - {1}'), firstSegment.startTime, lastSegment.endTime);
-          logger.error(_('waterfall_closure_marker_segment_range_readable', '   段时间范围（可读）: {0} - {1}'), new Date(firstSegment.startTime).toLocaleString(), new Date(lastSegment.endTime).toLocaleString());
-        }
-        
-        //logger.warn(_('waterfall_cannot_find_closure_marker', '⚠️ 无法找到关闭标记 {0} 的对应段或泳道'), marker.tabId);
-        return;
-      }
-
-      // 🎯 只跳过填充的空白段中的关闭标记，但允许在数据空段中显示
-      if (segment.isFiller) {
-        //logger.log(_('waterfall_skip_filler_closure', '⚡ 跳过填充空白段中的关闭标记: {0}'), marker.tabId);
-        return;
-      }
-      
-      if (segment.displayMode === 'dot' || segment.displayMode === 'icon') {
-        //logger.log(_('waterfall_skip_compressed_closure', '⚡ 跳过压缩条带中的关闭标记: {0} (模式: {1})'), marker.tabId, segment.displayMode);
-        return;
-      }
 
       // 🎯 关闭标记应该显示在找到的时间段的中央
       // 因为整个段都表示"该泳道现在可以复用"的状态
@@ -2313,185 +1759,113 @@ export class WaterfallRenderer implements BaseRenderer {
     });
   }
 
-  /**
-   * 根据时间戳查找对应的时间段
-   */
-  private findSegmentByTimestamp(timestamp: number, layout: LayoutResult): TimeSegment | null {
-    // 🎯 首先在所有段中查找（包括空段，因为关闭标记可能显示在空段中）
-    for (const segment of layout.segments) {
-      if (timestamp >= segment.startTime && timestamp <= segment.endTime) {
-        return segment;
-      }
-    }
-    
-    if (layout.segments.length > 0) {
-
-      layout.segments.forEach((seg, index) => {
-        const inRange = timestamp >= seg.startTime && timestamp <= seg.endTime;
-        logger.warn(_('waterfall_findSegment_segment_line', '     [{0}] {1}-{2} ({3} - {4}) {5} nodes:{6} filler:{7}'), index, seg.startTime, seg.endTime, new Date(seg.startTime).toLocaleString(), new Date(seg.endTime).toLocaleString(), inRange ? '✅' : '❌', seg.nodes.length, seg.isFiller);
-      });
-    }
-    
-    // 🎯 对于关闭标记：如果时间戳在所有段之外，尝试找到最近的段
-    // 这种情况常发生在关闭标记时间戳为 lifecycle.endTime + TIME_SEGMENT_DURATION
-    if (layout.segments.length > 0) {
-      const lastSegment = layout.segments[layout.segments.length - 1];
-      
-      // 🎯 更宽松的容错范围：如果时间戳在最后段结束后的合理范围内，使用最后段
-      // 扩大到 3 倍时间段长度，覆盖各种时间计算误差
-      if (timestamp > lastSegment.endTime && 
-          timestamp <= lastSegment.endTime + this.TIME_SEGMENT_DURATION * 3) {
-        
-        return lastSegment;
-      }
-      
-      // 🎯 如果时间戳甚至超出了3倍范围，尝试查找最接近的段
-      let closestSegment = lastSegment;
-      let minDistance = Math.abs(timestamp - lastSegment.endTime);
-      
-      for (const segment of layout.segments) {
-        const distanceToStart = Math.abs(timestamp - segment.startTime);
-        const distanceToEnd = Math.abs(timestamp - segment.endTime);
-        const minSegmentDistance = Math.min(distanceToStart, distanceToEnd);
-        
-        if (minSegmentDistance < minDistance) {
-          minDistance = minSegmentDistance;
-          closestSegment = segment;
-        }
-      }
-      
-      // 如果找到了相对接近的段（在1小时内），使用它
-      if (minDistance <= 60 * 60 * 1000) { // 1小时容错
-        
-        return closestSegment;
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * 渲染折叠角标
-   * @param group SVG 分组（应该传入节点的 group，这样角标在节点内部）
-   * @param node 显示的节点
-   * @param segment 所在时间段
-   * @param collapsedGroup 折叠组信息
-   */
   private renderCollapseBadge(
     group: any,
-    node: NavNode,
-    segment: TimeSegment,
-    collapsedGroup: CollapsedNodeGroup
+    collapsed: CollapsedNodeGroup,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    lane: number
   ): void {
-    const swimlane = this.getSwimlaneForNode(node);
-    if (!swimlane) return;
-    
-    const nodeWidth = this.NODE_WIDTHS[segment.displayMode];
-    const nodeHeight = this.NODE_HEIGHTS[segment.displayMode];
-    const verticalPadding = (this.SWIMLANE_HEIGHT - nodeHeight) / 2;
-    
-    const centerOffset = (segment.allocatedWidth - nodeWidth) / 2;
-    const nodeX = segment.startX + Math.max(0, centerOffset);
-    const nodeY = swimlane.y + verticalPadding;
-    
-    // 🎯 改为只占据节点右下半高区域，释放右上区域给 SPA 角标使用
-  const badgeText = `${collapsedGroup.count}`;
-  // 如果是 icon 模式，徽章宽度应与图标同宽且高度为图标高度的一半；其它模式保持默认宽度
-  const badgeWidth = (segment.displayMode === 'icon') ? nodeWidth : 22;
-  const badgeHeight = Math.max(12, Math.floor(nodeHeight / 2)); // 占半高，至少12px
-
-    // 右下角对齐：如果传入的 group 已经是单个节点的 group（navigation-node），
-    // 则使用局部坐标 (相对于 nodeGroup)。否则使用绝对坐标（相对于 svg/contentGroup）。
-    let badgeTransformX: number;
-    let badgeTransformY: number;
-
-    try {
-      const parentEl = (group && typeof group.node === 'function') ? group.node() as Element : null;
-      const parentClass = parentEl && parentEl.getAttribute ? parentEl.getAttribute('class') || '' : '';
-      const isNodeGroup = parentClass.indexOf('navigation-node') !== -1;
-
-      if (isNodeGroup) {
-        // 在 nodeGroup 内使用局部坐标
-        badgeTransformX = nodeWidth - badgeWidth;
-        badgeTransformY = nodeHeight - badgeHeight;
+    const badgeHeight = Math.max(12, Math.floor(height / 2));
+    const badge = this.appendBadge(group, width - 22, height - badgeHeight, `+${collapsed.count - 1}`, {
+      corner: 'bottom', fixedWidth: 22, minHeight: badgeHeight, fontSize: 7
+    });
+    const id = collapsed.displayNode.id;
+    const anchor = group.node() as SVGGElement;
+    const activate = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (this.currentOpenCollapseId === id) {
+        this.toggleDrawer(anchor, collapsed, x, y, width, height);
       } else {
-        // 使用绝对坐标
-        badgeTransformX = nodeX + nodeWidth - badgeWidth;
-        badgeTransformY = nodeY + nodeHeight - badgeHeight;
+        this.openDrawerPage(anchor, collapsed, x, y, width, height, lane, 0);
       }
-    } catch (err) {
-      // 如果检查失败，回退到绝对坐标
-      badgeTransformX = nodeX + nodeWidth - badgeWidth;
-      badgeTransformY = nodeY + nodeHeight - badgeHeight;
-    }
-
-    // 使用统一的 appendBadge 创建折叠徽章（右下圆角）
-  // For icon displayMode we show a non-interactive badge (cannot open drawer). For other modes make it interactive.
-  const badgeCornerOption = (segment.displayMode === 'icon') ? 'bottom-both' : 'bottom';
-  const collapseBadgeGroup = this.appendBadge(group, badgeTransformX, badgeTransformY, badgeText, { corner: badgeCornerOption as any, fixedWidth: badgeWidth, minHeight: badgeHeight, fontSize: 7 });
-  collapseBadgeGroup.attr('class', 'group-badge').attr('data-collapse-group', (collapsedGroup.displayNode && collapsedGroup.displayNode.id) ? collapsedGroup.displayNode.id : collapsedGroup.tabId);
-  if (segment.displayMode === 'icon') {
-    // show but not interactive
-    collapseBadgeGroup.style('cursor', 'default').style('pointer-events', 'none');
-  } else {
-    collapseBadgeGroup.style('cursor', 'pointer').style('pointer-events', 'all');
+    };
+    badge.attr('class', 'group-badge')
+      .attr('data-collapse-group', id)
+      .attr('role', 'button')
+      .attr('tabindex', 0)
+      .attr('aria-expanded', 'false')
+      .attr('aria-label', _('tree_day_expand', '展开 {0} 条记录', String(collapsed.count - 1)))
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'all')
+      .on('click', activate)
+      .on('keydown', (event: KeyboardEvent) => {
+        if (event.key === 'Enter' || event.key === ' ') activate(event);
+      });
   }
 
-    // 悬停效果：只对可交互的徽章生效
-    if (segment.displayMode !== 'icon') {
-      collapseBadgeGroup.on('mouseenter', function(this: SVGGElement) {
-        d3.select(this).select('path')
-          .transition()
-          .duration(animationDuration(200))
-          .attr('opacity', 1)
-          .attr('fill', '#1a1a1a');
-      }).on('mouseleave', function(this: SVGGElement) {
-        d3.select(this).select('path')
-          .transition()
-          .duration(animationDuration(200))
-          .attr('opacity', 0.95)
-          .attr('fill', '#2c2c2c');
-      });
-    }
+  private openDrawerPage(
+    anchor: SVGGElement, group: CollapsedNodeGroup, x: number, y: number,
+    width: number, height: number, lane: number, page: number
+  ): void {
+    this.closeCurrentDrawer();
+    const pageSize = Math.max(1, Math.min(500, Math.floor(window.navigraphSettings?.maxNodes ?? 100)));
+    const pageCount = Math.ceil((group.count - 1) / pageSize);
+    const first = 1 + page * pageSize;
+    const pageNodes = group.nodes.slice(first, first + pageSize);
+    const drawer = this.scrollableGroup.select('.drag-layer-group').append('g')
+      .attr('class', 'collapsed-drawer')
+      .attr('data-collapse-group', group.displayNode.id)
+      .attr('data-lane-index', lane)
+      .attr('data-open', 'false');
+    const body = drawer.append('g').attr('class', 'drawer-body')
+      .attr('opacity', 0).style('pointer-events', 'none');
+    body.append('rect').attr('class', 'drawer-bg')
+      .attr('x', x).attr('y', y).attr('width', width).attr('height', height)
+      .attr('fill', 'var(--waterfall-control-surface, #e6f2ff)')
+      .attr('stroke', 'var(--waterfall-accent, rgba(74, 144, 226, 0.6))');
+    const items = body.append('g').attr('class', 'drawer-viewport')
+      .append('g').attr('class', 'drawer-scroll').append('g').attr('class', 'drawer-items');
+    const cards = pageNodes.map((node, index) => {
+      const item = items.append('g').attr('class', 'drawer-item').attr('data-node-id', node.id)
+        .attr('transform', `translate(${x}, ${y})`).attr('opacity', 0).style('pointer-events', 'none');
+      const card = this.renderCard(item, node, width, height);
+      const badgeHeight = Math.max(12, Math.floor(height / 2));
+      this.appendBadge(item, width - 22, height - badgeHeight, String(first + index), {
+        corner: 'bottom', fixedWidth: 22, minHeight: badgeHeight, fontSize: 7
+      }).attr('class', 'drawer-item-index-badge');
+      return card;
+    });
+    this.toggleDrawer(anchor, { ...group, nodes: [group.displayNode, ...pageNodes] }, x, y, width, height);
+    this.hydrateCards(cards);
+    const owner = this.drawerOwner;
+    if (!owner || pageCount <= 1 || !this.container) return;
 
-      // 如果 node 上记录了 spa badge 的宽度，优先使用它来定位 SPA 徽章，确保两者不重叠
-      try {
-        const spaWidthFromNode = (node as any).__spaBadgeWidth || 0;
-        const gapBetween = 6;
-        if (spaWidthFromNode) {
-          // 对齐到节点右侧：让 SPA badge 的右边贴合节点右边（与 collapse 的右边一致）
-          const spaTargetX = Math.max(4, nodeWidth - spaWidthFromNode);
-          const spaSel = (group && typeof group.select === 'function') ? group.select('.spa-request-badge') : null;
-          if (spaSel && !spaSel.empty()) {
-            // 保留 SPA badge 当前 Y 值，仅更新 X
-            try {
-              const curTransform = spaSel.attr('transform') || '';
-              const m = /translate\(([-0-9.]+),\s*([-0-9.]+)\)/.exec(curTransform);
-              const curY = m ? parseFloat(m[2]) : 0;
-              spaSel.attr('transform', `translate(${spaTargetX}, ${curY})`);
-            } catch (err) {
-              spaSel.attr('transform', `translate(${spaTargetX}, 0)`);
-            }
-          }
-        }
-      } catch (e) {
-        // ignore reposition errors
+    const pager = document.createElement('div');
+    pager.className = 'waterfall-drawer-pager';
+    const go = (index: number) => {
+      if (!Number.isInteger(index) || index < 0 || index >= pageCount || index === page) {
+        field.value = String(page + 1);
+        return;
       }
-
-    // 点击事件 - 仅对非-icon 模式启用（dot 模式已在外层被排除）
-    if (segment.displayMode !== 'icon') {
-      collapseBadgeGroup.on('click', (event: MouseEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
-        try {
-          this.togglePrebuiltDrawer(collapsedGroup, segment, nodeX, nodeY, nodeWidth, nodeHeight);
-        } catch (e) {
-          // fallback
-          try { this.showCollapsedNodesDrawer(collapsedGroup, node, segment, nodeX, nodeY, nodeWidth, nodeHeight); } catch(e) {}
-        }
-      });
-    }
-
+      this.openDrawerPage(anchor, group, x, y, width, height, lane, index);
+      this.drawerOwner?.pager?.querySelector('input')?.focus();
+    };
+    const field = document.createElement('input');
+    field.type = 'number';
+    field.min = '1';
+    field.max = String(pageCount);
+    field.value = String(page + 1);
+    field.setAttribute('aria-label', _('waterfall_drawer_page', '抽屉页码'));
+    field.addEventListener('change', () => go(field.valueAsNumber - 1));
+    const previous = document.createElement('button');
+    previous.type = 'button';
+    previous.textContent = '‹';
+    previous.setAttribute('aria-label', _('waterfall_drawer_previous', '上一页'));
+    previous.disabled = page === 0;
+    previous.addEventListener('click', () => go(page - 1));
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.textContent = '›';
+    next.setAttribute('aria-label', _('waterfall_drawer_next', '下一页'));
+    next.disabled = page === pageCount - 1;
+    next.addEventListener('click', () => go(page + 1));
+    pager.append(previous, field, ` / ${pageCount.toLocaleString()} `, next);
+    this.container.append(pager);
+    owner.pager = pager;
   }
 
   /**
@@ -2559,230 +1933,6 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 显示折叠节点抽屉（原位展开）
    */
-  private showCollapsedNodesDrawer(
-    collapsedGroup: CollapsedNodeGroup,
-    firstNode: NavNode,
-    firstSegment: TimeSegment,
-    nodeX: number,
-    nodeY: number,
-    nodeWidth: number,
-    nodeHeight: number
-  ): void {
-    // 移除已存在的抽屉
-    d3.select('.collapsed-nodes-drawer').remove();
-    
-    // 获取泳道信息
-    const swimlane = this.getSwimlaneForNode(firstNode);
-    if (!swimlane) return;
-    
-    // 计算其他节点（排除第一个显示的节点）
-    const otherNodes = collapsedGroup.nodes.filter(n => n.id !== firstNode.id);
-    if (otherNodes.length === 0) return;
-
-  
-  // 抽屉布局规则：
-    // - 顶部从显示节点泳道上缘开始（drawerTop = swimlane.y）
-    // - 抽屉左右比节点宽，左右各有 horizontalPadding
-    // - 抽屉高度为 slots * SWIMLANE_HEIGHT + paddingAround*2
-    // - 每个槽高度为 SWIMLANE_HEIGHT，节点垂直居中于槽
-    const slots = collapsedGroup.nodes.length; // 包含 display node
-  const slotHeight = this.SWIMLANE_HEIGHT;
-  const paddingAround = 0; // 不在垂直方向增加额外留白，确保抽屉底部在下一泳道线
-    const horizontalPadding = Math.max(8, Math.round(nodeWidth * 0.15)); // 左右扩展，使抽屉比节点宽
-
-    const preferredTop = swimlane.y; // 从泳道上缘开始
-  const drawerFullHeight = slots * slotHeight; // 精确占用 N 个泳道高度
-
-    const svgHeight = this.height;
-    const availableDownSpace = svgHeight - preferredTop;
-    const availableUpSpace = preferredTop;
-
-    // 决定展开方向：优先向下；若下方空间不足且上方足够则向上
-    let drawerTop = preferredTop;
-    let expandUp = false;
-    if (availableDownSpace < drawerFullHeight && availableUpSpace >= drawerFullHeight) {
-      expandUp = true;
-      // 使槽0（display node 的槽）位于泳道上缘
-      drawerTop = swimlane.y - (drawerFullHeight - slotHeight);
-    }
-
-    // 实际可见高度（当空间不足时会剪裁并启用滚动）
-    const actualDrawerHeight = Math.min(drawerFullHeight, expandUp ? Math.min(availableUpSpace + slotHeight, drawerFullHeight) : availableDownSpace);
-    let scrollOffset = 0;
-    let maxScroll = Math.max(0, drawerFullHeight - actualDrawerHeight);
-    // Edge-case guard: if there are hidden slots but computed maxScroll is 0 due to rounding/space constraints,
-    // ensure scrolling is possible for the hidden items.
-    try {
-      const hiddenCountLocal = Math.max(0, slots - Math.floor(actualDrawerHeight / slotHeight));
-      if (hiddenCountLocal > 0 && maxScroll === 0) {
-        maxScroll = hiddenCountLocal * slotHeight;
-        try { logger.log(`drawer fallback maxScroll=${maxScroll} hiddenCount=${hiddenCountLocal}`); } catch(e) {}
-      }
-    } catch(e) {}
-
-    // Try to mount the drawer into the scrollable drag layer (above swimlane separators)
-    let drawer: any;
-    try {
-      const scrollable = this.scrollableGroup || this.svg;
-      const dragLayerSel = (scrollable && typeof scrollable.select === 'function') ? scrollable.select('.drag-layer-group') : null;
-      if (dragLayerSel && !dragLayerSel.empty()) {
-        drawer = dragLayerSel.append('g')
-          .attr('class', 'collapsed-nodes-drawer')
-          .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
-          .style('pointer-events', 'none');
-      } else {
-        drawer = this.svg.append('g')
-          .attr('class', 'collapsed-nodes-drawer')
-          .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
-          .style('pointer-events', 'none');
-      }
-    } catch (e) {
-      drawer = this.svg.append('g')
-        .attr('class', 'collapsed-nodes-drawer')
-        .attr('data-swimlane', `lane-${swimlane.laneIndex}`)
-        .style('pointer-events', 'none');
-    }
-
-    // 背景矩形在水平上扩展，以便左右超出节点
-    const bgX = Math.max(0, nodeX - horizontalPadding);
-    const bgWidth = nodeWidth + horizontalPadding * 2;
-
-  // debug console removed
-
-    // 背景矩形初始化为与 display node 同高，稍后可扩展至 full height
-    const bgRect = drawer.append('rect')
-      .attr('class', 'drawer-bg')
-      .attr('x', bgX)
-      .attr('y', nodeY)
-      .attr('width', bgWidth)
-      .attr('height', nodeHeight)
-      .attr('fill', '#e6f2ff')
-      .attr('fill-opacity', 1)
-      .attr('stroke', 'rgba(74, 144, 226, 0.6)')
-      .attr('stroke-width', 1)
-      .style('pointer-events', 'none');
-
-    // container for rendered nodes
-    const nodesContainer = drawer.append('g').attr('class', 'drawer-nodes').style('pointer-events', 'none');
-
-    // Ensure the drawer group is mounted into the drag-layer-group (if present)
-    try {
-      const overlay = this.scrollableGroup || this.svg;
-      const overlayNode = overlay.node() as any;
-      const drawerNode = drawer.node() as any;
-      if (overlayNode && drawerNode) {
-        try {
-          const dragLayer = overlayNode.querySelector && overlayNode.querySelector('.drag-layer-group');
-          if (dragLayer) {
-            try { dragLayer.appendChild(drawerNode); } catch (e) { /* ignore */ }
-          } else {
-            try { overlayNode.appendChild(drawerNode); } catch (e) { /* ignore */ }
-          }
-        } catch (e) {
-          try { overlayNode.appendChild(drawerNode); } catch (e) { /* ignore */ }
-        }
-      }
-    } catch (e) {
-      // ignore move errors
-    }
-    
-    // 🎯 按槽位渲染所有节点（包含 display node 占 slot 0）
-    const slotsCount = slots; // collapsedGroup.nodes.length
-    const slotPad = (slotHeight - nodeHeight) / 2;
-
-    // compute center Y for each slot (no vertical padding)
-    const slotYs: number[] = [];
-    for (let i = 0; i < slotsCount; i++) {
-      const slotTop = drawerTop + i * slotHeight;
-      const slotCenter = slotTop + slotHeight / 2;
-      slotYs.push(slotCenter);
-    }
-
-    // children occupy slot 1..N-1 (slot 0 is display node)
-    otherNodes.forEach((childNode, idx) => {
-      const slotIndex = Math.min(idx + 1, slotYs.length - 1);
-  const currentNodeY = slotYs[slotIndex];
-
-      // 时间差标签放在相邻槽中心之间（标签居中于背景宽度）
-      if (idx === 0) {
-        const timeDiff = Math.abs(childNode.timestamp - firstNode.timestamp);
-        const labelY = Math.round((slotYs[0] + currentNodeY) / 2);
-        this.renderTimeDiffLabel(nodesContainer, bgX + bgWidth / 2, labelY, bgWidth, timeDiff);
-      } else {
-        const prevY = slotYs[slotIndex - 1];
-        const timeDiff = Math.abs(childNode.timestamp - otherNodes[idx - 1].timestamp);
-        const labelY = Math.round((prevY + currentNodeY) / 2);
-        this.renderTimeDiffLabel(nodesContainer, bgX + bgWidth / 2, labelY, bgWidth, timeDiff);
-      }
-
-      const nodeGroup = nodesContainer.append('g')
-        .attr('class', 'drawer-node')
-        .attr('data-node-id', childNode.id)
-        .attr('transform', `translate(${nodeX}, ${currentNodeY - nodeHeight / 2})`)
-        .style('cursor', 'pointer')
-        .style('pointer-events', 'all');
-
-      if (firstSegment.displayMode === 'full') {
-        this.renderFullNode(nodeGroup, childNode, nodeWidth, nodeHeight);
-      } else if (firstSegment.displayMode === 'short') {
-        this.renderShortNode(nodeGroup, childNode, nodeWidth, nodeHeight);
-      } else if (firstSegment.displayMode === 'icon') {
-        this.renderIconNode(nodeGroup, childNode, 20, 20);
-      }
-
-      nodeGroup.on('click', (event: MouseEvent) => {
-        event.stopPropagation();
-        
-        this.visualizer.showNodeDetails(childNode);
-      });
-    });
-    
-    // 🎯 如果需要滚动，创建滚动指示箭头
-    if (maxScroll > 0) {
-      const arrowY = drawerTop + actualDrawerHeight - 12; // 距离底部12px
-      const arrowX = bgX + bgWidth / 2;
-      
-      const scrollArrow = drawer.append('g')
-        .attr('class', 'scroll-arrow')
-        .attr('transform', `translate(${arrowX}, ${arrowY})`);
-      
-      // 向下箭头（SVG path）
-      scrollArrow.append('path')
-        .attr('d', 'M -4,-2 L 0,2 L 4,-2')
-        .attr('fill', 'none')
-        .attr('stroke', '#4a90e2')
-        .attr('stroke-width', 1.5)
-        .attr('opacity', 0.6);
-    }
-    
-    // 点击外部关闭
-    const closeDrawer = () => {
-      drawer.remove();
-      this.svg.on('click.drawer', null);
-    };
-    
-    this.svg.on('click.drawer', (event: MouseEvent) => {
-      closeDrawer();
-    });
-    
-    // 点击抽屉背景关闭（但不包括节点）
-    drawer.select('rect').on('click', (event: MouseEvent) => {
-      event.stopPropagation();
-      closeDrawer();
-    });
-    
-    // 防止点击抽屉本身时关闭
-    drawer.on('click', (event: MouseEvent) => {
-      event.stopPropagation();
-    });
-    
-  const dir = (availableDownSpace >= drawerFullHeight) ? 'down' : 'up';
-  
-  }
-
-  /**
-   * 渲染时间差标签（在节点间隙中显示）
-   */
   private renderTimeDiffLabel(
     container: any,
     x: number,
@@ -2813,6 +1963,7 @@ export class WaterfallRenderer implements BaseRenderer {
     
     // 渲染标签（极小的灰色文字，稍微下移一点）
     container.append('text')
+      .attr('class', 'drawer-time-label')
       .attr('x', x + width / 2)
       .attr('y', y + 1) // 向下偏移1px
       .attr('text-anchor', 'middle')
@@ -2828,92 +1979,6 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 渲染单个节点
    */
-  private renderSingleNode(group: any, node: NavNode, segment: TimeSegment, index: number): any {
-    // 🎯 对于dot模式，使用动态宽度；其他模式使用固定宽度
-    let width: number;
-    let height: number;
-    
-    if (segment.displayMode === 'dot') {
-      // dot模式：动态调整大小以适应条带宽度
-      const availableWidth = segment.allocatedWidth;
-      const maxDotSize = 10;
-      const minDotSize = 4;
-      const horizontalGap = 2;
-      
-      // 根据条带宽度动态调整点的大小
-      const dotSize = Math.max(minDotSize, Math.min(maxDotSize, availableWidth - horizontalGap * 2));
-      width = dotSize;
-      height = dotSize;
-    } else {
-      // 其他模式：使用预定义的固定宽度
-      width = this.NODE_WIDTHS[segment.displayMode];
-      height = this.NODE_HEIGHTS[segment.displayMode];
-    }
-    
-    let nodeX: number;
-    let nodeY: number;
-    
-    // 🏊 使用泳道布局（如果有）
-    const swimlane = this.getSwimlaneForNode(node);
-    
-    if (swimlane) {
-      // 🎯 泳道模式：所有节点水平对齐在泳道的Y坐标上
-      const centerOffset = (segment.allocatedWidth - width) / 2;
-      nodeX = segment.startX + Math.max(0, centerOffset);
-      
-      // 节点垂直居中在泳道内 - 使用节点的实际高度来计算居中位置
-      const verticalPadding = (this.SWIMLANE_HEIGHT - height) / 2;
-      nodeY = swimlane.y + verticalPadding;
-      
-      // 🐛 调试日志（已移除以减少控制台噪音）
-      // 原始代码在此处以 1% 抽样打印节点定位，用于线下调试。
-    } else {
-      // 🎯 无泳道模式（回退到原有逻辑）
-      const timeAxisY = 80; // 时间轴横线的Y坐标
-      const startGap = 15; // 时间轴下方的起始间隔
-      
-      // 根据显示模式决定布局方式
-      if (segment.displayMode === 'full' || segment.displayMode === 'short') {
-        // 全节点和短节点：纵向堆叠
-        const centerOffset = (segment.allocatedWidth - width) / 2;
-        nodeX = segment.startX + Math.max(0, centerOffset);
-        nodeY = timeAxisY + startGap + (index * (height + 8)); // 纵向，间隔8px
-      } else {
-        // 图标节点和圆点节点：横向排列+换行
-        const itemsPerRow = Math.floor(segment.allocatedWidth / (width + 2)); // 每行能放多少个，间隔2px
-        const row = Math.floor(index / Math.max(1, itemsPerRow)); // 第几行
-        const col = index % Math.max(1, itemsPerRow); // 第几列
-        
-        const horizontalGap = 2; // 横向间隔
-        const verticalGap = 2; // 纵向间隔
-        
-        nodeX = segment.startX + (col * (width + horizontalGap));
-        nodeY = timeAxisY + startGap + (row * (height + verticalGap));
-      }
-    }
-
-    const nodeGroup = group.append('g')
-      .attr('class', 'navigation-node')
-      .attr('data-node-id', node.id)
-      .attr('transform', `translate(${nodeX}, ${nodeY})`);
-
-    // 根据显示模式渲染不同的节点样式
-    if (segment.displayMode === 'full') {
-      this.renderFullNode(nodeGroup, node, width, height);
-    } else if (segment.displayMode === 'short') {
-      this.renderShortNode(nodeGroup, node, width, height);
-    } else if (segment.displayMode === 'icon') {
-      this.renderIconNode(nodeGroup, node, width, height);
-    } else if (segment.displayMode === 'dot') {
-      this.renderDotNode(nodeGroup, node, width, height);
-    }
-
-    return nodeGroup;
-  }
-
-  /**
-   * 渲染完整节点 - V2样式：图标 + 标题
-   */
   private renderFullNode(group: any, node: NavNode, width: number, height: number): void {
     // � 添加裁剪路径，防止文字溢出
     const clipId = `node-clip-${Math.random().toString(36).substr(2, 9)}`;
@@ -2928,36 +1993,15 @@ export class WaterfallRenderer implements BaseRenderer {
     // 应用裁剪路径到整个节点组
     group.attr('clip-path', `url(#${clipId})`);
     
-    // �🎨 根据导航类型获取颜色
     const nodeColor = this.getNodeColor(node);
-    const strokeColor = this.adjustBrightness(nodeColor, -30);
-    const hoverColor = this.adjustBrightness(nodeColor, -20);
-    
-    // 背景矩形
-    const bgRect = group.append('rect')
+    group.append('rect')
+      .attr('class', 'waterfall-card-background')
       .attr('width', width)
       .attr('height', height)
       .attr('rx', 4)
-      .attr('fill', nodeColor)
-      .attr('stroke', strokeColor)
-      .attr('stroke-width', 1)
-      .style('cursor', 'pointer')
-      .attr('opacity', 0.95);
-    
-    // 悬停效果
-    bgRect.on('mouseenter', function(this: SVGRectElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(200))
-        .attr('fill', hoverColor)
-        .attr('opacity', 1);
-    }).on('mouseleave', function(this: SVGRectElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(200))
-        .attr('fill', nodeColor)
-        .attr('opacity', 0.95);
-    });
+      .style('--waterfall-type-color', nodeColor)
+      .style('--waterfall-type-stroke', this.adjustBrightness(nodeColor, -30))
+      .style('--waterfall-type-hover', this.adjustBrightness(nodeColor, -20));
 
     // 🎯 图标（favicon）
     const iconSize = 16;
@@ -3080,10 +2124,14 @@ export class WaterfallRenderer implements BaseRenderer {
     }
 
     // 🎯 添加点击事件
-    group.style('cursor', 'pointer')
-      .on('click', () => {
-        this.visualizer.showNodeDetails(node);
+    group.on('click', () => {
+      void this.loadNodeDetails([node.id]).then(() => {
+        const detail = this.nodeDetails.get(node.id);
+        if (!this.disposed && detail && group.node()?.isConnected) this.visualizer.showNodeDetails(detail);
+      }).catch(error => {
+        if (!this.disposed) this.visualizer.showError(String(error));
       });
+    });
   }
 
   /**
@@ -3095,227 +2143,6 @@ export class WaterfallRenderer implements BaseRenderer {
 
   /**
    * 截断URL显示域名
-   */
-  private truncateUrl(url: string): string {
-    try {
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname;
-      return domain.length > 15 ? domain.substring(0, 12) + '...' : domain;
-    } catch {
-      return url.length > 15 ? url.substring(0, 12) + '...' : url;
-    }
-  }
-
-  /**
-   * 渲染简短节点 - V2样式：只显示标题
-   */
-  private renderShortNode(group: any, node: NavNode, width: number, height: number): void {
-    // � 添加裁剪路径，防止文字溢出
-    const clipId = `short-clip-${Math.random().toString(36).substr(2, 9)}`;
-    const defs = group.append('defs');
-    defs.append('clipPath')
-      .attr('id', clipId)
-      .append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('rx', 3); // 与短节点圆角一致
-    
-    // 应用裁剪路径到整个节点组
-    group.attr('clip-path', `url(#${clipId})`);
-    
-    // �🎨 根据导航类型获取颜色
-    const nodeColor = this.getNodeColor(node);
-    const strokeColor = this.adjustBrightness(nodeColor, -30);
-    const hoverColor = this.adjustBrightness(nodeColor, -20);
-    
-    const bgRect = group.append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('rx', 3)
-      .attr('fill', nodeColor)
-      .attr('stroke', strokeColor)
-      .attr('stroke-width', 1)
-      .attr('opacity', 0.9)
-      .style('cursor', 'pointer');
-    
-    // 悬停效果
-    bgRect.on('mouseenter', function(this: SVGRectElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(150))
-        .attr('fill', hoverColor)
-        .attr('opacity', 1);
-    }).on('mouseleave', function(this: SVGRectElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(150))
-        .attr('fill', nodeColor)
-        .attr('opacity', 0.9);
-    });
-
-    const label = node.title || this.getNodeLabel(node);
-  // 🎯 更精确的字符数计算：9px字体大约每个字符5px宽度，留边距
-  // 为徽章预留空间（约 20px）以避免覆盖标题
-  const reservedRightSpace = 20;
-  const maxChars = Math.max(1, Math.floor((width - 8 - reservedRightSpace) / 5));
-    
-    group.append('text')
-      .attr('class', 'node-title-label')
-      .attr('x', width / 2)
-      .attr('y', height / 2 + 3)
-      .attr('font-size', '9px')
-      .attr('fill', '#555')
-      .attr('text-anchor', 'middle')
-      .text(this.truncateText(label, maxChars))
-      .style('pointer-events', 'none');
-    
-    // SPA 请求合并角标（短节点） - 确定性放置，使用 path 风格以匹配折叠标记
-    try {
-      const spaCount = (node as any).spaRequestCount || 0;
-      if (spaCount > 0) {
-        const badgeText = spaCount.toString();
-        const badgeHeight = 12;
-        const badgeWidth = 16 + (badgeText.length > 2 ? (badgeText.length - 2) * 6 : 0);
-
-        const collapseBadgeHeight = Math.max(12, Math.floor(height / 2));
-        const collapseY = height - collapseBadgeHeight;
-        const spaTopDesired = 2;
-        const verticalGap = 4;
-        const spaDesiredH = badgeHeight;
-        const minSpaH = 7;
-
-        const maxSpaHToAvoidOverlap = Math.max(minSpaH, collapseY - verticalGap - spaTopDesired);
-        const spaH = Math.max(minSpaH, Math.min(spaDesiredH, maxSpaHToAvoidOverlap));
-
-        const collapseBadgeWidth = 22;
-        const gapBetween = 6;
-        let spaX = width - collapseBadgeWidth - gapBetween - badgeWidth;
-        if (spaX < 4) spaX = 4;
-        let spaY = spaTopDesired;
-        if (spaY + spaH + verticalGap > collapseY) {
-          spaY = Math.max(2, collapseY - verticalGap - spaH);
-        }
-
-  const created = this.appendBadge(group, spaX, 0, badgeText, { corner: 'top', fixedWidth: 22, minHeight: collapseBadgeHeight, fontSize: 7 });
-        try {
-          const wAttr = created.attr('data-badge-width');
-          const hAttr = created.attr('data-badge-height');
-          if (wAttr) (node as any).__spaBadgeWidth = parseFloat(wAttr);
-          else (node as any).__spaBadgeWidth = badgeWidth;
-          if (hAttr) (node as any).__spaBadgeHeight = parseFloat(hAttr);
-          else (node as any).__spaBadgeHeight = spaH;
-        } catch (e) {
-          try { (node as any).__spaBadgeWidth = badgeWidth; (node as any).__spaBadgeHeight = spaH; } catch(e) {}
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // 🎯 添加点击事件
-    group.style('cursor', 'pointer')
-      .on('click', () => {
-        this.visualizer.showNodeDetails(node);
-      });
-  }
-
-  /**
-   * 渲染图标节点 - V2样式：显示favicon，横向排列+换行
-   */
-  private renderIconNode(group: any, node: NavNode, width: number, height: number): void {
-    const iconSize = Math.min(width, height) - 2;
-    
-    if (node.favicon) {
-      // 先获取颜色，避免在回调中的 this 绑定问题
-      const nodeColor = this.getNodeColor(node);
-      const strokeColor = this.adjustBrightness(nodeColor, -30);
-      
-      group.append('image')
-        .attr('x', (width - iconSize) / 2)
-        .attr('y', (height - iconSize) / 2)
-        .attr('width', iconSize)
-        .attr('height', iconSize)
-        .attr('href', UrlUtils.getFaviconUrl(node.url))
-        .attr('preserveAspectRatio', 'xMidYMid meet')
-        .style('pointer-events', 'none')
-        .on('error', function(this: SVGImageElement) {
-          // 如果图标加载失败，显示基于导航类型的彩色圆形
-          d3.select(this).remove();
-          group.append('circle')
-            .attr('cx', width / 2)
-            .attr('cy', height / 2)
-            .attr('r', iconSize / 2)
-            .attr('fill', nodeColor)
-            .attr('stroke', strokeColor)
-            .attr('stroke-width', 0.5)
-            .style('pointer-events', 'none');
-        });
-    } else {
-      // 默认圆形图标 - 使用基于导航类型的颜色
-      const nodeColor = this.getNodeColor(node);
-      const strokeColor = this.adjustBrightness(nodeColor, -30);
-      
-      group.append('circle')
-        .attr('cx', width / 2)
-        .attr('cy', height / 2)
-        .attr('r', iconSize / 2)
-        .attr('fill', nodeColor)
-        .attr('stroke', strokeColor)
-        .attr('stroke-width', 0.5)
-        .style('pointer-events', 'none');
-    }
-    
-    // 🎯 添加点击事件
-    group.style('cursor', 'pointer')
-      .on('click', () => {
-        this.visualizer.showNodeDetails(node);
-      });
-  }
-
-  /**
-   * 渲染圆点节点 - 最小化显示，使用彩色点
-   * 🎯 点的大小已经在 renderSingleNode 中动态计算，这里直接使用传入的 width/height
-   */
-  private renderDotNode(group: any, node: NavNode, width: number, height: number): void {
-    const radius = Math.min(width, height) / 2;
-    
-    // 🎨 根据标签页ID或URL生成彩色
-    const nodeColor = this.getNodeColor(node);
-    const hoverColor = this.adjustBrightness(nodeColor, -20); // 悬停时变深
-    
-    const circle = group.append('circle')
-      .attr('cx', width / 2)
-      .attr('cy', height / 2)
-      .attr('r', radius)
-      .attr('fill', nodeColor)
-      .attr('stroke', this.adjustBrightness(nodeColor, -30))
-      .attr('stroke-width', 0.5)
-      .attr('opacity', 0.85)
-      .style('cursor', 'pointer');
-    
-    // 悬停缩放效果
-    circle.on('mouseenter', function(this: SVGCircleElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(150))
-        .attr('r', radius * 1.3)
-        .attr('opacity', 1)
-        .attr('fill', hoverColor);
-    }).on('mouseleave', function(this: SVGCircleElement) {
-      d3.select(this)
-        .transition()
-        .duration(animationDuration(150))
-        .attr('r', radius)
-        .attr('opacity', 0.85)
-        .attr('fill', nodeColor);
-    });
-  }
-
-  /**
-   * 🎨 根据节点生成颜色（基于tabId或URL哈希）
-   */
-  /**
-   * 获取节点颜色 - 基于导航类型（与树形图保持一致）
    */
   private getNodeColor(node: NavNode): string {
     const type = node.type || 'default';
@@ -3380,81 +2207,68 @@ export class WaterfallRenderer implements BaseRenderer {
   /**
    * 渲染连接线 - V2样式：连接同一标签页的节点
    */
-  /**
-   * 渲染观察窗口滑块 - 在时间轴横线上滑动
-   */
-  private renderObservationWindowSlider(group: any, layout: LayoutResult): void {
-  
+  private getObservationWindowBounds(layout: LayoutResult): ObservationWindowBounds {
+    const segments = layout.normalDisplaySegments;
+    const x = segments[0].startX;
+    const last = segments[segments.length - 1];
+    const width = last.startX + last.allocatedWidth - x;
+    return {
+      x, width,
+      minX: layout.timeAxisData.startX,
+      maxX: layout.timeAxisData.endX - width,
+      maxIndex: layout.compressedSegments.length,
+    };
+  }
+
+  private renderObservationWindow(group: any, layout: LayoutResult): void {
+    const bounds = this.getObservationWindowBounds(layout);
+    const laneHeight = Math.min(this.height - this.TIME_AXIS_HEIGHT, this.swimlaneContentHeight());
+    group.append('rect')
+      .attr('class', 'waterfall-observation-frame')
+      .classed('is-movable', bounds.maxIndex > 0)
+      .attr('aria-hidden', 'true')
+      .attr('x', bounds.x)
+      .attr('y', this.TIME_AXIS_HEIGHT + 0.5)
+      .attr('width', bounds.width)
+      .attr('height', Math.max(0, laneHeight - 1))
+      .attr('rx', 6);
 
     const timeAxisY = 80; // 时间轴横线的Y坐标（与renderTimeAxis保持一致）
     const sliderHeight = 16; // 滑块高度（更扁平，适合在线上）
     const sliderY = timeAxisY - sliderHeight / 2; // 居中在时间轴线上
 
-    // 🎯 关键逻辑：判断是否有压缩段
-    const hasCompression = layout.compressedSegments.length > 0;
-    
-    if (!hasCompression) {
-      // ✅ 无压缩情况：观察窗口覆盖所有条带的实际宽度
-  
-      
-      const firstSegment = layout.segments[0];
-      const lastSegment = layout.segments[layout.segments.length - 1];
-      const windowStartX = firstSegment.startX;
-      const windowEndX = lastSegment.startX + lastSegment.allocatedWidth;
-      const windowWidth = windowEndX - windowStartX;
-
+    if (bounds.maxIndex === 0) {
       // 观察窗口滑块 - 虚线边框表示全覆盖
       group.append('rect')
         .attr('class', 'observation-slider-full')
-        .attr('x', windowStartX)
+        .attr('x', bounds.x)
         .attr('y', sliderY)
-        .attr('width', windowWidth)
+        .attr('width', bounds.width)
         .attr('height', sliderHeight)
         .attr('rx', sliderHeight / 2)
         .attr('ry', sliderHeight / 2)
-        .attr('fill', 'rgba(0, 123, 255, 0.1)')
-        .attr('stroke', '#007bff')
+        .attr('fill', 'var(--waterfall-control-surface, rgba(0, 123, 255, 0.1))')
+        .attr('stroke', 'var(--waterfall-accent, #007bff)')
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '4,4')
         .style('cursor', 'default');
-
-      this.observationWindow = {
-        centerSegmentIndex: 0,
-        startX: windowStartX,
-        width: windowWidth,
-        segments: layout.segments
-      };
-      
       return;
     }
-
-    // ⚠️ 有压缩情况：观察窗口只覆盖正常显示区域，可拖动
-  
-    
-    if (layout.normalDisplaySegments.length === 0) {
-      return;
-    }
-
-    const windowStartX = layout.normalDisplaySegments[0].startX;
-    const windowEndX = layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].startX + 
-                      layout.normalDisplaySegments[layout.normalDisplaySegments.length - 1].allocatedWidth;
-    const windowWidth = windowEndX - windowStartX;
 
     // 可拖动的观察窗口滑块 - 现代化设计
     const observationRect = group.append('rect')
       .attr('class', 'observation-slider')
-      .attr('x', windowStartX)
+      .attr('x', bounds.x)
       .attr('y', sliderY)
-      .attr('width', windowWidth)
+      .attr('width', bounds.width)
       .attr('height', sliderHeight)
       .attr('rx', sliderHeight / 2)
       .attr('ry', sliderHeight / 2)
       .attr('fill', 'url(#observationGradient)')
-      .attr('stroke', '#4A90E2')
+      .attr('stroke', 'var(--waterfall-accent, #4A90E2)')
       .attr('stroke-width', 1)
       .attr('filter', 'url(#observationShadow)')
-      .style('cursor', 'grab')
-      .style('transition', 'all 0.2s ease');
+      .style('cursor', 'grab');
 
     // 添加渐变定义
     const defs = group.append('defs');
@@ -3469,12 +2283,12 @@ export class WaterfallRenderer implements BaseRenderer {
     
     gradient.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#E3F2FD')
+      .attr('stop-color', 'var(--waterfall-control-surface, #E3F2FD)')
       .attr('stop-opacity', 0.4);
     
     gradient.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#BBDEFB')
+      .attr('stop-color', 'var(--waterfall-accent, #BBDEFB)')
       .attr('stop-opacity', 0.6);
     
     // 阴影效果
@@ -3504,654 +2318,51 @@ export class WaterfallRenderer implements BaseRenderer {
     feMerge.append('feMergeNode')
       .attr('in', 'SourceGraphic');
 
-    // 去掉文字标签，保持简洁
-
-    this.observationWindow = {
-      centerSegmentIndex: Math.floor(layout.normalDisplaySegments.length / 2),
-      startX: windowStartX,
-      width: windowWidth,
-      segments: layout.normalDisplaySegments
-    };
-
-    // 🎯 添加拖动功能（不再需要text参数）
-    this.setupObservationWindowDrag(observationRect, null, layout);
+    this.setupObservationCapsuleDrag(observationRect, bounds);
   }
 
-  /**
-   * 设置观察窗口拖动功能
-   */
-  private setupObservationWindowDrag(rect: any, text: any | null, layout: LayoutResult): void {
-    const self = this;
-    let isDragging = false;
-    let startX = 0;
-    let currentObservationStartIndex = 0;
+  private selectObservationIndicators(): any {
+    return this.svg.select('.focus-overlay-group')
+      .selectAll('.waterfall-observation-frame, .observation-slider');
+  }
 
-    // 计算当前观察窗口起始段索引
-    if (layout.normalDisplaySegments.length > 0) {
-      const firstNormalSegment = layout.normalDisplaySegments[0];
-      currentObservationStartIndex = this.allSegments.findIndex(s => s === firstNormalSegment);
-    }
-
-    // 🎯 计算最大可拖动的起始索引（确保最后几个段也能被观察）
-    const maxObservationStartIndex = Math.max(0, this.allSegments.length - layout.normalDisplaySegments.length);
-    
-    //logger.log(_('waterfall_observation_drag_setup', '🔍 观察窗口拖拽设置: 总段数={0}, 观察窗口段数={1}, 最大起始索引={2}'), this.allSegments.length, layout.normalDisplaySegments.length, maxObservationStartIndex);
-    //logger.log(_('waterfall_observation_drag_range_info', '🔍 拖拽范围段: 从第{0}段 到 第{1}段（允许覆盖所有段）'), 0, this.allSegments.length - 1);
+  private setupObservationCapsuleDrag(rect: any, bounds: ObservationWindowBounds): void {
+    const indicators = this.selectObservationIndicators();
+    let x = bounds.x;
 
     const drag = d3.drag()
-      .on('start', function(event: any) {
-        isDragging = true;
-        self.isDraggingObservationWindow = true; // 🛡️ 设置拖拽状态，防止滚轮误触
-        startX = event.x;
+      .on('start', () => {
+        x = bounds.x;
+        this.isDraggingObservationWindow = true;
         rect.style('cursor', 'grabbing');
       })
-      .on('drag', function(event: any) {
-        const dx = event.x - startX;
-        const currentX = parseFloat(rect.attr('x'));
-        const newX = currentX + dx;
-        
-        // 🎯 限制拖动范围：从第一个段的起始位置到最后能完整显示观察窗口的位置
-        const firstSegment = self.allSegments[0];
-        const lastValidSegment = self.allSegments[maxObservationStartIndex];
-        
-        const minX = firstSegment ? firstSegment.startX : layout.timeAxisData.startX;
-        const observationWindowWidth = parseFloat(rect.attr('width'));
-        
-        // 🧲✨ 统一的双向吸附逻辑
-        const snapThreshold = 8;
-        let targetX = newX;
-        let snappedToLeft = false;   // 左边界是否吸附
-        let snappedToRight = false;  // 右边界是否吸附
-        let leftSnapX = newX;
-        let rightSnapX = newX;
-        let leftDistance = Infinity;
-        let rightDistance = Infinity;
-        
-        // 🎯 检测左边界吸附（窗口左边 vs 所有条带左边）
-        const windowLeftEdge = newX;
-        for (let i = 0; i < self.allSegments.length; i++) {
-          const segment = self.allSegments[i];
-          if (segment) {
-            const segmentLeftEdge = segment.startX;
-            const distance = Math.abs(windowLeftEdge - segmentLeftEdge);
-            
-            if (distance < snapThreshold && distance < leftDistance) {
-              leftSnapX = segmentLeftEdge;
-              leftDistance = distance;
-              snappedToLeft = true;
-            }
-          }
-        }
-        
-        // 🎯 检测右边界吸附（窗口右边 vs 所有条带右边）
-        const windowRightEdge = newX + observationWindowWidth;
-        for (let i = 0; i < self.allSegments.length; i++) {
-          const segment = self.allSegments[i];
-          if (segment) {
-            const segmentRightEdge = segment.startX + segment.allocatedWidth;
-            const distance = Math.abs(windowRightEdge - segmentRightEdge);
-            
-            if (distance < snapThreshold && distance < rightDistance) {
-              rightSnapX = segmentRightEdge - observationWindowWidth;
-              rightDistance = distance;
-              snappedToRight = true;
-            }
-          }
-        }
-        
-        // 🎯 决定最终使用哪个吸附（防止抖动的关键逻辑）
-        if (snappedToLeft && snappedToRight) {
-          // 🎯✨ 同时触发两个吸附：只选择距离最近的那个，完全忽略另一个
-          // 这样可以避免两个吸附逻辑互相干扰造成抖动
-          if (leftDistance < rightDistance) {
-            // 左边界更近，只吸附左边界
-            targetX = leftSnapX;
-            self.lastDragSnapped = true;
-          } else if (rightDistance < leftDistance) {
-            // 右边界更近，只吸附右边界
-            targetX = rightSnapX;
-            self.lastDragSnapped = true;
-          } else {
-            // 距离相等（极少情况），默认优先左边界
-            targetX = leftSnapX;
-            self.lastDragSnapped = true;
-          }
-        } else if (snappedToLeft) {
-          // 只有左边界吸附
-          targetX = leftSnapX;
-          self.lastDragSnapped = true;
-        } else if (snappedToRight) {
-          // 只有右边界吸附
-          targetX = rightSnapX;
-          self.lastDragSnapped = true;
-        } else {
-          // 没有吸附
-          self.lastDragSnapped = false;
-        }
-        
-        // 🎯 应用边界限制 - 修复：严格限制右边界，防止越界和回弹
-        // 计算真正的最大拖动位置：应该让观察窗口右边缘能到达最后一个时间段的右边缘
-        const lastSegment = self.allSegments[self.allSegments.length - 1];
-        const maxX = lastSegment ? 
-          (lastSegment.startX + lastSegment.allocatedWidth - observationWindowWidth) : 
-          layout.timeAxisData.startX;
-        
-        //logger.log(_('waterfall_drag_boundary_check', '🔍 拖动边界检查: minX={0}, maxX={1}, targetX={2}, 最后段={3}'), minX, maxX, targetX, lastSegment ? `${lastSegment.startX}-${lastSegment.startX + lastSegment.allocatedWidth}` : 'N/A');
-        
-        // 🎯 修复右边界问题：严格限制边界，不允许超出
-        // 如果吸附位置超出边界，优先保证边界限制，放弃吸附
-        if (targetX > maxX) {
-          targetX = maxX;
-          self.lastDragSnapped = false; // 取消吸附状态
-          //logger.log(_('waterfall_reject_right_boundary_snap', '🚫 拒绝超出右边界的吸附，强制限制在边界内: {0}'), targetX);
-        }
-        
-        const clampedX = Math.max(minX, Math.min(maxX, targetX));
-        
-        // 视觉反馈 - 保持 1px 边框
-        if (self.lastDragSnapped) {
-          rect.style('cursor', 'grabbing').attr('stroke-width', 1.5);
-        } else {
-          rect.attr('stroke-width', 1);
-        }
-        
-        rect.attr('x', clampedX);
-        // text 参数已移除，不再更新文字位置
-        
-        // 🎯✨ 拖动过程中实时更新条带布局（基于视觉位置）
-        self.updateSegmentLayoutDuringDrag(clampedX, observationWindowWidth);
-        
-        startX = event.x;
+      .on('drag', (event: { dx: number }) => {
+        x = Math.max(bounds.minX, Math.min(bounds.maxX, x + event.dx));
+        indicators.attr('x', x);
       })
-      .on('end', function(event: any) {
-        isDragging = false;
-        self.isDraggingObservationWindow = false; // 🛡️ 清除拖拽状态，恢复滚轮响应
-        rect.style('cursor', 'grab')
-            .attr('stroke-width', 1); // 恢复正常边框
-        
-        // 🎯 确保最终位置在正确的边界内
-        const currentX = parseFloat(rect.attr('x'));
-        const observationWindowWidth = parseFloat(rect.attr('width'));
-        
-        // 重新计算边界限制
-        const firstSeg = self.allSegments[0];
-        const lastSeg = self.allSegments[self.allSegments.length - 1];
-        const minX = firstSeg ? firstSeg.startX : layout.timeAxisData.startX;
-        const maxX = lastSeg ? 
-          (lastSeg.startX + lastSeg.allocatedWidth - observationWindowWidth) : 
-          layout.timeAxisData.startX;
-        
-        // 如果当前位置超出边界，强制回到边界内
-        const correctedX = Math.max(minX, Math.min(maxX, currentX));
-        if (Math.abs(correctedX - currentX) > 0.1) {
-          //logger.log(_('waterfall_correct_drag_end_pos', '🎯 修正拖拽结束位置: {0} -> {1}'), currentX.toFixed(1), correctedX.toFixed(1));
-          rect.attr('x', correctedX);
-        }
-        
-        // 🎯 根据最终位置计算新的观察窗口起始索引（基于覆盖比例）
-        const finalX = correctedX;
-        const windowLeftEdge = finalX;
-        const windowRightEdge = finalX + observationWindowWidth;
-        
-        //logger.log(_('waterfall_drag_end_analysis', '🔍 拖拽结束位置分析: 窗口位置=[{0}, {1}], 宽度={2}'), windowLeftEdge.toFixed(1), windowRightEdge.toFixed(1), observationWindowWidth.toFixed(1));
-        
-        // 计算每个条带的覆盖比例
-        const stripCoverages = self.allSegments.map((segment, i) => {
-          const stripLeft = segment.startX;
-          const stripRight = segment.startX + segment.allocatedWidth;
-          const stripWidth = segment.allocatedWidth;
-          
-          const overlapLeft = Math.max(windowLeftEdge, stripLeft);
-          const overlapRight = Math.min(windowRightEdge, stripRight);
-          const overlapWidth = Math.max(0, overlapRight - overlapLeft);
-          const coverageRatio = stripWidth > 0 ? overlapWidth / stripWidth : 0;
-          
-          return { index: i, coverageRatio, overlapWidth, stripLeft, stripRight };
-        });
-        
-        // 🎯 特殊处理边界情况：当用户拖拽到左边或右边界时，直接确定索引
-        const firstSegment = self.allSegments[0];
-        const lastSegment = self.allSegments[self.allSegments.length - 1];
-        const minDragX = firstSegment ? firstSegment.startX : layout.timeAxisData.startX;
-        const maxDragX = lastSegment ? 
-          (lastSegment.startX + lastSegment.allocatedWidth - observationWindowWidth) : 
-          layout.timeAxisData.startX;
-        
-        // 检测用户是否拖拽到了最左边位置（容差5px）
-        const isAtLeftBoundary = Math.abs(windowLeftEdge - minDragX) < 5;
-        // 🎯 检测用户是否拖拽到了最右边位置（容差5px）
-        const isAtRightBoundary = Math.abs(windowLeftEdge - maxDragX) < 5;
-        
-        let newStartIndex = 0;
-        
-        if (isAtLeftBoundary) {
-          // 用户拖拽到最左边，显示最新的时间段（从索引0开始）
-          newStartIndex = 0;
-          //logger.log(_('waterfall_detect_left_boundary_drag', '🎯 检测到左边界拖拽：窗口左边缘={0}, 最小拖拽X={1}, 显示最新时间段（索引=0）'), windowLeftEdge.toFixed(1), minDragX.toFixed(1));
-        } else if (isAtRightBoundary) {
-          // 🎯 用户拖拽到最右边，确保观察窗口覆盖最后几个时间段
-          const maxObservationStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
-          newStartIndex = maxObservationStartIndex;
-          //logger.log(_('waterfall_detect_right_boundary_drag', '🎯 检测到右边界拖拽：窗口左边缘={0}, 最大拖拽X={1}, 显示最老时间段（索引={2}）'), windowLeftEdge.toFixed(1), maxDragX.toFixed(1), newStartIndex);
-        } else {
-          // 🎯 根据拖拽方向确定观察窗口停止位置
-          // 向左拖拽：以左边缘对齐时间条带；向右拖拽：以右边缘对齐时间条带
-          
-          // 检测拖拽方向（基于最终位置与当前显示的第一个条带的相对位置）
-          const currentFirstSegment = layout.normalDisplaySegments[0];
-          const currentWindowLeftEdge = currentFirstSegment ? currentFirstSegment.startX : 0;
-          
-          const isDraggingRight = windowLeftEdge > currentWindowLeftEdge;
-          
-          //logger.log(_('waterfall_drag_direction_analysis', '🔍 拖拽方向分析: 当前窗口左边缘={0}, 新位置={1}, 向右拖拽={2}'), currentWindowLeftEdge.toFixed(1), windowLeftEdge.toFixed(1), isDraggingRight);
-          
-          if (isDraggingRight) {
-            // 🎯 向右拖拽：找观察窗口右边缘覆盖的时间条带，让观察窗口右边缘对齐该条带右边缘
-            let targetSegmentIndex = -1;
-            for (let i = 0; i < self.allSegments.length; i++) {
-              const segment = self.allSegments[i];
-              const segmentRight = segment.startX + segment.allocatedWidth;
-              
-              // 找到右边缘最接近或刚好覆盖的条带
-              if (windowRightEdge <= segmentRight + 5) { // 5px容差
-                targetSegmentIndex = i;
-                break;
-              }
-            }
-            
-            if (targetSegmentIndex >= 0) {
-              // 计算让观察窗口右边缘对齐目标条带右边缘时的起始索引
-              newStartIndex = Math.max(0, targetSegmentIndex - layout.normalDisplaySegments.length + 1);
-              //logger.log(_('waterfall_drag_right_target', '🎯 向右拖拽: 目标条带={0}, 计算起始索引={1}'), targetSegmentIndex, newStartIndex);
-            } else {
-              // 回退到最大索引
-              newStartIndex = Math.max(0, self.allSegments.length - layout.normalDisplaySegments.length);
-              //logger.log(_('waterfall_drag_right_no_target', '🎯 向右拖拽: 未找到合适条带，使用最大索引={0}'), newStartIndex);
-            }
-          } else {
-            // 🎯 向左拖拽：找观察窗口左边缘覆盖的时间条带，让观察窗口左边缘对齐该条带左边缘
-            let targetSegmentIndex = -1;
-            for (let i = 0; i < self.allSegments.length; i++) {
-              const segment = self.allSegments[i];
-              
-              // 找到左边缘最接近或刚好覆盖的条带
-              if (windowLeftEdge >= segment.startX - 5 && windowLeftEdge <= segment.startX + segment.allocatedWidth + 5) {
-                targetSegmentIndex = i;
-                break;
-              }
-            }
-            
-            newStartIndex = targetSegmentIndex >= 0 ? targetSegmentIndex : 0;
-            //logger.log(_('waterfall_drag_left', '🎯 向左拖拽: 目标条带={0}, 起始索引={1}'), targetSegmentIndex, newStartIndex);
-          }
-        }
-        
-        //logger.log(_('waterfall_drag_end_target_index', '🖱️ 拖动结束，目标起始索引: {0}, 当前: {1}'), newStartIndex, self.observationStartIndex);
-        
-        // 🎯 拖动结束后完全重新渲染（确保节点正确显示）
-        if (newStartIndex !== self.observationStartIndex) {
-          self.reRenderWithObservationWindow(newStartIndex);
-        }
+      .on('end', () => {
+        this.isDraggingObservationWindow = false;
+        rect.style('cursor', 'grab');
+        if (this.disposed) return;
+        this.dropObservationWindow(indicators, bounds, x);
       });
-
     rect.call(drag);
   }
 
-  /**
-   * 根据X坐标计算观察窗口应该从哪个段开始
-   */
-  private calculateObservationStartIndex(x: number, layout: LayoutResult): number {
-    // 找到X坐标对应的段
-    for (let i = 0; i < this.allSegments.length; i++) {
-      const segment = this.allSegments[i];
-      if (segment.startX <= x && x < segment.startX + segment.allocatedWidth) {
-        return i;
-      }
-    }
-    return 0;
+  private dropObservationWindow(indicators: any, bounds: ObservationWindowBounds, x: number): void {
+    const fraction = (x - bounds.minX) / (bounds.maxX - bounds.minX);
+    const offsetFromLatest = Math.round((1 - fraction) * bounds.maxIndex);
+    if (offsetFromLatest !== this.observationOffsetFromLatest) this.reRenderWithObservationWindow(offsetFromLatest);
+    else indicators.attr('x', bounds.x);
   }
 
-  /**
-   * 根据新的观察窗口位置重新渲染
-   */
-  private reRenderWithObservationWindow(observationStartIndex: number): void {
-    //logger.log(_('waterfall_rerender_for_new_window', '🔄 根据新观察窗口位置重新渲染，起始索引: {0}'), observationStartIndex);
-    
-    // 🎯 更新当前观察窗口起始索引
-    this.observationStartIndex = observationStartIndex;
-    
-    // 💾 保存观察窗口索引到内存和 localStorage
-    this.visualizer.waterfallObservationIndex = observationStartIndex;
-    
-    // 保存到 localStorage
-    const tabId = this.visualizer.tabId || '';
-    //logger.log(_('waterfall_save_observation_index_prepare', '💾 准备保存观察窗口索引到 localStorage:'), {tabId,observationStartIndex});
-    
-    saveViewState(tabId, {
-      viewType: 'waterfall',
-      waterfallObservationIndex: observationStartIndex
-    });
-    
-    //logger.log(_('waterfall_saved_observation_index', '✅ 已保存观察窗口索引到 localStorage'));
-    
-    // 重新计算布局
-    const newLayout = this.allocateSegmentLayout(this.allSegments, this.width, observationStartIndex);
-    this.currentLayout = newLayout;
-
-    // 🎯 重新识别折叠组
-    this.collapsedGroups = this.identifyCollapsedGroups(newLayout.segments, this.swimlanes);
-
-    // 清空并重新渲染
-    this.svg.selectAll('*').remove();
-    
-    // 🎨 重新添加 SVG 定义
-    this.addSVGDefinitions();
-    
-    const mainGroup = this.createSVGGroups(this.svg);
-
-    // 渲染各个部分（使用新的分离结构）
-    this.renderTimeAxis(mainGroup.timeAxisGroup, newLayout); // 🕐 时间轴（固定，不滚动）
-    this.renderTimeStrips(mainGroup.timeStripsGroup, newLayout); // � 垂直时间条带（可滚动）
-    this.renderSwimlaneSeparators(mainGroup.swimlaneSeperatorsGroup, newLayout); // 🏊 泳道分隔线（可滚动）
-    this.renderSegmentNodes(mainGroup.nodesGroup, newLayout); // 🎯 纯粹的节点（可滚动）
-    this.renderClosureMarkers(mainGroup.closureMarkersGroup, newLayout); // 🔴 关闭标记（可滚动）
-    this.renderObservationWindowSlider(mainGroup.focusOverlayGroup, newLayout); // 🎚️ 观察窗口（固定，不滚动）
-    
-    // 重新设置滚轮事件（垂直滚动泳道）
-    this.setupWheelScroll(); // 🎯 重新启用：只用于垂直滚动泳道
-    
-    // 重新设置垂直拖拽滚动
-    this.setupVerticalDragScroll();
-    
-    // 更新状态栏以显示新的时间范围
-    this.visualizer.updateStatusBar();
+  private reRenderWithObservationWindow(offsetFromLatest: number): void {
+    this.observationOffsetFromLatest = offsetFromLatest;
+    this.drawLayout();
+    saveViewState(this.visualizer.tabId || '', { viewType: 'waterfall', waterfallObservationIndex: this.observationOffsetFromLatest });
+    this.visualizer.updateToolbar();
   }
 
-  /**
-   * 🎯 拖动时更新条带布局（按覆盖比例排序）
-   */
-  private updateSegmentLayoutDuringDrag(observationWindowX: number, observationWindowWidth: number): void {
-    if (!this.currentLayout) return;
-    
-    const timeAxisY = 80;
-    const windowLeftEdge = observationWindowX;
-    const windowRightEdge = observationWindowX + observationWindowWidth;
-    
-    // 🎯 使用初始布局中的正常显示段数（固定值）
-    const maxNormalSegments = this.currentLayout.normalDisplaySegments.length;
-    
-    // 1. 计算每个条带的覆盖情况
-    const stripCoverages = this.allSegments.map((segment, i) => {
-      const stripLeft = segment.startX;
-      const stripRight = segment.startX + segment.allocatedWidth;
-      const stripWidth = segment.allocatedWidth;
-      
-      // 计算重叠区域
-      const overlapLeft = Math.max(windowLeftEdge, stripLeft);
-      const overlapRight = Math.min(windowRightEdge, stripRight);
-      const overlapWidth = Math.max(0, overlapRight - overlapLeft);
-      
-      // 条带自身的覆盖比例
-      const selfCoverageRatio = stripWidth > 0 ? overlapWidth / stripWidth : 0;
-      
-      return { 
-        index: i, 
-        overlapWidth,
-        selfCoverageRatio
-      };
-    });
-    
-    // 2. 🎯 固定展开maxNormalSegments个条带，按自身覆盖比例排序
-    const sortedStrips = stripCoverages.sort((a, b) => b.selfCoverageRatio - a.selfCoverageRatio);
-    
-    // 取前maxNormalSegments个（固定数量）
-    const selectedStrips = sortedStrips.slice(0, maxNormalSegments);
-    
-    // 3. 创建展开条带的集合
-    const newExpanded = new Set<number>();
-    selectedStrips.forEach(s => newExpanded.add(s.index));
-    
-    // 4. 应用更新
-    if (newExpanded.size > 0) {
-      const startIndex = Math.min(...Array.from(newExpanded));
-      this.applySegmentUpdates(newExpanded, startIndex, timeAxisY);
-    }
-  }
-
-  /**
-   * 🎯 应用条带更新（提取为独立方法以减少重复代码）
-   */
-  private applySegmentUpdates(
-    normalSegmentIndices: Set<number>, 
-    startIndex: number,
-    timeAxisY: number
-  ): void {
-    // 记录上一次的展开状态
-    const oldNormalIndices = this.currentNormalSegmentIndices || new Set();
-    this.currentNormalSegmentIndices = normalSegmentIndices;
-    
-    // 重新计算布局
-    const layout = this.calculateSegmentLayout(this.allSegments, this.width, startIndex);
-    
-    // 更新每个条带
-    this.strips.forEach((strip, i) => {
-      const segment = this.allSegments[i];
-      const layoutSegment = layout.segments[i];
-      
-      if (!segment || !layoutSegment) return;
-      
-      const width = layoutSegment.allocatedWidth;
-      const startX = layoutSegment.startX;
-      
-      // 🎨 更新条带背景宽度和位置，保持原有的渐变样式
-      const isEven = segment.originalIndex % 2 === 0;
-      strip.select('.strip-background')
-        .attr('x', startX)
-        .attr('width', width)
-        .attr('fill', isEven ? 'url(#stripGradientEven)' : 'url(#stripGradientOdd)')
-        .attr('opacity', 0.9);
-      
-      // 更新时间标签 - 注释：条带中不再添加时间标签，由固定时间轴负责
-      // const timeLabel = strip.select('.time-label');
-      // const timeTick = strip.select('.time-tick');
-      
-      const isInWindow = normalSegmentIndices.has(i);
-      const wasInWindow = oldNormalIndices.has(i);
-      const isFullyExpanded = layoutSegment.displayMode === 'full' || layoutSegment.displayMode === 'short';
-      
-      // 移除任何残留的条带时间标签和刻度（避免与固定时间轴冲突）
-      strip.selectAll('.time-label').remove();
-      strip.selectAll('.time-tick').remove();
-      
-      // 🎯 关键修复：判断节点显示策略的变化
-      const isEntering = isInWindow && !wasInWindow;  // 进入观察窗口
-      const isLeaving = wasInWindow && !isInWindow;   // 离开观察窗口
-      
-      if (isEntering) {
-        // 🎯 进入观察窗口：展开节点显示
-        //logger.log(_('waterfall_strip_entered_observation', '✨ 条带 {0} 进入观察窗口，展开节点'), i);
-        if (isFullyExpanded) {
-          this.renderSegmentNodesExpanded(segment, strip, layoutSegment);
-        } else {
-          // 即使不是完全展开，也需要更新为压缩模式（icon）
-          this.renderSegmentNodesCompressed(segment, strip, layoutSegment);
-        }
-      } else if (isLeaving) {
-        // 🎯 离开观察窗口：压缩为圆点
-        //logger.log(_('waterfall_segment_leaving', '💨 条带 {0} 离开观察窗口，压缩节点'), i);
-        this.renderSegmentNodesAsDots(segment, strip, layoutSegment);
-      } else if (isInWindow) {
-        // 🎯 保持在观察窗口内：根据当前模式更新节点
-        if (isFullyExpanded) {
-          this.renderSegmentNodesExpanded(segment, strip, layoutSegment);
-        } else {
-          this.renderSegmentNodesCompressed(segment, strip, layoutSegment);
-        }
-      }
-    });
-  }
-
-  /**
-   * 判断条带是否正在改变状态（新进入或即将离开观察窗口）
-   */
-  private isSegmentChangingState(index: number, newStartIndex: number, windowSize: number): boolean {
-    const oldStartIndex = this.observationStartIndex;
-    
-    // 新进入观察窗口的条带
-    const justEntered = index >= newStartIndex && 
-                       index < newStartIndex + windowSize &&
-                       (index < oldStartIndex || index >= oldStartIndex + windowSize);
-    
-    // 即将离开观察窗口的条带
-    const justLeft = (index < newStartIndex || index >= newStartIndex + windowSize) &&
-                     index >= oldStartIndex && 
-                     index < oldStartIndex + windowSize;
-    
-    return justEntered || justLeft;
-  }
-
-  /**
-   * 🎯 判断条带是否正在进入观察窗口
-   */
-  private isSegmentEntering(index: number, newStartIndex: number, windowSize: number): boolean {
-    const oldStartIndex = this.observationStartIndex;
-    
-    return index >= newStartIndex && 
-           index < newStartIndex + windowSize &&
-           (index < oldStartIndex || index >= oldStartIndex + windowSize);
-  }
-
-  /**
-   * 🎯 判断条带是否正在离开观察窗口
-   */
-  private isSegmentLeaving(index: number, newStartIndex: number, windowSize: number): boolean {
-    const oldStartIndex = this.observationStartIndex;
-    
-    return (index < newStartIndex || index >= newStartIndex + windowSize) &&
-           index >= oldStartIndex && 
-           index < oldStartIndex + windowSize;
-  }
-
-  /**
-   * 判断条带是否在观察窗口内
-   */
-  private isInObservationWindow(index: number, startIndex: number, windowSize: number): boolean {
-    return index >= startIndex && index < startIndex + windowSize;
-  }
-
-  /**
-   * 将条带的节点快速渲染为dot模式（最轻量）
-   */
-  private renderSegmentNodesAsDots(
-    segment: TimeSegment, 
-    strip: any, 
-    layoutSegment: TimeSegment
-  ): void {
-    const nodeGroup = strip.select('.node-group');
-    nodeGroup.selectAll('.navigation-node').remove();
-    
-    const timeAxisY = 80;
-    const startGap = 15;
-    
-    // 🎯 动态计算点的大小，确保不超过条带宽度
-    const availableWidth = layoutSegment.allocatedWidth;
-    const maxDotSize = 8;
-    const minDotSize = 4;
-    const horizontalGap = 2;
-    const verticalGap = 2;
-    
-    // 根据条带宽度动态调整点的大小
-    const dotSize = Math.max(minDotSize, Math.min(maxDotSize, availableWidth - horizontalGap * 2));
-    
-    // 🎯 横向排列dot节点（简单布局）
-    const itemsPerRow = Math.max(1, Math.floor(availableWidth / (dotSize + horizontalGap)));
-    
-    segment.nodes.forEach((node, index) => {
-      const row = Math.floor(index / itemsPerRow);
-      const col = index % itemsPerRow;
-      
-      const nodeX = layoutSegment.startX + (col * (dotSize + horizontalGap));
-      const nodeY = timeAxisY + startGap + (row * (dotSize + verticalGap));
-      
-      const dotGroup = nodeGroup.append('g')
-        .attr('class', 'navigation-node')
-        .attr('transform', `translate(${nodeX}, ${nodeY})`);
-      
-      // 🎨 使用彩色点渲染
-      const nodeColor = this.getNodeColor(node);
-      const hoverColor = this.adjustBrightness(nodeColor, -20);
-      
-      const circle = dotGroup.append('circle')
-        .attr('cx', dotSize / 2)
-        .attr('cy', dotSize / 2)
-        .attr('r', dotSize / 2)
-        .attr('fill', nodeColor)
-        .attr('stroke', this.adjustBrightness(nodeColor, -30))
-        .attr('stroke-width', 0.5)
-        .attr('opacity', 0.85)
-        .style('cursor', 'pointer');
-      
-      // 悬停效果
-      circle.on('mouseenter', function(this: SVGCircleElement) {
-        d3.select(this)
-          .transition()
-          .duration(animationDuration(150))
-          .attr('r', dotSize / 2 * 1.3)
-          .attr('opacity', 1)
-          .attr('fill', hoverColor);
-      }).on('mouseleave', function(this: SVGCircleElement) {
-        d3.select(this)
-          .transition()
-          .duration(animationDuration(150))
-          .attr('r', dotSize / 2)
-          .attr('opacity', 0.85)
-          .attr('fill', nodeColor);
-      });
-      
-      // 点击事件
-      dotGroup.on('click', () => {
-        this.visualizer.showNodeDetails(node);
-      });
-    });
-  }
-
-  /**
-   * 将条带的节点渲染为展开模式（full或short）
-   */
-  private renderSegmentNodesExpanded(
-    segment: TimeSegment, 
-    strip: any, 
-    layoutSegment: TimeSegment
-  ): void {
-    const nodeGroup = strip.select('.node-group');
-    nodeGroup.selectAll('.navigation-node').remove();
-    
-    // 🎯 使用标准的节点渲染方法
-    segment.nodes.forEach((node, index) => {
-      const createdNodeGroup = this.renderSingleNode(nodeGroup, node, layoutSegment, index);
-    });
-  }
-
-  /**
-   * 将条带的节点渲染为压缩模式（icon或dot）
-   */
-  private renderSegmentNodesCompressed(
-    segment: TimeSegment, 
-    strip: any, 
-    layoutSegment: TimeSegment
-  ): void {
-    const nodeGroup = strip.select('.node-group');
-    nodeGroup.selectAll('.navigation-node').remove();
-    
-    // 🎯 使用标准的节点渲染方法（根据displayMode自动选择压缩级别）
-    segment.nodes.forEach((node, index) => {
-      const createdNodeGroup = this.renderSingleNode(nodeGroup, node, layoutSegment, index);
-    });
-  }
-
-  /**
-   * 获取节点标签
-   */
   private getNodeLabel(node: NavNode): string {
     if (!node.url) {
       return 'Unknown';
@@ -4193,8 +2404,8 @@ export class WaterfallRenderer implements BaseRenderer {
       const node = this.svg.node();
       if (node) {
         const handler = (ev: WheelEvent) => {
-          // 如果正在拖拽观察窗口或垂直拖拽，阻止默认并停止传播
-          if (self.isDraggingObservationWindow || self.isDraggingVertical) {
+          // Ignore wheel scrolling while either drag is in progress.
+          if (self.isDraggingObservationWindow || self.isDraggingCanvas) {
             try { ev.preventDefault(); ev.stopPropagation(); } catch(e) {}
             return;
           }
@@ -4226,25 +2437,12 @@ export class WaterfallRenderer implements BaseRenderer {
    * 计算最大垂直滚动距离 - 新版本：基于viewport架构
    */
   private calculateMaxVerticalScroll(): void {
-    if (!this.swimlanes || this.swimlanes.length === 0) {
-      this.maxVerticalScroll = 0;
-      
-      return;
-    }
+    this.maxVerticalScroll = Math.max(0, this.swimlaneContentHeight() - (this.height - this.TIME_AXIS_HEIGHT));
+  }
 
-    // 计算内容总高度（包括顶部间距）
-    const startY = 20;
-    const swimlaneHeight = this.SWIMLANE_HEIGHT;
-    const totalContentHeight = startY + (this.swimlanes.length * swimlaneHeight);
-    
-    // viewport可视高度
-    const timeAxisHeight = 100;
-    const viewportHeight = this.height - timeAxisHeight;
-    
-    // 如果内容高度超过viewport高度，则需要滚动
-    this.maxVerticalScroll = Math.max(0, totalContentHeight - viewportHeight);
-    
-    
+  private swimlaneContentHeight(): number {
+    const lastLane = this.swimlanes[this.swimlanes.length - 1];
+    return lastLane ? lastLane.y + lastLane.height : 0;
   }
 
   /**
@@ -4281,208 +2479,84 @@ export class WaterfallRenderer implements BaseRenderer {
       // 直接应用偏移，clipPath会确保内容不进入时间轴区域
       const transform = `translate(0, ${-this.verticalScrollOffset})`;
       this.scrollableGroup.attr('transform', transform);
+      if (this.scrollFrame === null) {
+        this.scrollFrame = requestAnimationFrame(() => {
+          this.scrollFrame = null;
+          this.renderVisibleLanes();
+        });
+      }
     }
     
   
   }
 
-  /**
-   * 设置垂直拖拽滚动 - 升级版本：整个泳道区域都可以拖拽
-   */
-  private setupVerticalDragScroll(): void {
-  
-  
-    
-    if (!this.scrollableGroup) {
-      logger.warn(_('waterfall_no_scrollable_group', '⚠️ scrollableGroup 不存在，无法设置拖拽'));
-      return;
-    }
-    
-    if (this.maxVerticalScroll <= 0) {
-      
-      return;
-    }
+  private setupCanvasDrag(): void {
+    const svg = this.svg;
+    const dragThreshold = 4;
+    const unitsPerPixel = this.width / this.viewportWidth;
+    const drag = d3.drag()
+      .touchable(() => false)
+      .clickDistance(dragThreshold)
+      .filter((event: MouseEvent) => {
+        const target = event.target as Element;
+        return event.button === 0 && !event.ctrlKey
+          && target.closest('.waterfall-pannable, .waterfall-observation-frame.is-movable') !== null
+          && target.closest('.group-badge, .collapsed-drawer') === null;
+      })
+      .on('start', (start: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
+        const bounds = this.getObservationWindowBounds(this.currentLayout!);
+        const initialOffset = this.verticalScrollOffset;
+        const indicators = this.selectObservationIndicators();
+        const frame = indicators.filter('.waterfall-observation-frame').node() as SVGRectElement;
+        const frameRect = frame.getBoundingClientRect();
+        const pointer = start.sourceEvent as MouseEvent;
+        const fromWindow = pointer.target === frame
+          || (pointer.clientX >= frameRect.left && pointer.clientX <= frameRect.right
+            && pointer.clientY >= frameRect.top && pointer.clientY <= frameRect.bottom);
+        let axis: 'horizontal' | 'vertical' | null = null;
+        let previewX = bounds.x;
 
-  
-    
-    const timeAxisHeight = 100;
-    const self = this;
-    let startY = 0;
-    let startOffset = 0;
-    let isDragging = false;
-
-    // 🎯 新策略：直接在时间条带上设置拖拽，避免覆盖层
-    const timeStripsGroup = this.scrollableGroup.select('.time-strips-group');
-    
-    if (timeStripsGroup.empty()) {
-      logger.warn(_('waterfall_time_strips_group_missing', '⚠️ 时间条带组不存在，无法设置拖拽'));
-      return;
-    }
-
-    // 🎯 为每个时间条带的背景添加拖拽功能
-    const timeStripBackgrounds = timeStripsGroup.selectAll('rect.strip-background');
-  
-    
-    timeStripBackgrounds.on('mousedown', function(this: SVGElement, event: any, d: any) {
-      // 🎯 关键：只有当点击的是时间条带本身时才启动拖拽
-      if (event.target === this) {
-        
-        startDrag(event);
-      }
-    });
-
-    // 🎯 为时间条带设置拖拽光标
-    timeStripBackgrounds
-      .style('cursor', 'ns-resize')
-      .on('mousemove', function(this: SVGElement, event: any) {
-        if (!self.isDraggingVertical) {
-          // 检查鼠标是否在空白区域
-          if (event.target === this) {
-            d3.select(this).style('cursor', 'ns-resize');
+        start.on('drag', (event: D3DragEvent<SVGSVGElement, unknown, unknown>) => {
+          if (this.disposed) return;
+          const dx = event.x - start.x;
+          const dy = event.y - start.y;
+          if (axis === null) {
+            if (Math.hypot(dx, dy) <= dragThreshold) return;
+            const horizontal = Math.abs(dx) >= Math.abs(dy);
+            if (horizontal ? !fromWindow || bounds.maxIndex === 0 : this.maxVerticalScroll === 0) return;
+            axis = horizontal ? 'horizontal' : 'vertical';
+            this.isDraggingCanvas = true;
+            svg.classed('waterfall-panning', true);
+            if (axis === 'vertical') this.closeCurrentDrawer();
           }
-        }
+
+          if (axis === 'vertical') {
+            this.setVerticalScrollOffset(initialOffset - dy * unitsPerPixel);
+            return;
+          }
+
+          previewX = Math.max(bounds.minX, Math.min(bounds.maxX, bounds.x + dx * unitsPerPixel));
+          indicators.attr('x', previewX);
+        });
+
+        start.on('end', () => {
+          if (this.disposed || axis === null) return;
+          this.isDraggingCanvas = false;
+          svg.classed('waterfall-panning', false);
+          if (axis === 'horizontal') this.dropObservationWindow(indicators, bounds, previewX);
+        });
       });
-
-    function startDrag(event: any) {
-      
-      
-      event.preventDefault();
-      event.stopPropagation();
-      
-      isDragging = false;
-      self.isDraggingVertical = false;
-      startY = event.clientY;
-      startOffset = self.verticalScrollOffset;
-      
-      // 鼠标移动事件
-      const mousemove = function(moveEvent: any) {
-        const deltaY = Math.abs(moveEvent.clientY - startY);
-        
-        if (!isDragging && deltaY > 3) {
-          isDragging = true;
-          self.isDraggingVertical = true;
-          d3.select('body').style('cursor', 'ns-resize');
-          
-        }
-        
-        if (isDragging) {
-          const deltaY = moveEvent.clientY - startY;
-          const newOffset = startOffset - deltaY;
-          self.setVerticalScrollOffset(newOffset);
-        }
-      };
-      
-      // 鼠标释放事件
-      const mouseup = function() {
-        if (isDragging) {
-          
-          isDragging = false;
-          self.isDraggingVertical = false;
-          d3.select('body').style('cursor', 'default');
-        }
-        
-        d3.select(window).on('mousemove.vscroll', null);
-        d3.select(window).on('mouseup.vscroll', null);
-      };
-      
-      d3.select(window).on('mousemove.vscroll', mousemove);
-      d3.select(window).on('mouseup.vscroll', mouseup);
-    }
-
-    
+    svg.call(drag);
   }
 
   /**
    * 处理水平滚动（时间轴方向）
    */
-  private handleHorizontalScroll(deltaY: number): void {
-    const layout = this.currentLayout!;
-    
-    // 计算滚动方向和步长
-    const delta = deltaY;
-    const step = delta > 0 ? 1 : -1;
-    
-    // 计算新的观察窗口起始索引
-    const maxStartIndex = Math.max(0, this.allSegments.length - layout.normalDisplaySegments.length);
-    const newStartIndex = Math.max(0, Math.min(maxStartIndex, this.observationStartIndex + step));
-    
-    // 如果索引没有变化，不需要更新
-    if (newStartIndex === this.observationStartIndex) {
-      logger.warn(_('waterfall_observation_window_at_boundary', '⚠️ 观察窗口已到达边界，无法继续滚动'));
-      return;
-    }
-    
-  
-    
-    // 🎯 滚动过程中：只更新视觉效果（条带宽度和观察窗口位置）
-    this.updateObservationWindowVisuals(newStartIndex);
-    
-    // 🎯 使用防抖：滚动停止后才完全重新渲染
-    if (this.wheelScrollTimeout) {
-      clearTimeout(this.wheelScrollTimeout);
-    }
-    
-    this.wheelScrollTimeout = window.setTimeout(() => {
-      
-      this.reRenderWithObservationWindow(newStartIndex);
-      this.wheelScrollTimeout = null;
-    }, 200); // 200ms 后认为滚动已停止
-  }
-
-  /**
-   * 🎯 更新观察窗口视觉效果（滚动过程中的快速更新）
-   * 只更新条带宽度和观察窗口滑块位置，不重新渲染节点
-   */
-  private updateObservationWindowVisuals(newStartIndex: number): void {
-    // 更新当前索引（用于下次对比）
-    this.observationStartIndex = newStartIndex;
-    
-    // 💾 保存观察窗口索引到内存（滚动停止后会保存到 localStorage）
-    this.visualizer.waterfallObservationIndex = newStartIndex;
-    
-    if (!this.currentLayout) return;
-    
-    const maxNormalSegments = this.currentLayout.normalDisplaySegments.length;
-    
-    // 🎯 计算新的观察窗口位置和宽度
-    const endIndex = Math.min(newStartIndex + maxNormalSegments - 1, this.allSegments.length - 1);
-    const startSegment = this.allSegments[newStartIndex];
-    const endSegment = this.allSegments[endIndex];
-    
-    if (!startSegment || !endSegment) return;
-    
-    const observationWindowX = startSegment.startX;
-    const observationWindowWidth = (endSegment.startX + endSegment.allocatedWidth) - startSegment.startX;
-    
-    // 🎯 先使用拖动时的更新逻辑（更新条带宽度和时间标签）
-    this.updateSegmentLayoutDuringDrag(observationWindowX, observationWindowWidth);
-    
-    // 🎯 再更新观察窗口滑块位置（确保在条带更新后）
-    const windowRect = this.svg.select('.observation-slider');
-      if (!windowRect.empty()) {
-      windowRect
-        .attr('x', observationWindowX)
-        .attr('width', observationWindowWidth);
-      
-      
-    } else {
-      logger.warn(_('waterfall_observation_slider_missing', '⚠️ 未找到观察窗口滑块 .observation-slider'));
-    }
-    
-    // 🎯 实时更新状态栏显示的时间范围
-    this.visualizer.updateStatusBar();
-  }
-
-  /**
-   * 移动观察窗口（用于交互）
-   */
   public moveObservationWindow(direction: 'left' | 'right'): void {
-    if (!this.currentLayout || !this.observationWindow) {
-      return;
-    }
-
-    // TODO: 实现观察窗口移动逻辑
-    // 这将重新计算布局并重新渲染
-    
+    const layout = this.currentLayout;
+    if (!layout || this.densityOnly || !layout.compressedSegments.length) return;
+    const step = direction === 'left' ? 1 : -1;
+    const offsetFromLatest = Math.max(0, Math.min(layout.compressedSegments.length, this.observationOffsetFromLatest + step));
+    if (offsetFromLatest !== this.observationOffsetFromLatest) this.reRenderWithObservationWindow(offsetFromLatest);
   }
 }

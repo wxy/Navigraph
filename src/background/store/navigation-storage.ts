@@ -1,7 +1,9 @@
 import { recordingHealth } from '../recording/health.js';
 import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
 import { QueryCache } from './query-cache.js';
-import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
+import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, isTrackingUrl, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
+import { localDayRange, TREE_DAY_LIMIT, type TreeDay } from '../../lib/graph/tree-day.js';
+import { WATERFALL_TIMELINE_LIMIT, type WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
  * 导航存储类
@@ -194,6 +196,102 @@ export class NavigationStorage {
         this.sessionCounts.set(query.sessionId, revision, result.pageInfo.total);
       }
       return result;
+    });
+  }
+
+  public async getWaterfallTimeline(sessionId: string, filters: GraphPageQuery['filters']): Promise<WaterfallTimeline> {
+    await this.ensureInitialized();
+    return this.db.readTransaction<WaterfallTimeline>(['sessions', 'nodes'], (tx, done) => {
+      const result: WaterfallTimeline = { session: null, nodes: [], total: 0, truncated: false };
+      done(result);
+      const metadata = tx.objectStore('sessions').get(sessionId);
+      metadata.onsuccess = () => {
+        if (!metadata.result) return;
+        const session = sessionMetadata(metadata.result);
+        result.session = session;
+        const timeOrder = tx.objectStore('nodes').index('pageOrder');
+        const request = timeOrder.openCursor(IDBKeyRange.bound([sessionId], [sessionId, []]));
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor || result.total === WATERFALL_TIMELINE_LIMIT) {
+            result.truncated = cursor !== null;
+            return;
+          }
+          const row = cursor.value as ReturnType<typeof indexedNode>;
+          result.total++;
+          const tracking = row._pageTracking === undefined ? isTrackingUrl(row.url || '') : row._pageTracking === 1;
+          if (matchesGraphFilters(row.type, row.isClosed === true, tracking, filters)) {
+            result.nodes.push({
+              id: row.id,
+              tabId: row.tabId,
+              timestamp: row._timeUnknown ? session.startTime : row.timestamp,
+              type: row.type,
+              isClosed: row.isClosed,
+              site: row._statsDomain ?? nodeUrlDomain(row.url),
+            });
+          }
+          cursor.continue();
+        };
+      };
+    });
+  }
+
+  public async getTreeDay(day?: [number, number]): Promise<TreeDay> {
+    await this.ensureInitialized();
+    return this.db.readTransaction<TreeDay>(['nodes', 'edges'], (tx, done) => {
+      const index = tx.objectStore('nodes').index('timestamp');
+      const readDay = ([start, end]: [number, number]) => {
+        const result: TreeDay = { start, nodes: [], truncated: false };
+        done(result);
+        const request = index.openCursor(IDBKeyRange.bound(start, end, false, true), 'prev');
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor && result.nodes.length < TREE_DAY_LIMIT) {
+            const row = cursor.value as ReturnType<typeof indexedNode>;
+            result.nodes.push({ id: row.id, parentId: row.parentId, sessionId: row.sessionId, tabId: row.tabId,
+              timestamp: row.timestamp, type: row.type, isClosed: row.isClosed,
+              site: row._statsDomain ?? nodeUrlDomain(row.url),
+              tracking: row._pageTracking === undefined ? isTrackingUrl(row.url || '') : row._pageTracking === 1 });
+            cursor.continue();
+            return;
+          }
+          result.truncated = cursor !== null;
+          if (!result.nodes.length) return;
+          // Preserve cross-links when compacting parent-child paths. Only the flags cross the boundary.
+          const nodes = new Map(result.nodes.map(node => [node.id, node]));
+          const oldest = result.nodes[result.nodes.length - 1].timestamp;
+          const relations = tx.objectStore('edges').index('timestamp').openCursor(IDBKeyRange.bound(oldest, end, false, true));
+          relations.onsuccess = () => {
+            const entry = relations.result;
+            if (!entry) return;
+            const edge = entry.value as NavLink;
+            const source = nodes.get(edge.source), target = nodes.get(edge.target);
+            if (source && target && (target.parentId !== source.id || source.tabId !== target.tabId || source === target)) {
+              source.keep = true;
+              target.keep = true;
+            }
+            entry.continue();
+          };
+        };
+      };
+      if (day) readDay(day);
+      else {
+        const newest = index.openKeyCursor(null, 'prev');
+        newest.onsuccess = () => readDay(localDayRange(Number(newest.result?.key ?? Date.now())));
+      }
+    });
+  }
+
+  public async getTreeNodes(ids: string[]): Promise<NavNode[]> {
+    await this.ensureInitialized();
+    return this.db.readTransaction<NavNode[]>(['nodes'], (tx, done) => {
+      const rows: NavNode[] = [];
+      const store = tx.objectStore('nodes');
+      done(rows);
+      for (const id of ids) {
+        const request = store.get(id);
+        request.onsuccess = () => { if (request.result) rows.push(request.result); };
+      }
     });
   }
 

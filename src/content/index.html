@@ -9,64 +9,62 @@
 </head>
 <body>
   <div class="app-container">
+    <header class="graph-toolbar">
+      <div class="graph-date-control">
+        <button id="graph-date-toggle" class="graph-button" type="button" aria-controls="graph-calendar" aria-expanded="false">
+          <img src="../../images/logo-48.png" width="18" height="18" alt="">
+          <span id="graph-date-value" data-i18n="content_session_date">日期</span>
+          <span class="graph-date-chevron" aria-hidden="true"></span>
+        </button>
+        <div id="graph-calendar" class="graph-calendar" hidden>
+          <div id="calendar-session-selector" class="calendar-session-selector"></div>
+          <div class="graph-calendar-footer">
+            <span id="graph-duration"></span>
+            <button id="graph-today" class="graph-button" type="button" data-i18n="graph_toolbar_today" hidden>今天</button>
+          </div>
+        </div>
+      </div>
+      <div id="view-switcher-container" class="graph-view-switcher" role="group">
+        <button id="tree-view" class="graph-button" type="button" aria-pressed="false" data-i18n="content_tree_view">树形图</button>
+        <button id="waterfall-view" class="graph-button" type="button" aria-pressed="true" data-i18n="content_waterfall_view">瀑布图</button>
+      </div>
+      <div class="graph-summary">
+        <span id="graph-record-count"></span>
+        <button id="graph-show-hidden" class="graph-button" type="button" data-i18n="content_hidden" disabled>已隐藏</button>
+      </div>
+      <button id="graph-filter-toggle" class="graph-button" type="button" aria-controls="control-panel" aria-expanded="false" data-i18n="graph_toolbar_filter">筛选</button>
+    </header>
+
     <!-- 主体内容区域 -->
     <div class="main-container">
-      <!-- Logo和名称移至主视图左上角 -->
-      <div class="logo-container">
-        <img src="../../images/logo-48.png" alt="Navigation Graph">
-        <h1 data-i18n="content_heading">导航图谱</h1>
-      </div>
-      
       <!-- 中间可视化区域 -->
       <div class="visualization-container" id="visualization-container">
         <!-- 这里会渲染SVG -->
       </div>
-      
-      <!-- 右侧控制区抓手 -->
-      <div class="control-panel-handle" id="control-panel-handle">
-        <div class="handle-icon">◀</div>
-      </div>
-      
-      <!-- 右侧控制面板 - 默认隐藏 -->
-      <div class="control-panel" id="control-panel">
-        <!-- 视图切换 -->
-        <div id="view-switcher-container" class="view-mode">
-          <button id="tree-view" data-i18n="content_tree_view">树形图</button>
-          <button id="waterfall-view" class="active" data-i18n="content_waterfall_view">瀑布图</button>
-        </div>
 
-        <div id="calendar-session-selector" class="calendar-session-selector">
-          <div class="calendar-header">
-            <button class="month-nav prev" data-i18n="content_prev_month_title">◀</button>
-            <h3 class="current-month"></h3>
-            <button class="month-nav next" data-i18n="content_next_month_title">▶</button>
-          </div>
-          
-          <div class="calendar-grid">
-            <div class="weekday" data-i18n="content_sunday">日</div>
-            <div class="weekday" data-i18n="content_monday">一</div>
-            <div class="weekday" data-i18n="content_tuesday">二</div>
-            <div class="weekday" data-i18n="content_wednesday">三</div>
-            <div class="weekday" data-i18n="content_thursday">四</div>
-            <div class="weekday" data-i18n="content_friday">五</div>
-            <div class="weekday" data-i18n="content_saturday">六</div>
-            <!-- 日期单元格由JS动态生成 -->
-          </div>
-          
-          <!-- 添加多会话列表容器 -->
-          <div class="session-list-container" id="session-list-container" style="display: none;">
-            <div class="session-list-header">
-              <h4 class="session-list-title" data-i18n="content_select_session">选择会话</h4>
-              <button class="session-list-close" id="session-list-close">&times;</button>
-            </div>
-            <div class="session-list" id="session-list">
-              <!-- 会话项将动态生成 -->
-            </div>
-          </div>
+      <div id="tree-fold-actions" hidden>
+        <div class="tree-fold-buttons">
+          <button id="tree-collapse-all" class="graph-button" type="button" aria-disabled="true" data-i18n="tree_day_collapse_all">全部折叠</button>
+          <button id="tree-expand-all" class="graph-button" type="button" aria-disabled="true" data-i18n="tree_day_expand_all">全部展开</button>
         </div>
-        <!-- 筛选面板 -->
+        <p id="tree-fold-limit" data-i18n="tree_day_expand_all_limit" hidden>节点太多，请用图上的 +N 逐组展开。</p>
+        <p id="tree-range-limit" class="graph-range-limit" hidden></p>
+      </div>
+      <div id="tree-viewport-tools" hidden>
+        <span id="tree-zoom-value">100%</span>
+        <button id="tree-fit-to-view" class="graph-button" type="button" data-i18n="graph_toolbar_fit_tree" disabled>适配全图</button>
+      </div>
+      <div id="waterfall-toolbar" hidden>
+        <div class="waterfall-range">
+          <span id="waterfall-observation-range" aria-live="polite"></span>
+          <p id="waterfall-range-limit" class="graph-range-limit" hidden></p>
+        </div>
+        <button id="waterfall-fit-toggle" class="graph-button" type="button" data-i18n="content_waterfall_fit_view">显示全图</button>
+      </div>
+
+      <aside class="control-panel" id="control-panel" aria-labelledby="graph-filter-heading" hidden>
         <div id="filter-panel-container" class="filters-panel">
-          <h2 data-i18n="content_filters">筛选器</h2>
+          <h2 id="graph-filter-heading" data-i18n="content_filters">筛选器</h2>
           
           <div class="filter-section">
             <h3 data-i18n="content_navigation_type">导航类型</h3>
@@ -112,8 +110,8 @@
             </div>
           </div>
         </div>
-      </div>
-      
+      </aside>
+
       <!-- 右侧详情面板 -->
       <div class="details-panel">
         <div id="node-details"><!-- 节点详情会显示在这里 --></div>
@@ -160,15 +158,6 @@
     <!-- 通知消息组件 - 默认隐藏 -->
     <div id="navigraph-toast" class="toast-message" style="display: none;"></div>
     
-    <!-- 底部状态栏 -->
-    <div class="windows-status-bar">
-      <div class="status-cell" id="status-date"><span data-i18n="content_session_date">会话日期</span>: --</div>
-      <div class="status-cell" id="status-duration"><span data-i18n="content_duration">时长</span>: 0min</div>
-      <div class="status-cell" id="status-nodes"><span data-i18n="content_nodes">节点</span>: 0</div>
-      <div class="status-cell" id="status-filtered"><span data-i18n="content_hidden">已隐藏</span>: 0</div>
-      <div class="status-cell" id="status-view"><span data-i18n="content_view">视图</span>: <span data-i18n="content_tree_view_short">树形图</span></div>
-      <div class="status-cell status-cell-stretch" id="status-zoom"><span data-i18n="content_zoom">缩放</span>: 100%</div>
-    </div>
   </div>
   
   <!-- 工具提示 -->

@@ -1,18 +1,11 @@
-import type { BackgroundMessages, BackgroundResponses } from '../../types/messages/background.js';
-import type { GraphPageQuery } from '../../lib/graph/query.js';
 import type { Session, SessionDetails } from '../types/session.js';
-import type { SessionMetadata, GraphFilters, GraphPageInfo } from '../../lib/graph/query.js';
+import type { SessionMetadata, GraphFilters } from '../../lib/graph/query.js';
+import type { WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import { DEFAULT_GRAPH_FILTERS } from '../../lib/graph/query.js';
-import { nodeManager } from './node-manager.js';
 import { sendMessage } from '../messaging/content-message-service.js';
 
-async function requestGraphPage(query: GraphPageQuery): Promise<BackgroundResponses.GetSessionPageResponse> {
-  const request: Omit<BackgroundMessages.GetSessionPageRequest, 'requestId'> = { ...query, action: 'getSessionPage', target: 'background' };
-  return sendMessage(request.action, query);
-}
-
-type SessionEventCallback = (session: SessionDetails | null) => void;
-/** Owns one bounded page. A new query invalidates every earlier response before any state is applied. */
+type SessionEventCallback = (session: SessionDetails | null, fitToView?: boolean) => void;
+/** Owns the selected session's bounded timeline. A new query invalidates earlier responses. */
 export class SessionServiceClient {
   private static instance: SessionServiceClient | null = null;
   private sessionList: SessionMetadata[] = [];
@@ -26,15 +19,13 @@ export class SessionServiceClient {
   private sessionsListLoadedListeners: ((sessions: Session[]) => void)[] = [];
   private latestSessionLoadListeners: ((session: SessionMetadata | null) => void)[] = [];
   private readFilters: () => GraphFilters = () => DEFAULT_GRAPH_FILTERS;
-  private readLimit: () => number = () => 100;
-  private requestedPage = 0;
-  private requestedEdgePage = 0;
-  public pageInfo: GraphPageInfo | null = null;
+  private appliedFilters?: string;
+  public timeline: WaterfallTimeline | null = null;
 
   public static getInstance(): SessionServiceClient {
     return this.instance || (this.instance = new SessionServiceClient());
   }
-  configure(filters: () => GraphFilters, limit: () => number): void { this.readFilters = filters; this.readLimit = limit; }
+  configure(filters: () => GraphFilters): void { this.readFilters = filters; }
   onSessionLoaded(callback: SessionEventCallback): void { this.sessionLoadListeners.push(callback); }
   onSessionsListLoaded(callback: (sessions: Session[]) => void): void { this.sessionsListLoadedListeners.push(callback); }
   onLatestSessionLoaded(callback: (session: SessionMetadata | null) => void): void { this.latestSessionLoadListeners.push(callback); }
@@ -53,35 +44,33 @@ export class SessionServiceClient {
 
   private async loadSession(sessionId: string): Promise<SessionDetails | null> {
     this.setCurrentSessionId(sessionId);
-    return this.loadPage();
+    return this.loadTimeline();
   }
 
-  async loadPage(page = this.requestedPage, edgePage = this.requestedEdgePage): Promise<SessionDetails | null> {
+  async loadTimeline(): Promise<SessionDetails | null> {
     const sessionId = this.currentSessionId;
     if (!sessionId) return null;
-    if (page !== this.requestedPage) edgePage = 0;
-    this.requestedPage = page; this.requestedEdgePage = edgePage;
     const generation = ++this.generation;
-    const query = { sessionId, page, edgePage, limit: Math.max(1, Math.min(500, Math.floor(this.readLimit()))), filters: { ...this.readFilters() } };
-    const queryKey = JSON.stringify(query);
+    const filters = { ...this.readFilters() };
     try {
-      const response = await requestGraphPage(query);
-      if (generation !== this.generation || queryKey !== JSON.stringify({ ...query, sessionId: this.currentSessionId })) return this.currentSession;
-      if (!response.success) throw new Error(response.error || 'Page unavailable');
+      const response = await sendMessage('getWaterfallTimeline', { sessionId, filters });
+      if (generation !== this.generation) return this.currentSession;
+      if (!response.success) throw new Error(response.error || 'Timeline unavailable');
       if (!response.session) {
-        // Deleted session: clear this page immediately, then choose a valid metadata entry.
-        this.currentSession = null; this.pageInfo = null; nodeManager.processPageData([], []);
+        this.currentSession = null;
+        this.timeline = null;
         for (const listener of this.sessionLoadListeners) listener(null);
         await this.loadSessionList();
         if (generation !== this.generation) return this.currentSession;
         this.setCurrentSessionId(null);
         return this.loadCurrentSession();
       }
-      this.pageInfo = response.pageInfo;
-      this.requestedPage = response.pageInfo.page; this.requestedEdgePage = response.pageInfo.edgePage;
+      const filterKey = JSON.stringify(filters);
+      const fitToView = this.currentSession?.id === sessionId && this.appliedFilters !== filterKey;
+      this.appliedFilters = filterKey;
+      this.timeline = response;
       this.currentSession = { ...response.session };
-      nodeManager.processPageData(response.nodes, response.edges);
-      for (const listener of this.sessionLoadListeners) listener(this.currentSession);
+      for (const listener of this.sessionLoadListeners) listener(this.currentSession, fitToView);
       return this.currentSession;
     } catch (error) {
       if (generation !== this.generation) return this.currentSession;
@@ -89,7 +78,7 @@ export class SessionServiceClient {
     }
   }
 
-  private async loadLatestSession(): Promise<SessionMetadata | null> {
+  async loadLatestSession(): Promise<SessionMetadata | null> {
     const response = await sendMessage('getLatestSession');
     if (!response?.success) throw new Error(response?.error || 'Latest session unavailable');
     this.latestSession = response.session || null;
@@ -104,19 +93,15 @@ export class SessionServiceClient {
     const latest = await this.loadLatestSession();
     if (generation !== this.generation) return this.currentSession;
     if (!this.followsLatestSession && this.sessionList.some(session => session.id === this.currentSessionId)) {
-      return this.loadPage();
+      return this.loadTimeline();
     }
-
     this.followsLatestSession = true;
-    // 活跃会话刚创建时，先显示最近一个已有记录的会话。
     const latestWithRecords = latest?.nodeCount
       ? latest
       : this.sessionList.find(session => (session.nodeCount ?? 0) > 0);
     const session = latestWithRecords ?? latest ?? this.sessionList[0];
     if (session) return this.loadSession(session.id);
-
-    this.setCurrentSessionId(null); this.currentSession = null; this.pageInfo = null;
-    nodeManager.processPageData([], []);
+    this.setCurrentSessionId(null); this.currentSession = null; this.timeline = null;
     for (const listener of this.sessionLoadListeners) listener(null);
     return null;
   }
@@ -125,7 +110,7 @@ export class SessionServiceClient {
     return this.loadSession(sessionId);
   }
   private setCurrentSessionId(sessionId: string | null): void {
-    if (sessionId !== this.currentSessionId) { this.generation++; this.requestedPage = 0; this.requestedEdgePage = 0; }
+    if (sessionId !== this.currentSessionId) this.generation++;
     this.currentSessionId = sessionId;
   }
   getSessionList(): SessionMetadata[] { return this.sessionList; }

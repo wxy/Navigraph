@@ -329,30 +329,33 @@ function updateViewPreview(view: ViewType): void {
 
       previewContainer.innerHTML = svg;
     } else if (previewType === 'tree') {
-      // 左右平衡树：根节点在中间，左右对称展开，颜色分组
       const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
-          <rect x="0" y="0" width="240" height="140" fill="transparent" />
-          <!-- center root -->
-          <circle cx="120" cy="28" r="12" fill="#4a6ee0" stroke="#fff" stroke-width="2" />
-
-          <!-- left branch -->
-          <path d="M120 36 C100 46 88 62 68 76" stroke="#d0d7ef" stroke-width="2" fill="none" />
-          <circle cx="72" cy="78" r="10" fill="#ff6b6b" stroke="#fff" stroke-width="2" />
-          <path d="M72 88 C60 98 52 110 40 120" stroke="#e9eef8" stroke-width="1.5" fill="none" />
-          <circle cx="44" cy="120" r="7" fill="#fbbc05" stroke="#fff" stroke-width="1.5" />
-          <circle cx="56" cy="106" r="7" fill="#9b59b6" stroke="#fff" stroke-width="1.5" />
-
-          <!-- right branch (mirror) -->
-          <path d="M120 36 C140 46 152 62 172 76" stroke="#d0d7ef" stroke-width="2" fill="none" />
-          <circle cx="168" cy="78" r="10" fill="#34a853" stroke="#fff" stroke-width="2" />
-          <path d="M168 88 C180 98 188 110 200 120" stroke="#e9eef8" stroke-width="1.5" fill="none" />
-          <circle cx="196" cy="120" r="7" fill="#00aaff" stroke="#fff" stroke-width="1.5" />
-          <circle cx="184" cy="106" r="7" fill="#ff7f50" stroke="#fff" stroke-width="1.5" />
-
-          <!-- subtle connectors near root -->
-          <line x1="96" y1="48" x2="104" y2="56" stroke="#dfe8fb" stroke-width="1.5" />
-          <line x1="136" y1="56" x2="144" y2="48" stroke="#dfe8fb" stroke-width="1.5" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 140" width="100%" height="100%" aria-hidden="true">
+          <defs>
+            <g id="tree-preview-branch">
+              <path d="M0 0 C8 -13 20 -17 32.5 -17.7 M32.5 -17.7 C39 -30 50 -36 63 -36 M32.5 -17.7 C38 -12 58 -12 91 -12"
+                fill="none" stroke="#aab9dc" stroke-width="2" />
+              <g fill="#7aa2ff" stroke="#fff" stroke-width="1.5">
+                <circle cx="32.5" cy="-17.7" r="5.5" />
+                <circle cx="63" cy="-36" r="5" />
+                <circle cx="91" cy="-12" r="5" />
+              </g>
+            </g>
+          </defs>
+          <g fill="#4a6ee0" stroke="#b4bdd3" stroke-width=".5">
+            <ellipse cx="120" cy="70" rx="92" ry="48" fill-opacity=".05" />
+            <ellipse cx="120" cy="70" rx="47" ry="24" fill-opacity=".08" />
+          </g>
+          <g transform="translate(120 70)">
+            <use href="#tree-preview-branch" />
+            <use href="#tree-preview-branch" transform="scale(-1 1)" />
+            <use href="#tree-preview-branch" transform="scale(1 -1)" />
+            <use href="#tree-preview-branch" transform="scale(-1 -1)" />
+          </g>
+          <circle cx="120" cy="70" r="11" fill="#4a6ee0" />
+          <path d="M173.5 48 V54" stroke="#aab9dc" />
+          <rect x="161" y="36" width="25" height="12" rx="6" fill="#fff" stroke="#aab9dc" />
+          <text x="173.5" y="45" font-size="8" text-anchor="middle" fill="#33415e">+4</text>
         </svg>
       `;
 

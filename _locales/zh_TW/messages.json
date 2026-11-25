@@ -3719,6 +3719,18 @@
     "message": "節點: {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "恢復篩選",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "實際大小",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "顯示全圖",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "已隱藏: {0}",
     "description": "已隐藏节点数量状态项"
@@ -5259,12 +5271,36 @@
     "message": "隱藏標題時，刻度、徽章與節點詳情仍可使用。",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "僅顯示工作階段最新 {0} 筆記錄",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "工作階段活動概覽。切換至實際大小可檢視各泳道。",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} 筆記錄",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "抽屜頁碼",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "上一頁",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "下一頁",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "每頁節點數",
+    "message": "瀑布圖抽屜每頁節點數",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500；只限制同時顯示的節點，不刪除歷史記錄。",
+    "message": "設定展開群組後每頁顯示的節點數。範圍 1–500，預設 100。",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
@@ -5282,5 +5318,68 @@
   },
   "recording_metadata_not_saved": {
     "message": "頁面資訊未儲存，請檢查記錄狀態。"
+  },
+  "tree_day_density": {
+    "message": "視窗空間有限，分組顯示",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "圖上已展開較多紀錄，請先收合一組",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
+  "tree_day_collapse_all": {
+    "message": "全部收合",
+    "description": "一键收起平衡树中已展开的分组"
+  },
+  "tree_day_expand_all": {
+    "message": "全部展開",
+    "description": "一键展开平衡树的所有分组"
+  },
+  "tree_day_expand_all_limit": {
+    "message": "節點太多，請用圖上的 +N 逐組展開。",
+    "description": "无法一次展开全图时的操作提示"
+  },
+  "tree_day_collapse": {
+    "message": "收合分支",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "重新整理 {0} 次",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "展開 {0} 筆記錄",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "僅顯示當天最新 {0} 筆記錄",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
+  "tree_chain_expand": {
+    "message": "展開 {0} 個中間頁面"
+  },
+  "tree_chain_collapse": {
+    "message": "收合 {0} 個中間頁面"
+  },
+  "tree_visible_level": {
+    "message": "可見第 {0} 層"
+  },
+  "tree_original_level": {
+    "message": "摺疊前第 {0} 層"
+  },
+  "tree_continues_outside_page": {
+    "message": "上一層頁面不在目前範圍"
+  },
+  "graph_toolbar_filter": {
+    "message": "篩選",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "今天",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "縮放至全圖",
+    "description": "Graph toolbar"
   }
 }

@@ -1,7 +1,9 @@
 import type { RecordingHealth } from '../recording-health.js';
-import type { GraphPageQuery, GraphPageResult, SessionMetadata } from '../../lib/graph/query.js';
+import type { GraphFilters, GraphPageQuery, GraphPageResult, SessionMetadata } from '../../lib/graph/query.js';
+import type { TreeDay } from '../../lib/graph/tree-day.js';
+import type { WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import { BaseMessage, BaseResponse } from './common.js';
-import { BrowsingSession } from '../session-types.js';
+import { BrowsingSession, NavNode } from '../session-types.js';
 // 添加这些新的类型定义
 import { 
     SessionQueryOptions,
@@ -13,6 +15,11 @@ import {
 export namespace BackgroundMessages {
   export interface GetRecordingHealthRequest extends BaseMessage { action: 'getRecordingHealth'; target: 'background'; }
   export interface GetSessionPageRequest extends BaseMessage, GraphPageQuery { action: 'getSessionPage'; target: 'background'; }
+  export interface GetWaterfallTimelineRequest extends BaseMessage {
+    action: 'getWaterfallTimeline'; target: 'background'; sessionId: string; filters: GraphFilters;
+  }
+  export interface GetTreeDayRequest extends BaseMessage { action: 'getTreeDay'; target: 'background'; date?: number; }
+  export interface GetTreeNodesRequest extends BaseMessage { action: 'getTreeNodes'; target: 'background'; ids: string[]; }
   /**
    * 获取标签页ID请求
    */
@@ -317,6 +324,9 @@ export namespace BackgroundMessages {
 export namespace BackgroundResponses {
   export interface GetRecordingHealthResponse extends BaseResponse { health: RecordingHealth; }
   export interface GetSessionPageResponse extends BaseResponse, GraphPageResult {}
+  export interface GetWaterfallTimelineResponse extends BaseResponse, WaterfallTimeline {}
+  export interface GetTreeDayResponse extends BaseResponse, TreeDay {}
+  export interface GetTreeNodesResponse extends BaseResponse { nodes: NavNode[]; }
   export interface GetTabIdResponse extends BaseResponse {
     tabId?: number;
   }
@@ -559,6 +569,9 @@ export namespace BackgroundResponses {
 export interface BackgroundAPI {
   getRecordingHealth: { request: BackgroundMessages.GetRecordingHealthRequest; response: BackgroundResponses.GetRecordingHealthResponse; };
   getSessionPage: { request: BackgroundMessages.GetSessionPageRequest; response: BackgroundResponses.GetSessionPageResponse; };
+  getWaterfallTimeline: { request: BackgroundMessages.GetWaterfallTimelineRequest; response: BackgroundResponses.GetWaterfallTimelineResponse; };
+  getTreeDay: { request: BackgroundMessages.GetTreeDayRequest; response: BackgroundResponses.GetTreeDayResponse; };
+  getTreeNodes: { request: BackgroundMessages.GetTreeNodesRequest; response: BackgroundResponses.GetTreeNodesResponse; };
   getTabId: {
     request: BackgroundMessages.GetTabIdRequest;
     response: BackgroundResponses.GetTabIdResponse;
@@ -734,6 +747,7 @@ export type BackgroundRequest =
   | BackgroundMessages.GetGraphDataRequest
   | BackgroundMessages.GetRecordingHealthRequest
   | BackgroundMessages.GetSessionPageRequest
+  | BackgroundMessages.GetWaterfallTimelineRequest
   | BackgroundMessages.GetSessionDetailsRequest
   | BackgroundMessages.CreateSessionRequest
   | BackgroundMessages.UpdateSessionRequest
@@ -768,6 +782,7 @@ export type BackgroundResponse =
   | BackgroundResponses.GetGraphDataResponse
   | BackgroundResponses.GetRecordingHealthResponse
   | BackgroundResponses.GetSessionPageResponse
+  | BackgroundResponses.GetWaterfallTimelineResponse
   | BackgroundResponses.GetSessionDetailsResponse
   | BackgroundResponses.CreateSessionResponse
   | BackgroundResponses.UpdateSessionResponse

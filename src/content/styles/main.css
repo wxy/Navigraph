@@ -238,6 +238,14 @@ body.loading-session #visualization-container::before {
   transition: all 0.2s ease;
 }
 
+button.day-cell {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 /* 折叠组抽屉：阻止滚动链到父容器，优先使用 CSS 来避免非被动 wheel 监听警告 */
 .collapsed-nodes-drawer .drawer-body {
   overscroll-behavior: contain; /* 阻止滚动链到父容器/页面 */
@@ -605,9 +613,10 @@ body.loading-session #visualization-container::before {
 /* 主体内容区域 */
 .main-container {
   display: grid;
-  grid-template-columns: 1fr auto; /* 默认只有主视图和右侧详情面板 */
+  grid-template-columns: minmax(0, 1fr) auto;
   position: relative;
-  height: 100%;
+  flex: 1;
+  min-block-size: 0;
   overflow: hidden;
   background-color: var(--background-color);
   color: var(--text-color);
@@ -694,7 +703,7 @@ body.loading-session #visualization-container::before {
   flex: 1;
   position: relative;
   overflow: hidden;
-  min-height: 500px;
+  min-height: 0;
   border: 1px solid var(--border-color, #333);
   background-color: var(--background-color);
 }
@@ -953,47 +962,6 @@ svg {
   opacity: 1;
 }
 
-/* ========== Windows风格状态栏 ========== */
-.windows-status-bar {
-  display: flex;
-  background-color: var(--status-bg, #f0f0f0);
-  border-top: 1px solid var(--status-border, #ddd);
-  height: 24px;
-  align-items: stretch;
-  font-size: 12px;
-  color: var(--status-text, #333);
-  user-select: none;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
-  flex: 0 0 auto;
-}
-
-.status-cell {
-  padding: 0 8px;
-  border: 1px solid;
-  border-color: var(--status-border-dark, #808080) var(--status-border-light, #fff) var(--status-border-light, #fff) var(--status-border-dark, #808080);
-  background-color: var(--status-cell-bg, #e0e0e0);
-  display: flex;
-  align-items: center;
-  margin-right: 2px;
-  min-width: 80px;
-  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-.status-cell-stretch {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-cell-highlight {
-  font-weight: 500;
-}
-
 /* ========== 工具提示 ========== */
 #tooltip {
   position: absolute;
@@ -1087,12 +1055,6 @@ path.link.closed, .edge.closed {
 .node:hover .filtered-indicator {
   transform: scale(1.2);
   opacity: 1;
-}
-
-/* 状态栏中的过滤指示器 */
-#status-filtered {
-  /* 颜色由 JavaScript 动态控制：有隐藏节点时为红色，无隐藏时为默认颜色 */
-  font-weight: 500;
 }
 
 /* 根节点样式 */
@@ -1638,113 +1600,325 @@ svg .node-label {
   fill: #999;
 }
 
-/* Logo 容器 - 使用专用变量 */
-.logo-container {
-  position: absolute;
-  top: 10px;
-  left: 15px;
-  z-index: 10;
+
+.graph-toolbar {
+  position: relative;
+  z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  background-color: var(--logo-bg-color, rgba(255, 255, 255, 0.8));
-  border: var(--logo-border, 1px solid rgba(0, 0, 0, 0.1));
-  padding: 5px 10px;
+  gap: 6px 14px;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background-color: var(--toolbar-bg, #fff);
+  border-block-end: 1px solid var(--color-border, #ddd);
+  color: var(--text-color, #333);
+}
+
+.graph-button {
+  min-block-size: 32px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-border, #ddd);
   border-radius: 6px;
-  backdrop-filter: blur(4px);
+  background-color: var(--toolbar-bg, #fff);
+  color: var(--text-color, #333);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.logo-container img {
-  width: 28px;
-  height: 28px;
+.graph-button:hover:not(:disabled, [aria-disabled="true"]) {
+  background-color: var(--toolbar-button-hover, var(--color-bg-hover));
 }
 
-.logo-container h1 {
-  font-size: 16px;
-  margin: 0;
-  font-weight: 500;
-  color: var(--logo-text-color, inherit);
+.graph-button:disabled,
+.graph-button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
 }
 
-/* 控制面板抓手 */
-.control-panel-handle {
+.graph-date-control {
+  position: relative;
+  min-inline-size: 10em;
+}
+
+#graph-date-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-color: transparent;
+}
+
+.graph-date-chevron {
+  inline-size: 5px;
+  block-size: 5px;
+  border-inline-end: 1px solid currentColor;
+  border-block-end: 1px solid currentColor;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.graph-calendar {
   position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 80px;
-  background-color: var(--color-bg-secondary);
-  border-radius: 6px 0 0 6px;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 0;
+  inline-size: min(296px, calc(100vw - 24px));
+  max-block-size: calc(100vh - 52px);
+  overflow: auto;
+  padding: 10px;
+  background-color: var(--toolbar-bg, #fff);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+}
+
+.graph-calendar .session-list-item {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+}
+
+.graph-calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px 0;
+  color: var(--label-color, #555);
+  font-size: 12px;
+}
+
+.graph-view-switcher,
+.graph-summary,
+.tree-fold-buttons {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 1001;
-  opacity: 0.7; /* 默认时有点透明 */
-  transition: right 0.3s ease-in-out, background-color 0.2s ease, opacity 0.2s ease;
+  gap: 5px;
 }
 
-.control-panel-handle:hover {
-  background-color: var(--color-accent);
+.graph-view-switcher .graph-button,
+#graph-show-hidden {
+  border-color: transparent;
+}
+
+.graph-view-switcher .graph-button[aria-pressed="true"] {
+  position: relative;
+  background-color: var(--toolbar-button, #f5f7fa);
+}
+
+.graph-view-switcher .graph-button[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 8px 2px;
+  border-block-end: 2px solid var(--btn-primary, #4285f4);
+}
+
+.graph-summary {
+  margin-inline-start: auto;
+  color: var(--label-color, #555);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+#graph-filter-toggle[aria-expanded="true"],
+#graph-date-toggle[aria-expanded="true"] {
+  border-color: var(--btn-primary, #4285f4);
+  background-color: var(--toolbar-button, #f5f7fa);
+}
+
+#tree-fold-actions,
+#tree-viewport-tools,
+#waterfall-toolbar {
+  position: absolute;
+  z-index: 10;
+}
+
+#tree-fold-actions {
+  inset: 10px auto auto 12px;
+  max-inline-size: min(22rem, calc(100% - 24px));
+  pointer-events: none;
+}
+
+.tree-fold-buttons {
+  flex-wrap: wrap;
+}
+
+.tree-fold-buttons button {
+  pointer-events: auto;
+}
+
+#tree-fold-limit,
+#tree-fold-actions .graph-range-limit {
+  inline-size: fit-content;
+  margin-block-start: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 5px;
+  background-color: var(--toolbar-bg, #fff);
+  font-size: 12px;
+}
+
+#tree-viewport-tools {
+  inset: auto 12px 10px auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--toolbar-bg, #fff);
+  color: var(--label-color, #555);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 6px;
+  padding: 2px 3px 2px 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+#tree-viewport-tools .graph-button {
+  border-color: transparent;
+}
+
+#waterfall-toolbar {
+  inset: 8px 50px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+  pointer-events: none;
+  color: var(--label-color, #555);
+  font-size: 13px;
+}
+
+#waterfall-toolbar .graph-button {
+  pointer-events: auto;
+}
+
+#waterfall-observation-range {
+  font-variant-numeric: tabular-nums;
+}
+
+#waterfall-range-limit {
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .graph-toolbar {
+    gap: 4px 7px;
+  }
+
+  .graph-summary {
+    margin-inline-start: 0;
+  }
+
+  #graph-filter-toggle {
+    margin-inline-start: auto;
+  }
+
+  #waterfall-toolbar {
+    inset-inline: 12px;
+  }
+}
+
+.graph-toolbar [hidden],
+#tree-viewport-tools[hidden],
+#waterfall-toolbar[hidden] {
+  display: none;
+}
+
+.waterfall-card-background {
+  fill: var(--waterfall-type-color);
+  stroke: var(--waterfall-type-stroke);
+  stroke-width: 1;
+  opacity: 0.95;
+  transition: fill 0.2s ease, opacity 0.2s ease;
+}
+
+.waterfall-card-background:hover {
+  fill: var(--waterfall-type-hover);
   opacity: 1;
 }
 
-/* 面板可见时，抓手更明显 */
-.control-panel-handle.panel-visible {
-  opacity: 0.9;
+.waterfall-card {
+  cursor: pointer;
 }
 
-/* 当面板可见时，抓手位置需要变化 */
-.control-panel.visible + .control-panel-handle,
-.control-panel-handle.panel-visible {
-  right: 300px; /* 与面板宽度相同 */
+.waterfall-window-movable .strip-background,
+.waterfall-observation-frame.is-movable {
+  cursor: grab;
 }
 
-.control-panel-handle {
-  right: 0; /* 默认位置在右侧边缘 */
-  transition: right 0.3s ease-in-out;
+.waterfall-observation-frame {
+  fill: none;
+  stroke: var(--waterfall-accent, #4a90e2);
+  stroke-opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
 }
 
-.control-panel.visible ~ .control-panel-handle {
-  right: 300px; /* 当控制面板可见时，抓手也跟着移动 */
+.waterfall-observation-frame.is-movable {
+  pointer-events: stroke;
 }
 
-.handle-icon {
-  font-size: 18px;
-  color: var(--color-text);
-  font-weight: bold;
-  transition: transform 0.3s ease;
+.waterfall-lane-scroll {
+  cursor: ns-resize;
 }
 
-/* 面板可见时，箭头方向变化 */
-.control-panel-handle.panel-visible .handle-icon {
-  transform: rotate(180deg); /* 箭头方向反转 */
+.waterfall-panning .waterfall-observation-frame.is-movable,
+.waterfall-panning .waterfall-pannable,
+.waterfall-panning .waterfall-pannable * {
+  cursor: grabbing !important;
 }
 
-/* 控制面板 */
+.visualization-svg[data-view="waterfall"] .group-badge:focus {
+  outline: none;
+}
+
+.visualization-svg[data-view="waterfall"] .group-badge:focus-visible > path {
+  fill: #767676;
+}
+
+.waterfall-drawer-pager {
+  color-scheme: light;
+  color: var(--text-color, #333);
+  background-color: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.waterfall-drawer-pager {
+  position: absolute;
+  z-index: 21;
+  inset-block-end: 86px;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 6px;
+  background: var(--color-bg-panel, #f5f7fa);
+  font-size: 13px;
+}
+
+.waterfall-drawer-pager input {
+  width: 5em;
+}
+
+.waterfall-drawer-pager button {
+  min-width: 26px;
+  min-height: 26px;
+}
+
 .control-panel {
   position: absolute;
-  top: 0;
-  right: -320px; /* 默认隐藏 */
-  width: 300px;
-  height: 100%;
-  background-color: var(--color-bg-panel, #f5f7fa); /* 定义一个专用颜色变量，默认值为浅灰色 */
-  border-left: 1px solid var(--color-border);
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
-  padding: 20px 15px;
-  z-index: 1000; /* 确保高于SVG */
-  overflow-y: auto;
-  transition: right 0.3s ease-in-out, background-color 0.3s ease;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.control-panel.visible {
-  right: 0;
+  inset: 8px 8px auto auto;
+  inline-size: min(290px, calc(100% - 16px));
+  max-block-size: calc(100% - 16px);
+  z-index: 15;
+  overflow: auto;
+  background-color: var(--toolbar-bg, #fff);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  padding: 12px;
 }
 
 /* 控制面板滚动条美化 - 仅保留基础样式 */
@@ -1835,8 +2009,12 @@ svg .node-label {
 
 /* 筛选面板调整 */
 .control-panel .filters-panel {
-  padding: 15px;
-  border-top: 1px solid var(--color-border);
+  display: flex;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .control-panel .filters-panel h2 {
@@ -1856,13 +2034,6 @@ svg .node-label {
 
 .control-panel .filter-option {
   margin-bottom: 6px;
-}
-
-/* 在小屏幕上调整控制面板 */
-@media (max-width: 768px) {
-  .control-panel {
-    width: 260px;
-  }
 }
 
 /* 增加CSS变量定义以支持明暗主题 */
@@ -2054,6 +2225,81 @@ svg .node-label {
 
 /* Display preferences affect graph decoration, never axis/control text or hit targets. */
 .visualization-svg.hide-node-labels .node-title-label { display: none !important; }
+
+.visualization-svg[data-view="tree"] .node-title-label {
+  stroke: none;
+}
+
+[data-theme="dark"] .visualization-svg[data-view="tree"] .link:is(.initial, .unknown) {
+  stroke: var(--label-color);
+}
+
+.tree-levels {
+  pointer-events: none;
+}
+
+.tree-level-gradient {
+  --tree-halo-opacity: 0.12;
+}
+
+[data-theme="dark"] .tree-level-gradient {
+  --tree-halo-opacity: 0.19;
+}
+
+.tree-level-gradient stop {
+  stop-color: var(--btn-primary, #4a6ee0);
+  stop-opacity: calc(var(--tree-halo-opacity) * var(--tree-level-strength));
+}
+
+.tree-level {
+  fill: none;
+  stroke: var(--svg-text);
+  stroke-opacity: 0.34;
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.selected-tree-level {
+  stroke: var(--btn-primary, #4285f4);
+  stroke-opacity: 0.8;
+  stroke-width: 1px;
+}
+
+.link.tree-link-continuation {
+  stroke-dasharray: 4 5;
+  stroke-opacity: 0.5;
+}
+
+.tree-chain-guide {
+  stroke: var(--svg-text);
+  stroke-opacity: .38;
+  pointer-events: none;
+}
+
+.tree-chain-toggle {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
+  margin: 3px 4px;
+  padding: 0;
+  border: 1px solid var(--svg-node-stroke);
+  border-radius: 999px;
+  background: var(--svg-background);
+  color: var(--svg-text);
+  font: 600 13px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.tree-chain-toggle:hover {
+  background: var(--svg-node-fill);
+  border-color: var(--btn-primary, #4285f4);
+}
+
+.tree-chain-toggle:focus-visible {
+  outline: 2px solid var(--svg-text);
+  outline-offset: 1px;
+}
 .visualization-svg.motion-disabled, .visualization-svg.motion-disabled * {
   animation: none !important;
   transition: none !important;

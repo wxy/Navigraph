@@ -3719,6 +3719,18 @@
     "message": "노드: {0}",
     "description": "节点数量状态项"
   },
+  "content_restore_filters": {
+    "message": "필터 복원",
+    "description": "恢复此前的筛选条件"
+  },
+  "content_waterfall_actual_size": {
+    "message": "실제 크기",
+    "description": "以实际大小查看瀑布图"
+  },
+  "content_waterfall_fit_view": {
+    "message": "전체 보기",
+    "description": "在窗口内查看完整瀑布图"
+  },
   "content_hidden_count": {
     "message": "숨김: {0}",
     "description": "已隐藏节点数量状态项"
@@ -5259,12 +5271,36 @@
     "message": "제목을 숨겨도 축, 배지 및 노드 세부정보는 사용할 수 있습니다.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "이 세션의 최근 기록 {0}개 표시 중",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "세션 활동 개요입니다. 실제 크기로 전환하면 레인을 볼 수 있습니다.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "기록 {0}개",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "그룹 페이지",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "이전 페이지",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "다음 페이지",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "페이지당 노드 수",
+    "message": "폭포 그래프 그룹의 페이지당 노드 수",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500. 표시되는 노드 수만 제한하며 기록을 삭제하지 않습니다.",
+    "message": "그룹을 열었을 때 페이지당 노드 수입니다. 1~500, 기본값 100.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
@@ -5282,5 +5318,68 @@
   },
   "recording_metadata_not_saved": {
     "message": "페이지 정보가 저장되지 않았습니다. 기록 상태를 확인하세요."
+  },
+  "tree_day_density": {
+    "message": "창 크기에 맞춰 그룹화",
+    "description": "窗口内密集分组的原因"
+  },
+  "tree_day_view_full": {
+    "message": "다른 기록을 보려면 그룹 하나를 먼저 접으세요.",
+    "description": "展开内容超出窗口可布局的数量时的提示"
+  },
+  "tree_day_collapse_all": {
+    "message": "모두 접기",
+    "description": "一键收起平衡树中已展开的分组"
+  },
+  "tree_day_expand_all": {
+    "message": "모두 펼치기",
+    "description": "一键展开平衡树的所有分组"
+  },
+  "tree_day_expand_all_limit": {
+    "message": "노드가 너무 많습니다. 트리의 +N을 눌러 그룹별로 펼치세요.",
+    "description": "无法一次展开全图时的操作提示"
+  },
+  "tree_day_collapse": {
+    "message": "가지 접기",
+    "description": "收起展开的平衡树分支"
+  },
+  "tree_day_reload_count": {
+    "message": "새로고침 {0}회",
+    "description": "折叠记录中的刷新次数"
+  },
+  "tree_day_expand": {
+    "message": "기록 {0}개 펼치기",
+    "description": "展开平衡树分组中的记录"
+  },
+  "tree_day_limit": {
+    "message": "이 날짜의 최신 기록 {0}개",
+    "description": "超出平衡树全天记录上限时显示的范围"
+  },
+  "tree_chain_expand": {
+    "message": "중간 페이지 {0}개 펼치기"
+  },
+  "tree_chain_collapse": {
+    "message": "중간 페이지 {0}개 접기"
+  },
+  "tree_visible_level": {
+    "message": "표시 깊이 {0}"
+  },
+  "tree_original_level": {
+    "message": "접기 전 깊이 {0}"
+  },
+  "tree_continues_outside_page": {
+    "message": "상위 페이지가 현재 범위 밖에 있습니다"
+  },
+  "graph_toolbar_filter": {
+    "message": "필터",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_today": {
+    "message": "오늘",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "화면에 맞추기",
+    "description": "Graph toolbar"
   }
 }

@@ -1,7 +1,10 @@
 import { defaultView, validView } from '../utils/display-settings.js';
 import type { NavigraphSettings } from '../../lib/settings/types.js';
 import { sessionServiceClient } from './session-service-client.js';
-import type { GraphPageInfo } from '../../lib/graph/query.js';
+import { matchesGraphFilters, type GraphPageInfo } from '../../lib/graph/query.js';
+import type { FilteredTreeDay, TreeDay } from '../../lib/graph/tree-day.js';
+import type { BackgroundResponses } from '../../types/messages/background.js';
+import { sendMessage } from '../messaging/content-message-service.js';
 /**
  * 导航图谱可视化器核心类
  */
@@ -20,6 +23,7 @@ import { NavigationMessageHandler } from '../messaging/handlers/navigation-messa
 import { FilterManager } from '../visualizer/state/FilterManager.js';
 import type { FilterStates } from '../visualizer/ui/FilterConfig.js';
 import { RenderingManager } from '../visualizer/renderers/RenderingManager.js';
+import type { GraphRenderOptions } from '../visualizer/renderers/BaseRenderer.js';
 
 const logger = new Logger('NavigationVisualizer');
 /**
@@ -27,9 +31,40 @@ const logger = new Logger('NavigationVisualizer');
  * 负责可视化导航数据
  */ 
 export class NavigationVisualizer implements Visualizer {
-  get pageInfo(): GraphPageInfo | null { return sessionServiceClient.pageInfo; }
-  async loadGraphPage(page = 0, edgePage = 0): Promise<void> {
-    await sessionServiceClient.loadPage(page, edgePage);
+  get waterfallTimeline() { return sessionServiceClient.timeline; }
+  get graphCounts(): Pick<GraphPageInfo, 'total' | 'matched'> | null {
+    const graph = this.currentView === 'tree' ? this.treeDay : this.waterfallTimeline;
+    return graph ? { total: graph.total, matched: graph.nodes.length } : null;
+  }
+
+  treeDay: FilteredTreeDay | null = null;
+  private treeSnapshot: TreeDay | null = null;
+  private treeDate?: number;
+  private treeRequest = 0;
+
+  async loadTreeDay(fit = false): Promise<void> {
+    const request = ++this.treeRequest;
+    const response: BackgroundResponses.GetTreeDayResponse = await sendMessage('getTreeDay', { date: this.treeDate });
+    if (request !== this.treeRequest || this.currentView !== 'tree') return;
+    const { start, nodes, truncated } = response;
+    const fitToView = fit || this.treeSnapshot?.start !== start;
+    this.treeSnapshot = { start, nodes, truncated };
+    this.refreshVisualization(undefined, { restoreTransform: true, fitToView });
+    this.sessionViewController.updateSessionSelector();
+  }
+
+  async selectTreeDay(date: number): Promise<void> {
+    this.treeDate = date;
+    await this.loadTreeDay(true);
+  }
+
+  async reloadGraph(): Promise<void> {
+    if (this.currentView === 'tree') {
+      if (this.treeSnapshot) this.refreshVisualization(undefined, { fitToView: true });
+      else await this.loadTreeDay(true);
+      return;
+    }
+    await sessionServiceClient.loadTimeline();
   }
 
   // 可视化容器
@@ -48,7 +83,6 @@ export class NavigationVisualizer implements Visualizer {
   width: number = 0;
   height: number = 0;
   currentSession?: SessionDetails = undefined; // 修改为可选属性，与Visualizer接口匹配
-  statusBar?: HTMLElement; // 修改为可选属性，与Visualizer接口匹配
 
   private dataProcessor: DataProcessor = new DataProcessor();
   private uiManager: UIManager = new UIManager(this);
@@ -76,9 +110,10 @@ export class NavigationVisualizer implements Visualizer {
   get hasExplicitView(): boolean { return this.explicitView; }
   private readonly popstateHandler = () => {
     const view = this.resolveLocationView();
+    const viewChanged = view !== this.currentView;
     this.filterManager.restoreFromUrl();
     this.renderCurrentView(view);
-    void this.loadGraphPage(0).catch(error => this.showError(String(error)));
+    if (view === 'waterfall' && !viewChanged) void this.reloadGraph().catch(error => this.showError(String(error)));
   };
 
 
@@ -107,7 +142,7 @@ export class NavigationVisualizer implements Visualizer {
     
     // 初始化筛选器管理器 - 新增
     this.filterManager = new FilterManager(this, this.dataProcessor, this.uiManager);
-    sessionServiceClient.configure(() => this.filters, () => window.navigraphSettings?.maxNodes || 100);
+    sessionServiceClient.configure(() => this.filters);
     
     // 初始化渲染管理器
     this.renderingManager = new RenderingManager(this, this.viewStateManager, this.uiManager);
@@ -115,7 +150,7 @@ export class NavigationVisualizer implements Visualizer {
     // 设置缩放变化回调
     this.viewStateManager.setOnZoomChangeCallback(
       // 使用NavigationVisualizer中的节流函数
-      () => this.updateStatusBarThrottled()
+      () => this.updateToolbarThrottled()
     );
     // 检查d3是否已加载
     if (typeof window.d3 === "undefined") {
@@ -248,9 +283,9 @@ export class NavigationVisualizer implements Visualizer {
     }
   }
 
-  // 更新状态栏
-  public updateStatusBar(): void {
-    this.uiManager.updateStatusBar();
+  // 更新图谱工具栏
+  public updateToolbar(): void {
+    this.uiManager.updateToolbar();
   }
 
   /**
@@ -290,13 +325,10 @@ export class NavigationVisualizer implements Visualizer {
       this.applyGlobalConfig();
       return;
     }
-    const pageSizeChanged = Math.floor(Math.min(500, previous.maxNodes)) !== Math.floor(Math.min(500, next.maxNodes));
     const target = !this.explicitView ? defaultView() : this.currentView;
     const viewChanged = target !== this.currentView;
     if (viewChanged) this.renderCurrentView(target as 'tree' | 'waterfall');
-    if (pageSizeChanged) {
-      void this.loadGraphPage(0).catch(error => this.showError(String(error)));
-    } else if (!viewChanged && (previous.animationEnabled !== next.animationEnabled || previous.showLabels !== next.showLabels)) {
+    if (!viewChanged && (previous.animationEnabled !== next.animationEnabled || previous.showLabels !== next.showLabels)) {
       this.refreshVisualization(undefined, { restoreTransform: true });
     }
   }
@@ -349,14 +381,14 @@ export class NavigationVisualizer implements Visualizer {
     this.renderingManager.updateContainerSize();
   }
   /**
-   * 节流更新状态栏
+   * 节流更新工具栏
    */
-  private updateStatusBarThrottled = (() => {
+  private updateToolbarThrottled = (() => {
     let ticking = false;
     return () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          this.updateStatusBar();
+          this.updateToolbar();
           ticking = false;
         });
         ticking = true;
@@ -396,7 +428,7 @@ export class NavigationVisualizer implements Visualizer {
   /**
    * 刷新可视化
    */
-  public refreshVisualization(data?: any, options: any = {}): void {
+  public refreshVisualization(data?: any, options: GraphRenderOptions & { skipSessionEvents?: boolean } = {}): void {
     // 获取控制选项
     const skipSessionEvents = options.skipSessionEvents === true;
     
@@ -441,6 +473,7 @@ export class NavigationVisualizer implements Visualizer {
   }
 
   private renderCurrentView(view: 'tree' | 'waterfall'): void {
+    const viewChanged = view !== this.currentView;
     // 使用视图状态管理器切换视图
     this.viewStateManager.switchView(view as "tree" | "waterfall");
 
@@ -458,7 +491,13 @@ export class NavigationVisualizer implements Visualizer {
       }
 
       // 使用渲染管理器重新渲染
-      this.refreshVisualization(undefined, { restoreTransform: true });
+      this.refreshVisualization(undefined, { fitToView: true });
+      if (view === 'tree') {
+        void this.loadTreeDay().catch(error => this.showError(String(error)));
+      } else if (viewChanged) {
+        this.treeRequest++;
+        void this.sessionViewController.loadCurrentSession().catch(error => this.showError(String(error)));
+      }
     } catch (error) {
       logger.error(_('reinit_view_failed', '重新初始化视图失败'), error);
       this.showError(_('content_view_switch_failed', '切换视图失败') + ": " + (error instanceof Error ? error.message : String(error)));
@@ -470,6 +509,13 @@ export class NavigationVisualizer implements Visualizer {
    * 修改为使用FilterManager
    */
   public applyFilters(): void {
+    if (this.currentView === 'tree' && this.treeSnapshot) {
+      const { start, nodes, truncated } = this.treeSnapshot;
+      const filters = this.filters;
+      this.treeDay = { start, truncated, total: nodes.length,
+        oldest: nodes[nodes.length - 1]?.timestamp, newest: nodes[0]?.timestamp,
+        nodes: nodes.filter(node => matchesGraphFilters(node.type, node.isClosed === true, node.tracking, filters)) };
+    }
     this.nodes = this.allNodes;
     this.edges = this.allEdges;
   }
@@ -485,6 +531,14 @@ export class NavigationVisualizer implements Visualizer {
     
     // 切换状态
     this.filterManager.handleFilterChange('filter-closed', !currentState);
+  }
+
+  get canRestoreFilters(): boolean {
+    return this.filterManager.canRestoreFilters;
+  }
+
+  public toggleHiddenNodes(): void {
+    this.filterManager.toggleHiddenNodes();
   }
 
   /**
@@ -509,6 +563,10 @@ export class NavigationVisualizer implements Visualizer {
    * 切换到当天的会话
    */
   public switchToToday(): void {
+    if (this.currentView === 'tree') {
+      void this.selectTreeDay(Date.now()).catch(error => this.showError(String(error)));
+      return;
+    }
     logger.log(_('switch_to_today', '切换到当天'));
     
     // 使用 SessionViewController 切换到当天
@@ -551,7 +609,7 @@ export class NavigationVisualizer implements Visualizer {
    * @param node 节点数据
    */
   public showNodeDetails(node: NavNode): void {
-    this.uiManager.showNodeDetails(this.nodeMap.get(node.id) || node);
+    this.uiManager.showNodeDetails(node);
   }
   public showDetailedError(
     title: string,
@@ -697,6 +755,11 @@ export class NavigationVisualizer implements Visualizer {
    */
   async refreshData(): Promise<void> {
     try {
+      if (this.currentView === 'tree') {
+        await this.sessionViewController.loadSessionList();
+        if (this.currentView === 'tree') await this.loadTreeDay();
+        return;
+      }
       await this.sessionViewController.refreshSessionData();
       this.refreshVisualization();
       logger.log(_('data_refresh_complete', '刷新数据完成'));

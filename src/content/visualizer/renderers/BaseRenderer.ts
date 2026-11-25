@@ -2,7 +2,12 @@
  * 渲染器基础接口
  * 定义所有可视化渲染器必须实现的方法
  */
-import { NavNode, NavLink, Visualizer } from '../../types/navigation.js';
+import type { NavNode, NavLink } from '../../types/navigation.js';
+
+export interface GraphRenderOptions {
+  restoreTransform?: boolean;
+  fitToView?: boolean;
+}
 
 export interface BaseRenderer {
   /**
@@ -20,7 +25,7 @@ export interface BaseRenderer {
    * @param edges 边数据
    * @param options 渲染选项
    */
-  render(nodes: NavNode[], edges: NavLink[], options?: any): void;
+  render(nodes: NavNode[], edges: NavLink[], options?: GraphRenderOptions): void;
   
   /**
    * 清理资源
