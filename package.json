@@ -29,7 +29,8 @@
   },
   "dependencies": {
     "astronomy-engine": "2.1.19",
-    "d3": "^7.9.0"
+    "d3": "^7.9.0",
+    "tldts": "7.6.2"
   },
   "engines": {
     "node": ">=20.9.0"

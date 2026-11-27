@@ -5374,6 +5374,10 @@
     "message": "Filter",
     "description": "Graph toolbar"
   },
+  "graph_toolbar_options": {
+    "message": "Optionen",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
   "graph_toolbar_today": {
     "message": "Heute",
     "description": "Graph toolbar"

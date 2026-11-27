@@ -1,15 +1,16 @@
 import { graphViewUrl } from '../../../lib/graph/location.js';
+import { formatGraphDuration, graphDateFormat, setupGraphOptions } from '../../../lib/graph/toolbar.js';
 import { localDayRange } from '../../../lib/graph/tree-day.js';
 import { _ } from '../../../lib/utils/i18n.js';
 import type { Visualizer } from '../../types/navigation.js';
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 
 export class GraphToolbar {
   constructor(private visualizer: Visualizer) {}
 
   initialize(): void {
+    setupGraphOptions();
     document.getElementById('graph-show-hidden')?.addEventListener('click', () => this.visualizer.toggleHiddenNodes());
   }
 
@@ -44,13 +45,13 @@ export class GraphToolbar {
     const duration = document.getElementById('graph-duration');
     const today = document.getElementById('graph-today');
     if (start !== undefined) {
-      const date = dateFormat.format(start);
+      const date = graphDateFormat.format(start);
       if (dateLabel) dateLabel.textContent = session ? `${date} · ${timeFormat.format(start)}` : date;
       if (duration && (day || session)) {
         const span = day
           ? (day.nodes[0]?.timestamp ?? 0) - (day.nodes.at(-1)?.timestamp ?? 0)
           : (session?.endTime ?? Date.now()) - start;
-        duration.textContent = _('content_session_duration_label', '时长: {0}', this.formatDuration(span));
+        duration.textContent = _('content_session_duration_label', '时长: {0}', formatGraphDuration(span));
       } else if (duration) duration.textContent = '';
     } else {
       if (dateLabel) dateLabel.textContent = _('content_session_date', '会话日期');
@@ -70,12 +71,4 @@ export class GraphToolbar {
     }
   }
 
-  private formatDuration(ms: number): string {
-    const minutes = Math.floor(Math.max(0, ms) / 60_000);
-    const hours = Math.floor(minutes / 60);
-    if (!hours) return _('content_duration_minutes', '{0} 分钟', String(minutes));
-    return minutes % 60
-      ? _('calendar_duration_hours_minutes', '{0}小时 {1}分钟', String(hours), String(minutes % 60))
-      : _('content_duration_hours', '{0} 小时', String(hours));
-  }
 }

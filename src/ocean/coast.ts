@@ -1,21 +1,22 @@
 import { berthInOpenWater, polar, type Landing, type Point, type WaterObstacle } from './course.js';
 import type { Dock, Island, Ship } from './history.js';
 import { LAND_GRID, LAND_TILES } from './land-data.js';
+import { LARGE_LAND_TILES, LARGE_SHORE_RADII } from './large-island-data.js';
 import { SHORE_RADII } from './shore-data.js';
 
 export interface Berth extends Landing {
   slips: Map<Ship, Point>;
 }
 
-const ANCHORS = [
-  [.37, .43], [.73, .27], [.21, .20], [.72, .72], [.17, .69],
-  [.88, .49], [.45, .77], [.52, .20], [.28, .81],
-];
+const WIDE_ANCHORS = [[.35, .43], [.73, .28], [.16, .22], [.67, .77], [.29, .78], [.87, .56]];
+const TALL_ANCHORS = [[.35, .27], [.69, .48], [.70, .15], [.26, .65], [.62, .82], [.23, .46]];
 const GOLDEN_RATIO = (Math.sqrt(5) - 1) / 2;
 const FULL_TURN = 2 * Math.PI;
-const COASTS = SHORE_RADII.map(samples => samples.flatMap((radius, index) =>
+const coastalSamples = (atlas: readonly (readonly number[])[]) => atlas.map(samples => samples.flatMap((radius, index) =>
   radius > 0 ? [{ angle: index * FULL_TURN / samples.length, radius: radius / 1000 }] : [],
 ));
+const COASTS = coastalSamples(SHORE_RADII);
+const LARGE_COASTS = coastalSamples(LARGE_SHORE_RADII);
 
 function siteHash(site: string): number {
   let hash = 0;
@@ -75,6 +76,93 @@ function townBehind(berth: Berth, continent: boolean, sprite: number, width: num
   return { point: best.point, size: best.coverage < 6 ? size * .75 : size, sprite: continent ? 3 : sprite % 4 };
 }
 
+function islandSize(island: Island, room: number, maxRecords: number): number {
+  const weight = Math.log1p(island.records) / maxRecords;
+  return room * (island.scale === 'small' ? .36 + .37 * weight : .8 + .20 * weight);
+}
+
+function islandRadius(size: number): number {
+  return size * .50 + Math.min(9, size * .12);
+}
+
+function scatteredPoints(islands: readonly Island[], width: number, height: number, room: number, maxRecords: number): Point[] {
+  const points: (Point & { radius: number })[] = [];
+  const waterGap = Math.min(23, room * .16);
+  for (const island of islands) {
+    const radius = islandRadius(islandSize(island, room, maxRecords));
+    const margin = radius + 12;
+    let seed = Math.imul(siteHash(island.site), 1597334677) >>> 0;
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 2 ** 32;
+    };
+    for (let attempt = 0; attempt < 70; attempt++) {
+      const point = {
+        x: margin + random() * (width - 2 * margin),
+        y: margin + random() * (height - 2 * margin),
+      };
+      if (points.some(other => Math.hypot(point.x - other.x, point.y - other.y) < radius + other.radius + waterGap)) continue;
+      points.push({ ...point, radius });
+      break;
+    }
+  }
+  return points;
+}
+
+function islandPositions(islands: readonly Island[], left: number, width: number, height: number, maxRecords: number) {
+  const count = islands.length;
+  const tall = width < height * 1.16;
+  if (count <= WIDE_ANCHORS.length) {
+    const anchors = tall ? TALL_ANCHORS : WIDE_ANCHORS;
+    return islands.map((_, index) => {
+      const [x, y] = count === 1 ? [.47, .51] : anchors[index];
+      return { center: { x: left + x * width, y: y * height }, room: Math.min(width * .29, height * .36, 239),
+        labelWidth: Math.min(164, width * .35), compact: false };
+    });
+  }
+
+  // Stagger two uneven island groups around a wide, gently curved passage.
+  const length = tall ? height : width;
+  const passage = Math.min(124, length * .15);
+  const divide = (length - passage) * .43;
+  const firstGroup = Math.round(count * .43);
+  const groups = [islands.slice(0, firstGroup), islands.slice(firstGroup)];
+  return groups.flatMap((group, groupNumber) => {
+    const first = groupNumber === 0;
+    const groupCount = group.length;
+    const extent = first ? divide : length - divide - passage;
+    const offset = first ? 0 : divide + passage;
+    const groupWidth = tall ? width : extent;
+    const groupHeight = tall ? extent : height;
+    const columns = Math.min(groupCount, Math.ceil(Math.sqrt(groupCount * groupWidth / groupHeight)));
+    const rows = Math.ceil(groupCount / columns);
+    const cellWidth = groupWidth / columns;
+    const cellHeight = groupHeight / rows;
+    const room = Math.min(239, Math.min(cellWidth, cellHeight) * .64);
+    const scattered = groupCount <= 32 ? scatteredPoints(group, groupWidth, groupHeight, room, maxRecords) : [];
+    return group.map((island, index) => {
+      const row = Math.floor(index / columns);
+      const column = index % columns;
+      const rowCount = Math.min(columns, groupCount - row * columns);
+      const hash = siteHash(island.site);
+      const stagger = ((column * 7 + (first ? 2 : 10)) % 13 - 6) / 25;
+      const point = scattered.length === groupCount ? scattered[index] : {
+        x: (column + (columns - rowCount + 1) / 2 + ((hash % 23) - 11) / 61) * cellWidth,
+        y: (row + .50 + stagger + (((hash >>> 8) % 19) - 9) / 128) * cellHeight,
+      };
+      const { x, y } = point;
+      const bend = Math.sin((tall ? x / width : y / height) * Math.PI * 1.6 - .81) * passage * .26;
+      const center = tall ? { x: left + x, y: y + offset + bend } : { x: left + x + offset + bend, y };
+      // Keep the outside islands clear of the viewport edges after the passage bends.
+      const margin = islandRadius(islandSize(island, room, maxRecords)) + 8;
+      center.x = Math.max(left + margin, Math.min(left + width - margin, center.x));
+      center.y = Math.max(margin, Math.min(height - margin, center.y));
+      const rank = first ? index : index + firstGroup;
+      return { center, room, labelWidth: Math.max(65, Math.min(164, cellWidth - 8)), compact: cellWidth < 105 && rank > 7 };
+    });
+  });
+}
+
 export function placeIslands(islands: readonly Island[], width: number, height: number) {
   const continents = islands.filter(island => island.scale === 'continent').slice(0, width >= 1050 ? 2 : 1);
   const continentCount = continents.length;
@@ -82,44 +170,28 @@ export function placeIslands(islands: readonly Island[], width: number, height: 
   const padding = continentSize * .39 + 32;
   const shoreLeft = continentCount > 0 ? padding : 0;
   const openWidth = width - shoreLeft - (continentCount > 1 ? padding : 0);
-  const count = islands.length - continentCount;
-  const spread = openWidth > 740 && count <= ANCHORS.length;
-  const columns = Math.max(1, Math.min(count, Math.ceil(Math.sqrt(count * openWidth / height))));
-  const rows = Math.max(1, Math.ceil(count / columns));
-  const cellWidth = openWidth / columns;
-  const cellHeight = height / rows;
-  const islandLimit = Math.min(239, openWidth * .23, height * .37, spread ? height : Math.min(cellWidth, cellHeight) * .66);
+  const offshore = islands.filter(island => !continents.includes(island));
   const maxRecords = Math.log1p(islands[0]?.records ?? 1);
+  const positions = islandPositions(offshore, shoreLeft, openWidth, height, maxRecords);
 
-  return [...continents, ...islands.filter(island => !continents.includes(island))].map((island, index) => {
+  return [...continents, ...offshore].map((island, index) => {
     const continent = index < continentCount;
     const hash = siteHash(island.site);
-    const sprite = continent ? index === 0 ? 5 : 7 : hash % COASTS.length;
     const large = island.scale !== 'small';
-    const weight = Math.log1p(island.records) / maxRecords;
-    const size = continent ? continentSize : islandLimit * (large ? .8 + .20 * weight : .36 + .37 * weight);
-    const position = index - continentCount;
-    const row = Math.floor(position / columns);
-    const itemsInRow = Math.min(columns, count - row * columns);
-    const cellX = (position % columns + (columns - itemsInRow + 1) / 2 + ((hash % 19) - 9) / 105) * cellWidth;
-    const cellY = (row + .47 + (((hash >>> 8) % 19) - 9) / 95) * cellHeight;
-    let center: Point;
-    if (continent) {
-      center = index === 0 ? { x: -size * .13, y: height * .46 } : { x: width + size * .13, y: height * .56 };
-    } else if (count === 1) {
-      center = { x: shoreLeft + openWidth / 2, y: height / 2 - 12 };
-    } else if (spread) {
-      center = { x: shoreLeft + ANCHORS[position][0] * openWidth, y: ANCHORS[position][1] * height };
-    } else {
-      center = { x: shoreLeft + cellX, y: cellY };
-    }
-    const obstacle = { center, size, radius: size * .50 + Math.min(9, size * .12), land: LAND_TILES[sprite] };
-    const coast = continent ? COASTS[sprite].filter(({ angle, radius }) => {
+    const sprite = continent ? index + 2 : hash % (large ? 2 : COASTS.length);
+    const position = positions[index - continentCount];
+    const size = continent ? continentSize : islandSize(island, position.room, maxRecords);
+    const center = continent
+      ? { x: index === 0 ? -size * .13 : width + size * .13, y: height * (index === 0 ? .46 : .56) }
+      : position.center;
+    const obstacle = { center, size, radius: islandRadius(size), land: (large ? LARGE_LAND_TILES : LAND_TILES)[sprite] };
+    const shoreline = (large ? LARGE_COASTS : COASTS)[sprite];
+    const coast = continent ? shoreline.filter(({ angle, radius }) => {
       const shore = polar(center, radius * size, angle);
       const gate = polar(center, obstacle.radius + 12, angle);
       const intoMap = Math.cos(angle) * (index === 0 ? 1 : -1);
       return intoMap > .46 && shore.x > 12 && shore.x < width - 12 && gate.y > 18 && gate.y < height - 18;
-    }) : COASTS[sprite];
+    }) : shoreline;
     const berths = new Map(island.docks.map(dock => [dock, mooring(dock, obstacle, coast)]));
     const facingDocks = continent ? island.docks.filter(dock => {
       const x = berths.get(dock)!.shore.x;
@@ -131,6 +203,6 @@ export function placeIslands(islands: readonly Island[], width: number, height: 
     const harbor = berths.get(port)!;
     const town = townBehind(harbor, continent, sprite, width);
     return { island, obstacle, sprite, berths, harbor, town, continent, large,
-      compact: !spread && cellWidth < 105 && position > 7, labelWidth: Math.max(65, Math.min(164, cellWidth - 8)) };
+      compact: position?.compact ?? false, labelWidth: position?.labelWidth ?? 135 };
   });
 }

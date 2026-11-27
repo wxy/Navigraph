@@ -20,14 +20,17 @@ async function loadSheet(file: string, columns: number, rows: number): Promise<S
 }
 
 export async function loadOceanArt() {
-  const [piers, boats, marine, birds, celestial] = await Promise.all([
+  const [piers, boats, marine, birds, celestial, islands, largeIslands, surface] = await Promise.all([
     loadSheet('ocean-piers.webp', 2, 2),
     loadSheet('ocean-boats.webp', 3, 3),
     loadSheet('ocean-marine.webp', 2, 2),
     loadSheet('ocean-birds.webp', 2, 2),
     loadSheet('ocean-celestial.webp', 2, 1),
+    loadSheet('ocean-islands.webp', 3, 3),
+    loadSheet('ocean-large-islands.webp', 2, 2),
+    loadImage('ocean-water-tile.webp'),
   ]);
-  return { piers, boats, marine, birds, celestial };
+  return { piers, boats, marine, birds, celestial, islands, largeIslands, surface };
 }
 
 export type OceanArt = Awaited<ReturnType<typeof loadOceanArt>>;
@@ -51,7 +54,7 @@ export function drawPier(ctx: CanvasRenderingContext2D, sheet: SpriteSheet, bert
   ctx.save();
   ctx.translate(shore.x, shore.y);
   ctx.rotate(angle);
-  ctx.globalAlpha = main ? 1 : .8;
+  ctx.globalAlpha *= main ? 1 : .8;
   drawSprite(ctx, sheet, design, span / 2, 0, width, height);
   ctx.restore();
 }

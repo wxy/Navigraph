@@ -18,7 +18,6 @@ body {
 }
 
 button, input, select { font: inherit; }
-a { color: inherit; text-decoration: none; }
 button:not(:disabled), select:not(:disabled) { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 [hidden] { display: none !important; }
@@ -34,46 +33,13 @@ button:not(:disabled), select:not(:disabled) { cursor: pointer; }
   white-space: nowrap;
 }
 
-.topbar {
-  display: flex;
-  min-height: 56px;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  padding: 10px clamp(16px, 3vw, 44px);
-  border-bottom: 1px solid var(--line);
-}
-
-.brand, nav { display: flex; align-items: center; gap: 10px; }
-.brand { font-weight: 650; letter-spacing: .015em; }
-nav { gap: 4px; }
-nav > * { padding: 6px 11px; border-radius: 6px; color: var(--quiet); }
-nav > :hover, nav [aria-current] { background: #c5e7ed12; color: #f2ecdc; }
-
 main {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 16px;
-  padding: 22px clamp(16px, 3vw, 44px) 24px;
+  min-width: 0;
+  padding: 14px clamp(12px, 2vw, 32px) 18px;
 }
 
-.chart-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-h1 {
-  font: 400 clamp(29px, 3vw, 42px)/1.1 Georgia, serif;
-  letter-spacing: -.025em;
-  margin: 0 0 5px;
-}
-
-#ocean-counts { color: var(--quiet); margin: 0; font-variant-numeric: tabular-nums; }
-
-.date-field input, .session-field select {
+#ocean-session {
   border: 1px solid #a8c5ce35;
   border-radius: 8px;
   padding: 8px 10px;
@@ -93,7 +59,10 @@ h1 {
 }
 
 .map {
-  min-height: max(390px, calc(100vh - 264px));
+  --surface-period: 720px;
+  --surface-shift: translate3d(0, 0, 0);
+  --sky-width: clamp(96px, 11vw, 138px);
+  min-height: 390px;
   position: relative;
   border-radius: 13px 13px 0 0;
   isolation: isolate;
@@ -102,12 +71,11 @@ h1 {
 }
 
 #ocean-surface {
-  --surface-period: 720px;
   position: absolute;
   inset: 0 calc(-1 * var(--surface-period)) calc(-1 * var(--surface-period)) 0;
   background: url("../images/ocean-water-tile.webp") 0 0 / var(--surface-period) var(--surface-period) repeat;
   pointer-events: none;
-  transform: translate3d(0, 0, 0);
+  transform: var(--surface-shift);
 }
 
 .map canvas, #ocean-islands {
@@ -119,38 +87,88 @@ h1 {
 }
 
 .map canvas { z-index: 1; }
+#ocean-shallows { z-index: 0; }
 #ocean-islands { z-index: 2; }
 #ocean-piers, #ocean-ships { z-index: 3; }
+
+#ocean-reflections {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ocean-reflection {
+  --footprint: radial-gradient(ellipse 8% 36% at var(--reflection-x) 23%, #000, #000a 40%, #0003 72%, transparent 100%);
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--reflection-color) / .095);
+  -webkit-mask-image: var(--footprint);
+  mask-image: var(--footprint);
+}
+
+.ocean-reflection::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(-1 * var(--surface-period)) calc(-1 * var(--surface-period)) 0;
+  background: rgb(var(--reflection-color));
+  -webkit-mask: var(--glint-tile) 0 0 / var(--surface-period) var(--surface-period) repeat;
+  mask: var(--glint-tile) 0 0 / var(--surface-period) var(--surface-period) repeat;
+  transform: var(--surface-shift);
+}
+
+.sun-reflection {
+  --reflection-x: calc(100% - 20px - var(--sky-width) * .725);
+  --reflection-color: 255 215 149;
+  opacity: calc(var(--daylight, 0) * .85);
+}
+
+.moon-reflection {
+  --reflection-x: calc(100% - 23px - var(--sky-width) * .271);
+  --reflection-color: 176 221 252;
+  opacity: calc(var(--moonlight, 0) * .88);
+}
 
 #ocean-light {
   position: absolute;
   z-index: 3;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at 97% 8%, rgb(156 192 245 / var(--moonlight, 0)), transparent 51%);
-}
-
-#ocean-light::before, #ocean-light::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-
-#ocean-light::before {
   background: linear-gradient(148deg, #10233c59, #020e2d5e);
   opacity: var(--night, 0);
 }
 
-#ocean-light::after {
-  background: radial-gradient(ellipse at calc(100% - 110px) 4%, #ffdda16b, #ecaa6630 33%, transparent 65%);
+#ocean-sky {
+  position: absolute;
+  z-index: 3;
+  inset: 12px 12px auto auto;
+  width: var(--sky-width);
+  aspect-ratio: 218 / 112;
+  pointer-events: none;
+}
+
+#ocean-sun, #ocean-moon {
+  position: absolute;
+  inset: 12.5% auto auto;
+  width: 38.532%;
+  height: 75%;
+}
+
+#ocean-sun {
+  left: 8.257%;
+  background: url("../images/ocean-celestial.webp") left center / 200% 100% no-repeat;
   opacity: var(--daylight, 0);
 }
 
-#ocean-sky {
-  z-index: 3;
-  inset: 12px 12px auto auto;
-  width: clamp(96px, 11vw, 138px);
-  height: auto;
+#ocean-moon {
+  left: 53.67%;
+  opacity: var(--night, 0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #ocean-sun, #ocean-moon, #ocean-light, .ocean-reflection, .island-town::after {
+    transition: opacity 720ms ease-in-out;
+  }
 }
 
 .island {
@@ -174,6 +192,11 @@ h1 {
   filter: drop-shadow(0 2px 7px #020e17);
 }
 
+.island.major .island-art {
+  background-image: url("../images/ocean-large-islands.webp");
+  background-size: 200% 200%;
+}
+
 .island-town {
   position: absolute;
   width: var(--town-size);
@@ -185,6 +208,15 @@ h1 {
   filter: drop-shadow(0 1px 3px #16231aaa);
 }
 
+.island-town::after {
+  content: "";
+  position: absolute;
+  inset: 15%;
+  background: radial-gradient(ellipse at 39% 52%, #ffc580b0, #d88c3728 27%, transparent 50%),
+    radial-gradient(ellipse at 62% 69%, #ffd7999c, #d88c3720 26%, transparent 46%);
+  mix-blend-mode: screen;
+  opacity: var(--night, 0);
+}
 .island-name {
   position: absolute;
   top: calc(100% + 3px);
@@ -326,9 +358,4 @@ h1 {
 @media (max-width: 740px) {
   .playback { grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px; }
   .playback-options { grid-column: 1 / -1; justify-content: space-between; }
-}
-
-@media (max-width: 550px) {
-  .chart-heading { align-items: flex-start; }
-  .date-field input { max-width: 145px; }
 }

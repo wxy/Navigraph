@@ -3,40 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title data-i18n="ocean_view">海图</title>
+  <title data-i18n="ocean_view">航海图</title>
+  <link rel="stylesheet" href="../content/styles/graph-toolbar.css">
   <link rel="stylesheet" href="ocean.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="../content/index.html">
-      <img src="../images/logo-48.png" width="24" height="24" alt="">
+  <header class="graph-toolbar">
+    <div class="graph-brand">
+      <img src="../images/logo-48.png" width="22" height="22" alt="">
       <span>Navigraph</span>
-    </a>
-    <nav aria-labelledby="ocean-title">
-      <a id="ocean-tree-view" href="../content/index.html?view=tree" data-i18n="content_tree_view">树形图</a>
-      <a id="ocean-waterfall-view" href="../content/index.html?view=waterfall" data-i18n="content_waterfall_view">瀑布图</a>
-      <span aria-current="page" data-i18n="ocean_view">海图</span>
-    </nav>
+      <button id="graph-options" class="graph-button" type="button" data-i18n="graph_toolbar_options">选项</button>
+    </div>
+    <div class="graph-date-control">
+      <button id="graph-date-toggle" class="graph-button" type="button" aria-controls="graph-calendar" aria-expanded="false">
+        <span id="graph-date-value" data-i18n="content_session_date">日期</span>
+        <span class="graph-date-chevron" aria-hidden="true"></span>
+      </button>
+      <div id="graph-calendar" class="graph-calendar" hidden>
+        <div id="calendar-session-selector" class="calendar-session-selector"></div>
+        <div class="graph-calendar-footer">
+          <span id="graph-duration"></span>
+          <button id="graph-today" class="graph-button" type="button" data-i18n="graph_toolbar_today" hidden>今天</button>
+        </div>
+      </div>
+    </div>
+    <div id="view-switcher-container" class="graph-view-switcher" role="group">
+      <a id="ocean-tree-view" class="graph-button" href="../content/index.html?view=tree" data-i18n="content_tree_view">树形图</a>
+      <a id="ocean-waterfall-view" class="graph-button" href="../content/index.html?view=waterfall" data-i18n="content_waterfall_view">瀑布图</a>
+      <span class="graph-button" aria-current="page" data-i18n="ocean_view">航海图</span>
+    </div>
+    <div class="graph-summary"><span id="ocean-counts"></span></div>
   </header>
   <main>
-    <header class="chart-heading">
-      <div>
-        <h1 id="ocean-title" data-i18n="ocean_view">海图</h1>
-        <p id="ocean-counts"></p>
-      </div>
-      <label class="date-field">
-        <span class="visually-hidden" data-i18n="ocean_date">海图日期</span>
-        <input id="ocean-date" type="date">
-      </label>
-    </header>
     <div class="chart">
       <div id="ocean-map" class="map">
         <div id="ocean-surface" aria-hidden="true"></div>
+        <canvas id="ocean-shallows" aria-hidden="true"></canvas>
+        <div id="ocean-reflections" aria-hidden="true">
+          <div class="ocean-reflection sun-reflection"></div>
+          <div class="ocean-reflection moon-reflection"></div>
+        </div>
         <canvas id="ocean-water" aria-hidden="true"></canvas>
         <div id="ocean-islands"></div>
         <canvas id="ocean-piers" aria-hidden="true"></canvas>
         <div id="ocean-light" aria-hidden="true"></div>
-        <canvas id="ocean-sky" width="218" height="112" aria-hidden="true"></canvas>
+        <div id="ocean-sky" aria-hidden="true">
+          <div id="ocean-sun"></div>
+          <canvas id="ocean-moon" width="84" height="84"></canvas>
+        </div>
         <canvas id="ocean-ships" aria-hidden="true"></canvas>
         <p id="ocean-status" role="status" data-i18n="content_loading">正在加载数据...</p>
         <aside id="ocean-port" aria-labelledby="ocean-port-name" hidden>

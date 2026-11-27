@@ -1,18 +1,21 @@
+import { CalendarSessionSelector } from '../lib/graph/CalendarSessionSelector.js';
 import { graphViewUrl, readHistoryDay, replaceHistorySelection } from '../lib/graph/location.js';
 import { OCEAN_DAY_LIMIT } from '../lib/graph/ocean-day.js';
+import { formatGraphDuration, graphDateFormat, setupGraphCalendar, setupGraphOptions } from '../lib/graph/toolbar.js';
 import { localDayRange } from '../lib/graph/tree-day.js';
 import { sendToBackground } from '../lib/messaging/sender.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { I18n, _ } from '../lib/utils/i18n.js';
 import type { BackgroundResponses } from '../types/messages/background.js';
+import type { SessionSummary } from '../types/session-types.js';
+import { getThemeManager } from '../content/utils/theme-manager.js';
 import { loadOceanArt } from './art.js';
 import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
 import { ChartLight } from './light.js';
-import { prepareReplay, replayAt } from './replay.js';
+import { islandVisibilityAt, prepareReplay, replayAt } from './replay.js';
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-const inputDate = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const SURFACE_SPEED = 5 / 1000;
 
@@ -27,12 +30,17 @@ async function initialize(): Promise<void> {
   const locale = params.get('locale') ?? settings.getSetting('forcedLocale') ?? 'system';
   await I18n.getInstance().setLocale(locale);
   document.documentElement.lang = (locale === 'system' ? chrome.i18n.getUILanguage() : locale).replace('_', '-');
+  await getThemeManager().initialize();
+  setupGraphOptions();
+  document.getElementById('view-switcher-container')?.setAttribute('aria-label', _('content_view', '视图'));
 
   const initialDay = readHistoryDay(params);
   const initialSession = params.get('session') ?? undefined;
   const treeView = document.querySelector<HTMLAnchorElement>('#ocean-tree-view')!;
   const waterfallView = document.querySelector<HTMLAnchorElement>('#ocean-waterfall-view')!;
-  const date = document.querySelector<HTMLInputElement>('#ocean-date')!;
+  const dateLabel = document.getElementById('graph-date-value')!;
+  const duration = document.getElementById('graph-duration')!;
+  const today = document.getElementById('graph-today')!;
   const counts = document.getElementById('ocean-counts')!;
   const status = document.getElementById('ocean-status')!;
   const play = document.querySelector<HTMLButtonElement>('#ocean-play')!;
@@ -50,8 +58,7 @@ async function initialize(): Promise<void> {
   const portVisits = document.getElementById('ocean-port-visits')!;
   const closePortButton = document.querySelector<HTMLButtonElement>('#ocean-port-close')!;
   const map = document.getElementById('ocean-map')!;
-  const surface = document.getElementById('ocean-surface')!;
-  const tileSize = Number.parseFloat(getComputedStyle(surface).getPropertyValue('--surface-period'));
+  const tileSize = Number.parseFloat(getComputedStyle(map).getPropertyValue('--surface-period'));
   const bearing = Math.random() * Math.PI * 2;
   const surfaceVelocityX = Math.cos(bearing) * SURFACE_SPEED;
   const surfaceVelocityY = Math.sin(bearing) * SURFACE_SPEED;
@@ -63,6 +70,7 @@ async function initialize(): Promise<void> {
   const chart = new OceanChart(
     map,
     document.getElementById('ocean-islands')!,
+    document.querySelector<HTMLCanvasElement>('#ocean-shallows')!,
     document.querySelector<HTMLCanvasElement>('#ocean-water')!,
     document.querySelector<HTMLCanvasElement>('#ocean-piers')!,
     document.querySelector<HTMLCanvasElement>('#ocean-ships')!,
@@ -71,9 +79,10 @@ async function initialize(): Promise<void> {
     openPort,
   );
   const light = new ChartLight(
-    document.getElementById('ocean-light')!,
-    document.querySelector<HTMLCanvasElement>('#ocean-sky')!,
+    map,
+    document.querySelector<HTMLCanvasElement>('#ocean-moon')!,
     art.celestial,
+    art.surface,
   );
   let history = chartHistory([]);
   let replay = prepareReplay([]);
@@ -84,6 +93,7 @@ async function initialize(): Promise<void> {
   let describedSecond = -1;
   let describedUnderway = -1;
   let requestedDay = initialDay;
+  let calendarSessions: SessionSummary[] = [];
   let request = 0;
   let refreshPending = false;
   let refreshing = false;
@@ -92,6 +102,12 @@ async function initialize(): Promise<void> {
   let previousFrame = 0;
   let surfaceX = 0;
   let surfaceY = 0;
+  const calendar = new CalendarSessionSelector({
+    byDay: true,
+    get day() { return dayData?.start ?? requestedDay; },
+    selectDay,
+  });
+  setupGraphCalendar(calendar, () => selectDay(Date.now()), () => { void loadCalendarSessions(); });
   musicOption.checked = false;
   music.volume = .32;
 
@@ -102,7 +118,7 @@ async function initialize(): Promise<void> {
   function draw(): void {
     const animate = !reducedMotion.matches;
     const { fleet, trails, current: shown, underway, timestamp } = replayAt(replay, elapsed, animate);
-    chart.showFleet(fleet, trails, elapsed, animate);
+    chart.showFleet(fleet, trails, elapsed, animate, islandVisibilityAt(replay, elapsed, animate));
     const day = dayData?.start ?? requestedDay;
     light.show(timestamp ?? (day === undefined ? Date.now() : new Date(day).setHours(12, 0, 0, 0)));
     const progress = Math.round(elapsed / 100) * 100;
@@ -178,7 +194,7 @@ async function initialize(): Promise<void> {
       if (!reducedMotion.matches) {
         surfaceX = wrap(surfaceX + surfaceVelocityX * step, tileSize);
         surfaceY = wrap(surfaceY + surfaceVelocityY * step, tileSize);
-        surface.style.transform = `translate3d(${-surfaceX}px, ${-surfaceY}px, 0)`;
+        map.style.setProperty('--surface-shift', `translate3d(${-surfaceX}px, ${-surfaceY}px, 0)`);
       }
     }
     previousFrame = now;
@@ -256,11 +272,27 @@ async function initialize(): Promise<void> {
     waterfallView.href = graphViewUrl('waterfall', day, session || (day === initialDay ? initialSession : undefined)).href;
   }
 
+  function selectDay(timestamp: number): void {
+    const [day] = localDayRange(timestamp);
+    replaceHistorySelection(day, day === initialDay ? initialSession : undefined);
+    void load(day);
+  }
+
+  async function loadCalendarSessions(): Promise<void> {
+    try {
+      const { sessions } = await sendToBackground('getSessions', { options: { sortBy: 'startTime', sortOrder: 'desc', limit: 500 } });
+      calendarSessions = sessions;
+      calendar.update(calendarSessions, undefined, calendarSessions[0]?.id);
+    } catch (error) {
+      console.error('Unable to load dates with sessions', error);
+    }
+  }
+
   async function load(day?: number): Promise<void> {
     const token = ++request;
     requestedDay = day;
     updateViewLinks(day);
-    if (day !== undefined) date.value = inputDate.format(day);
+    if (day !== undefined) dateLabel.textContent = graphDateFormat.format(day);
     closePort();
     dayData = undefined;
     history = chartHistory([]);
@@ -291,8 +323,14 @@ async function initialize(): Promise<void> {
     const sameDay = previous?.start === response.start;
     const selectedSession = sameDay ? sessionPicker.value : '';
     dayData = response;
-    if (!sameDay) date.value = inputDate.format(response.start);
-    date.max = inputDate.format(Date.now());
+    if (!sameDay) {
+      dateLabel.textContent = graphDateFormat.format(response.start);
+      calendar.update(calendarSessions, undefined, calendarSessions[0]?.id);
+    }
+    today.hidden = response.start === localDayRange(Date.now())[0];
+    duration.textContent = response.nodes.length
+      ? _('content_session_duration_label', '时长: {0}', formatGraphDuration(response.nodes[0].timestamp - response.nodes.at(-1)!.timestamp))
+      : '';
     response.sessions.sort((a, b) => a.firstVisit - b.firstVisit);
     const sameSessions = sameDay && response.sessions.length === previous.sessions.length && response.sessions.every((session, index) => {
       const old = previous.sessions[index];
@@ -385,14 +423,6 @@ async function initialize(): Promise<void> {
     if (message?.target === 'content' && message.action === 'refreshVisualization') scheduleRefresh();
   });
   reducedMotion.addEventListener('change', draw);
-  date.addEventListener('change', () => {
-    if (!date.value || !date.validity.valid) return;
-    const [day] = localDayRange(new Date(`${date.value}T12:00:00`).getTime());
-    replaceHistorySelection(day, day === initialDay ? initialSession : undefined);
-    void load(day);
-  });
-
-  date.max = inputDate.format(Date.now());
   await load(initialDay);
 }
 

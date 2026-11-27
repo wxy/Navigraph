@@ -5374,6 +5374,10 @@
     "message": "필터",
     "description": "Graph toolbar"
   },
+  "graph_toolbar_options": {
+    "message": "옵션",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
   "graph_toolbar_today": {
     "message": "오늘",
     "description": "Graph toolbar"

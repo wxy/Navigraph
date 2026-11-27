@@ -5374,6 +5374,10 @@
     "message": "篩選",
     "description": "Graph toolbar"
   },
+  "graph_toolbar_options": {
+    "message": "選項",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
   "graph_toolbar_today": {
     "message": "今天",
     "description": "Graph toolbar"
@@ -5383,7 +5387,7 @@
     "description": "Graph toolbar"
   },
   "ocean_view": {
-    "message": "海圖",
+    "message": "航海圖",
     "description": "Sea chart"
   },
   "ocean_date": {

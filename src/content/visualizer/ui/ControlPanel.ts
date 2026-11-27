@@ -1,6 +1,8 @@
 import type { Visualizer } from '../../types/navigation.js';
+import { CalendarSessionSelector } from '../../../lib/graph/CalendarSessionSelector.js';
+import { setGraphPanelOpen, setupGraphCalendar } from '../../../lib/graph/toolbar.js';
+import { sessionServiceClient } from '../../core/session-service-client.js';
 import { ViewSwitcher } from './ControlPanel/ViewSwitcher.js';
-import { CalendarSessionSelector } from './ControlPanel/CalendarSessionSelector.js';
 import { FilterPanel } from './ControlPanel/FilterPanel.js';
 
 export class ControlPanel {
@@ -10,65 +12,40 @@ export class ControlPanel {
 
   constructor(private visualizer: Visualizer) {
     this.viewSwitcher = new ViewSwitcher(visualizer);
-    this.calendarSessionSelector = new CalendarSessionSelector(visualizer);
+    this.calendarSessionSelector = new CalendarSessionSelector({
+      get byDay() { return visualizer.currentView === 'tree'; },
+      get day() { return visualizer.graphDate; },
+      selectDay: day => void visualizer.selectTreeDay(day).catch(error => visualizer.showError(String(error))),
+      selectSession: id => sessionServiceClient.switchSession(id),
+    });
     this.filterPanel = new FilterPanel(visualizer);
   }
 
   initialize(container: HTMLElement): void {
     const calendar = document.getElementById('graph-calendar');
-    const dateToggle = document.getElementById('graph-date-toggle');
     const filters = document.getElementById('control-panel');
     const filterToggle = document.getElementById('graph-filter-toggle');
-    if (!calendar || !dateToggle || !filters || !filterToggle) return;
+    if (!calendar || !filters || !filterToggle) return;
 
-    const setOpen = (panel: HTMLElement, trigger: HTMLElement, open: boolean) => {
-      const restoreFocus = !open && panel.contains(document.activeElement);
-      panel.hidden = !open;
-      trigger.setAttribute('aria-expanded', String(open));
-      if (restoreFocus) trigger.focus({ preventScroll: true });
-    };
-    const closeCalendar = () => {
-      setOpen(calendar, dateToggle, false);
-      this.calendarSessionSelector.hideSessionList();
-    };
-    const closeFilters = () => setOpen(filters, filterToggle, false);
+    const closeFilters = () => setGraphPanelOpen(filters, filterToggle, false);
 
     this.viewSwitcher.initialize();
-    this.calendarSessionSelector.initialize(closeCalendar);
     this.filterPanel.initialize();
+    const closeCalendar = setupGraphCalendar(this.calendarSessionSelector, () => this.visualizer.switchToToday(), closeFilters);
 
-    dateToggle.addEventListener('click', () => {
-      if (!calendar.hidden) {
-        closeCalendar();
-        return;
-      }
-      closeFilters();
-      setOpen(calendar, dateToggle, true);
-    });
-    document.getElementById('graph-today')?.addEventListener('click', () => {
-      closeCalendar();
-      this.visualizer.switchToToday();
-    });
     filterToggle.addEventListener('click', () => {
       if (!filters.hidden) {
         closeFilters();
         return;
       }
       closeCalendar();
-      setOpen(filters, filterToggle, true);
+      setGraphPanelOpen(filters, filterToggle, true);
       filters.querySelector('input')?.focus({ preventScroll: true });
     });
 
     container.addEventListener('click', closeFilters);
-    document.addEventListener('click', event => {
-      const target = event.target as Node;
-      if (!calendar.hidden && !calendar.contains(target) && !dateToggle.contains(target)) closeCalendar();
-    });
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') {
-        if (!calendar.hidden) closeCalendar();
-        else if (!filters.hidden) closeFilters();
-      }
+      if (event.key === 'Escape' && !filters.hidden) closeFilters();
     });
   }
 

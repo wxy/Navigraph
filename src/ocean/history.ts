@@ -1,3 +1,4 @@
+import { getDomain } from 'tldts';
 import type { OceanDayNode } from '../lib/graph/ocean-day.js';
 
 export const SHIP_IDLE_MS = 15 * 60 * 1000;
@@ -39,9 +40,15 @@ export interface Arrival {
 
 export function chartHistory(nodes: readonly OceanDayNode[]) {
   const sites = new Map<string, { records: number; pages: Set<number> }>();
+  const domains = new Map<string, string>();
   // The indexed day query returns newest first, including when timestamps tie.
   for (let index = nodes.length - 1; index >= 0; index--) {
-    const { site, page } = nodes[index];
+    const { site: host, page } = nodes[index];
+    let site = domains.get(host);
+    if (site === undefined) {
+      site = getDomain(host, { allowPrivateDomains: true, extractHostname: false }) ?? host;
+      domains.set(host, site);
+    }
     let visits = sites.get(site);
     if (!visits) {
       visits = { records: 0, pages: new Set() };

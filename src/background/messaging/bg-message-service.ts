@@ -67,7 +67,7 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
     const extensionPages = ['content/index.html', 'options/index.html'].map(path => chrome.runtime.getURL(path));
     const senderUrl = sender.url || '';
     const senderPage = senderUrl.split(/[?#]/)[0];
-    if (message.action === 'getOceanDay' && senderPage === chrome.runtime.getURL('ocean/index.html')) return;
+    if (senderPage === chrome.runtime.getURL('ocean/index.html') && ['getOceanDay', 'getSessions'].includes(message.action)) return;
     const privileged = extensionPages.includes(senderPage);
     const str = (value: unknown, max = 8192): value is string => typeof value === 'string' && value.length <= max;
     const http = (value: unknown): value is string => { try { return str(value) && ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; } };

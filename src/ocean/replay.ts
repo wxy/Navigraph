@@ -1,6 +1,10 @@
 import { SHIP_IDLE_MS, type Arrival, type Dock, type Island, type Ship } from './history.js';
 
 export const TRAIL_FADE = 3200;
+const CROWDED_CHART = 12;
+const ISLAND_LEAD = 1400;
+const ISLAND_STAY = 3600;
+const ISLAND_FADE = 520;
 
 export function easeTravel(progress: number): number {
   return progress * progress * (3 - 2 * progress);
@@ -24,15 +28,50 @@ interface ShipTrack {
   replacedAt: number;
 }
 
+interface IslandWindow {
+  from: number;
+  until: number;
+}
+
+function islandSchedule(islands: Set<Island>, tracks: Iterable<ShipTrack>): Map<Island, IslandWindow[]> | undefined {
+  if (islands.size <= CROWDED_CHART) return;
+  const schedule = new Map<Island, IslandWindow[]>();
+  function include(island: Island, from: number, until: number): void {
+    if (island.scale !== 'small') return;
+    const existing = schedule.get(island);
+    if (existing) existing.push({ from, until });
+    else schedule.set(island, [{ from, until }]);
+  }
+  for (const { legs } of tracks) {
+    for (const { arrival, start, end } of legs) {
+      include(arrival.island, start - ISLAND_LEAD, end + ISLAND_STAY);
+      const origin = arrival.previous?.island;
+      if (origin && origin !== arrival.island) include(origin, start - ISLAND_LEAD, end + 200);
+    }
+  }
+  for (const [island, visits] of schedule) {
+    const windows: IslandWindow[] = [];
+    for (const visit of visits.sort((a, b) => a.from - b.from)) {
+      const latest = windows.at(-1);
+      if (latest && visit.from <= latest.until + ISLAND_FADE) latest.until = Math.max(latest.until, visit.until);
+      else windows.push(visit);
+    }
+    schedule.set(island, windows);
+  }
+  return schedule;
+}
+
 export function prepareReplay(arrivals: readonly Arrival[]) {
   const tracks = new Map<Ship, ShipTrack>();
   const tabs = new Map<number, TimedArrival>();
   const arrivalsAt = new Map<Arrival, number>();
+  const islands = new Set<Island>();
   let previousTimestamp = arrivals[0]?.timestamp ?? 0;
   let suggestedStart = 0;
   let duration = 0;
   let lastVoyage = 0;
   for (const arrival of arrivals) {
+    islands.add(arrival.island);
     if (arrivalsAt.size) {
       const gap = arrival.timestamp - previousTimestamp;
       suggestedStart += Math.min(500, 100 * (1 + Math.floor(Math.log10(1 + gap / 1000))));
@@ -56,7 +95,30 @@ export function prepareReplay(arrivals: readonly Arrival[]) {
     arrivalsAt.set(arrival, end);
     duration = Math.max(duration, end);
   }
-  return { tracks: [...tracks.values()], arrivalsAt, duration: Math.max(duration, lastVoyage ? lastVoyage + TRAIL_FADE : 0) };
+  return {
+    tracks: [...tracks.values()], arrivalsAt, islandWindows: islandSchedule(islands, tracks.values()),
+    duration: Math.max(duration, lastVoyage ? lastVoyage + TRAIL_FADE : 0),
+  };
+}
+
+export function islandVisibilityAt(replay: ReturnType<typeof prepareReplay>, time: number, animate: boolean): Map<Island, number> | undefined {
+  if (!replay.islandWindows) return;
+  const visibility = new Map<Island, number>();
+  for (const [island, windows] of replay.islandWindows) {
+    let low = 0;
+    let high = windows.length;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (windows[mid].from <= time) low = mid + 1;
+      else high = mid;
+    }
+    const window = windows[low - 1];
+    if (!window || time >= window.until + ISLAND_FADE) continue;
+    const progress = Math.min(1, (time - window.from) / ISLAND_FADE, (window.until + ISLAND_FADE - time) / ISLAND_FADE);
+    const opacity = animate ? Math.round(easeTravel(progress) * 20) / 20 : 1;
+    if (opacity > 0) visibility.set(island, opacity);
+  }
+  return visibility;
 }
 
 export function replayAt(replay: ReturnType<typeof prepareReplay>, time: number, animate: boolean) {

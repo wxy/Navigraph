@@ -80,6 +80,7 @@ module.exports = {
         { from: 'src/content/styles',     to: 'content/styles',       noErrorOnMissing: true },
         { from: 'src/ocean/ocean.css',    to: 'ocean/ocean.css' },
         { from: 'src/ocean/harbor-music.ogg', to: 'ocean/harbor-music.ogg' },
+        { from: 'node_modules/tldts/LICENSE', to: 'ocean/tldts.LICENSE.txt' },
         { from: 'src/options/styles',     to: 'options/styles',       noErrorOnMissing: true },
       ]
     }),
