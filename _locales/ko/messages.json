@@ -5402,21 +5402,21 @@
     "message": "탐색 기록 재생",
     "description": "Sea chart"
   },
-  "ocean_ship_filter": {
-    "message": "브라우저 탭 선택",
-    "description": "Sea chart"
+  "ocean_session_filter": {
+    "message": "세션 선택",
+    "description": "Sea Chart playback"
   },
   "ocean_ship": {
     "message": "배 {0}",
     "description": "Sea chart"
   },
-  "ocean_ship_option": {
-    "message": "배 {0} · 섬 간 이동 {1}회 · 연안 이동 {2}회",
-    "description": "Sea chart"
+  "ocean_all_sessions": {
+    "message": "모든 세션",
+    "description": "Sea Chart playback"
   },
-  "ocean_all_ships": {
-    "message": "모든 탭",
-    "description": "Sea chart"
+  "ocean_music": {
+    "message": "배경 음악",
+    "description": "Sea Chart playback"
   },
   "ocean_counts": {
     "message": "섬 {0}개 · 배 {1}척 · 섬 간 이동 {2}회 · 연안 이동 {3}회",

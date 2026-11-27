@@ -5405,21 +5405,21 @@
     "message": "Replay navigation",
     "description": "Sea chart"
   },
-  "ocean_ship_filter": {
-    "message": "Choose a browser tab",
-    "description": "Sea chart"
+  "ocean_session_filter": {
+    "message": "Choose a session",
+    "description": "Sea Chart playback"
   },
   "ocean_ship": {
     "message": "Ship {0}",
     "description": "Sea chart"
   },
-  "ocean_ship_option": {
-    "message": "Ship {0} · Crossings {1} · Coastal trips {2}",
-    "description": "Sea chart"
+  "ocean_all_sessions": {
+    "message": "All sessions",
+    "description": "Sea Chart playback"
   },
-  "ocean_all_ships": {
-    "message": "All tabs",
-    "description": "Sea chart"
+  "ocean_music": {
+    "message": "Background music",
+    "description": "Sea Chart playback"
   },
   "ocean_counts": {
     "message": "Islands {0} · Ships {1} · Crossings {2} · Coastal trips {3}",

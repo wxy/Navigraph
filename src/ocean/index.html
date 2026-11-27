@@ -31,7 +31,7 @@
     </header>
     <div class="chart">
       <div id="ocean-map" class="map">
-        <canvas id="ocean-routes" aria-hidden="true"></canvas>
+        <canvas id="ocean-water" aria-hidden="true"></canvas>
         <div id="ocean-islands"></div>
         <canvas id="ocean-ships" aria-hidden="true"></canvas>
         <p id="ocean-status" role="status" data-i18n="content_loading">正在加载数据...</p>
@@ -62,10 +62,17 @@
             <span id="ocean-last-time"></span>
           </div>
         </div>
-        <label class="ship-field">
-          <span class="visually-hidden" data-i18n="ocean_ship_filter">选择标签页</span>
-          <select id="ocean-ship" disabled></select>
-        </label>
+        <div class="playback-options">
+          <label class="music-option">
+            <input id="ocean-music" type="checkbox" autocomplete="off">
+            <span data-i18n="ocean_music">背景音乐</span>
+          </label>
+          <label class="session-field">
+            <span class="visually-hidden" data-i18n="ocean_session_filter">选择会话</span>
+            <select id="ocean-session" disabled></select>
+          </label>
+        </div>
+        <audio id="ocean-music-track" src="harbor-music.ogg" preload="none" loop muted></audio>
       </div>
     </div>
   </main>

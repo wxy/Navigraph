@@ -5402,21 +5402,21 @@
     "message": "閲覧の軌跡を再生",
     "description": "Sea chart"
   },
-  "ocean_ship_filter": {
-    "message": "タブを選択",
-    "description": "Sea chart"
+  "ocean_session_filter": {
+    "message": "セッションを選択",
+    "description": "Sea Chart playback"
   },
   "ocean_ship": {
     "message": "船 {0}",
     "description": "Sea chart"
   },
-  "ocean_ship_option": {
-    "message": "船 {0} · 島間 {1} 回 · 沿岸 {2} 回",
-    "description": "Sea chart"
+  "ocean_all_sessions": {
+    "message": "すべてのセッション",
+    "description": "Sea Chart playback"
   },
-  "ocean_all_ships": {
-    "message": "すべてのタブ",
-    "description": "Sea chart"
+  "ocean_music": {
+    "message": "BGM",
+    "description": "Sea Chart playback"
   },
   "ocean_counts": {
     "message": "島 {0} · 船 {1} 隻 · 島間 {2} 回 · 沿岸 {3} 回",

@@ -5402,21 +5402,21 @@
     "message": "按導覽記錄回放",
     "description": "Sea chart"
   },
-  "ocean_ship_filter": {
-    "message": "選擇分頁",
-    "description": "Sea chart"
+  "ocean_session_filter": {
+    "message": "選擇工作階段",
+    "description": "Sea Chart playback"
   },
   "ocean_ship": {
     "message": "船 {0}",
     "description": "Sea chart"
   },
-  "ocean_ship_option": {
-    "message": "船 {0} · 跨島 {1} · 沿岸 {2}",
-    "description": "Sea chart"
+  "ocean_all_sessions": {
+    "message": "全部工作階段",
+    "description": "Sea Chart playback"
   },
-  "ocean_all_ships": {
-    "message": "所有分頁",
-    "description": "Sea chart"
+  "ocean_music": {
+    "message": "背景音樂",
+    "description": "Sea Chart playback"
   },
   "ocean_counts": {
     "message": "{0} 座島 · {1} 艘船 · 跨島 {2} 段 · 沿岸 {3} 段",

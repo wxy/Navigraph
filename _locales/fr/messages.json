@@ -5402,21 +5402,21 @@
     "message": "Rejouer la navigation",
     "description": "Sea chart"
   },
-  "ocean_ship_filter": {
-    "message": "Choisir un onglet",
-    "description": "Sea chart"
+  "ocean_session_filter": {
+    "message": "Choisir une session",
+    "description": "Sea Chart playback"
   },
   "ocean_ship": {
     "message": "Navire {0}",
     "description": "Sea chart"
   },
-  "ocean_ship_option": {
-    "message": "Navire {0} · Traversées {1} · Trajets côtiers {2}",
-    "description": "Sea chart"
+  "ocean_all_sessions": {
+    "message": "Toutes les sessions",
+    "description": "Sea Chart playback"
   },
-  "ocean_all_ships": {
-    "message": "Tous les onglets",
-    "description": "Sea chart"
+  "ocean_music": {
+    "message": "Musique de fond",
+    "description": "Sea Chart playback"
   },
   "ocean_counts": {
     "message": "Îles {0} · Navires {1} · Traversées {2} · Trajets côtiers {3}",

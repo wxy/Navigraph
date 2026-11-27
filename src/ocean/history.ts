@@ -15,40 +15,32 @@ export interface Dock {
 }
 
 export interface Ship {
+  tabId: number;
   number: number;
   arrivals: Arrival[];
-  voyages: number;
-  coastalTrips: number;
-}
-
-export interface Route {
-  from: Dock;
-  to: Dock;
-  crossings: number;
 }
 
 export interface Arrival {
   index: number;
   timestamp: number;
+  sessionId: string;
   ship: Ship;
   island: Island;
   dock: Dock;
-  from?: Dock;
-  route?: Route;
+  previous?: Arrival;
 }
 
 export function chartHistory(nodes: readonly OceanDayNode[]) {
   const islands = new Map<string, Island>();
   const docks = new Map<number, Dock>();
   const ships = new Map<number, Ship>();
-  const routes = new Map<string, Route>();
   const arrivals: Arrival[] = [];
   let voyages = 0;
   let coastalTrips = 0;
 
   // The indexed day query returns newest first, including when timestamps tie.
   for (let index = nodes.length - 1; index >= 0; index--) {
-    const { site, tabId, timestamp, page } = nodes[index];
+    const { site, tabId, timestamp, page, sessionId } = nodes[index];
     let island = islands.get(site);
     if (!island) {
       island = { site, records: 0, docks: [], arrivals: [] };
@@ -64,28 +56,16 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
 
     let ship = ships.get(tabId);
     if (!ship) {
-      ship = { number: ships.size + 1, arrivals: [], voyages: 0, coastalTrips: 0 };
+      ship = { tabId, number: ships.size + 1, arrivals: [] };
       ships.set(tabId, ship);
     }
-    const from = ship.arrivals[ship.arrivals.length - 1]?.dock;
-    if (from === dock) continue;
-
-    let route: Route | undefined;
-    if (from && from.island !== island) {
-      const key = `${from.page}:${dock.page}`;
-      route = routes.get(key);
-      if (!route) {
-        route = { from, to: dock, crossings: 0 };
-        routes.set(key, route);
-      }
-      route.crossings++;
-      ship.voyages++;
-      voyages++;
-    } else if (from) {
-      ship.coastalTrips++;
-      coastalTrips++;
+    const last = ship.arrivals.at(-1);
+    const previous = last?.sessionId === sessionId && last?.dock !== dock ? last : undefined;
+    if (previous) {
+      if (previous.island === island) coastalTrips++;
+      else voyages++;
     }
-    const arrival = { index: arrivals.length, timestamp, ship, island, dock, from, route };
+    const arrival = { index: arrivals.length, timestamp, sessionId, ship, island, dock, previous };
     arrivals.push(arrival);
     ship.arrivals.push(arrival);
     island.arrivals.push(arrival);
@@ -95,7 +75,6 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
   return {
     islands: [...islands.values()].sort((a, b) => b.records - a.records || a.site.localeCompare(b.site)),
     ships: [...ships.values()],
-    routes: [...routes.values()],
     arrivals,
     voyages,
     coastalTrips,

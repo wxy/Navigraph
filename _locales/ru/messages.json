@@ -5402,21 +5402,21 @@
     "message": "Воспроизвести навигацию",
     "description": "Sea chart"
   },
-  "ocean_ship_filter": {
-    "message": "Выбрать вкладку браузера",
-    "description": "Sea chart"
+  "ocean_session_filter": {
+    "message": "Выбрать сеанс",
+    "description": "Sea Chart playback"
   },
   "ocean_ship": {
     "message": "Корабль {0}",
     "description": "Sea chart"
   },
-  "ocean_ship_option": {
-    "message": "Корабль {0} · Переходы {1} · Вдоль берега {2}",
-    "description": "Sea chart"
+  "ocean_all_sessions": {
+    "message": "Все сеансы",
+    "description": "Sea Chart playback"
   },
-  "ocean_all_ships": {
-    "message": "Все вкладки",
-    "description": "Sea chart"
+  "ocean_music": {
+    "message": "Фоновая музыка",
+    "description": "Sea Chart playback"
   },
   "ocean_counts": {
     "message": "Острова {0} · Корабли {1} · Переходы {2} · Вдоль берега {3}",

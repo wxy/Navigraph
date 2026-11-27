@@ -3,7 +3,7 @@ import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
 import { QueryCache } from './query-cache.js';
 import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, isTrackingUrl, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
 import { localDayRange, TREE_DAY_LIMIT, type TreeDay } from '../../lib/graph/tree-day.js';
-import { OCEAN_DAY_LIMIT, type OceanDay } from '../../lib/graph/ocean-day.js';
+import { OCEAN_DAY_LIMIT, type OceanDay, type OceanDaySession } from '../../lib/graph/ocean-day.js';
 import { WATERFALL_TIMELINE_LIMIT, type WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
@@ -294,12 +294,14 @@ export class NavigationStorage {
 
   public async getOceanDay(day?: [number, number]): Promise<OceanDay> {
     await this.ensureInitialized();
-    return this.db.readTransaction<OceanDay>(['nodes'], (tx, done) => {
+    return this.db.readTransaction<OceanDay>(['nodes', 'sessions'], (tx, done) => {
       const index = tx.objectStore('nodes').index('timestamp');
+      const sessions = tx.objectStore('sessions');
       queryDay(index, day, ([start, end]) => {
-        const result: OceanDay = { start, nodes: [], truncated: false };
+        const result: OceanDay = { start, nodes: [], sessions: [], truncated: false };
         done(result);
         const pages = new Map<string, number>();
+        const sessionsById = new Map<string, OceanDaySession>();
         const request = index.openCursor(IDBKeyRange.bound(start, end, false, true), 'prev');
         let recordsRead = 0;
         request.onsuccess = () => {
@@ -319,7 +321,19 @@ export class NavigationStorage {
               page = pages.size;
               pages.set(row.url, page);
             }
-            result.nodes.push({ timestamp: row.timestamp, tabId: row.tabId, site, page });
+            const { timestamp, tabId } = row;
+            const sessionId = row.sessionId ?? '';
+            result.nodes.push({ timestamp, tabId, sessionId, site, page });
+            const session = sessionsById.get(sessionId);
+            if (session) {
+              session.firstVisit = timestamp;
+            } else if (sessionId) {
+              const entry: OceanDaySession = { id: sessionId, firstVisit: timestamp };
+              sessionsById.set(sessionId, entry);
+              result.sessions.push(entry);
+              const metadata = sessions.get(sessionId);
+              metadata.onsuccess = () => { entry.title = (metadata.result as BrowsingSession | undefined)?.title; };
+            }
           }
           cursor.continue();
         };

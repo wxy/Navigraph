@@ -31,7 +31,9 @@ async function initialize(): Promise<void> {
   const play = document.querySelector<HTMLButtonElement>('#ocean-play')!;
   const playLabel = document.getElementById('ocean-play-label')!;
   const position = document.querySelector<HTMLInputElement>('#ocean-position')!;
-  const shipPicker = document.querySelector<HTMLSelectElement>('#ocean-ship')!;
+  const sessionPicker = document.querySelector<HTMLSelectElement>('#ocean-session')!;
+  const musicOption = document.querySelector<HTMLInputElement>('#ocean-music')!;
+  const music = document.querySelector<HTMLAudioElement>('#ocean-music-track')!;
   const time = document.querySelector<HTMLTimeElement>('#ocean-time')!;
   const current = document.getElementById('ocean-current')!;
   const underwayLabel = document.getElementById('ocean-underway')!;
@@ -44,13 +46,14 @@ async function initialize(): Promise<void> {
   const chart = new OceanChart(
     map,
     document.getElementById('ocean-islands')!,
-    document.querySelector<HTMLCanvasElement>('#ocean-routes')!,
+    document.querySelector<HTMLCanvasElement>('#ocean-water')!,
     document.querySelector<HTMLCanvasElement>('#ocean-ships')!,
+    timeFormat,
     openPort,
   );
   let history = chartHistory([]);
   let replay = prepareReplay([]);
-  let selectedShip: Ship | undefined;
+  let dayData: BackgroundResponses.GetOceanDayResponse | undefined;
   let lastPortButton: HTMLElement | undefined;
   let elapsed = 0;
   let describedIndex = -2;
@@ -58,14 +61,17 @@ async function initialize(): Promise<void> {
   let request = 0;
   let frame: number | undefined;
   let previousFrame = 0;
+  musicOption.checked = false;
+  music.volume = .32;
 
   function shipName(ship: Ship): string {
     return _('ocean_ship', '船 {0}', ship.number);
   }
 
   function draw(): void {
-    const { fleet, current: shown, underway } = replayAt(replay, elapsed, !reducedMotion.matches);
-    chart.showFleet(fleet, shown);
+    const animate = !reducedMotion.matches;
+    const { fleet, trails, current: shown, underway } = replayAt(replay, elapsed, animate);
+    chart.showFleet(fleet, trails, elapsed, shown, animate);
     const progress = Math.round(elapsed / 100) * 100;
     if (position.valueAsNumber !== progress) position.value = String(progress);
     if (describedUnderway !== underway) {
@@ -79,18 +85,39 @@ async function initialize(): Promise<void> {
     time.textContent = shown ? timeFormat.format(shown.timestamp) : '–';
     time.dateTime = shown ? new Date(shown.timestamp).toISOString() : '';
     let place = shown?.island.site;
-    if (shown?.route) place = `${shown.route.from.island.site} → ${shown.island.site}`;
-    else if (shown?.from) {
-      place = `${place} · ${_('ocean_coastal_move', '码头 {0} → 码头 {1}', shown.from.number, shown.dock.number)}`;
+    if (shown?.previous && shown.previous.island !== shown.island) {
+      place = `${shown.previous.island.site} → ${shown.island.site}`;
+    } else if (shown?.previous) {
+      place = `${place} · ${_('ocean_coastal_move', '码头 {0} → 码头 {1}', shown.previous.dock.number, shown.dock.number)}`;
     }
     current.textContent = shown ? `${shipName(shown.ship)} · ${place}` : '';
     position.setAttribute('aria-valuetext', `${time.textContent} ${current.textContent}`.trim());
+  }
+
+  function positionMusic(): void {
+    if (Number.isFinite(music.duration) && music.duration > 0) music.currentTime = elapsed / 1000 % music.duration;
+  }
+
+  function syncMusic(playing: boolean): void {
+    music.muted = !musicOption.checked;
+    if (!playing || !musicOption.checked) {
+      music.pause();
+      return;
+    }
+    positionMusic();
+    void music.play().catch(error => {
+      if (error.name === 'AbortError') return;
+      console.error('Unable to play the sea chart soundtrack', error);
+      musicOption.checked = false;
+      music.muted = true;
+    });
   }
 
   function setPlaying(playing: boolean): void {
     play.classList.toggle('playing', playing);
     map.classList.toggle('sailing', playing);
     playLabel.textContent = playing ? _('ocean_pause', '暂停') : _('ocean_play', '播放');
+    syncMusic(playing);
   }
 
   function pause(): void {
@@ -151,16 +178,21 @@ async function initialize(): Promise<void> {
     closePortButton.focus();
   }
 
-  function applyShip(ship: Ship | undefined): void {
-    selectedShip = ship;
-    shipPicker.value = ship ? String(ship.number) : '';
-    chart.focus(ship);
-    showTimeline(ship?.arrivals ?? history.arrivals);
+  function applySession(): void {
+    if (!dayData) return;
+    const session = sessionPicker.value;
+    history = chartHistory(session ? dayData.nodes.filter(node => node.sessionId === session) : dayData.nodes);
+    chart.setHistory(history.islands);
+    counts.textContent = _('ocean_counts', '{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段',
+      history.islands.length.toLocaleString(), history.ships.length.toLocaleString(),
+      history.voyages.toLocaleString(), history.coastalTrips.toLocaleString());
+    updateViewLinks(dayData.start, session);
+    showTimeline(history.arrivals);
   }
 
-  function updateViewLinks(day?: number): void {
+  function updateViewLinks(day?: number, session?: string): void {
     treeView.href = graphViewUrl('tree', day).href;
-    waterfallView.href = graphViewUrl('waterfall', day, day === initialDay ? initialSession : undefined).href;
+    waterfallView.href = graphViewUrl('waterfall', day, session || (day === initialDay ? initialSession : undefined)).href;
   }
 
   async function load(day?: number): Promise<void> {
@@ -168,10 +200,12 @@ async function initialize(): Promise<void> {
     updateViewLinks(day);
     if (day !== undefined) date.value = inputDate.format(day);
     closePort();
+    dayData = undefined;
     history = chartHistory([]);
-    chart.setHistory([], []);
+    chart.setHistory([]);
     showTimeline([]);
-    shipPicker.disabled = true;
+    sessionPicker.replaceChildren(new Option(_('ocean_all_sessions', '全部会话'), ''));
+    sessionPicker.disabled = true;
     counts.textContent = '';
     status.hidden = false;
     status.classList.remove('limit');
@@ -187,20 +221,13 @@ async function initialize(): Promise<void> {
     }
     if (token !== request) return;
     date.value = inputDate.format(response.start);
-    updateViewLinks(response.start);
-    history = chartHistory(response.nodes);
-    chart.setHistory(history.islands, history.routes);
-    counts.textContent = _('ocean_counts', '{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段',
-      history.islands.length.toLocaleString(), history.ships.length.toLocaleString(),
-      history.voyages.toLocaleString(), history.coastalTrips.toLocaleString());
-    shipPicker.replaceChildren(new Option(_('ocean_all_ships', '所有标签页'), ''));
-    const ranked = [...history.ships].sort((a, b) => b.voyages - a.voyages || b.coastalTrips - a.coastalTrips || a.number - b.number);
-    for (const ship of ranked) {
-      const label = _('ocean_ship_option', '船 {0} · 跨岛 {1} · 沿岸 {2}', ship.number, ship.voyages, ship.coastalTrips);
-      shipPicker.add(new Option(label, String(ship.number)));
+    dayData = response;
+    for (const session of response.sessions.sort((a, b) => a.firstVisit - b.firstVisit)) {
+      const firstVisit = timeFormat.format(session.firstVisit);
+      sessionPicker.add(new Option(session.title ? `${firstVisit} · ${session.title}` : firstVisit, session.id));
     }
-    shipPicker.disabled = !history.ships.length;
-    applyShip(undefined);
+    sessionPicker.disabled = !response.sessions.length;
+    applySession();
     status.hidden = Boolean(history.arrivals.length) && !response.truncated;
     status.classList.toggle('limit', response.truncated);
     status.textContent = response.truncated
@@ -219,9 +246,11 @@ async function initialize(): Promise<void> {
     frame = requestAnimationFrame(tick);
   });
   position.addEventListener('input', () => seek(position.valueAsNumber));
-  shipPicker.addEventListener('change', () => {
+  musicOption.addEventListener('change', () => syncMusic(frame !== undefined));
+  music.addEventListener('loadedmetadata', positionMusic);
+  sessionPicker.addEventListener('change', () => {
     closePort();
-    applyShip(history.ships[Number(shipPicker.value) - 1]);
+    applySession();
   });
   closePortButton.addEventListener('click', () => closePort(true));
   port.addEventListener('keydown', event => {
@@ -231,7 +260,6 @@ async function initialize(): Promise<void> {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!button) return;
     const arrival = history.arrivals[Number(button.dataset.arrival)];
-    if (selectedShip && arrival.ship !== selectedShip) applyShip(undefined);
     seek(replay.arrivalsAt.get(arrival)!);
     closePort(true);
   });
