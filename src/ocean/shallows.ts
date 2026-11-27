@@ -5,7 +5,7 @@ const TILE = 128;
 const MARGIN = 34;
 const SIZE = TILE + 2 * MARGIN;
 
-function makeShallows(sheet: OceanArt['islands'], sprite: number, reach: number): HTMLCanvasElement {
+function makeShallows(sheet: OceanArt['islands'], sprite: number, reach: number, strength: number): string {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = SIZE;
   const ctx = canvas.getContext('2d')!;
@@ -37,29 +37,29 @@ function makeShallows(sheet: OceanArt['islands'], sprite: number, reach: number)
       pixels.data[rgba] = 39 + 62 * color;
       pixels.data[rgba + 1] = 119 + 53 * color;
       pixels.data[rgba + 2] = 133 + 21 * color;
-      pixels.data[rgba + 3] = 219 * (1 - depth) ** 1.65;
+      pixels.data[rgba + 3] = 219 * strength * (1 - depth) ** 1.65;
     }
   }
   ctx.putImageData(pixels, 0, 0);
-  return canvas;
+  return canvas.toDataURL();
 }
 
 export class ShallowWater {
-  private images = new Map<string, HTMLCanvasElement>();
+  private images = new Map<string, string>();
 
   constructor(private art: OceanArt) {}
 
-  draw(ctx: CanvasRenderingContext2D, { center, size }: WaterObstacle, sprite: number, large: boolean, continent: boolean): void {
+  place(patch: HTMLImageElement, { center, size }: WaterObstacle, sprite: number, large: boolean, continent: boolean): void {
     const key = `${large}:${continent}:${sprite}`;
     let image = this.images.get(key);
     if (!image) {
-      image = makeShallows(large ? this.art.largeIslands : this.art.islands, sprite, continent ? 15 : 26);
+      image = makeShallows(large ? this.art.largeIslands : this.art.islands, sprite, continent ? 15 : 26, large ? .91 : .72);
       this.images.set(key, image);
     }
     const width = size * SIZE / TILE;
-    ctx.save();
-    ctx.globalAlpha *= large ? .91 : .72;
-    ctx.drawImage(image, center.x - width / 2, center.y - width / 2, width, width);
-    ctx.restore();
+    if (patch.src !== image) patch.src = image;
+    patch.style.width = `${width}px`;
+    patch.style.left = `${center.x - width / 2}px`;
+    patch.style.top = `${center.y - width / 2}px`;
   }
 }

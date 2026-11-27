@@ -69,6 +69,7 @@ async function initialize(): Promise<void> {
   const visitStatus = document.getElementById('ocean-visit-status')!;
   const visitDetails = document.getElementById('ocean-visit-details')!;
   const map = document.getElementById('ocean-map')!;
+  const surface = document.getElementById('ocean-surface')!;
   const tileSize = Number.parseFloat(getComputedStyle(map).getPropertyValue('--surface-period'));
   const bearing = Math.random() * Math.PI * 2;
   const surfaceVelocityX = -Math.cos(bearing) * SURFACE_SPEED;
@@ -85,9 +86,9 @@ async function initialize(): Promise<void> {
   const chart = new OceanChart(
     map,
     document.getElementById('ocean-islands')!,
-    document.querySelector<HTMLCanvasElement>('#ocean-shallows')!,
+    document.getElementById('ocean-shallows')!,
     document.querySelector<HTMLCanvasElement>('#ocean-water')!,
-    document.querySelector<HTMLCanvasElement>('#ocean-piers')!,
+    document.getElementById('ocean-piers')!,
     document.querySelector<HTMLCanvasElement>('#ocean-ships')!,
     document.getElementById('ocean-ship-targets')!,
     art,
@@ -99,7 +100,6 @@ async function initialize(): Promise<void> {
     map,
     document.querySelector<HTMLCanvasElement>('#ocean-moon')!,
     art.celestial,
-    art.surface,
   );
   let history = chartHistory([]);
   let replay = prepareReplay([]);
@@ -212,7 +212,7 @@ async function initialize(): Promise<void> {
       if (!reducedMotion.matches) {
         surfaceX = wrapSurface(surfaceX + surfaceVelocityX * step, tileSize);
         surfaceY = wrapSurface(surfaceY + surfaceVelocityY * step, tileSize);
-        map.style.setProperty('--surface-shift', `translate3d(${surfaceX}px, ${surfaceY}px, 0)`);
+        surface.style.transform = `translate3d(${surfaceX}px, ${surfaceY}px, 0)`;
       }
     }
     previousFrame = now;

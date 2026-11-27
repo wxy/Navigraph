@@ -60,7 +60,6 @@ main {
 
 .map {
   --surface-period: 720px;
-  --surface-shift: translate3d(0, 0, 0);
   --sky-width: clamp(96px, 11vw, 138px);
   min-height: 390px;
   position: relative;
@@ -85,10 +84,10 @@ main {
   inset: 0 calc(-1 * var(--surface-period)) calc(-1 * var(--surface-period)) 0;
   background: url("../images/ocean-water-tile.webp") 0 0 / var(--surface-period) var(--surface-period) repeat;
   pointer-events: none;
-  transform: var(--surface-shift);
+  transform: translate3d(0, 0, 0);
 }
 
-.map canvas, #ocean-islands, #ocean-ship-targets {
+.map > canvas, #ocean-shallows, #ocean-islands, #ocean-piers, #ocean-ship-targets {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -96,10 +95,17 @@ main {
   pointer-events: none;
 }
 
-.map canvas { z-index: 1; }
+.map > canvas { z-index: 1; }
 #ocean-shallows { z-index: 0; }
 #ocean-islands { z-index: 2; }
 #ocean-piers, #ocean-ships, #ocean-ship-targets { z-index: 3; }
+
+.ocean-shallow-patch, .ocean-island-piers, .ocean-pier { position: absolute; }
+.ocean-island-piers { top: 0; left: 0; }
+.ocean-pier {
+  transform-origin: 1px 50%;
+  background: url("../images/ocean-piers.webp") 0 0 / 200% 200% no-repeat;
+}
 
 .ocean-ship-target {
   position: absolute;
@@ -130,44 +136,6 @@ main {
 
 .ocean-ship-target[aria-current="true"] .ocean-ship-clock { box-shadow: 0 0 0 1px var(--accent); }
 
-#ocean-reflections {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-}
-
-.ocean-reflection {
-  --footprint: radial-gradient(ellipse 8% 36% at var(--reflection-x) 23%, #000, #000a 40%, #0003 72%, transparent 100%);
-  position: absolute;
-  inset: 0;
-  background: rgb(var(--reflection-color) / .095);
-  -webkit-mask-image: var(--footprint);
-  mask-image: var(--footprint);
-}
-
-.ocean-reflection::before {
-  content: "";
-  position: absolute;
-  inset: 0 calc(-1 * var(--surface-period)) calc(-1 * var(--surface-period)) 0;
-  background: rgb(var(--reflection-color));
-  -webkit-mask: var(--glint-tile) 0 0 / var(--surface-period) var(--surface-period) repeat;
-  mask: var(--glint-tile) 0 0 / var(--surface-period) var(--surface-period) repeat;
-  transform: var(--surface-shift);
-}
-
-.sun-reflection {
-  --reflection-x: calc(100% - 20px - var(--sky-width) * .725);
-  --reflection-color: 255 215 149;
-  opacity: calc(var(--daylight, 0) * .85);
-}
-
-.moon-reflection {
-  --reflection-x: calc(100% - 23px - var(--sky-width) * .271);
-  --reflection-color: 176 221 252;
-  opacity: calc(var(--moonlight, 0) * .88);
-}
-
 #ocean-light {
   position: absolute;
   z-index: 3;
@@ -186,8 +154,31 @@ main {
   pointer-events: none;
 }
 
+#ocean-sky::before, #ocean-sky::after {
+  content: "";
+  position: absolute;
+  top: 62%;
+  width: 92%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgb(var(--sky-glow-color) / .34), rgb(var(--sky-glow-color) / .13) 39%, transparent 71%);
+}
+
+#ocean-sky::before {
+  --sky-glow-color: 255 214 150;
+  left: 27.5%;
+  opacity: var(--daylight, 0);
+}
+
+#ocean-sky::after {
+  --sky-glow-color: 177 223 255;
+  left: 72.9%;
+  opacity: var(--moonlight, 0);
+}
+
 #ocean-sun, #ocean-moon {
   position: absolute;
+  z-index: 1;
   inset: 12.5% auto auto;
   width: 38.532%;
   height: 75%;
@@ -205,7 +196,7 @@ main {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  #ocean-sun, #ocean-moon, #ocean-light, .ocean-reflection, .island-town::after {
+  #ocean-sun, #ocean-moon, #ocean-light, #ocean-sky::before, #ocean-sky::after, .island-town::after {
     transition: opacity 720ms ease-in-out;
   }
 }
