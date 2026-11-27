@@ -1,7 +1,7 @@
 import { drawPier, type OceanArt } from './art.js';
-import { boatColor, boatDesign, drawBoat } from './boats.js';
+import { boatDesign, drawBoat } from './boats.js';
 import { placeIslands, type Berth } from './coast.js';
-import { coursePosition, traceCourse, Waterways, type Course, type Point } from './course.js';
+import { coursePosition, Waterways, type Course, type Point } from './course.js';
 import type { Dock, Island, Ship } from './history.js';
 import { TRAIL_FADE, type ShipPosition, type TimedArrival } from './replay.js';
 import { drawSeaLife, placeSeaLife } from './sea-life.js';
@@ -10,6 +10,46 @@ interface LabelBox extends Point { width: number; height: number }
 
 function eased(progress: number): number {
   return progress * progress * (3 - 2 * progress);
+}
+
+function drawWake(ctx: CanvasRenderingContext2D, course: Course, start: number, end: number, time: number): void {
+  const duration = end - start;
+  const head = eased(Math.min(1, (time - start) / duration));
+  const tail = eased(Math.max(0, (time - start - TRAIL_FADE) / duration));
+  const count = Math.max(2, Math.ceil(course.length / 10));
+  for (let index = Math.max(1, Math.ceil(tail * count)); index < head * count; index++) {
+    const progress = index / count;
+    // Space the crests by distance, then recover when the eased boat passed each one.
+    const release = duration * (.5 - Math.sin(Math.asin(1 - 2 * progress) / 3));
+    const age = Math.max(0, Math.min(1, (time - start - release) / TRAIL_FADE));
+    const spread = 2.8 + 11 * age ** .66;
+    const length = 6 + 7 * age;
+    const fade = (1 - age) ** 1.6;
+    const variation = Math.sin(index * 2.39996);
+    const { x, y, angle } = coursePosition(course, progress);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.ellipse(-4, 0, length * (.8 + variation * .1), 1.15 + spread * .24, 0, 0, 2 * Math.PI);
+    ctx.globalAlpha = .21 * fade;
+    ctx.fillStyle = '#a3d4d6';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-1, -spread * (.59 + variation * .12));
+    ctx.quadraticCurveTo(-length * .69, -spread * .64, -length * (1 + variation * .25), -spread);
+    ctx.moveTo(-3, spread * (.57 - variation * .12));
+    ctx.quadraticCurveTo(-length * .67, spread * .73, -length * (1 - variation * .25), spread);
+    ctx.lineWidth = 3 + age * 2;
+    ctx.strokeStyle = '#78b9cb';
+    ctx.globalAlpha = .25 * fade;
+    ctx.stroke();
+    ctx.lineWidth = 1.08;
+    ctx.strokeStyle = '#d9f6ec';
+    ctx.globalAlpha = (.57 + variation * .08) * fade;
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function addClock(
@@ -104,6 +144,10 @@ export class OceanChart {
     if (island) this.islandButtons.get(island)?.setAttribute('aria-pressed', 'true');
   }
 
+  focusIsland(island: Island): void {
+    this.islandButtons.get(island)?.focus();
+  }
+
   showFleet(fleet: ShipPosition[], trails: TimedArrival[], time: number, animate: boolean): void {
     this.fleet = fleet;
     this.trails = trails;
@@ -165,9 +209,9 @@ export class OceanChart {
   }
 
   private courseFor(from: Dock, to: Dock): Course | null {
-    const key = from.page + ':' + to.page;
+    const key = from.id + ':' + to.id;
     if (this.courses.has(key)) return this.courses.get(key)!;
-    const seed = ((Math.imul(from.page, 31) + to.page) >>> 0) % 997;
+    const seed = ((Math.imul(from.id, 31) + to.id) >>> 0) % 997;
     const course = this.waterways!.course(this.berths.get(from)!, this.berths.get(to)!, seed) ?? null;
     if (this.courses.size >= 256) this.courses.delete(this.courses.keys().next().value!);
     this.courses.set(key, course);
@@ -181,30 +225,15 @@ export class OceanChart {
     ctx.lineCap = 'round';
     for (const { arrival, start, end } of this.trails) {
       const course = this.courseFor(arrival.previous!.dock, arrival.dock);
-      if (!course) continue;
-      const duration = end - start;
-      const tail = Math.max(0, (this.time - TRAIL_FADE - start) / duration);
-      const head = Math.min(1, (this.time - start) / duration);
-      if (head <= tail) continue;
-      ctx.strokeStyle = boatColor(arrival.ship.tabId);
-      ctx.lineWidth = 1.65;
-      const bands = Math.max(2, Math.min(7, Math.ceil(course.length * (head - tail) / 18)));
-      for (let band = 0; band < bands; band++) {
-        const from = tail + (head - tail) * band / bands;
-        const to = tail + (head - tail) * (band + 1) / bands;
-        const age = this.time - (start + duration * (from + to) / 2);
-        ctx.globalAlpha = .87 * (1 - age / TRAIL_FADE) ** 1.45;
-        traceCourse(ctx, course, eased(from), eased(to));
-      }
+      if (course) drawWake(ctx, course, start, end, this.time);
     }
-    ctx.globalAlpha = 1;
   }
 
   private drawShips(): void {
     const ctx = this.shipLayer.getContext('2d')!;
     ctx.clearRect(0, 0, this.width, this.height);
     const scale = this.width < 600 ? .82 : 1;
-    const ships = this.fleet.map(({ arrival, fraction, timestamp }) => {
+    const ships = this.fleet.map(({ arrival, fraction, timestamp, parked }) => {
       const { ship, dock, previous } = arrival;
       const destination = this.berths.get(dock)!;
       const underway = fraction !== undefined;
@@ -213,23 +242,27 @@ export class OceanChart {
       const berth = underway && !course && origin ? origin : destination;
       const position = course
         ? coursePosition(course, eased(fraction!))
-        : { ...berth.ships.get(ship)!, angle: berth.angle };
-      return { position, ship, timestamp, underway };
+        : { ...(berth.ships.get(ship) ?? berth.water), angle: berth.angle };
+      return { position, ship, timestamp, underway, parked };
     });
 
-    for (const { position, ship } of ships) {
-      drawBoat(ctx, this.art.boats, position.x, position.y, position.angle, scale, boatDesign(ship.tabId));
+    for (const { position, ship, parked } of ships) {
+      ctx.globalAlpha = parked ? .83 : 1;
+      drawBoat(ctx, this.art.boats, position.x, position.y, position.angle, scale, boatDesign(ship.tabId, ship.generation));
     }
     ctx.font = '600 10px system-ui, sans-serif';
     const occupied: LabelBox[] = [];
-    for (const { position, ship, timestamp } of ships.sort((a, b) => Number(b.underway) - Number(a.underway))) {
+    const priority = ({ underway, parked }: typeof ships[number]) => underway ? 2 : parked ? 0 : 1;
+    for (const { position, ship, timestamp, parked } of ships.sort((a, b) => priority(b) - priority(a))) {
       const second = Math.floor(timestamp / 1000);
       let clock = this.clocks.get(ship);
       if (clock?.second !== second) {
         clock = { second, label: this.clockFormat.format(timestamp) };
         this.clocks.set(ship, clock);
       }
+      ctx.globalAlpha = parked ? .65 : 1;
       addClock(ctx, position, clock.label, Math.max(12, 14 * scale), occupied, this.width, this.height);
     }
+    ctx.globalAlpha = 1;
   }
 }

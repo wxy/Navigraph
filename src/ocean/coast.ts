@@ -41,7 +41,7 @@ function mooring(dock: Dock, island: WaterObstacle, coast: typeof COASTS[number]
   for (const { ship } of dock.arrivals) {
     if (ships.has(ship)) continue;
     const offset = ships.size * Math.PI * (3 - Math.sqrt(5));
-    const radius = Math.min(12, 5 * Math.sqrt(ships.size));
+    const radius = Math.min(17, 10 * Math.sqrt(ships.size));
     ships.set(ship, polar(water, radius, angle + Math.sin(offset) * Math.PI / 2));
   }
   return { angle, shore, water, gate, island, ships };
@@ -75,7 +75,7 @@ function townBehind(berth: Berth, continent: boolean, sprite: number, width: num
 }
 
 export function placeIslands(islands: readonly Island[], width: number, height: number) {
-  const continents = islands.filter(island => island.records >= 100 && island.docks.length >= 12).slice(0, width >= 1050 ? 2 : 1);
+  const continents = islands.filter(island => island.scale === 'continent').slice(0, width >= 1050 ? 2 : 1);
   const continentCount = continents.length;
   const continentSize = Math.min(590, height * .91, width * .70);
   const padding = continentSize * .39 + 32;
@@ -94,7 +94,7 @@ export function placeIslands(islands: readonly Island[], width: number, height: 
     const continent = index < continentCount;
     const hash = siteHash(island.site);
     const sprite = continent ? index === 0 ? 5 : 7 : hash % COASTS.length;
-    const large = island.records >= 30 && island.docks.length >= 6;
+    const large = island.scale !== 'small';
     const weight = Math.log1p(island.records) / maxRecords;
     const size = continent ? continentSize : islandLimit * (large ? .8 + .20 * weight : .36 + .37 * weight);
     const position = index - continentCount;

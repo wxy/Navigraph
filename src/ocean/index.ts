@@ -8,6 +8,7 @@ import type { BackgroundResponses } from '../types/messages/background.js';
 import { loadOceanArt } from './art.js';
 import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
+import { ChartLight } from './light.js';
 import { prepareReplay, replayAt } from './replay.js';
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -69,14 +70,24 @@ async function initialize(): Promise<void> {
     timeFormat,
     openPort,
   );
+  const light = new ChartLight(
+    document.getElementById('ocean-light')!,
+    document.querySelector<HTMLCanvasElement>('#ocean-sky')!,
+    art.celestial,
+  );
   let history = chartHistory([]);
   let replay = prepareReplay([]);
   let dayData: BackgroundResponses.GetOceanDayResponse | undefined;
-  let lastPortButton: HTMLElement | undefined;
+  let portIsland: Island | undefined;
   let elapsed = 0;
   let describedIndex = -2;
+  let describedSecond = -1;
   let describedUnderway = -1;
+  let requestedDay = initialDay;
   let request = 0;
+  let refreshPending = false;
+  let refreshing = false;
+  let refreshTimer: number | undefined;
   let frame: number | undefined;
   let previousFrame = 0;
   let surfaceX = 0;
@@ -90,8 +101,10 @@ async function initialize(): Promise<void> {
 
   function draw(): void {
     const animate = !reducedMotion.matches;
-    const { fleet, trails, current: shown, underway } = replayAt(replay, elapsed, animate);
+    const { fleet, trails, current: shown, underway, timestamp } = replayAt(replay, elapsed, animate);
     chart.showFleet(fleet, trails, elapsed, animate);
+    const day = dayData?.start ?? requestedDay;
+    light.show(timestamp ?? (day === undefined ? Date.now() : new Date(day).setHours(12, 0, 0, 0)));
     const progress = Math.round(elapsed / 100) * 100;
     if (position.valueAsNumber !== progress) position.value = String(progress);
     if (describedUnderway !== underway) {
@@ -100,17 +113,23 @@ async function initialize(): Promise<void> {
       underwayLabel.textContent = underway >= 2 ? _('ocean_underway', '{0} 艘船同时航行', underway) : '';
     }
     const index = shown?.index ?? -1;
-    if (index === describedIndex) return;
-    describedIndex = index;
-    time.textContent = shown ? timeFormat.format(shown.timestamp) : '–';
-    time.dateTime = shown ? new Date(shown.timestamp).toISOString() : '';
-    let place = shown?.island.site;
-    if (shown?.previous && shown.previous.island !== shown.island) {
-      place = `${shown.previous.island.site} → ${shown.island.site}`;
-    } else if (shown?.previous) {
-      place = `${place} · ${_('ocean_coastal_move', '码头 {0} → 码头 {1}', shown.previous.dock.number, shown.dock.number)}`;
+    const second = timestamp === undefined ? -1 : Math.floor(timestamp / 1000);
+    if (index === describedIndex && second === describedSecond) return;
+    if (second !== describedSecond) {
+      describedSecond = second;
+      time.textContent = timestamp === undefined ? '–' : timeFormat.format(timestamp);
+      time.dateTime = timestamp === undefined ? '' : new Date(second * 1000).toISOString();
     }
-    current.textContent = shown ? `${shipName(shown.ship)} · ${place}` : '';
+    if (index !== describedIndex) {
+      describedIndex = index;
+      let place = shown?.island.site;
+      if (shown?.previous && shown.previous.island !== shown.island) {
+        place = `${shown.previous.island.site} → ${shown.island.site}`;
+      } else if (shown?.previous) {
+        place = `${place} · ${_('ocean_coastal_move', '码头 {0} → 码头 {1}', shown.previous.dock.number, shown.dock.number)}`;
+      }
+      current.textContent = shown ? `${shipName(shown.ship)} · ${place}` : '';
+    }
     position.setAttribute('aria-valuetext', `${time.textContent} ${current.textContent}`.trim());
   }
 
@@ -143,6 +162,7 @@ async function initialize(): Promise<void> {
     if (frame !== undefined) cancelAnimationFrame(frame);
     frame = undefined;
     setPlaying(false);
+    if (refreshPending) scheduleRefresh();
   }
 
   function seek(time: number): void {
@@ -167,54 +187,68 @@ async function initialize(): Promise<void> {
     else frame = requestAnimationFrame(tick);
   }
 
-  function showTimeline(arrivals: Arrival[]): void {
+  function showTimeline(arrivals: Arrival[], startAt?: number): void {
     replay = prepareReplay(arrivals);
     describedIndex = -2;
     position.max = String(replay.duration);
     position.disabled = play.disabled = arrivals.length < 2;
     firstTime.textContent = arrivals.length ? timeFormat.format(arrivals[0].timestamp) : '';
     lastTime.textContent = arrivals.length ? timeFormat.format(arrivals[arrivals.length - 1].timestamp) : '';
-    seek(replay.duration);
+    seek(startAt === undefined ? replay.duration : Math.min(startAt, replay.duration));
   }
 
   function closePort(restoreFocus = false): void {
     port.hidden = true;
     chart.selectIsland();
-    if (restoreFocus) lastPortButton?.focus();
-    lastPortButton = undefined;
+    if (restoreFocus && portIsland) chart.focusIsland(portIsland);
+    portIsland = undefined;
   }
 
   function openPort(island: Island): void {
-    lastPortButton = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    showPort(island);
+    closePortButton.focus();
+  }
+
+  function showPort(island: Island): void {
+    portIsland = island;
     chart.selectIsland(island);
     document.getElementById('ocean-port-name')!.textContent = island.site;
     document.getElementById('ocean-port-count')!.textContent =
       _('ocean_port_counts', '{0} 条记录 · {1} 个码头', island.records.toLocaleString(), island.docks.length.toLocaleString());
+    const active = document.activeElement as HTMLButtonElement | null;
+    const focusedArrival = active && portVisits.contains(active) ? active.dataset.arrival : undefined;
     const fragment = document.createDocumentFragment();
+    let focus: HTMLButtonElement | undefined;
     for (const arrival of island.arrivals) {
       const item = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.arrival = String(arrival.index);
+      if (button.dataset.arrival === focusedArrival) focus = button;
       button.textContent = `${timeFormat.format(arrival.timestamp)} · ${shipName(arrival.ship)} · ${_('ocean_dock', '码头 {0}', arrival.dock.number)}`;
       item.append(button);
       fragment.append(item);
     }
     portVisits.replaceChildren(fragment);
     port.hidden = false;
-    closePortButton.focus();
+    if (focusedArrival !== undefined) (focus ?? closePortButton).focus({ preventScroll: true });
   }
 
-  function applySession(): void {
+  function applySession(preserve = false): void {
     if (!dayData) return;
     const session = sessionPicker.value;
+    const savedPosition = preserve && elapsed < replay.duration ? elapsed : undefined;
+    const openSite = preserve ? portIsland?.site : undefined;
     history = chartHistory(session ? dayData.nodes.filter(node => node.sessionId === session) : dayData.nodes);
     chart.setHistory(history.islands);
     counts.textContent = _('ocean_counts', '{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段',
       history.islands.length.toLocaleString(), history.ships.length.toLocaleString(),
       history.voyages.toLocaleString(), history.coastalTrips.toLocaleString());
     updateViewLinks(dayData.start, session);
-    showTimeline(history.arrivals);
+    showTimeline(history.arrivals, savedPosition);
+    const stillOpen = openSite && history.islands.find(island => island.site === openSite);
+    if (stillOpen) showPort(stillOpen);
+    else if (portIsland) closePort();
   }
 
   function updateViewLinks(day?: number, session?: string): void {
@@ -224,6 +258,7 @@ async function initialize(): Promise<void> {
 
   async function load(day?: number): Promise<void> {
     const token = ++request;
+    requestedDay = day;
     updateViewLinks(day);
     if (day !== undefined) date.value = inputDate.format(day);
     closePort();
@@ -247,19 +282,70 @@ async function initialize(): Promise<void> {
       return;
     }
     if (token !== request) return;
-    date.value = inputDate.format(response.start);
+    showDay(response);
+    if (refreshPending) scheduleRefresh();
+  }
+
+  function showDay(response: BackgroundResponses.GetOceanDayResponse): void {
+    const previous = dayData;
+    const sameDay = previous?.start === response.start;
+    const selectedSession = sameDay ? sessionPicker.value : '';
     dayData = response;
-    for (const session of response.sessions.sort((a, b) => a.firstVisit - b.firstVisit)) {
-      const firstVisit = timeFormat.format(session.firstVisit);
-      sessionPicker.add(new Option(session.title ? `${firstVisit} · ${session.title}` : firstVisit, session.id));
+    if (!sameDay) date.value = inputDate.format(response.start);
+    date.max = inputDate.format(Date.now());
+    response.sessions.sort((a, b) => a.firstVisit - b.firstVisit);
+    const sameSessions = sameDay && response.sessions.length === previous.sessions.length && response.sessions.every((session, index) => {
+      const old = previous.sessions[index];
+      return session.id === old.id && session.title === old.title && session.firstVisit === old.firstVisit;
+    });
+    if (!sameSessions) {
+      const options = response.sessions.map(session => {
+        const firstVisit = timeFormat.format(session.firstVisit);
+        return new Option(session.title ? `${firstVisit} · ${session.title}` : firstVisit, session.id);
+      });
+      sessionPicker.replaceChildren(new Option(_('ocean_all_sessions', '全部会话'), ''), ...options);
+      if (options.some(option => option.value === selectedSession)) sessionPicker.value = selectedSession;
+      sessionPicker.disabled = !response.sessions.length;
     }
-    sessionPicker.disabled = !response.sessions.length;
-    applySession();
+    const sameSelection = sameDay && selectedSession === sessionPicker.value;
+    const sameNodes = sameDay && response.nodes.length === previous.nodes.length && response.nodes.every((node, index) => {
+      const old = previous.nodes[index];
+      return node.timestamp === old.timestamp && node.tabId === old.tabId && node.sessionId === old.sessionId
+        && node.site === old.site && node.page === old.page;
+    });
+    if (!sameSelection || !sameNodes) applySession(sameSelection);
     status.hidden = Boolean(history.arrivals.length) && !response.truncated;
     status.classList.toggle('limit', response.truncated);
     status.textContent = response.truncated
       ? _('ocean_day_limit', '显示最近 {0} 条导航记录。', OCEAN_DAY_LIMIT.toLocaleString())
       : _('ocean_empty', '这一天还没有浏览记录。');
+  }
+
+  function scheduleRefresh(): void {
+    refreshPending = true;
+    if (refreshTimer !== undefined || refreshing || !dayData || document.hidden || frame !== undefined) return;
+    refreshTimer = window.setTimeout(() => {
+      refreshTimer = undefined;
+      void refresh();
+    }, 150);
+  }
+
+  async function refresh(): Promise<void> {
+    if (!dayData || document.hidden || frame !== undefined) return;
+    const token = request;
+    refreshPending = false;
+    refreshing = true;
+    try {
+      const response = await sendToBackground('getOceanDay', { date: requestedDay });
+      if (token !== request) return;
+      if (document.hidden || frame !== undefined) refreshPending = true;
+      else showDay(response);
+    } catch (error) {
+      if (token === request) console.error('Unable to refresh sea chart history', error);
+    } finally {
+      refreshing = false;
+      if (refreshPending) scheduleRefresh();
+    }
   }
 
   play.addEventListener('click', () => {
@@ -276,7 +362,6 @@ async function initialize(): Promise<void> {
   musicOption.addEventListener('change', () => syncMusic(frame !== undefined));
   music.addEventListener('loadedmetadata', positionMusic);
   sessionPicker.addEventListener('change', () => {
-    closePort();
     applySession();
   });
   closePortButton.addEventListener('click', () => closePort(true));
@@ -292,6 +377,12 @@ async function initialize(): Promise<void> {
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pause();
+    else if (dayData) scheduleRefresh();
+    else void load(requestedDay);
+  });
+  window.addEventListener('focus', scheduleRefresh);
+  chrome.runtime.onMessage.addListener(message => {
+    if (message?.target === 'content' && message.action === 'refreshVisualization') scheduleRefresh();
   });
   reducedMotion.addEventListener('change', draw);
   date.addEventListener('change', () => {

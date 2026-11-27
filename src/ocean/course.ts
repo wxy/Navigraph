@@ -200,26 +200,6 @@ export function coursePosition(course: Course, fraction: number): Point & { angl
   return { ...mix(a, b, t), angle: Math.atan2(b.y - a.y, b.x - a.x) };
 }
 
-export function traceCourse(ctx: CanvasRenderingContext2D, course: Course, start: number, end: number): void {
-  const first = locate(course, start);
-  const last = locate(course, end);
-  const origin = coursePosition(course, start);
-  ctx.beginPath();
-  ctx.moveTo(origin.x, origin.y);
-  for (let index = first.bend; index <= last.bend; index++) {
-    const bend = course.bends[index];
-    const from = index === first.bend ? first.t : 0;
-    const to = index === last.bend ? last.t : 1;
-    const a = mix(bend.start, bend.control, from);
-    const b = mix(bend.control, bend.end, from);
-    const point = mix(a, b, from);
-    const control = { x: point.x + (b.x - a.x) * (to - from), y: point.y + (b.y - a.y) * (to - from) };
-    const target = mix(mix(bend.start, bend.control, to), mix(bend.control, bend.end, to), to);
-    ctx.quadraticCurveTo(control.x, control.y, target.x, target.y);
-  }
-  ctx.stroke();
-}
-
 export class Waterways {
   private detours?: Point[];
 

@@ -20,13 +20,14 @@ async function loadSheet(file: string, columns: number, rows: number): Promise<S
 }
 
 export async function loadOceanArt() {
-  const [piers, boats, marine, birds] = await Promise.all([
+  const [piers, boats, marine, birds, celestial] = await Promise.all([
     loadSheet('ocean-piers.webp', 2, 2),
     loadSheet('ocean-boats.webp', 3, 3),
     loadSheet('ocean-marine.webp', 2, 2),
     loadSheet('ocean-birds.webp', 2, 2),
+    loadSheet('ocean-celestial.webp', 2, 1),
   ]);
-  return { piers, boats, marine, birds };
+  return { piers, boats, marine, birds, celestial };
 }
 
 export type OceanArt = Awaited<ReturnType<typeof loadOceanArt>>;
