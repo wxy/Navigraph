@@ -1,5 +1,6 @@
-import { coursePosition, polar, Waterways, type Course, type Landing, type Point, type WaterObstacle } from './course.js';
+import { berthInOpenWater, coursePosition, polar, Waterways, type Course, type Landing, type Point, type WaterObstacle } from './course.js';
 import type { Arrival, Dock, Island, Route, Ship } from './history.js';
+import { LAND_TILES } from './land-data.js';
 import type { ShipPosition } from './replay.js';
 import { SHORE_RADII } from './shore-data.js';
 
@@ -38,8 +39,8 @@ function mooring(dock: Dock, island: WaterObstacle, sprite: number, size: number
   const angle = (start.angle + gap * fraction) % FULL_TURN;
   const coastRadius = (start.radius + (end.radius - start.radius) * fraction) * size;
   const shore = polar(island.center, coastRadius - 1.5, angle);
-  const water = polar(island.center, coastRadius + Math.min(12, size * .22), angle);
   const gate = polar(island.center, island.radius + Math.min(12, size * .16), angle);
+  const water = berthInOpenWater(polar(island.center, coastRadius + Math.min(12, size * .22), angle), gate, island);
   const ships = new Map<Ship, Point>();
   for (const { ship } of dock.arrivals) {
     if (ships.has(ship)) continue;
@@ -220,7 +221,7 @@ export class OceanChart {
       if (count === 1) { center.x = width / 2; center.y = height / 2 - 12; }
 
       // Each sprite is clipped to this circle. The margin gives sails room to pass.
-      const obstacle = { center, radius: size * .50 + Math.min(9, size * .12) };
+      const obstacle = { center, size, radius: size * .50 + Math.min(9, size * .12), land: LAND_TILES[sprite] };
       obstacles.push(obstacle);
       for (const dock of island.docks) this.berths.set(dock, mooring(dock, obstacle, sprite, size));
       const button = this.islandButtons.get(island)!;

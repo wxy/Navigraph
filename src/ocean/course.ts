@@ -1,8 +1,12 @@
+import { LAND_GRID } from './land-data.js';
+
 export interface Point { x: number; y: number }
 
 export interface WaterObstacle {
   center: Point;
   radius: number;
+  size: number;
+  land: readonly number[];
 }
 
 export interface Landing {
@@ -61,11 +65,53 @@ function touchesTurn(a: Point, corner: Point, b: Point, island: WaterObstacle): 
   return signs.every(value => value >= 0) || signs.every(value => value <= 0);
 }
 
-function directLeg(start: Point, end: Point): Bend {
-  return { start, control: mix(start, end, .5), end };
+function touchesShore(a: Point, control: Point, b: Point, { center, size, land }: WaterObstacle): boolean {
+  const cell = size / LAND_GRID;
+  const padding = Math.min(1.5, cell * .7);
+  const originX = center.x - size / 2;
+  const originY = center.y - size / 2;
+  function overlaps(start: Point, corner: Point, end: Point): boolean {
+    const left = Math.min(start.x, corner.x, end.x);
+    const right = Math.max(start.x, corner.x, end.x);
+    const top = Math.min(start.y, corner.y, end.y);
+    const bottom = Math.max(start.y, corner.y, end.y);
+    const fromColumn = Math.max(0, Math.floor((left - padding - originX) / cell));
+    const toColumn = Math.min(LAND_GRID - 1, Math.floor((right + padding - originX) / cell));
+    const fromRow = Math.max(0, Math.floor((top - padding - originY) / cell));
+    const toRow = Math.min(LAND_GRID - 1, Math.floor((bottom + padding - originY) / cell));
+    for (let row = fromRow; row <= toRow; row++) {
+      for (let column = fromColumn; column <= toColumn; column++) {
+        if (!((land[row * 2 + (column >>> 5)] >>> (column & 31)) & 1)) continue;
+        // Subdivide the control bounds until they separate from the coast or
+        // reach subpixel size. The rendered curve stays inside those bounds.
+        if (Math.max(right - left, bottom - top) <= .5) return true;
+        const leftControl = mix(start, corner, .5);
+        const rightControl = mix(corner, end, .5);
+        const middle = mix(leftControl, rightControl, .5);
+        return overlaps(start, leftControl, middle) || overlaps(middle, rightControl, end);
+      }
+    }
+    return false;
+  }
+  return overlaps(a, control, b);
 }
 
-function fitSpline(points: Point[], islands: readonly WaterObstacle[]): Bend[] | undefined {
+export function berthInOpenWater(berth: Point, gate: Point, island: WaterObstacle): Point {
+  const blocked = (point: Point) => touchesShore(point, mix(point, gate, .5), gate, island);
+  if (!blocked(berth)) return berth;
+
+  // Find the nearest point along the pier with a clear path to open water.
+  let inside = berth;
+  let outside = gate;
+  while (distance(inside, outside) > .5) {
+    const halfway = mix(inside, outside, .5);
+    if (blocked(halfway)) inside = halfway;
+    else outside = halfway;
+  }
+  return mix(outside, gate, 1 / Math.max(1, distance(outside, gate)));
+}
+
+function fitSpline(points: Point[], crossesLand: (bend: Bend) => boolean): Bend[] | undefined {
   while (true) {
     const bends: Bend[] = [];
     const split = new Set<number>();
@@ -75,9 +121,9 @@ function fitSpline(points: Point[], islands: readonly WaterObstacle[]): Bend[] |
       const control = points[i];
       const start = first ? points[0] : mix(points[i - 1], control, .5);
       const end = last ? points[i + 1] : mix(control, points[i + 1], .5);
-      bends.push({ start, control, end });
-      // A quadratic stays in its control triangle.
-      if (!islands.some(island => touchesTurn(start, control, end, island))) continue;
+      const bend = { start, control, end };
+      bends.push(bend);
+      if (!crossesLand(bend)) continue;
       const left = distance(points[i - 1], control) > .5;
       const right = distance(control, points[i + 1]) > .5;
       if (!left && !right) return;
@@ -144,10 +190,15 @@ export class Waterways {
     if (!this.clear(from.water, from.gate, from.island) || !this.clear(to.gate, to.water, to.island)) return;
     from = this.widerTurn(from);
     to = this.widerTurn(to);
+    const crossesLand = ({ start, control, end }: Bend) => this.islands.some(island => {
+      if (!touchesTurn(start, control, end, island)) return false;
+      if (island !== from.island && island !== to.island) return true;
+      return touchesShore(start, control, end, island);
+    });
     const coastal = from.island === to.island;
     if (!coastal) {
       const direct = this.singleBend(from, to);
-      if (direct) return drawCourse(direct);
+      if (direct && !crossesLand(direct)) return drawCourse([direct]);
     }
     const guides = coastal ? this.alongCoast(from, to, seed) : [this.seaGuide(from, to, seed)];
     const preferred = [...guides, to.gate];
@@ -155,18 +206,10 @@ export class Waterways {
       && this.clear(index ? preferred[index - 1] : from.gate, point));
     const middle = clear ? preferred : this.connect(from.gate, to.gate);
     if (!middle) return;
-    const channelEnd = (landing: Landing) => {
-      const { center, radius } = landing.island;
-      const waterRadius = Math.max(radius, distance(center, landing.water));
-      const room = distance(center, landing.gate) - waterRadius;
-      return polar(center, waterRadius + Math.min(2, room * .27), landing.angle);
-    };
-    const departure = channelEnd(from);
-    const arrival = channelEnd(to);
-    const guidesWithChannels = [departure, from.gate, ...middle, arrival];
-    const points = guidesWithChannels.filter((point, index) => !index || distance(guidesWithChannels[index - 1], point) > .001);
-    const bends = fitSpline(points, this.islands);
-    return bends ? drawCourse([directLeg(from.water, departure), ...bends, directLeg(arrival, to.water)]) : undefined;
+    const guidesWithBerths = [from.water, from.gate, ...middle, to.water];
+    const points = guidesWithBerths.filter((point, index) => !index || distance(guidesWithBerths[index - 1], point) > .001);
+    const bends = fitSpline(points, crossesLand);
+    return bends ? drawCourse(bends) : undefined;
   }
 
   private widerTurn(landing: Landing): Landing {
@@ -176,9 +219,9 @@ export class Waterways {
     return this.inside(gate) && this.clear(landing.gate, gate, landing.island) ? { ...landing, gate } : landing;
   }
 
-  private singleBend(from: Landing, to: Landing): Bend[] | undefined {
-    const start = from.gate;
-    const end = to.gate;
+  private singleBend(from: Landing, to: Landing): Bend | undefined {
+    const start = from.water;
+    const end = to.water;
     const departure = polar({ x: 0, y: 0 }, 1, from.angle);
     const arrival = polar({ x: 0, y: 0 }, 1, to.angle);
     const dx = end.x - start.x;
@@ -190,16 +233,7 @@ export class Waterways {
     const span = Math.hypot(dx, dy);
     if (outward <= 0 || inward <= 0 || Math.max(outward, inward) > span) return;
     const control = polar(start, outward, from.angle);
-    if (!this.inside(control)) return;
-    if (!this.islands.some(island => touchesTurn(from.water, control, to.water, island))) {
-      return [{ start: from.water, control, end: to.water }];
-    }
-    if (this.islands.some(island => touchesTurn(start, control, end, island))) return;
-    return [
-      directLeg(from.water, start),
-      { start, control, end },
-      directLeg(end, to.water),
-    ];
+    if (this.inside(control)) return { start, control, end };
   }
 
   private inside(p: Point): boolean {
