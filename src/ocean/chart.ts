@@ -2,10 +2,9 @@ import { drawPier, type OceanArt } from './art.js';
 import { boatColor, boatDesign, drawBoat } from './boats.js';
 import { placeIslands, type Berth } from './coast.js';
 import { coursePosition, traceCourse, Waterways, type Course, type Point } from './course.js';
-import type { Arrival, Dock, Island, Ship } from './history.js';
+import type { Dock, Island, Ship } from './history.js';
 import { TRAIL_FADE, type ShipPosition, type TimedArrival } from './replay.js';
 import { drawSeaLife, placeSeaLife } from './sea-life.js';
-import { OceanWaves } from './waves.js';
 
 interface LabelBox extends Point { width: number; height: number }
 
@@ -35,9 +34,7 @@ function addClock(
 }
 
 export class OceanChart {
-  readonly waves: OceanWaves;
   private berths = new Map<Dock, Berth>();
-  private harbors: Berth[] = [];
   private courses = new Map<string, Course | null>();
   private waterways?: Waterways;
   private seaLife: ReturnType<typeof placeSeaLife> = [];
@@ -47,7 +44,6 @@ export class OceanChart {
   private selectedIsland?: Island;
   private fleet: ShipPosition[] = [];
   private trails: TimedArrival[] = [];
-  private primary?: Arrival;
   private time = 0;
   private seaTime = 0;
   private width = 0;
@@ -57,12 +53,12 @@ export class OceanChart {
     private map: HTMLElement,
     private islandLayer: HTMLElement,
     private waterLayer: HTMLCanvasElement,
+    private pierLayer: HTMLCanvasElement,
     private shipLayer: HTMLCanvasElement,
     private art: OceanArt,
     private clockFormat: Intl.DateTimeFormat,
     seePort: (island: Island) => void,
   ) {
-    this.waves = new OceanWaves(map.querySelector<HTMLCanvasElement>('#ocean-swell')!, art.water);
     this.islandLayer.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.island');
       if (button) seePort(this.islands[Number(button.dataset.index)]);
@@ -75,7 +71,6 @@ export class OceanChart {
     this.selectedIsland = undefined;
     this.fleet = [];
     this.trails = [];
-    this.primary = undefined;
     this.time = this.seaTime = 0;
     this.clocks.clear();
     this.islandButtons.clear();
@@ -107,13 +102,11 @@ export class OceanChart {
     if (this.selectedIsland) this.islandButtons.get(this.selectedIsland)?.setAttribute('aria-pressed', 'false');
     this.selectedIsland = island;
     if (island) this.islandButtons.get(island)?.setAttribute('aria-pressed', 'true');
-    this.drawShips();
   }
 
-  showFleet(fleet: ShipPosition[], trails: TimedArrival[], time: number, primary: Arrival | undefined, animate: boolean): void {
+  showFleet(fleet: ShipPosition[], trails: TimedArrival[], time: number, animate: boolean): void {
     this.fleet = fleet;
     this.trails = trails;
-    this.primary = primary;
     this.time = time;
     this.seaTime = animate ? time : 0;
     this.drawWater();
@@ -126,16 +119,20 @@ export class OceanChart {
     this.width = width;
     this.height = height;
     const pixels = Math.min(devicePixelRatio, 2);
-    for (const canvas of [this.waterLayer, this.shipLayer]) {
+    for (const canvas of [this.waterLayer, this.pierLayer, this.shipLayer]) {
       canvas.width = Math.round(width * pixels);
       canvas.height = Math.round(height * pixels);
       canvas.getContext('2d')!.setTransform(pixels, 0, 0, pixels, 0, 0);
     }
     const land = placeIslands(this.islands, width, height);
     this.berths = new Map(land.flatMap(({ berths }) => [...berths]));
-    this.harbors = land.map(({ harbor }) => harbor);
+    const pierContext = this.pierLayer.getContext('2d')!;
     this.courses.clear();
-    for (const { island, obstacle, sprite, town, harbor, continent, large, compact, labelWidth } of land) {
+    for (const { island, obstacle, sprite, town, harbor, berths, continent, large, compact, labelWidth } of land) {
+      for (const berth of berths.values()) {
+        if (berth !== harbor) drawPier(pierContext, this.art.piers, berth, false);
+      }
+      drawPier(pierContext, this.art.piers, harbor, true);
       const { center, size } = obstacle;
       const button = this.islandButtons.get(island)!;
       const style = button.style;
@@ -163,7 +160,6 @@ export class OceanChart {
     }
     this.waterways = new Waterways(land.map(({ obstacle }) => obstacle), width, height);
     this.seaLife = placeSeaLife(this.waterways, width, height);
-    this.waves.place(this.waterways, width, height);
     this.drawWater();
     this.drawShips();
   }
@@ -207,36 +203,26 @@ export class OceanChart {
   private drawShips(): void {
     const ctx = this.shipLayer.getContext('2d')!;
     ctx.clearRect(0, 0, this.width, this.height);
-    const active = new Set<Berth>();
-    const quiet = new Set(this.harbors);
-    if (this.selectedIsland) {
-      for (const dock of this.selectedIsland.docks) quiet.add(this.berths.get(dock)!);
-    }
+    const scale = this.width < 600 ? .82 : 1;
     const ships = this.fleet.map(({ arrival, fraction, timestamp }) => {
       const { ship, dock, previous } = arrival;
       const destination = this.berths.get(dock)!;
       const underway = fraction !== undefined;
       const origin = previous && this.berths.get(previous.dock);
       const course = underway && previous ? this.courseFor(previous.dock, dock) : null;
-      (underway || arrival === this.primary ? active : quiet).add(destination);
-      if (underway && origin) active.add(origin);
       const berth = underway && !course && origin ? origin : destination;
       const position = course
         ? coursePosition(course, eased(fraction!))
         : { ...berth.ships.get(ship)!, angle: berth.angle };
-      const scale = Math.min(1.32, Math.max(.62, Math.sqrt(destination.island.size / 109))) * (underway ? 1.03 : .84);
-      return { position, scale, ship, timestamp, underway };
+      return { position, ship, timestamp, underway };
     });
-    const main = new Set(this.harbors);
-    for (const berth of quiet) if (!active.has(berth)) drawPier(ctx, this.art.piers, berth, false, main.has(berth));
-    for (const berth of active) drawPier(ctx, this.art.piers, berth, true, main.has(berth));
 
-    for (const { position, scale, ship } of ships) {
+    for (const { position, ship } of ships) {
       drawBoat(ctx, this.art.boats, position.x, position.y, position.angle, scale, boatDesign(ship.tabId));
     }
     ctx.font = '600 10px system-ui, sans-serif';
     const occupied: LabelBox[] = [];
-    for (const { position, scale, ship, timestamp } of ships.sort((a, b) => Number(b.underway) - Number(a.underway))) {
+    for (const { position, ship, timestamp } of ships.sort((a, b) => Number(b.underway) - Number(a.underway))) {
       const second = Math.floor(timestamp / 1000);
       let clock = this.clocks.get(ship);
       if (clock?.second !== second) {

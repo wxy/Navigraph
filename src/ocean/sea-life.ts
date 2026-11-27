@@ -4,11 +4,11 @@ import type { Point, Waterways } from './course.js';
 
 const DETAILS = [
   { kind: 'trawler', x: .24, y: .22, heading: -.32, drift: 13, period: 53 },
-  { kind: 'whale', x: .56, y: .74, heading: -.5, drift: 15, period: 58 },
+  { kind: 'whale', x: .56, y: .74, heading: -.5, drift: 25, period: 26 },
   { kind: 'gulls', x: .65, y: .20, heading: .5, drift: 12, period: 36 },
   { kind: 'trawler', x: .79, y: .60, heading: 2.7, drift: 10, period: 67 },
   { kind: 'gulls', x: .30, y: .80, heading: -.6, drift: 13, period: 42 },
-  { kind: 'fish', x: .46, y: .48, heading: .24, drift: 11, period: 45 },
+  { kind: 'fish', x: .46, y: .48, heading: .24, drift: 29, period: 17 },
 ] as const;
 
 const GULLS = [
@@ -41,11 +41,21 @@ export function drawSeaLife(ctx: CanvasRenderingContext2D, art: OceanArt, detail
   const seconds = time / 1000;
   for (const { point, kind, scale, heading, period, drift } of details) {
     const turn = seconds / period * Math.PI * 2;
+    const swimming = kind === 'whale' || kind === 'fish';
     ctx.save();
-    ctx.translate(point.x + Math.sin(turn) * drift * scale, point.y + Math.sin(turn * 2) * drift * scale * .35);
-    ctx.rotate(heading + Math.sin(turn) * .14);
+    if (swimming) {
+      const x = Math.sin(turn) * drift * scale;
+      const y = -Math.cos(turn) * drift * scale * .55;
+      const cos = Math.cos(heading);
+      const sin = Math.sin(heading);
+      ctx.translate(point.x + x * cos - y * sin, point.y + x * sin + y * cos);
+      ctx.rotate(heading + Math.atan2(.55 * Math.sin(turn), Math.cos(turn)));
+    } else {
+      ctx.translate(point.x + Math.sin(turn) * drift * scale, point.y + Math.sin(turn * 2) * drift * scale * .35);
+      ctx.rotate(heading + Math.sin(turn) * .14);
+    }
     ctx.scale(scale, scale);
-    if (kind === 'whale' || kind === 'fish') {
+    if (swimming) {
       ctx.globalAlpha = .70 + Math.sin(turn) * .08;
       drawSprite(ctx, art.marine, kind === 'whale' ? 0 : 2, 0, 0, kind === 'whale' ? 47 : 32);
     } else if (kind === 'trawler') {

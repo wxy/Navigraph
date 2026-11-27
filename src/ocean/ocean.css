@@ -93,13 +93,21 @@ h1 {
 }
 
 .map {
-  --water-texture: url("../images/ocean-water.webp");
   min-height: max(390px, calc(100vh - 264px));
   position: relative;
   border-radius: 13px 13px 0 0;
   isolation: isolate;
   overflow: hidden;
-  background: #082236 var(--water-texture) center / cover no-repeat;
+  background: #082236;
+}
+
+#ocean-surface {
+  --surface-period: 720px;
+  position: absolute;
+  inset: 0 calc(-1 * var(--surface-period)) calc(-1 * var(--surface-period)) 0;
+  background: url("../images/ocean-water-tile.webp") 0 0 / var(--surface-period) var(--surface-period) repeat;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
 }
 
 .map canvas, #ocean-islands {
@@ -111,16 +119,8 @@ h1 {
 }
 
 .map canvas { z-index: 1; }
-#ocean-swell {
-  z-index: 0;
-  opacity: 0;
-}
-@media (prefers-reduced-motion: no-preference) {
-  #ocean-swell { transition: opacity .28s ease; }
-  #ocean-swell.moving { opacity: 1; }
-}
 #ocean-islands { z-index: 2; }
-#ocean-ships { z-index: 3; }
+#ocean-piers, #ocean-ships { z-index: 3; }
 
 .island {
   position: absolute;

@@ -13,6 +13,11 @@ import { prepareReplay, replayAt } from './replay.js';
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const inputDate = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const SURFACE_SPEED = 5 / 1000;
+
+function wrap(offset: number, period: number): number {
+  return (offset % period + period) % period;
+}
 
 async function initialize(): Promise<void> {
   const params = new URLSearchParams(location.search);
@@ -44,6 +49,11 @@ async function initialize(): Promise<void> {
   const portVisits = document.getElementById('ocean-port-visits')!;
   const closePortButton = document.querySelector<HTMLButtonElement>('#ocean-port-close')!;
   const map = document.getElementById('ocean-map')!;
+  const surface = document.getElementById('ocean-surface')!;
+  const tileSize = Number.parseFloat(getComputedStyle(surface).getPropertyValue('--surface-period'));
+  const bearing = Math.random() * Math.PI * 2;
+  const surfaceVelocityX = Math.cos(bearing) * SURFACE_SPEED;
+  const surfaceVelocityY = Math.sin(bearing) * SURFACE_SPEED;
   const art = await loadOceanArt().catch(error => {
     console.error('Unable to load sea chart artwork', error);
     status.textContent = _('content_init_failed', '初始化失败').replace(/[:：]\s*$/, '');
@@ -53,6 +63,7 @@ async function initialize(): Promise<void> {
     map,
     document.getElementById('ocean-islands')!,
     document.querySelector<HTMLCanvasElement>('#ocean-water')!,
+    document.querySelector<HTMLCanvasElement>('#ocean-piers')!,
     document.querySelector<HTMLCanvasElement>('#ocean-ships')!,
     art,
     timeFormat,
@@ -68,6 +79,8 @@ async function initialize(): Promise<void> {
   let request = 0;
   let frame: number | undefined;
   let previousFrame = 0;
+  let surfaceX = 0;
+  let surfaceY = 0;
   musicOption.checked = false;
   music.volume = .32;
 
@@ -78,7 +91,7 @@ async function initialize(): Promise<void> {
   function draw(): void {
     const animate = !reducedMotion.matches;
     const { fleet, trails, current: shown, underway } = replayAt(replay, elapsed, animate);
-    chart.showFleet(fleet, trails, elapsed, shown, animate);
+    chart.showFleet(fleet, trails, elapsed, animate);
     const progress = Math.round(elapsed / 100) * 100;
     if (position.valueAsNumber !== progress) position.value = String(progress);
     if (describedUnderway !== underway) {
@@ -122,7 +135,6 @@ async function initialize(): Promise<void> {
 
   function setPlaying(playing: boolean): void {
     play.classList.toggle('playing', playing);
-    if (!playing) chart.waves.stop();
     playLabel.textContent = playing ? _('ocean_pause', '暂停') : _('ocean_play', '播放');
     syncMusic(playing);
   }
@@ -140,14 +152,19 @@ async function initialize(): Promise<void> {
   }
 
   function tick(now: number): void {
-    if (previousFrame) elapsed = Math.min(replay.duration, elapsed + now - previousFrame);
+    if (previousFrame) {
+      const step = Math.min(now - previousFrame, replay.duration - elapsed);
+      elapsed += step;
+      if (!reducedMotion.matches) {
+        surfaceX = wrap(surfaceX + surfaceVelocityX * step, tileSize);
+        surfaceY = wrap(surfaceY + surfaceVelocityY * step, tileSize);
+        surface.style.transform = `translate3d(${-surfaceX}px, ${-surfaceY}px, 0)`;
+      }
+    }
     previousFrame = now;
     draw();
     if (elapsed === replay.duration) pause();
-    else {
-      if (!reducedMotion.matches) chart.waves.draw(now);
-      frame = requestAnimationFrame(tick);
-    }
+    else frame = requestAnimationFrame(tick);
   }
 
   function showTimeline(arrivals: Arrival[]): void {
@@ -276,10 +293,7 @@ async function initialize(): Promise<void> {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pause();
   });
-  reducedMotion.addEventListener('change', () => {
-    if (reducedMotion.matches) chart.waves.stop();
-    draw();
-  });
+  reducedMotion.addEventListener('change', draw);
   date.addEventListener('change', () => {
     if (!date.value || !date.validity.valid) return;
     const [day] = localDayRange(new Date(`${date.value}T12:00:00`).getTime());
