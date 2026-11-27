@@ -294,6 +294,33 @@ input[type="range"]::-webkit-slider-thumb {
   background-image: none;
 }
 
+.preview-box.ocean-preview {
+  background: #082236 url("../../images/ocean-water.webp") center / cover no-repeat;
+}
+
+.ocean-preview-islands {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(240px, 95%);
+}
+
+.ocean-preview-islands span {
+  width: 64px;
+  aspect-ratio: 1;
+  background: url("../../images/ocean-islands.webp") left top / 300% 300%;
+}
+
+.ocean-preview-islands span:nth-child(2) {
+  background-position: center bottom;
+  transform: translateY(20px);
+}
+
+.ocean-preview-islands span:nth-child(3) {
+  background-position: right center;
+  transform: translateY(-20px);
+}
+
 .preview-hint {
   position: absolute;
   top: 10px;

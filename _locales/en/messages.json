@@ -5377,6 +5377,10 @@
     "message": "Filter",
     "description": "Graph toolbar"
   },
+  "graph_toolbar_options": {
+    "message": "Options",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
   "graph_toolbar_today": {
     "message": "Today",
     "description": "Graph toolbar"
@@ -5384,5 +5388,85 @@
   "graph_toolbar_fit_tree": {
     "message": "Fit to view",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Sea chart",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Chart date",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Play",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Pause",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Replay navigation",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "Choose a session",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "Ship {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "All sessions",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "Background music",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "Islands {0} · Ships {1} · Crossings {2} · Coastal trips {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "There is no browsing history for this day.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Could not read the browsing history for this day.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Showing the latest {0} navigation records.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Dock {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Dock {0} → Dock {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "Direction of the sea surface movement"
+  },
+  "ocean_visit_details": {
+    "message": "Visit details"
+  },
+  "ocean_visit_unavailable": {
+    "message": "This visit is no longer available."
+  },
+  "ocean_port_back": {
+    "message": "Back"
+  },
+  "ocean_port_counts": {
+    "message": "Records {0} · Docks {1}",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} ships underway",
+    "description": "Ships moving at the same replay time"
   }
 }

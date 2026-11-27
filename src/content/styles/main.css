@@ -2,6 +2,7 @@
 
 /* 导入错误UI样式 */
 @import 'error-ui.css';
+@import 'graph-toolbar.css';
 
 /* ========== 基础样式 ========== */
 * {
@@ -82,31 +83,6 @@ body.loading-session #visualization-container::before {
   to { transform: rotate(360deg); }
 }
 
-/* ========== 日历加载指示器 ========== */
-.calendar-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--overlay-bg, rgba(255, 255, 255, 0.8));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-.calendar-loading .spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--spinner-track, rgba(74, 108, 247, 0.2));
-  border-top-color: var(--accent-color, #4a6cf7);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 8px;
-}
-
 /* ========== 布局组件 ========== */
 /* 主布局容器 */
 .app-container {
@@ -162,90 +138,6 @@ body.loading-session #visualization-container::before {
   font-weight: bold;
 }
 
-/* ========== 日历会话选择器样式 ========== */
-.calendar-session-selector {
-  font-family: system-ui, -apple-system, sans-serif;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px var(--shadow-color, rgba(0,0,0,0.08));
-  background: var(--card-bg, white);
-  width: 100%;
-  margin-bottom: 5px;
-  position: relative;
-}
-
-.calendar-header {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid var(--border-color, #eaeaea);
-}
-
-.current-month {
-  flex: 1;
-  text-align: center;
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-color);
-}
-
-.month-nav {
-  background: none;
-  border: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text-color, #555);
-}
-
-.month-nav:hover {
-  background: var(--color-bg-hover, rgba(0,0,0,0.05));
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-gap: 1px;
-  padding: 8px;
-}
-
-.weekday {
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--label-color, #666);
-  padding: 6px 1px;
-  border-bottom: 1px solid var(--border-color, #eaeaea);
-}
-
-/* 基本日期单元格 */
-.day-cell {
-  position: relative;
-  aspect-ratio: 1;
-  min-height: 32px;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  cursor: default;
-  transition: all 0.2s ease;
-}
-
-button.day-cell {
-  background: transparent;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
 /* 折叠组抽屉：阻止滚动链到父容器，优先使用 CSS 来避免非被动 wheel 监听警告 */
 .collapsed-nodes-drawer .drawer-body {
   overscroll-behavior: contain; /* 阻止滚动链到父容器/页面 */
@@ -269,175 +161,6 @@ button.day-cell {
 .overlay {
   overscroll-behavior: none;
   touch-action: none;
-}
-
-/* 日期数字 */
-.day-number {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--text-color);
-}
-
-/* 当前日期 - 使用右上角小圆点标记 */
-.current-day {
-  position: relative;
-}
-
-/* 当前日期的右上角小圆点 */
-.current-day::after {
-  content: '';
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
-  background-color: var(--accent-color, #4a6cf7);
-  border-radius: 50%;
-}
-
-/* 会话开始日 - 添加动态效果 */
-.session-start {
-  cursor: pointer;
-  background-color: var(--session-start-bg, rgba(74, 108, 247, 0.15));
-  font-weight: 500;
-  position: relative;
-  animation: session-pulse 2s infinite ease-in-out;
-  box-shadow: 0 0 0 0 rgba(74, 108, 247, 0.4);
-}
-
-/* 会话开始日的脉冲动画效果 */
-@keyframes session-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(74, 108, 247, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(74, 108, 247, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(74, 108, 247, 0);
-  }
-}
-
-/* 会话开始日添加小光点指示器 */
-.session-start::after {
-  content: '';
-  display: block;
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: var(--accent-color, #4a6cf7);
-  box-shadow: 0 0 5px var(--accent-color, #4a6cf7);
-  animation: glow 1.5s ease-in-out infinite alternate;
-}
-
-/* 光点闪烁动画 */
-@keyframes glow {
-  from {
-    opacity: 0.8;
-    box-shadow: 0 0 2px var(--accent-color, #4a6cf7);
-  }
-  to {
-    opacity: 1;
-    box-shadow: 0 0 5px var(--accent-color, #4a6cf7), 
-                0 0 8px var(--accent-color, #4a6cf7);
-  }
-}
-
-/* 会话持续日 - 添加动态效果 */
-.session-continue {
-  background-color: var(--session-continue-bg, rgba(74, 108, 247, 0.06));
-  position: relative;
-  animation: session-continue-flow 3s infinite linear;
-  background-image: linear-gradient(
-    90deg, 
-    var(--session-continue-bg, rgba(74, 108, 247, 0.06)) 45%, 
-    var(--session-continue-highlight, rgba(74, 108, 247, 0.12)) 50%,
-    var(--session-continue-bg, rgba(74, 108, 247, 0.06)) 55%
-  );
-  background-size: 200% 100%;
-}
-
-/* 会话持续日的流动动画效果 */
-@keyframes session-continue-flow {
-  0% {
-    background-position: 100% 0;
-  }
-  100% {
-    background-position: 0 0;
-  }
-}
-
-/* 确保鼠标悬停时突出显示会话开始日 */
-.session-start:hover {
-  background-color: var(--session-start-hover-bg, rgba(74, 108, 247, 0.3));
-  animation-play-state: paused; /* 悬停时暂停动画 */
-  transform: scale(1.05);
-  transition: transform 0.2s ease;
-  z-index: 2;
-}
-
-/* 不在当前月份的日期 */
-.other-month {
-  opacity: 0.3;
-}
-
-/* 鼠标悬停效果 */
-.day-cell:hover {
-  background-color: var(--hover-bg, rgba(0, 0, 0, 0.05));
-}
-
-.session-start:hover {
-  background-color: var(--session-start-hover-bg, rgba(74, 108, 247, 0.25));
-}
-
-/* 日历会话指示器样式 */
-.day-cell .session-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--accent-color, #4a6cf7);
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* 当前会话指示器 */
-.day-cell .current-indicator {
-  background-color: var(--accent-color, #4285f4);
-}
-
-/* 最新会话指示器 */
-.day-cell .latest-indicator {
-  background-color: var(--success-color, #34a853);
-}
-
-/* 同时是当前和最新会话的指示器 */
-.day-cell .current-latest-indicator {
-  background: linear-gradient(to right, #4285f4 50%, #34a853 50%);
-}
-
-/* 当前会话日期 */
-.day-cell.selected-day {
-  background-color: rgba(66, 133, 244, 0.1);
-  border-left: 2px solid #4285f4;
-}
-
-/* 最新会话日期 */
-.day-cell.latest-day {
-  background-color: rgba(52, 168, 83, 0.1);
-  border-right: 2px solid #34a853;
-}
-
-/* 同时是当前和最新会话的日期 */
-.day-cell.selected-day.latest-day {
-  background-color: rgba(156, 39, 176, 0.1);
-  border-left: 2px solid #4285f4;
-  border-right: 2px solid #34a853;
 }
 
 /* ========== 视图切换相关样式 ========== */
@@ -1601,132 +1324,6 @@ svg .node-label {
 }
 
 
-.graph-toolbar {
-  position: relative;
-  z-index: 20;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  flex-shrink: 0;
-  padding: 6px 12px;
-  background-color: var(--toolbar-bg, #fff);
-  border-block-end: 1px solid var(--color-border, #ddd);
-  color: var(--text-color, #333);
-}
-
-.graph-button {
-  min-block-size: 32px;
-  padding: 4px 9px;
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: 6px;
-  background-color: var(--toolbar-bg, #fff);
-  color: var(--text-color, #333);
-  font: inherit;
-  font-size: 13px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.graph-button:hover:not(:disabled, [aria-disabled="true"]) {
-  background-color: var(--toolbar-button-hover, var(--color-bg-hover));
-}
-
-.graph-button:disabled,
-.graph-button[aria-disabled="true"] {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.graph-date-control {
-  position: relative;
-  min-inline-size: 10em;
-}
-
-#graph-date-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border-color: transparent;
-}
-
-.graph-date-chevron {
-  inline-size: 5px;
-  block-size: 5px;
-  border-inline-end: 1px solid currentColor;
-  border-block-end: 1px solid currentColor;
-  transform: translateY(-1px) rotate(45deg);
-}
-
-.graph-calendar {
-  position: absolute;
-  inset-block-start: calc(100% + 6px);
-  inset-inline-start: 0;
-  inline-size: min(296px, calc(100vw - 24px));
-  max-block-size: calc(100vh - 52px);
-  overflow: auto;
-  padding: 10px;
-  background-color: var(--toolbar-bg, #fff);
-  border: 1px solid var(--color-border, #ddd);
-  border-radius: 8px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
-}
-
-.graph-calendar .session-list-item {
-  width: 100%;
-  font: inherit;
-  color: inherit;
-  text-align: start;
-}
-
-.graph-calendar-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 4px 0;
-  color: var(--label-color, #555);
-  font-size: 12px;
-}
-
-.graph-view-switcher,
-.graph-summary,
-.tree-fold-buttons {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.graph-view-switcher .graph-button,
-#graph-show-hidden {
-  border-color: transparent;
-}
-
-.graph-view-switcher .graph-button[aria-pressed="true"] {
-  position: relative;
-  background-color: var(--toolbar-button, #f5f7fa);
-}
-
-.graph-view-switcher .graph-button[aria-pressed="true"]::after {
-  content: "";
-  position: absolute;
-  inset: auto 8px 2px;
-  border-block-end: 2px solid var(--btn-primary, #4285f4);
-}
-
-.graph-summary {
-  margin-inline-start: auto;
-  color: var(--label-color, #555);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-
-#graph-filter-toggle[aria-expanded="true"],
-#graph-date-toggle[aria-expanded="true"] {
-  border-color: var(--btn-primary, #4285f4);
-  background-color: var(--toolbar-button, #f5f7fa);
-}
-
 #tree-fold-actions,
 #tree-viewport-tools,
 #waterfall-toolbar {
@@ -1801,14 +1398,6 @@ svg .node-label {
 }
 
 @media (max-width: 600px) {
-  .graph-toolbar {
-    gap: 4px 7px;
-  }
-
-  .graph-summary {
-    margin-inline-start: 0;
-  }
-
   #graph-filter-toggle {
     margin-inline-start: auto;
   }
@@ -1818,7 +1407,6 @@ svg .node-label {
   }
 }
 
-.graph-toolbar [hidden],
 #tree-viewport-tools[hidden],
 #waterfall-toolbar[hidden] {
   display: none;
@@ -2063,100 +1651,6 @@ svg .node-label {
   justify-content: center;
   font-weight: bold;
   z-index: 1;
-}
-
-/* 会话列表容器样式 */
-.session-list-container {
-  margin-top: 10px;
-  background-color: var(--card-bg, white);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px var(--shadow-color, rgba(0,0,0,0.1));
-  overflow: hidden;
-  border: 1px solid var(--border-color, #eaeaea);
-  animation: fade-in 0.2s ease-out;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.session-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-color, #eaeaea);
-}
-
-.session-list-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-color);
-}
-
-.session-list-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: var(--label-color, #777);
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s;
-}
-
-.session-list-close:hover {
-  background-color: var(--hover-bg, rgba(0,0,0,0.05));
-}
-
-.session-list {
-  padding: 4px 0;
-}
-
-.session-list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-color, #eaeaea);
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.session-list-item:last-child {
-  border-bottom: none;
-}
-
-.session-list-item:hover {
-  background-color: var(--hover-bg, rgba(74, 108, 247, 0.08));
-}
-
-.session-time {
-  font-weight: 500;
-  color: var(--text-color);
-  min-width: 60px;
-}
-
-.session-info {
-  display: flex;
-  gap: 12px;
-}
-
-.session-duration {
-  color: var(--label-color, #666);
-  font-size: 13px;
-}
-
-.session-pages {
-  color: var(--accent-color, #4a6cf7);
-  font-size: 13px;
-  font-weight: 500;
 }
 
 /* Debug overlay class (replaces inline cssText in content/index.ts) */

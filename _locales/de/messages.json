@@ -5374,6 +5374,10 @@
     "message": "Filter",
     "description": "Graph toolbar"
   },
+  "graph_toolbar_options": {
+    "message": "Optionen",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
   "graph_toolbar_today": {
     "message": "Heute",
     "description": "Graph toolbar"
@@ -5381,5 +5385,85 @@
   "graph_toolbar_fit_tree": {
     "message": "Ansicht einpassen",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Seekarte",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Datum der Seekarte",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Abspielen",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Pause",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Navigation wiedergeben",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "Sitzung auswählen",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "Schiff {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "Alle Sitzungen",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "Hintergrundmusik",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "Inseln {0} · Schiffe {1} · Überfahrten {2} · Küstenfahrten {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "Für diesen Tag gibt es keinen Browserverlauf.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Der Browserverlauf für diesen Tag konnte nicht geladen werden.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Die letzten {0} Navigationseinträge werden angezeigt.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Anleger {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Anleger {0} → Anleger {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "Bewegungsrichtung der Wasseroberfläche"
+  },
+  "ocean_visit_details": {
+    "message": "Besuchsdetails"
+  },
+  "ocean_visit_unavailable": {
+    "message": "Dieser Besuch ist nicht mehr verfügbar."
+  },
+  "ocean_port_back": {
+    "message": "Zurück"
+  },
+  "ocean_port_counts": {
+    "message": "Einträge {0} · Anleger {1}",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} Schiffe gleichzeitig unterwegs",
+    "description": "Ships moving at the same replay time"
   }
 }

@@ -5374,6 +5374,10 @@
     "message": "필터",
     "description": "Graph toolbar"
   },
+  "graph_toolbar_options": {
+    "message": "옵션",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
   "graph_toolbar_today": {
     "message": "오늘",
     "description": "Graph toolbar"
@@ -5381,5 +5385,85 @@
   "graph_toolbar_fit_tree": {
     "message": "화면에 맞추기",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "해도",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "해도 날짜",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "재생",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "일시 정지",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "탐색 기록 재생",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "세션 선택",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "배 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "모든 세션",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "배경 음악",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "섬 {0}개 · 배 {1}척 · 섬 간 이동 {2}회 · 연안 이동 {3}회",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "이 날짜의 방문 기록이 없습니다.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "이 날짜의 방문 기록을 읽지 못했습니다.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "최근 탐색 기록 {0}개를 표시합니다.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "선착장 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "선착장 {0} → 선착장 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "해수면이 움직이는 방향"
+  },
+  "ocean_visit_details": {
+    "message": "방문 상세 정보"
+  },
+  "ocean_visit_unavailable": {
+    "message": "이 방문 기록을 더 이상 볼 수 없습니다."
+  },
+  "ocean_port_back": {
+    "message": "뒤로"
+  },
+  "ocean_port_counts": {
+    "message": "기록 {0}개 · 선착장 {1}개",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "배 {0}척 동시 항해 중",
+    "description": "Ships moving at the same replay time"
   }
 }

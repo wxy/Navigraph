@@ -2,7 +2,8 @@ import { defaultView, validView } from '../utils/display-settings.js';
 import type { NavigraphSettings } from '../../lib/settings/types.js';
 import { sessionServiceClient } from './session-service-client.js';
 import { matchesGraphFilters, type GraphPageInfo } from '../../lib/graph/query.js';
-import type { FilteredTreeDay, TreeDay } from '../../lib/graph/tree-day.js';
+import { readHistoryDay, replaceHistorySelection } from '../../lib/graph/location.js';
+import { localDayRange, type FilteredTreeDay, type TreeDay } from '../../lib/graph/tree-day.js';
 import type { BackgroundResponses } from '../../types/messages/background.js';
 import { sendMessage } from '../messaging/content-message-service.js';
 /**
@@ -32,6 +33,15 @@ const logger = new Logger('NavigationVisualizer');
  */ 
 export class NavigationVisualizer implements Visualizer {
   get waterfallTimeline() { return sessionServiceClient.timeline; }
+  get graphDate(): number | undefined {
+    return this.currentView === 'tree'
+      ? this.treeDay?.start ?? this.treeDate
+      : this.currentSession?.startTime ?? sessionServiceClient.requestedDay;
+  }
+  get oceanDate(): number | undefined {
+    return this.currentView === 'tree' ? this.graphDate : sessionServiceClient.requestedDay ?? this.graphDate;
+  }
+
   get graphCounts(): Pick<GraphPageInfo, 'total' | 'matched'> | null {
     const graph = this.currentView === 'tree' ? this.treeDay : this.waterfallTimeline;
     return graph ? { total: graph.total, matched: graph.nodes.length } : null;
@@ -55,6 +65,11 @@ export class NavigationVisualizer implements Visualizer {
 
   async selectTreeDay(date: number): Promise<void> {
     this.treeDate = date;
+    if (sessionServiceClient.requestedDay !== undefined) {
+      const [day] = localDayRange(date);
+      replaceHistorySelection(day);
+      sessionServiceClient.restoreSelection(day);
+    }
     await this.loadTreeDay(true);
   }
 
@@ -111,9 +126,13 @@ export class NavigationVisualizer implements Visualizer {
   private readonly popstateHandler = () => {
     const view = this.resolveLocationView();
     const viewChanged = view !== this.currentView;
+    const selectionChanged = this.restoreHistorySelection();
     this.filterManager.restoreFromUrl();
     this.renderCurrentView(view);
-    if (view === 'waterfall' && !viewChanged) void this.reloadGraph().catch(error => this.showError(String(error)));
+    if (view === 'waterfall' && !viewChanged) {
+      const refresh = selectionChanged ? this.sessionViewController.loadCurrentSession() : this.reloadGraph();
+      void refresh.catch(error => this.showError(String(error)));
+    }
   };
 
 
@@ -215,6 +234,7 @@ export class NavigationVisualizer implements Visualizer {
       await this.initializeBaseConfig();
       // Location/settings may change while waiting for the document load event.
       this.applyGlobalConfig();
+      this.restoreHistorySelection();
 
       // 第二阶段：委托UI管理器处理所有UI初始化
       await this.initializeUI();
@@ -316,6 +336,14 @@ export class NavigationVisualizer implements Visualizer {
     const view = validView(new URL(window.location.href).searchParams.get('view'));
     this.explicitView = view !== undefined;
     return view || defaultView();
+  }
+
+  private restoreHistorySelection(): boolean {
+    const params = new URLSearchParams(location.search);
+    const day = readHistoryDay(params);
+    if (day === undefined && sessionServiceClient.requestedDay === undefined) return false;
+    this.treeDate = day;
+    return sessionServiceClient.restoreSelection(day, params.get('session') ?? undefined);
   }
 
   /** Apply only changed display fields; unrelated/same-value notifications keep the current page. */
@@ -469,6 +497,7 @@ export class NavigationVisualizer implements Visualizer {
     this.explicitView = true;
     url.searchParams.set('view', view);
     if (changed) window.history.pushState(null, '', url);
+    this.restoreHistorySelection();
     this.renderCurrentView(view);
   }
 

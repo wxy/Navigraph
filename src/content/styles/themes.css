@@ -92,7 +92,6 @@
   /* 映射变量 */
   --svg-background: var(--background-color);
   --node-bg: var(--color-bg-tertiary);
-  --toolbar-button-hover: var(--color-bg-hover);
 
   /* 添加Logo容器特定变量 */
   --logo-bg-color: rgba(26, 29, 33, 0.8);

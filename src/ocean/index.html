@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="ocean_view">航海图</title>
+  <link rel="stylesheet" href="../content/styles/graph-toolbar.css">
+  <link rel="stylesheet" href="ocean.css">
+</head>
+<body>
+  <header class="graph-toolbar">
+    <div class="graph-brand">
+      <img src="../images/logo-48.png" width="22" height="22" alt="">
+      <span>Navigraph</span>
+      <button id="graph-options" class="graph-button" type="button" data-i18n="graph_toolbar_options">选项</button>
+    </div>
+    <div class="graph-date-control">
+      <button id="graph-date-toggle" class="graph-button" type="button" aria-controls="graph-calendar" aria-expanded="false">
+        <span id="graph-date-value" data-i18n="content_session_date">日期</span>
+        <span class="graph-date-chevron" aria-hidden="true"></span>
+      </button>
+      <div id="graph-calendar" class="graph-calendar" hidden>
+        <div id="calendar-session-selector" class="calendar-session-selector"></div>
+        <div class="graph-calendar-footer">
+          <span id="graph-duration"></span>
+          <button id="graph-today" class="graph-button" type="button" data-i18n="graph_toolbar_today" hidden>今天</button>
+        </div>
+      </div>
+    </div>
+    <div id="view-switcher-container" class="graph-view-switcher" role="group">
+      <a id="ocean-tree-view" class="graph-button" href="../content/index.html?view=tree" data-i18n="content_tree_view">树形图</a>
+      <a id="ocean-waterfall-view" class="graph-button" href="../content/index.html?view=waterfall" data-i18n="content_waterfall_view">瀑布图</a>
+      <span class="graph-button" aria-current="page" data-i18n="ocean_view">航海图</span>
+    </div>
+    <div class="graph-summary"><span id="ocean-counts"></span></div>
+  </header>
+  <main>
+    <div class="chart">
+      <div id="ocean-map" class="map">
+        <div id="ocean-surface" aria-hidden="true"></div>
+        <div id="ocean-shallows" aria-hidden="true"></div>
+        <canvas id="ocean-water" aria-hidden="true"></canvas>
+        <div id="ocean-islands"></div>
+        <div id="ocean-piers" aria-hidden="true"></div>
+        <div id="ocean-light" aria-hidden="true"></div>
+        <div id="ocean-sky" aria-hidden="true">
+          <div id="ocean-sun"></div>
+          <canvas id="ocean-moon" width="84" height="84"></canvas>
+        </div>
+        <canvas id="ocean-ships" aria-hidden="true"></canvas>
+        <div id="ocean-ship-targets"></div>
+        <img id="ocean-wind" src="../images/ocean-wind.png" width="36" height="36" alt="海面移动方向" hidden>
+        <p id="ocean-status" role="status" data-i18n="content_loading">正在加载数据...</p>
+        <aside id="ocean-port" aria-labelledby="ocean-port-name" hidden>
+          <div class="port-heading">
+            <button id="ocean-port-back" type="button" data-i18n="ocean_port_back" hidden>返回</button>
+            <h2 id="ocean-port-name"></h2>
+            <button id="ocean-port-close" type="button" data-i18n="content_close">关闭</button>
+          </div>
+          <div id="ocean-port-list">
+            <p id="ocean-port-count"></p>
+            <ol id="ocean-port-visits"></ol>
+          </div>
+          <div id="ocean-visit" hidden>
+            <p id="ocean-visit-status" role="status"></p>
+            <div id="ocean-visit-details"></div>
+          </div>
+        </aside>
+      </div>
+      <div class="playback">
+        <button id="ocean-play" class="play-button" type="button" disabled>
+          <span class="play-symbol" aria-hidden="true"></span>
+          <span id="ocean-play-label" data-i18n="ocean_play">播放</span>
+        </button>
+        <div class="timeline">
+          <label class="visually-hidden" for="ocean-position" data-i18n="ocean_timeline">按导航记录回放</label>
+          <div class="timeline-caption">
+            <time id="ocean-time">–</time>
+            <span id="ocean-current"></span>
+            <span id="ocean-underway" hidden></span>
+          </div>
+          <input id="ocean-position" type="range" min="0" max="0" step="100" value="0" disabled>
+          <div class="timeline-endpoints" aria-hidden="true">
+            <span id="ocean-first-time"></span>
+            <span id="ocean-last-time"></span>
+          </div>
+        </div>
+        <div class="playback-options">
+          <label class="music-option">
+            <input id="ocean-music" type="checkbox" autocomplete="off">
+            <span data-i18n="ocean_music">背景音乐</span>
+          </label>
+          <label class="session-field">
+            <span class="visually-hidden" data-i18n="ocean_session_filter">选择会话</span>
+            <select id="ocean-session" disabled></select>
+          </label>
+        </div>
+        <audio id="ocean-music-track" src="harbor-music.ogg" preload="none" loop muted></audio>
+      </div>
+    </div>
+  </main>
+  <script src="ocean.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import { indexedNode, indexedEdge, nodeUrlDomain } from './graph-index.js';
 import { QueryCache } from './query-cache.js';
 import { DEFAULT_GRAPH_FILTERS, GraphPageQuery, GraphPageResult, isTrackingUrl, matchesGraphFilters, sessionMetadata } from '../../lib/graph/query.js';
 import { localDayRange, TREE_DAY_LIMIT, type TreeDay } from '../../lib/graph/tree-day.js';
+import { OCEAN_DAY_LIMIT, type OceanDay, type OceanDaySession } from '../../lib/graph/ocean-day.js';
 import { WATERFALL_TIMELINE_LIMIT, type WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import type { SessionStatistics, BrowsingSession } from '../../types/session-types.js';
 /**
@@ -17,6 +18,19 @@ import { UrlUtils } from '../../lib/utils/url-utils.js';
 import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('NavigationStorage');
+
+function queryDay(
+  index: IDBIndex,
+  day: [number, number] | undefined,
+  read: (range: [number, number]) => void,
+): void {
+  if (day) {
+    read(day);
+    return;
+  }
+  const newest = index.openKeyCursor(null, 'prev');
+  newest.onsuccess = () => read(localDayRange(Number(newest.result?.key ?? Date.now())));
+}
 
 /**
  * 导航存储类
@@ -274,11 +288,56 @@ export class NavigationStorage {
           };
         };
       };
-      if (day) readDay(day);
-      else {
-        const newest = index.openKeyCursor(null, 'prev');
-        newest.onsuccess = () => readDay(localDayRange(Number(newest.result?.key ?? Date.now())));
-      }
+      queryDay(index, day, readDay);
+    });
+  }
+
+  public async getOceanDay(day?: [number, number]): Promise<OceanDay> {
+    await this.ensureInitialized();
+    return this.db.readTransaction<OceanDay>(['nodes', 'sessions'], (tx, done) => {
+      const index = tx.objectStore('nodes').index('timestamp');
+      const sessions = tx.objectStore('sessions');
+      queryDay(index, day, ([start, end]) => {
+        const result: OceanDay = { start, nodes: [], sessions: [], truncated: false };
+        done(result);
+        const pages = new Map<string, number>();
+        const sessionsById = new Map<string, OceanDaySession>();
+        const request = index.openCursor(IDBKeyRange.bound(start, end, false, true), 'prev');
+        let recordsRead = 0;
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor || recordsRead >= OCEAN_DAY_LIMIT) {
+            result.truncated = cursor !== null;
+            return;
+          }
+          recordsRead++;
+          const row = cursor.value as ReturnType<typeof indexedNode>;
+          const site = (row._statsDomain ?? nodeUrlDomain(row.url)).replace(/^www\./, '');
+          const tracking = row._pageTracking === undefined ? isTrackingUrl(row.url || '') : row._pageTracking === 1;
+          if (site && !tracking && Number.isInteger(row.tabId) && row.tabId >= 0) {
+            // Keep the URL in storage until the user opens the visit details.
+            let page = pages.get(row.url);
+            if (page === undefined) {
+              page = pages.size;
+              pages.set(row.url, page);
+            }
+            const { id, timestamp, tabId } = row;
+            const sessionId = row.sessionId ?? '';
+            result.nodes.push({ id, timestamp, tabId, sessionId, site, page });
+            const session = sessionsById.get(sessionId);
+            if (session) {
+              session.firstVisit = timestamp;
+            } else if (sessionId) {
+              const entry: OceanDaySession = { id: sessionId, firstVisit: timestamp };
+              sessionsById.set(sessionId, entry);
+              result.sessions.push(entry);
+              const metadata = sessions.get(sessionId);
+              metadata.onsuccess = () => { entry.title = (metadata.result as BrowsingSession | undefined)?.title; };
+            }
+          }
+          cursor.continue();
+        };
+      });
     });
   }
 

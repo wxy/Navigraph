@@ -10,9 +10,13 @@
 <body>
   <div class="app-container">
     <header class="graph-toolbar">
+      <div class="graph-brand">
+        <img src="../images/logo-48.png" width="22" height="22" alt="">
+        <span>Navigraph</span>
+        <button id="graph-options" class="graph-button" type="button" data-i18n="graph_toolbar_options">选项</button>
+      </div>
       <div class="graph-date-control">
         <button id="graph-date-toggle" class="graph-button" type="button" aria-controls="graph-calendar" aria-expanded="false">
-          <img src="../../images/logo-48.png" width="18" height="18" alt="">
           <span id="graph-date-value" data-i18n="content_session_date">日期</span>
           <span class="graph-date-chevron" aria-hidden="true"></span>
         </button>
@@ -27,6 +31,7 @@
       <div id="view-switcher-container" class="graph-view-switcher" role="group">
         <button id="tree-view" class="graph-button" type="button" aria-pressed="false" data-i18n="content_tree_view">树形图</button>
         <button id="waterfall-view" class="graph-button" type="button" aria-pressed="true" data-i18n="content_waterfall_view">瀑布图</button>
+        <a id="ocean-view" class="graph-button" href="../ocean/index.html" data-i18n="ocean_view">航海图</a>
       </div>
       <div class="graph-summary">
         <span id="graph-record-count"></span>
