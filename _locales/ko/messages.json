@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "화면에 맞추기",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "해도",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "해도 날짜",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "재생",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "일시 정지",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "탐색 기록 재생",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "브라우저 탭 선택",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "배 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "배 {0} · 섬 간 이동 {1}회 · 연안 이동 {2}회",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "모든 탭",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "섬 {0}개 · 배 {1}척 · 섬 간 이동 {2}회 · 연안 이동 {3}회",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "이 날짜의 방문 기록이 없습니다.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "이 날짜의 방문 기록을 읽지 못했습니다.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "최근 탐색 기록 {0}개를 표시합니다.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "선착장 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "선착장 {0} → 선착장 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "기록 {0}개 · 선착장 {1}개",
+    "description": "Sea chart"
   }
 }

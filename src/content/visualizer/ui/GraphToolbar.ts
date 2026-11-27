@@ -17,6 +17,14 @@ export class GraphToolbar {
     const day = tree ? visualizer.treeDay : null;
     const session = tree ? undefined : visualizer.currentSession;
     const start = day?.start ?? session?.startTime;
+    const ocean = document.querySelector<HTMLAnchorElement>('#ocean-view');
+    if (ocean) {
+      const url = new URL('../ocean/index.html', location.href);
+      if (start !== undefined) url.searchParams.set('day', String(start));
+      const locale = window.navigraphSettings?.forcedLocale;
+      if (locale && locale !== 'system') url.searchParams.set('locale', locale);
+      ocean.href = url.href;
+    }
 
     const graphCounts = visualizer.graphCounts;
     const count = graphCounts?.matched ?? (tree ? day?.nodes.length ?? 0 : visualizer.nodes.length);

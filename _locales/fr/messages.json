@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "Ajuster à la fenêtre",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Carte marine",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Date de la carte",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Lire",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Pause",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Rejouer la navigation",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "Choisir un onglet",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "Navire {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "Navire {0} · Traversées {1} · Trajets côtiers {2}",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "Tous les onglets",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "Îles {0} · Navires {1} · Traversées {2} · Trajets côtiers {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "Aucun historique de navigation pour cette journée.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Impossible de lire l’historique de navigation de cette journée.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Affichage des {0} dernières entrées de navigation.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Quai {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Quai {0} → Quai {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "Entrées {0} · Quais {1}",
+    "description": "Sea chart"
   }
 }

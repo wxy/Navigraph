@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="ocean_view">海图</title>
+  <link rel="stylesheet" href="ocean.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../content/index.html">
+      <img src="../images/logo-48.png" width="24" height="24" alt="">
+      <span>Navigraph</span>
+    </a>
+    <nav aria-labelledby="ocean-title">
+      <a href="../content/index.html?view=tree" data-i18n="content_tree_view">树形图</a>
+      <a href="../content/index.html?view=waterfall" data-i18n="content_waterfall_view">瀑布图</a>
+      <span aria-current="page" data-i18n="ocean_view">海图</span>
+    </nav>
+  </header>
+  <main>
+    <header class="chart-heading">
+      <div>
+        <h1 id="ocean-title" data-i18n="ocean_view">海图</h1>
+        <p id="ocean-counts"></p>
+      </div>
+      <label class="date-field">
+        <span class="visually-hidden" data-i18n="ocean_date">海图日期</span>
+        <input id="ocean-date" type="date">
+      </label>
+    </header>
+    <div class="chart">
+      <div id="ocean-map" class="map">
+        <canvas id="ocean-routes" aria-hidden="true"></canvas>
+        <div id="ocean-islands"></div>
+        <canvas id="ocean-ships" aria-hidden="true"></canvas>
+        <p id="ocean-status" role="status" data-i18n="content_loading">正在加载数据...</p>
+        <aside id="ocean-port" aria-labelledby="ocean-port-name" hidden>
+          <div class="port-heading">
+            <h2 id="ocean-port-name"></h2>
+            <button id="ocean-port-close" type="button" data-i18n="content_close">关闭</button>
+          </div>
+          <p id="ocean-port-count"></p>
+          <ol id="ocean-port-visits"></ol>
+        </aside>
+      </div>
+      <div class="playback">
+        <button id="ocean-play" class="play-button" type="button" disabled>
+          <span class="play-symbol" aria-hidden="true"></span>
+          <span id="ocean-play-label" data-i18n="ocean_play">播放</span>
+        </button>
+        <div class="timeline">
+          <label class="visually-hidden" for="ocean-position" data-i18n="ocean_timeline">按导航记录回放</label>
+          <div class="timeline-caption">
+            <time id="ocean-time">–</time>
+            <span id="ocean-current"></span>
+          </div>
+          <input id="ocean-position" type="range" min="0" max="0" step="1" value="0" disabled>
+          <div class="timeline-endpoints" aria-hidden="true">
+            <span id="ocean-first-time"></span>
+            <span id="ocean-last-time"></span>
+          </div>
+        </div>
+        <label class="ship-field">
+          <span class="visually-hidden" data-i18n="ocean_ship_filter">选择标签页</span>
+          <select id="ocean-ship" disabled></select>
+        </label>
+      </div>
+    </div>
+  </main>
+  <script src="ocean.js"></script>
+</body>
+</html>

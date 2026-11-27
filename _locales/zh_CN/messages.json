@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "适配全图",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "海图",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "海图日期",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "播放",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "暂停",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "按导航记录回放",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "选择标签页",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "船 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "船 {0} · 跨岛 {1} · 沿岸 {2}",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "所有标签页",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "这一天还没有浏览记录。",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "读取这一天的浏览记录失败。",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "显示最近 {0} 条导航记录。",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "码头 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "码头 {0} → 码头 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "{0} 条记录 · {1} 个码头",
+    "description": "Sea chart"
   }
 }

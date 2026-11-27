@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "Вписать в окно",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Морская карта",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Дата карты",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Воспроизвести",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Пауза",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Воспроизвести навигацию",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "Выбрать вкладку браузера",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "Корабль {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "Корабль {0} · Переходы {1} · Вдоль берега {2}",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "Все вкладки",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "Острова {0} · Корабли {1} · Переходы {2} · Вдоль берега {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "За этот день нет истории посещений.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Не удалось загрузить историю посещений за этот день.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Показаны последние {0} записей навигации.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Причал {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Причал {0} → Причал {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "Записи {0} · Причалы {1}",
+    "description": "Sea chart"
   }
 }

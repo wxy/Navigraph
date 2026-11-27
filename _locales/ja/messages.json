@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "全体を表示",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "海図",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "海図の日付",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "再生",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "一時停止",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "閲覧の軌跡を再生",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "タブを選択",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "船 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "船 {0} · 島間 {1} 回 · 沿岸 {2} 回",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "すべてのタブ",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "島 {0} · 船 {1} 隻 · 島間 {2} 回 · 沿岸 {3} 回",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "この日の閲覧履歴はありません。",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "この日の閲覧履歴を読み込めませんでした。",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "最新のナビゲーション記録を {0} 件表示しています。",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "桟橋 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "桟橋 {0} → 桟橋 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "記録 {0} 件 · 桟橋 {1} か所",
+    "description": "Sea chart"
   }
 }

@@ -1702,6 +1702,13 @@ svg .node-label {
   border-color: transparent;
 }
 
+#ocean-view {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .graph-view-switcher .graph-button[aria-pressed="true"] {
   position: relative;
   background-color: var(--toolbar-button, #f5f7fa);

@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "縮放至全圖",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "海圖",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "海圖日期",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "播放",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "暫停",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "按導覽記錄回放",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "選擇分頁",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "船 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "船 {0} · 跨島 {1} · 沿岸 {2}",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "所有分頁",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "{0} 座島 · {1} 艘船 · 跨島 {2} 段 · 沿岸 {3} 段",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "這一天沒有瀏覽記錄。",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "無法讀取這一天的瀏覽記錄。",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "顯示最近 {0} 筆導覽記錄。",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "碼頭 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "碼頭 {0} → 碼頭 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "{0} 筆記錄 · {1} 個碼頭",
+    "description": "Sea chart"
   }
 }

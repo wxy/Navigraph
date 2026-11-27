@@ -12,6 +12,7 @@ module.exports = {
     navigraph: path.resolve(__dirname, '..', 'src', 'content', 'navigraph.ts'),
     // 扩展页面入口
     content: path.resolve(__dirname, '..', 'src', 'content', 'index.ts'),
+    ocean: path.resolve(__dirname, '..', 'src', 'ocean', 'index.ts'),
     // 选项页面入口
     options: path.resolve(__dirname, '..', 'src', 'options', 'options.ts')
   },
@@ -77,6 +78,7 @@ module.exports = {
         },
         { from: 'src/content/*.js',       to: 'content/[name][ext]',  noErrorOnMissing: true },
         { from: 'src/content/styles',     to: 'content/styles',       noErrorOnMissing: true },
+        { from: 'src/ocean/ocean.css',    to: 'ocean/ocean.css' },
         { from: 'src/options/styles',     to: 'options/styles',       noErrorOnMissing: true },
       ]
     }),
@@ -95,6 +97,13 @@ module.exports = {
       chunks: ['content'],
       cache: false,
       inject: false, // 如果HTML中已手动引入JS，设为false避免重复注入
+    }),
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, '..', 'src', 'ocean', 'index.html'),
+      filename: 'ocean/index.html',
+      chunks: ['ocean'],
+      cache: false,
+      inject: false,
     }),
   ],
   output: {

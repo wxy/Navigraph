@@ -1,0 +1,260 @@
+* { box-sizing: border-box; }
+
+:root {
+  color-scheme: dark;
+  color: #f2ecdc;
+  background: #09151c;
+  font: 14px/1.4 system-ui, sans-serif;
+  --quiet: #9fb4bc;
+  --line: #ffffff1c;
+  --accent: #f4ca8e;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+button, input, select { font: inherit; }
+a { color: inherit; text-decoration: none; }
+button:not(:disabled), select:not(:disabled) { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+[hidden] { display: none !important; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.topbar {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 10px clamp(16px, 3vw, 44px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand, nav { display: flex; align-items: center; gap: 10px; }
+.brand { font-weight: 650; letter-spacing: .015em; }
+nav { gap: 4px; }
+nav > * { padding: 6px 11px; border-radius: 6px; color: var(--quiet); }
+nav > :hover, nav [aria-current] { background: #c5e7ed12; color: #f2ecdc; }
+
+main {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  padding: 22px clamp(16px, 3vw, 44px) 24px;
+}
+
+.chart-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+h1 {
+  font: 400 clamp(29px, 3vw, 42px)/1.1 Georgia, serif;
+  letter-spacing: -.025em;
+  margin: 0 0 5px;
+}
+
+#ocean-counts { color: var(--quiet); margin: 0; font-variant-numeric: tabular-nums; }
+
+.date-field :is(input, select), .ship-field select {
+  border: 1px solid #a8c5ce35;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: inherit;
+  background: #142832;
+  min-height: 36px;
+}
+
+.chart {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  border: 1px solid #7ea4ad40;
+  border-radius: 14px;
+  background: #0c202b;
+  box-shadow: 0 14px 36px #030a1060;
+  min-width: 0;
+}
+
+.map {
+  min-height: max(390px, calc(100vh - 264px));
+  position: relative;
+  border-radius: 13px 13px 0 0;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 42% 45%, #17465645, transparent 65%),
+    repeating-linear-gradient(0deg, #b9e6f307 0 1px, transparent 1px 108px),
+    repeating-linear-gradient(90deg, #b9e6f307 0 1px, transparent 1px 108px),
+    radial-gradient(ellipse at 18% 15%, #0e3946, #081f2c 52%, #071a27);
+}
+
+.map canvas, #ocean-islands {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.island {
+  position: absolute;
+  width: var(--island-size);
+  height: var(--island-size);
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #fbefda;
+  pointer-events: auto;
+}
+
+.island-art {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: url("../images/ocean-islands.webp") var(--sprite-x) var(--sprite-y) / 300% 300% no-repeat;
+  filter: drop-shadow(0 2px 7px #020e17);
+}
+
+.island-name {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: var(--label-width);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 3px;
+  padding: 1px 4px;
+  background: #061c29db;
+  font: 650 11px/1.35 system-ui, sans-serif;
+  letter-spacing: .015em;
+}
+
+.island.major .island-name { font-size: 13px; }
+.island.subdued { opacity: .32; }
+.island.compact .island-name { visibility: hidden; }
+.island:hover, .island:focus-visible, .island[aria-pressed="true"] { z-index: 1; opacity: 1; }
+.island:is(:hover, :focus-visible, [aria-pressed="true"]) .island-name { visibility: visible; }
+.island[aria-pressed="true"] .island-name { color: var(--accent); }
+
+#ocean-status {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  max-width: 80%;
+  color: var(--quiet);
+  text-align: center;
+}
+
+#ocean-status.limit {
+  inset: 14px auto auto 14px;
+  transform: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: #081d29ed;
+}
+
+.playback {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(135px, auto);
+  align-items: center;
+  gap: 20px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.play-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 86px;
+  min-height: 38px;
+  padding: 5px 10px;
+  border: 1px solid #f9d69e82;
+  border-radius: 8px;
+  background: #dfad70;
+  color: #162026;
+  font-weight: 700;
+}
+
+.play-button:disabled { opacity: .46; }
+.play-button:not(:disabled):hover { background: #f4c68d; }
+.play-symbol {
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+  border-left: 8px solid currentColor;
+  border-right: 0;
+}
+
+.playing .play-symbol {
+  width: 8px;
+  height: 11px;
+  border: solid currentColor;
+  border-width: 0 2px;
+}
+
+.timeline { min-width: 0; font-variant-numeric: tabular-nums; }
+.timeline-caption { display: flex; gap: 8px; align-items: baseline; }
+#ocean-time { font-weight: 700; color: var(--accent); flex-shrink: 0; }
+#ocean-current { color: #e2e9e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ocean-position { accent-color: var(--accent); width: 100%; margin: 0; cursor: pointer; }
+.timeline-endpoints { display: flex; justify-content: space-between; color: var(--quiet); font-size: 11px; }
+.ship-field select { width: 100%; max-width: 240px; }
+
+#ocean-port {
+  position: absolute;
+  z-index: 2;
+  inset: 14px 14px auto auto;
+  max-height: calc(100% - 28px);
+  width: min(280px, calc(100% - 28px));
+  overflow: auto;
+  padding: 12px 14px;
+  border: 1px solid #82a4af75;
+  border-radius: 10px;
+  background: #0a202ced;
+  box-shadow: 0 8px 24px #030e1877;
+}
+
+.port-heading { display: flex; align-items: start; justify-content: space-between; gap: 6px; }
+.port-heading h2 { font-size: 14px; overflow-wrap: anywhere; margin: 0; }
+#ocean-port p { margin: 2px 0 8px; color: var(--quiet); font-size: 12px; }
+#ocean-port ol { list-style: none; padding: 0; margin: 0; }
+#ocean-port button {
+  color: inherit;
+  background: #c5e7ed13;
+  border: 0;
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+#ocean-port li button { width: 100%; text-align: start; margin: 2px 0; }
+
+@media (max-width: 550px) {
+  .chart-heading { align-items: flex-start; }
+  .date-field :is(input, select) { max-width: 145px; }
+  .playback { grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px; }
+  .ship-field { grid-column: 1 / -1; }
+  .ship-field select { max-width: none; }
+}

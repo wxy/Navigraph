@@ -1,6 +1,7 @@
 import type { RecordingHealth } from '../recording-health.js';
 import type { GraphFilters, GraphPageQuery, GraphPageResult, SessionMetadata } from '../../lib/graph/query.js';
 import type { TreeDay } from '../../lib/graph/tree-day.js';
+import type { OceanDay } from '../../lib/graph/ocean-day.js';
 import type { WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import { BaseMessage, BaseResponse } from './common.js';
 import { BrowsingSession, NavNode } from '../session-types.js';
@@ -19,6 +20,7 @@ export namespace BackgroundMessages {
     action: 'getWaterfallTimeline'; target: 'background'; sessionId: string; filters: GraphFilters;
   }
   export interface GetTreeDayRequest extends BaseMessage { action: 'getTreeDay'; target: 'background'; date?: number; }
+  export interface GetOceanDayRequest extends BaseMessage { action: 'getOceanDay'; target: 'background'; date?: number; }
   export interface GetTreeNodesRequest extends BaseMessage { action: 'getTreeNodes'; target: 'background'; ids: string[]; }
   /**
    * 获取标签页ID请求
@@ -326,6 +328,7 @@ export namespace BackgroundResponses {
   export interface GetSessionPageResponse extends BaseResponse, GraphPageResult {}
   export interface GetWaterfallTimelineResponse extends BaseResponse, WaterfallTimeline {}
   export interface GetTreeDayResponse extends BaseResponse, TreeDay {}
+  export interface GetOceanDayResponse extends BaseResponse, OceanDay {}
   export interface GetTreeNodesResponse extends BaseResponse { nodes: NavNode[]; }
   export interface GetTabIdResponse extends BaseResponse {
     tabId?: number;
@@ -571,6 +574,7 @@ export interface BackgroundAPI {
   getSessionPage: { request: BackgroundMessages.GetSessionPageRequest; response: BackgroundResponses.GetSessionPageResponse; };
   getWaterfallTimeline: { request: BackgroundMessages.GetWaterfallTimelineRequest; response: BackgroundResponses.GetWaterfallTimelineResponse; };
   getTreeDay: { request: BackgroundMessages.GetTreeDayRequest; response: BackgroundResponses.GetTreeDayResponse; };
+  getOceanDay: { request: BackgroundMessages.GetOceanDayRequest; response: BackgroundResponses.GetOceanDayResponse; };
   getTreeNodes: { request: BackgroundMessages.GetTreeNodesRequest; response: BackgroundResponses.GetTreeNodesResponse; };
   getTabId: {
     request: BackgroundMessages.GetTabIdRequest;

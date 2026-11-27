@@ -5381,5 +5381,69 @@
   "graph_toolbar_fit_tree": {
     "message": "Ansicht einpassen",
     "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Seekarte",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Datum der Seekarte",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Abspielen",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Pause",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Navigation wiedergeben",
+    "description": "Sea chart"
+  },
+  "ocean_ship_filter": {
+    "message": "Browser-Tab auswählen",
+    "description": "Sea chart"
+  },
+  "ocean_ship": {
+    "message": "Schiff {0}",
+    "description": "Sea chart"
+  },
+  "ocean_ship_option": {
+    "message": "Schiff {0} · Überfahrten {1} · Küstenfahrten {2}",
+    "description": "Sea chart"
+  },
+  "ocean_all_ships": {
+    "message": "Alle Tabs",
+    "description": "Sea chart"
+  },
+  "ocean_counts": {
+    "message": "Inseln {0} · Schiffe {1} · Überfahrten {2} · Küstenfahrten {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "Für diesen Tag gibt es keinen Browserverlauf.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Der Browserverlauf für diesen Tag konnte nicht geladen werden.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Die letzten {0} Navigationseinträge werden angezeigt.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Anleger {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Anleger {0} → Anleger {1}",
+    "description": "Sea chart"
+  },
+  "ocean_port_counts": {
+    "message": "Einträge {0} · Anleger {1}",
+    "description": "Sea chart"
   }
 }
