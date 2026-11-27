@@ -93,7 +93,7 @@ async function initialize(): Promise<void> {
     art,
     timeFormat,
     openPort,
-    openVisit,
+    arrival => { void openVisit(arrival, true); },
   );
   const light = new ChartLight(
     map,
@@ -105,7 +105,7 @@ async function initialize(): Promise<void> {
   let replay = prepareReplay([]);
   let dayData: BackgroundResponses.GetOceanDayResponse | undefined;
   let portIsland: Island | undefined;
-  let selectedVisit: { nodeId: string; shipButton?: HTMLButtonElement } | undefined;
+  let selectedVisit: { nodeId: string; ship?: Ship } | undefined;
   let elapsed = 0;
   let describedIndex = -2;
   let describedSecond = -1;
@@ -234,10 +234,11 @@ async function initialize(): Promise<void> {
 
   function closePort(restoreFocus = false): void {
     port.hidden = true;
+    chart.selectShip();
     chart.selectIsland();
     if (restoreFocus) {
-      const shipButton = selectedVisit?.shipButton;
-      if (shipButton?.isConnected) shipButton.focus();
+      const shipButton = chart.shipButton(selectedVisit?.ship);
+      if (shipButton) shipButton.focus();
       else if (portIsland) chart.focusIsland(portIsland);
     }
     portIsland = undefined;
@@ -252,6 +253,8 @@ async function initialize(): Promise<void> {
 
   function showPort(island: Island, focusedArrival?: string): void {
     selectedVisit = undefined;
+    chart.selectShip();
+    positionVisitPanel();
     visitDetails.replaceChildren();
     portIsland = island;
     chart.selectIsland(island);
@@ -279,12 +282,31 @@ async function initialize(): Promise<void> {
     if (focusedArrival !== undefined) (focus ?? closePortButton).focus();
   }
 
-  async function openVisit(arrival: Arrival, shipButton?: HTMLButtonElement): Promise<void> {
+  function positionVisitPanel(ship?: Ship): void {
+    const button = chart.shipButton(ship);
+    if (!button) {
+      port.classList.remove('below-ship');
+      port.style.removeProperty('max-height');
+      return;
+    }
+    const hull = button.getBoundingClientRect();
+    const clock = button.querySelector('.ocean-ship-clock')!.getBoundingClientRect();
+    const bounds = map.getBoundingClientRect();
+    const above = Math.min(hull.top, clock.top) - bounds.top;
+    const below = bounds.bottom - Math.max(hull.bottom, clock.bottom);
+    port.classList.toggle('below-ship', below > above);
+    // Leave room for the panel inset and the selected ship's outline.
+    port.style.maxHeight = `${Math.floor(Math.max(above, below)) - 24}px`;
+  }
+
+  async function openVisit(arrival: Arrival, fromShip = false): Promise<void> {
     if (frame !== undefined) pause();
-    const selection = { nodeId: arrival.nodeId, shipButton };
+    const selection = { nodeId: arrival.nodeId, ship: fromShip ? arrival.ship : undefined };
     selectedVisit = selection;
     portIsland = arrival.island;
     chart.selectIsland(arrival.island);
+    chart.selectShip(selection.ship);
+    positionVisitPanel(selection.ship);
     portName.textContent = arrival.island.site;
     portList.hidden = true;
     visitDetails.replaceChildren();
@@ -320,11 +342,15 @@ async function initialize(): Promise<void> {
     showTimeline(history.arrivals, savedPosition);
     const stillOpen = openSite && history.islands.find(island => island.site === openSite);
     if (stillOpen) {
-      const nodeId = selectedVisit?.nodeId;
-      if (nodeId !== undefined && stillOpen.arrivals.some(arrival => arrival.nodeId === nodeId)) {
+      const selection = selectedVisit;
+      const arrival = selection && stillOpen.arrivals.find(entry => entry.nodeId === selection.nodeId);
+      if (selection && arrival) {
+        if (selection.ship) selection.ship = arrival.ship;
         portIsland = stillOpen;
         chart.selectIsland(stillOpen);
-      } else showPort(stillOpen, nodeId);
+        chart.selectShip(selection.ship);
+        positionVisitPanel(selection.ship);
+      } else showPort(stillOpen, selection?.nodeId);
     }
     else if (portIsland) closePort();
   }
