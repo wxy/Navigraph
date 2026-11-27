@@ -5,6 +5,7 @@ import { sendToBackground } from '../lib/messaging/sender.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { I18n, _ } from '../lib/utils/i18n.js';
 import type { BackgroundResponses } from '../types/messages/background.js';
+import { loadOceanArt } from './art.js';
 import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
 import { prepareReplay, replayAt } from './replay.js';
@@ -43,11 +44,17 @@ async function initialize(): Promise<void> {
   const portVisits = document.getElementById('ocean-port-visits')!;
   const closePortButton = document.querySelector<HTMLButtonElement>('#ocean-port-close')!;
   const map = document.getElementById('ocean-map')!;
+  const art = await loadOceanArt().catch(error => {
+    console.error('Unable to load sea chart artwork', error);
+    status.textContent = _('content_init_failed', '初始化失败').replace(/[:：]\s*$/, '');
+  });
+  if (!art) return;
   const chart = new OceanChart(
     map,
     document.getElementById('ocean-islands')!,
     document.querySelector<HTMLCanvasElement>('#ocean-water')!,
     document.querySelector<HTMLCanvasElement>('#ocean-ships')!,
+    art,
     timeFormat,
     openPort,
   );
@@ -115,7 +122,7 @@ async function initialize(): Promise<void> {
 
   function setPlaying(playing: boolean): void {
     play.classList.toggle('playing', playing);
-    map.classList.toggle('sailing', playing);
+    if (!playing) chart.waves.stop();
     playLabel.textContent = playing ? _('ocean_pause', '暂停') : _('ocean_play', '播放');
     syncMusic(playing);
   }
@@ -137,7 +144,10 @@ async function initialize(): Promise<void> {
     previousFrame = now;
     draw();
     if (elapsed === replay.duration) pause();
-    else frame = requestAnimationFrame(tick);
+    else {
+      if (!reducedMotion.matches) chart.waves.draw(now);
+      frame = requestAnimationFrame(tick);
+    }
   }
 
   function showTimeline(arrivals: Arrival[]): void {
@@ -266,7 +276,10 @@ async function initialize(): Promise<void> {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pause();
   });
-  reducedMotion.addEventListener('change', draw);
+  reducedMotion.addEventListener('change', () => {
+    if (reducedMotion.matches) chart.waves.stop();
+    draw();
+  });
   date.addEventListener('change', () => {
     if (!date.value || !date.validity.valid) return;
     const [day] = localDayRange(new Date(`${date.value}T12:00:00`).getTime());

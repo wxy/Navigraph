@@ -102,37 +102,6 @@ h1 {
   background: #082236 var(--water-texture) center / cover no-repeat;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .map::before, .map::after {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    inset: -2%;
-    pointer-events: none;
-    background: var(--water-texture) center / cover no-repeat;
-    -webkit-mask-image: var(--swell-area);
-    mask-image: var(--swell-area);
-    mix-blend-mode: screen;
-  }
-
-  .map::before {
-    --swell-area: radial-gradient(ellipse 38% 24% at 30% 34%, #000 0%, #0008 46%, transparent 100%);
-    animation: ocean-swell 24s ease-in-out infinite alternate paused;
-  }
-
-  .map::after {
-    --swell-area: radial-gradient(ellipse 33% 20% at 74% 72%, #000 0%, #0007 45%, transparent 100%);
-    animation: ocean-swell 31s ease-in-out -9s infinite alternate-reverse paused;
-  }
-
-  .map.sailing::before, .map.sailing::after { animation-play-state: running; }
-}
-
-@keyframes ocean-swell {
-  from { transform: translate(-4px, 1px); opacity: .09; }
-  to { transform: translate(4px, -1px); opacity: .20; }
-}
-
 .map canvas, #ocean-islands {
   position: absolute;
   inset: 0;
@@ -142,6 +111,14 @@ h1 {
 }
 
 .map canvas { z-index: 1; }
+#ocean-swell {
+  z-index: 0;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  #ocean-swell { transition: opacity .28s ease; }
+  #ocean-swell.moving { opacity: 1; }
+}
 #ocean-islands { z-index: 2; }
 #ocean-ships { z-index: 3; }
 
@@ -264,10 +241,10 @@ h1 {
 }
 
 .timeline { min-width: 0; font-variant-numeric: tabular-nums; }
-.timeline-caption { display: flex; gap: 8px; align-items: baseline; }
+.timeline-caption { display: flex; gap: 8px; align-items: baseline; block-size: 1.5em; }
 #ocean-time { font-weight: 700; color: var(--accent); flex-shrink: 0; }
 #ocean-current { color: #e2e9e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#ocean-underway { margin-inline-start: auto; flex-shrink: 0; color: #abdedf; font-size: 11px; }
+#ocean-underway { margin-inline-start: auto; flex-shrink: 0; color: #abdedf; font-size: 11px; white-space: nowrap; }
 #ocean-position { accent-color: var(--accent); width: 100%; margin: 0; cursor: pointer; }
 .timeline-endpoints { display: flex; justify-content: space-between; color: var(--quiet); font-size: 11px; }
 .playback-options {

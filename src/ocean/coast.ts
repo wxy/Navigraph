@@ -133,31 +133,3 @@ export function placeIslands(islands: readonly Island[], width: number, height: 
       compact: !spread && cellWidth < 105 && position > 7, labelWidth: Math.max(65, Math.min(164, cellWidth - 8)) };
   });
 }
-
-export function drawPier(ctx: CanvasRenderingContext2D, berth: Berth, active: boolean, main: boolean): void {
-  const { shore, water, angle, island } = berth;
-  const width = active ? 4.5 : main ? 3.5 : 2;
-  const landing = active || main ? Math.min(8, island.size * .13) : 0;
-  ctx.beginPath();
-  ctx.moveTo(shore.x, shore.y);
-  ctx.lineTo(water.x, water.y);
-  if (landing) {
-    const left = polar(water, landing / 2, angle - Math.PI / 2);
-    const right = polar(water, landing / 2, angle + Math.PI / 2);
-    ctx.moveTo(left.x, left.y);
-    ctx.lineTo(right.x, right.y);
-  }
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#24302f';
-  ctx.lineWidth = width + 2;
-  ctx.stroke();
-  ctx.strokeStyle = active ? '#e9bf86' : main ? '#d1aa78' : '#a8896b';
-  ctx.lineWidth = width;
-  ctx.stroke();
-  if (landing) {
-    ctx.beginPath();
-    ctx.arc(water.x, water.y, active ? 2 : 1.45, 0, FULL_TURN);
-    ctx.fillStyle = active ? '#fff0bb' : '#f2d7a4';
-    ctx.fill();
-  }
-}
