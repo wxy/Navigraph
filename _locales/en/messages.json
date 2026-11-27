@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Display browsing history nodes and links in interactive graphics to help users intuitively analyze access patterns and behaviors.",
+    "message": "Explore your browsing history in tree and waterfall views. Browse by date or session and filter recorded visits.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,11 +2048,11 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "Show Page Reload",
+    "message": "Show page reloads",
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "Show History Navigation",
+    "message": "Show history navigation",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "Show Tracking Page",
+    "message": "Show tracking pages",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -2464,7 +2464,7 @@
     "description": "显示通知消息失败错误"
   },
   "content_tree_view": {
-    "message": "Treemap",
+    "message": "Tree View",
     "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
@@ -4228,7 +4228,7 @@
     "description": "标签文本 <label> 文本"
   },
   "options_option_tree": {
-    "message": "Treemap",
+    "message": "Tree View",
     "description": "下拉选项文本 <option> 文本"
   },
   "options_session_group_title": {
@@ -5216,7 +5216,7 @@
     "description": "从TS提取 (_): src/options/options.ts"
   },
   "options_option_waterfall": {
-    "message": "Waterfall",
+    "message": "Waterfall View",
     "description": "从HTML提取: src/options/index.html"
   },
   "options_label_force_language": {
@@ -5271,12 +5271,36 @@
     "message": "When titles are hidden, axes, badges, and node details remain available.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "Showing the latest {0} records in this session",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "Session activity overview. Switch to Actual size to browse lanes.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} records",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "Drawer page",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "Previous page",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "Next page",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "Nodes per page",
+    "message": "Waterfall drawer page size",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500; limits visible nodes without deleting history.",
+    "message": "Nodes per page when opening a group. From 1 to 500. Default 100.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
@@ -5348,5 +5372,101 @@
   },
   "tree_continues_outside_page": {
     "message": "The parent page is outside the current range"
+  },
+  "graph_toolbar_filter": {
+    "message": "Filter",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_options": {
+    "message": "Options",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
+  "graph_toolbar_today": {
+    "message": "Today",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "Fit to view",
+    "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Sea chart",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Chart date",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Play",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Pause",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Replay navigation",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "Choose a session",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "Ship {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "All sessions",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "Background music",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "Islands {0} · Ships {1} · Crossings {2} · Coastal trips {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "There is no browsing history for this day.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Could not read the browsing history for this day.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Showing the latest {0} navigation records.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Dock {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Dock {0} → Dock {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "Direction of the sea surface movement"
+  },
+  "ocean_visit_details": {
+    "message": "Visit details"
+  },
+  "ocean_visit_unavailable": {
+    "message": "This visit is no longer available."
+  },
+  "ocean_port_back": {
+    "message": "Back"
+  },
+  "ocean_port_counts": {
+    "message": "Records {0} · Docks {1}",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} ships underway",
+    "description": "Ships moving at the same replay time"
   }
 }

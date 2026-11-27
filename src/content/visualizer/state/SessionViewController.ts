@@ -8,7 +8,6 @@ import { sessionServiceClient } from '../../core/session-service-client.js';
 import type { UIManager } from '../ui/UIManager.js';
 import type { NavigationVisualizer } from '../../core/navigation-visualizer.js';
 import type { SessionDetails } from '../../types/session.js';
-import { nodeManager } from '../../core/node-manager.js';
 
 const logger = new Logger('SessionViewController');
 
@@ -57,12 +56,13 @@ export class SessionViewController {
       await this.loadSessionList();
       
       // 加载当前会话
-      if (this.visualizer.currentView === 'tree') await this.visualizer.loadTreeDay();
-      else await this.loadCurrentSession();
+      if (this.visualizer.currentView === 'tree') {
+        await this.visualizer.loadTreeDay();
+        await sessionServiceClient.loadLatestSession();
+      } else {
+        await this.loadCurrentSession();
+      }
 
-      // 获取最新会话ID (不需要单独加载，仅获取ID用于视觉区分)
-      await sessionServiceClient.loadLatestSession();
-      
       logger.log(_('session_management_init_complete', '会话管理初始化完成'));
     } catch (error) {
       logger.error(_('session_management_init_failed', '会话管理初始化失败: {0}'), error);
@@ -192,20 +192,18 @@ export class SessionViewController {
       if (!session) {
         this.visualizer.currentSession = undefined;
         this.visualizer.setRawData([], [], new Map());
+        this.updateSessionUI();
         this.visualizer.refreshVisualization();
         return;
       }
 
-      // 保存当前会话到可视化器
+      if (this.visualizer.currentSession && this.visualizer.currentSession.id !== session.id) {
+        this.visualizer.waterfallObservationIndex = 0;
+      }
       this.visualizer.currentSession = session;
 
-      // 从节点管理器获取处理好的数据
-      const nodes = [...nodeManager.getNodes()];
-      const edges = [...nodeManager.getEdges()];
-      const nodeMap = nodeManager.getNodeMap();
-      
-      // 设置可视化器数据
-      this.visualizer.setRawData(nodes, edges, nodeMap);
+      const nodes = (sessionServiceClient.timeline?.nodes ?? []).map(node => ({ ...node, title: node.site }));
+      this.visualizer.setRawData(nodes, [], new Map(nodes.map(node => [node.id, node])));
 
       // 更新会话相关UI
       this.updateSessionUI();
@@ -221,7 +219,6 @@ export class SessionViewController {
         id: session.id, 
         title: session.title,
         nodes: nodes.length,
-        edges: edges.length
       });
     } catch (error) {
       logger.error(_('session_load_processing_failed', '处理会话加载失败: {0}'), error);
@@ -239,11 +236,8 @@ export class SessionViewController {
     // 更新会话选择器
     this.updateSessionSelector();
 
-    // 更新状态栏
-    this.visualizer.updateStatusBar();
-
-    // 使用 UIManager 隐藏控制面板
-    this.uiManager.hideControlPanel();
+    // 更新工具栏
+    this.visualizer.updateToolbar();
   }
   
   /**
@@ -260,9 +254,6 @@ export class SessionViewController {
       await sessionServiceClient.loadSessionList();
       await sessionServiceClient.loadCurrentSession();
       
-      // 同时更新最新会话ID
-      await sessionServiceClient.loadLatestSession();
-
       logger.log(_('session_data_refresh_complete', '会话数据刷新完成'));
     } catch (error) {
       logger.error(_('session_data_refresh_failed', '刷新会话数据失败: {0}'), error);

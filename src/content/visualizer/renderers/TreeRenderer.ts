@@ -77,6 +77,7 @@ export class TreeRenderer implements BaseRenderer {
     const folds = main.append('g').attr('class', 'tree-chain-controls');
     const collapseAll = d3.select('#tree-collapse-all');
     const expandAll = d3.select('#tree-expand-all');
+    const fitView = d3.select('#tree-fit-to-view');
     const foldLimit = d3.select('#tree-fold-limit');
     let selectedNodeId: string | undefined;
     let pending = false;
@@ -86,7 +87,7 @@ export class TreeRenderer implements BaseRenderer {
     const tabId = visualizer.tabId || '';
     const layoutScope = `panorama:${day.start}:${width}x${height}`;
     const captureOverview = (): Overview => ({ scope: layoutScope, transform: d3.zoomTransform(svg.node()!) });
-    const viewportHeight = Math.max(1, height - (options.viewportBottomInset ?? 0));
+    const viewportHeight = Math.max(1, height);
     const saved = options.fitToView ? undefined : getViewState(tabId, VIEW_STATE);
     const restored = saved?.layoutScope === layoutScope ? saved.transform : undefined;
     const applyViewport = (transform: d3.ZoomTransform) => {
@@ -102,7 +103,7 @@ export class TreeRenderer implements BaseRenderer {
       });
       folds.selectAll<SVGLineElement, FoldLink>('line')
         .attr('y2', link => link.y - (FOLD_BUTTON_OFFSET - 15) * factor);
-      visualizer.updateStatusBar();
+      visualizer.updateToolbar();
     };
     const zoom: d3.ZoomBehavior<SVGSVGElement, unknown> = d3.zoom();
     zoom.duration(animationDuration(250))
@@ -282,6 +283,10 @@ export class TreeRenderer implements BaseRenderer {
         const initial = d3.zoomIdentity
           .translate(layout.centerX * (1 - scale), viewportHeight / 2 - layout.centerY * scale)
           .scale(scale);
+        fitView.property('disabled', false).on('click.tree-fit', () => {
+          svg.call(zoom.transform, initial);
+          if (!hasOpened) saveViewState(tabId, { viewType: VIEW_STATE, layoutScope, transform: initial });
+        });
         const camera = hasOpened || action?.fitOverview ? undefined
           : overview?.scope === layoutScope ? overview.transform : action ? undefined : restored;
         const transform = camera && Number.isFinite(camera.x) && Number.isFinite(camera.y) && Number.isFinite(camera.k) && camera.k > 0
@@ -310,6 +315,7 @@ export class TreeRenderer implements BaseRenderer {
       .attr('aria-disabled', 'true')
       .attr('aria-describedby', null);
     d3.select('#tree-fold-limit').property('hidden', true);
+    d3.select('#tree-fit-to-view').on('click.tree-fit', null).property('disabled', true);
     this.zoom?.on('zoom end', null);
     this.svg?.on('.zoom', null);
     this.svg?.selectAll('*').interrupt();

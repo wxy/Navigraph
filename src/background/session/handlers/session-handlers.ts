@@ -1,4 +1,4 @@
-import type { GraphPageQuery } from '../../../lib/graph/query.js';
+import type { GraphFilters, GraphPageQuery } from '../../../lib/graph/query.js';
 import { DEFAULT_GRAPH_FILTERS } from '../../../lib/graph/query.js';
 import { localDayRange, TREE_NODE_BATCH } from '../../../lib/graph/tree-day.js';
 import { getNavigationManager } from '../../navigation/navigation-manager.js';
@@ -12,6 +12,22 @@ import {
 import { _, _Error } from "../../../lib/utils/i18n.js";
 
 const logger = new Logger("SessionMessageHandler");
+
+function readGraphFilters(input: Partial<GraphFilters> | undefined): GraphFilters {
+  const filters = { ...DEFAULT_GRAPH_FILTERS };
+  for (const key of Object.keys(filters) as (keyof GraphFilters)[]) {
+    const value = input?.[key];
+    if (typeof value === 'boolean') filters[key] = value;
+  }
+  return filters;
+}
+
+function readDayRange(date: unknown): [number, number] | undefined | null {
+  if (date === undefined) return undefined;
+  if (typeof date !== 'number') return null;
+  const range = localDayRange(date);
+  return range.every(Number.isFinite) ? range : null;
+}
 
 /**
  * 会话相关消息处理类
@@ -34,24 +50,33 @@ export class SessionMessageHandler {
       const input = message;
       const integer = (value: unknown, fallback: number, max: number) => typeof value === 'number' && Number.isInteger(value) && value >= 0 ? Math.min(value, max) : fallback;
       const query: GraphPageQuery = { sessionId: input.sessionId, page: integer(input.page, 0, Number.MAX_SAFE_INTEGER),
-        limit: Math.max(1, integer(input.limit, 100, 500)), edgePage: integer(input.edgePage, 0, Number.MAX_SAFE_INTEGER), filters: { ...DEFAULT_GRAPH_FILTERS } };
+        limit: Math.max(1, integer(input.limit, 100, 500)), edgePage: integer(input.edgePage, 0, Number.MAX_SAFE_INTEGER), filters: readGraphFilters(input.filters) };
       if (typeof query.sessionId !== 'string' || !query.sessionId) return ctx.error('Invalid session');
-      for (const key of Object.keys(query.filters) as Array<keyof typeof query.filters>) {
-        if (typeof input.filters?.[key] === 'boolean') query.filters[key] = input.filters[key];
-      }
       void getNavigationManager().getNavigationStorage().getSessionPage(query).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
+      return true;
+    });
+
+    messageService.registerHandler<BackgroundMessages.GetWaterfallTimelineRequest, BackgroundResponses.GetWaterfallTimelineResponse>('getWaterfallTimeline', (message, sender, sendResponse) => {
+      const ctx = messageService.createMessageContext(message, sender, sendResponse);
+      if (typeof message.sessionId !== 'string' || !message.sessionId) return ctx.error('Invalid session');
+      void getNavigationManager().getNavigationStorage().getWaterfallTimeline(message.sessionId, readGraphFilters(message.filters))
+        .then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
       return true;
     });
 
     messageService.registerHandler<BackgroundMessages.GetTreeDayRequest, BackgroundResponses.GetTreeDayResponse>('getTreeDay', (message, sender, sendResponse) => {
       const ctx = messageService.createMessageContext(message, sender, sendResponse);
-      const { date } = message;
-      if (date !== undefined && typeof date !== 'number') return ctx.error('Invalid date');
-      const range = date === undefined ? undefined : localDayRange(date);
-      if (range && !range.every(Number.isFinite)) {
-        return ctx.error('Invalid date');
-      }
+      const range = readDayRange(message.date);
+      if (range === null) return ctx.error('Invalid date');
       void getNavigationManager().getNavigationStorage().getTreeDay(range).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
+      return true;
+    });
+
+    messageService.registerHandler<BackgroundMessages.GetOceanDayRequest, BackgroundResponses.GetOceanDayResponse>('getOceanDay', (message, sender, sendResponse) => {
+      const ctx = messageService.createMessageContext(message, sender, sendResponse);
+      const range = readDayRange(message.date);
+      if (range === null) return ctx.error('Invalid date');
+      void getNavigationManager().getNavigationStorage().getOceanDay(range).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
       return true;
     });
 

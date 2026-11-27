@@ -14,8 +14,8 @@ Navigraph: Visualisierung des Browserverlaufs
 ### Schnellstart
 
 1. Öffnen Sie die Erweiterungsseite (klicken Sie auf das Navigraph-Symbol in der Symbolleiste).
-2. Bewegen Sie den Mauszeiger kurz oder klicken Sie auf den Steuerfeldgriff auf der rechten Seite der Seite, um die Seitenleiste zu öffnen. In der Seitenleiste können Sie Sitzungsdaten auswählen, Ansichten wechseln oder Knoten filtern.
-3. Verwenden Sie die Statusleiste, um Ansichten zu wechseln oder die Sichtbarkeit von ausgeblendeten/geschlossenen Knoten umzuschalten.
+2. Öffnen Sie den Kalender über das Datum in der oberen Leiste. Wählen Sie im Baum einen Tag und im Wasserfall eine Sitzung. Mit den danebenliegenden Tasten wechseln Sie die Ansicht.
+3. Öffnen Sie Filter oben rechts. Die Leiste zeigt die Anzahl der Einträge und bietet Zugriff auf ausgeblendete Einträge oder die Wiederherstellung der Filter.
 4. Klicken Sie auf Knoten, um detaillierte Informationen anzuzeigen.
 
 ## Benutzerhandbuch (Übersicht)
@@ -32,25 +32,11 @@ Navigraph: Visualisierung des Browserverlaufs
 1. Besuchen Sie die [Navigraph-Seite im Microsoft Edge Add-ons Store](https://microsoftedge.microsoft.com/addons/detail/ibcpeknflplfaljendadfkhmflhfnhdh)
 2. Klicken Sie auf "Abrufen", um die Erweiterung zu installieren
 
-### Seitenleiste
+### Symbolleiste
 
-Die Seitenleiste wird hauptsächlich für die Sitzungswahl und die Knotenfilterung verwendet:
-
-- Ansichtswechsel: Wechseln Sie die aktuelle Ansicht (Baumdiagramm / Wasserfalldiagramm) oben in der Seitenleiste
-- Sitzungs-Kalender: Zeigt Sitzungen nach Datum an und ermöglicht es Ihnen, Sitzungsverläufe auszuwählen und zu laden. Wenn mehrere Sitzungen am selben Tag vorhanden sind, werden diese einzeln angezeigt
-- Filtersteuerung: Filtern Sie Ergebnisse basierend auf Navigationstypen oder Aktionen (z. B. nur Linkklicks anzeigen, Formularübermittlungen usw.)
-
-Tipp: Die Seitenleiste dient als Haupteinstiegspunkt zum Wechseln von Datenbereichen oder Identifizieren von Analysebereichen. Es wird empfohlen, zuerst eine Sitzung auszuwählen und dann die Ansicht zu wechseln.
-
-### Statusleiste
-
-Die Statusleiste bietet einen prägnanten Kontext und Interaktionen innerhalb der Benutzeroberfläche:
-
-- Zeigt die aktuelle Ansicht (Baumdiagramm / Wasserfalldiagramm) an und wechselt diese
-- Zeigt Sitzungsstatistiken (z. B. Anzahl der Knoten, Sitzungsdauer) an und bietet Schnellaktionen im Zusammenhang mit der Ansicht (z. B. Umschalten der Sichtbarkeit ausgeblendeter Knoten)
-- Klicken Sie auf das Datum, um schnell zur heutigen Sitzung zurückzukehren
-
-Erläuterung: Die Steuerungen in der Statusleiste sind direkte Interaktionspunkte, die sich auf die aktuelle Ansicht beziehen. Komplexere Filterungen werden weiterhin über die Seitenleiste durchgeführt.
+- Öffnen Sie den Kalender über das Datum in der oberen Leiste. Wählen Sie im Baum einen Tag und im Wasserfall eine Sitzung. Mit den danebenliegenden Tasten wechseln Sie die Ansicht.
+- Öffnen Sie Filter oben rechts. Die Leiste zeigt die Anzahl der Einträge und bietet Zugriff auf ausgeblendete Einträge oder die Wiederherstellung der Filter.
+- Im Baum finden Sie links oben die Funktionen zum Ein- und Ausklappen und rechts unten die Zoomanzeige und die Fensteranpassung. Im Wasserfall stehen Zeitraum und Ansichtsgröße oberhalb der Zeitleiste.
 
 ### Ansichtsinteraktionen
 

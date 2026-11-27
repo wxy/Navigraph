@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "インタラクティブなグラフィックで閲覧履歴のノードとリンクを表示し、ユーザーが閲覧パターンと行動を視覚的に分析できるよう支援します。",
+    "message": "閲覧履歴をツリー図とウォーターフォール図で確認。日付やセッションを選び、訪問の順序やページ同士のつながりをたどれます。",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,11 +2048,11 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "ページの表示、リロード",
+    "message": "ページの再読み込みを表示",
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "履歴ナビゲーションを表示",
+    "message": "履歴からの移動を表示",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "追跡ページを表示",
+    "message": "トラッキングページを表示",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -2464,7 +2464,7 @@
     "description": "显示通知消息失败错误"
   },
   "content_tree_view": {
-    "message": "スリルマップ",
+    "message": "ツリービュー",
     "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "滝の見えるめ",
+    "message": "ウォーターフォール",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {
@@ -5271,12 +5271,36 @@
     "message": "タイトルを非表示にしても、軸、バッジ、ノードの詳細は利用できます。",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "このセッションの最新 {0} 件を表示",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "セッションの概要です。実際のサイズに切り替えるとレーンを表示できます。",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} 件",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "グループのページ番号",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "前のページ",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "次のページ",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "1ページのノード数",
+    "message": "ウォーターフォールのグループのページ件数",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1～500。表示数のみを制限し、履歴は削除しません。",
+    "message": "グループを開いたときの 1 ページのノード数。1〜500、既定値 100。",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
@@ -5345,5 +5369,101 @@
   },
   "tree_continues_outside_page": {
     "message": "親ページは現在の表示範囲外です"
+  },
+  "graph_toolbar_filter": {
+    "message": "フィルター",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_options": {
+    "message": "オプション",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
+  "graph_toolbar_today": {
+    "message": "今日",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "全体を表示",
+    "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "海図",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "海図の日付",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "再生",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "一時停止",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "閲覧の軌跡を再生",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "セッションを選択",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "船 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "すべてのセッション",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "BGM",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "島 {0} · 船 {1} 隻 · 島間 {2} 回 · 沿岸 {3} 回",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "この日の閲覧履歴はありません。",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "この日の閲覧履歴を読み込めませんでした。",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "最新のナビゲーション記録を {0} 件表示しています。",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "桟橋 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "桟橋 {0} → 桟橋 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "海面が流れる方向"
+  },
+  "ocean_visit_details": {
+    "message": "閲覧の詳細"
+  },
+  "ocean_visit_unavailable": {
+    "message": "この閲覧記録は利用できなくなりました。"
+  },
+  "ocean_port_back": {
+    "message": "戻る"
+  },
+  "ocean_port_counts": {
+    "message": "記録 {0} 件 · 桟橋 {1} か所",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} 隻が同時に航行中",
+    "description": "Ships moving at the same replay time"
   }
 }

@@ -25,7 +25,7 @@ export class ViewStateManager {
   private _waterfallZoom: any = null; // 瀑布视图的缩放状态（已废弃，保留兼容性）
   
   // 瀑布视图的观察窗口位置
-  private _waterfallObservationIndex: number = 0; // 瀑布视图的观察窗口起始索引
+  private _waterfallObservationIndex: number = 0; // 观察窗口与最新端相隔的时段数
   
   private onZoomChangeCallback?: () => void;
 

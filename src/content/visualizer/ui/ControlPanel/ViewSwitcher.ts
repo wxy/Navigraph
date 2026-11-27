@@ -23,6 +23,7 @@ export class ViewSwitcher {
   public initialize(): void {
     this.treeViewButton = document.getElementById('tree-view');
     this.waterfallViewButton = document.getElementById('waterfall-view');
+    document.getElementById('view-switcher-container')?.setAttribute('aria-label', _('content_view', '视图'));
     
     if (!this.treeViewButton || !this.waterfallViewButton) {
       logger.warn(_('view_switcher_buttons_not_found', '视图切换按钮未找到'));
@@ -75,6 +76,7 @@ export class ViewSwitcher {
    */
   public updateButtonsState(currentView: string): void {
     document.getElementById('tree-fold-actions')?.toggleAttribute('hidden', currentView !== 'tree');
+    document.getElementById('tree-viewport-tools')?.toggleAttribute('hidden', currentView !== 'tree');
     if (!this.treeViewButton || !this.waterfallViewButton) {
       return;
     }
@@ -82,6 +84,8 @@ export class ViewSwitcher {
     // 移除所有按钮的激活状态
     this.treeViewButton.classList.remove('active');
     this.waterfallViewButton.classList.remove('active');
+    this.treeViewButton.setAttribute('aria-pressed', String(currentView === 'tree'));
+    this.waterfallViewButton.setAttribute('aria-pressed', String(currentView === 'waterfall'));
     
     // 根据当前视图设置激活状态
     if (currentView === 'tree') {

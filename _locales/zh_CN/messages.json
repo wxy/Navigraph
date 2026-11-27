@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "以交互式图形展示浏览历史节点和链接，帮助用户直观分析访问模式和行为。",
+    "message": "用树形图和瀑布图回顾浏览历史。按日期或会话查找访问记录，查看页面关联和访问顺序。",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -5271,12 +5271,36 @@
     "message": "隐藏标题时，刻度、徽标与节点详情仍可使用。",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "仅显示会话最新 {0} 条记录",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "会话活动概览。切换到实际大小可查看各泳道。",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} 条记录",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "抽屉页码",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "上一页",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "下一页",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "每页节点数",
+    "message": "瀑布图抽屉每页节点数",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500；仅限制同时显示的节点，不删除历史记录。",
+    "message": "设置展开分组后每页显示的节点数。范围 1–500，默认 100。",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
@@ -5345,5 +5369,101 @@
   },
   "tree_continues_outside_page": {
     "message": "上游页面不在当前范围"
+  },
+  "graph_toolbar_filter": {
+    "message": "筛选",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_options": {
+    "message": "选项",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
+  "graph_toolbar_today": {
+    "message": "今天",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "适配全图",
+    "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "航海图",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "海图日期",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "播放",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "暂停",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "按导航记录回放",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "选择会话",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "船 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "全部会话",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "背景音乐",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "这一天还没有浏览记录。",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "读取这一天的浏览记录失败。",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "显示最近 {0} 条导航记录。",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "码头 {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "码头 {0} → 码头 {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "海面移动方向"
+  },
+  "ocean_visit_details": {
+    "message": "访问详情"
+  },
+  "ocean_visit_unavailable": {
+    "message": "这条访问记录已不可用。"
+  },
+  "ocean_port_back": {
+    "message": "返回"
+  },
+  "ocean_port_counts": {
+    "message": "{0} 条记录 · {1} 个码头",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} 艘船同时航行",
+    "description": "Ships moving at the same replay time"
   }
 }

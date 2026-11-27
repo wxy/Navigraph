@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Affiche les nœuds et liens de l'historique de navigation sous forme de graphiques interactifs, aidant les utilisateurs à analyser visuellement les modèles et comportements de navigation.",
+    "message": "Explorez votre historique en arbre ou en cascade. Consultez et filtrez vos visites par date ou par session.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,11 +2048,11 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "Afficher la page de rechargement",
+    "message": "Rechargements de page",
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "Afficher l'historique de navigation",
+    "message": "Déplacements dans l’historique",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "Afficher la page de suivi",
+    "message": "Pages de suivi",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "Vue sur la cascade",
+    "message": "Cascade",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {
@@ -5271,12 +5271,36 @@
     "message": "Les axes, badges et détails restent disponibles lorsque les titres sont masqués.",
     "description": "Graph display setting"
   },
+  "waterfall_timeline_limit": {
+    "message": "Les {0} entrées les plus récentes de cette session",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_density_overview": {
+    "message": "Vue d’ensemble de la session. Passez à la taille réelle pour voir les couloirs.",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_record_count": {
+    "message": "{0} entrées",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_page": {
+    "message": "Page du groupe",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_previous": {
+    "message": "Page précédente",
+    "description": "Waterfall timeline"
+  },
+  "waterfall_drawer_next": {
+    "message": "Page suivante",
+    "description": "Waterfall timeline"
+  },
   "options_label_nodes_per_page": {
-    "message": "Nœuds par page",
+    "message": "Nœuds par page dans le groupe de la cascade",
     "description": "Graph display setting"
   },
   "options_desc_nodes_per_page": {
-    "message": "1–500 ; limite les nœuds visibles sans supprimer l’historique.",
+    "message": "Nœuds par page du groupe ouvert. De 1 à 500, 100 par défaut.",
     "description": "Graph display setting"
   },
   "options_desc_default_view": {
@@ -5345,5 +5369,101 @@
   },
   "tree_continues_outside_page": {
     "message": "La page parente est hors de la plage actuelle"
+  },
+  "graph_toolbar_filter": {
+    "message": "Filtrer",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_options": {
+    "message": "Options",
+    "description": "Toolbar entry that opens Navigraph options"
+  },
+  "graph_toolbar_today": {
+    "message": "Aujourd’hui",
+    "description": "Graph toolbar"
+  },
+  "graph_toolbar_fit_tree": {
+    "message": "Ajuster à la fenêtre",
+    "description": "Graph toolbar"
+  },
+  "ocean_view": {
+    "message": "Carte marine",
+    "description": "Sea chart"
+  },
+  "ocean_date": {
+    "message": "Date de la carte",
+    "description": "Sea chart"
+  },
+  "ocean_play": {
+    "message": "Lire",
+    "description": "Sea chart"
+  },
+  "ocean_pause": {
+    "message": "Pause",
+    "description": "Sea chart"
+  },
+  "ocean_timeline": {
+    "message": "Rejouer la navigation",
+    "description": "Sea chart"
+  },
+  "ocean_session_filter": {
+    "message": "Choisir une session",
+    "description": "Sea Chart playback"
+  },
+  "ocean_ship": {
+    "message": "Navire {0}",
+    "description": "Sea chart"
+  },
+  "ocean_all_sessions": {
+    "message": "Toutes les sessions",
+    "description": "Sea Chart playback"
+  },
+  "ocean_music": {
+    "message": "Musique de fond",
+    "description": "Sea Chart playback"
+  },
+  "ocean_counts": {
+    "message": "Îles {0} · Navires {1} · Traversées {2} · Trajets côtiers {3}",
+    "description": "Sea chart"
+  },
+  "ocean_empty": {
+    "message": "Aucun historique de navigation pour cette journée.",
+    "description": "Sea chart"
+  },
+  "ocean_history_error": {
+    "message": "Impossible de lire l’historique de navigation de cette journée.",
+    "description": "Sea chart"
+  },
+  "ocean_day_limit": {
+    "message": "Affichage des {0} dernières entrées de navigation.",
+    "description": "Sea chart"
+  },
+  "ocean_dock": {
+    "message": "Quai {0}",
+    "description": "Sea chart"
+  },
+  "ocean_coastal_move": {
+    "message": "Quai {0} → Quai {1}",
+    "description": "Sea chart"
+  },
+  "ocean_surface_direction": {
+    "message": "Direction du mouvement de la surface de la mer"
+  },
+  "ocean_visit_details": {
+    "message": "Détails de la visite"
+  },
+  "ocean_visit_unavailable": {
+    "message": "Cette visite n’est plus disponible."
+  },
+  "ocean_port_back": {
+    "message": "Retour"
+  },
+  "ocean_port_counts": {
+    "message": "Entrées {0} · Quais {1}",
+    "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} navires en mouvement",
+    "description": "Ships moving at the same replay time"
   }
 }

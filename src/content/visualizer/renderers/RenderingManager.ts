@@ -15,7 +15,6 @@ import type { UIManager } from '../ui/UIManager.js';
 import type { SessionDetails } from '../../types/session.js';
 
 const logger = new Logger('RenderingManager');
-const RANGE_CONTROLS_BOTTOM = 42;
 
 export class RenderingManager {
   private visualizer: Visualizer;
@@ -31,7 +30,6 @@ export class RenderingManager {
   private currentRenderer: any = null;
   private treeExpansion: TreeExpansionState = { opened: new Set() };
   private treeDate?: number;
-  private rangeControls: HTMLDivElement | null = null;
   private waterfallFitToView = false;
 
   
@@ -52,6 +50,10 @@ export class RenderingManager {
     logger.log(_('rendering_manager_init_start', '开始初始化渲染管理器'));
     
     this.container = container;
+    document.getElementById('waterfall-fit-toggle')?.addEventListener('click', () => {
+      this.waterfallFitToView = !this.waterfallFitToView;
+      this.renderVisualization({ restoreTransform: true, fitToView: this.waterfallFitToView });
+    });
     
     // 更新容器大小
     this.updateContainerSize();
@@ -110,7 +112,7 @@ export class RenderingManager {
     this.updateUrl();
     
     // 更新状态栏
-    this.uiManager.updateStatusBar();
+    this.uiManager.updateToolbar();
   }
   
   /**
@@ -167,11 +169,7 @@ export class RenderingManager {
         this.treeDate = treeDay?.start;
       }
       if (options.fitToView && view === 'waterfall') this.waterfallFitToView = true;
-      const pageNodes = view === 'waterfall' ? this.visualizer.nodes : [];
-      const ids = new Set(pageNodes.map(node => node.id));
-      const nodes = pageNodes.map(node => ({ ...node,
-        parentId: node.parentId && ids.has(node.parentId) ? node.parentId : '',
-        timestamp: node._timeUnknown ? currentSession?.startTime || Date.now() : node.timestamp }));
+      const nodes = view === 'waterfall' ? this.visualizer.nodes : [];
       const edges = view === 'waterfall' ? this.visualizer.edges : [];
       this.updateRangeControls();
 
@@ -224,12 +222,11 @@ export class RenderingManager {
         renderer.render(nodes, edges, {
           restoreTransform: options.restoreTransform && !options.fitToView,
           fitToView: view === 'waterfall' ? this.waterfallFitToView : options.fitToView,
-          viewportBottomInset: this.rangeControls ? this.rangeControls.offsetHeight + RANGE_CONTROLS_BOTTOM + 8 : 0,
         });
       }
 
-      // 更新状态栏
-      this.uiManager.updateStatusBar();
+      // 更新图谱工具栏
+      this.uiManager.updateToolbar();
 
       // 将一个日志消息拆分成两种情况的不同消息ID
       if (this.viewStateManager.zoom) {
@@ -249,66 +246,34 @@ export class RenderingManager {
   }
   
   private updateRangeControls(): void {
-    this.rangeControls?.remove();
-    this.rangeControls = null;
-    if (!this.container) return;
-    const info = this.visualizer.pageInfo;
     const tree = this.viewStateManager.currentView === 'tree';
-    const day = this.visualizer.treeDay;
-    if (tree ? !day?.truncated : !info) return;
-    const controls = document.createElement('div');
-    controls.className = 'navigation-range-controls';
-    controls.style.cssText = `position:absolute;left:50%;bottom:${RANGE_CONTROLS_BOTTOM}px;transform:translateX(-50%);z-index:20;display:flex;gap:8px;align-items:center;padding:8px;background:var(--bg-primary,#fff);border:1px solid #888;border-radius:8px`;
-    if (tree && day) {
-      const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      controls.textContent = `${_('tree_day_limit', '仅显示当天最新 {0} 条记录', day.total.toLocaleString())} · ${time(day.oldest!)}–${time(day.newest!)}`;
-      this.container.append(controls);
-      this.rangeControls = controls;
-      return;
-    }
-    if (!info) return;
-    const pages = Math.max(1, Math.ceil(info.matched / info.limit));
-    const edgePages = Math.max(1, Math.ceil(info.edgeTotal / info.edgeLimit));
-    const en = chrome.i18n.getUILanguage().startsWith('en');
-    const start = info.matched ? info.page * info.limit + 1 : 0, end = Math.min(info.matched, (info.page + 1) * info.limit);
-    const label = document.createElement('span');
-    label.textContent = en ? `${start}–${end} / ${info.matched} · newest first` : `${start}–${end} / ${info.matched} · 从新到旧`;
-    controls.append(label);
-    for (const [text, delta] of [[en ? 'Newer' : '较新', -1], [en ? 'Older' : '较早', 1]] as const) {
-      const button = document.createElement('button'); button.textContent = text;
-      button.disabled = info.page + delta < 0 || info.page + delta >= pages;
-      button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page + delta).catch(error => this.uiManager.showError(String(error))); });
-      controls.append(button);
-    }
-    if (edgePages > 1) {
-      const label = document.createElement('span');
-      label.className = 'edge-range';
-      label.textContent = `${en ? 'Edges' : '边'} ${info.edgePage * info.edgeLimit + 1}–${Math.min(info.edgeTotal, (info.edgePage + 1) * info.edgeLimit)} / ${info.edgeTotal}`;
-      controls.append(label);
-      for (const delta of [-1, 1]) {
-        const button = document.createElement('button'); button.textContent = delta < 0 ? '←' : '→';
-        button.disabled = info.edgePage + delta < 0 || info.edgePage + delta >= edgePages;
-        button.addEventListener('click', () => { void this.visualizer.loadGraphPage(info.page, info.edgePage + delta).catch(error => this.uiManager.showError(String(error))); });
-        controls.append(button);
+    const day = tree ? this.visualizer.treeDay : null;
+    const treeLimit = document.getElementById('tree-range-limit');
+    if (treeLimit) {
+      treeLimit.hidden = !day?.truncated;
+      if (day?.truncated) {
+        const time = (timestamp: number) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        treeLimit.textContent = `${_('tree_day_limit', '仅显示当天最新 {0} 条记录', day.total.toLocaleString())} · ${time(day.oldest!)}–${time(day.newest!)}`;
       }
     }
-    if (this.viewStateManager.currentView === 'waterfall' && this.visualizer.nodes.length > 0) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'waterfall-fit-toggle';
+
+    const timeline = tree ? null : this.visualizer.waterfallTimeline;
+    const hasCards = !tree && this.visualizer.nodes.length > 0;
+    const toolbar = document.getElementById('waterfall-toolbar');
+    if (toolbar) toolbar.hidden = !hasCards && !timeline?.truncated;
+
+    const limit = document.getElementById('waterfall-range-limit');
+    if (limit) {
+      limit.hidden = !timeline?.truncated;
+      if (timeline?.truncated) limit.textContent = _('waterfall_timeline_limit', '仅显示会话最新 {0} 条记录', timeline.total.toLocaleString());
+    }
+    const button = document.getElementById('waterfall-fit-toggle');
+    if (button) {
+      button.hidden = !hasCards;
       button.textContent = this.waterfallFitToView
         ? _('content_waterfall_actual_size', '实际大小')
         : _('content_waterfall_fit_view', '显示全图');
-      button.addEventListener('click', () => {
-        const hadFocus = document.activeElement === button;
-        this.waterfallFitToView = !this.waterfallFitToView;
-        this.renderVisualization({ restoreTransform: true, fitToView: this.waterfallFitToView });
-        if (hadFocus) this.rangeControls?.querySelector<HTMLButtonElement>('.waterfall-fit-toggle')?.focus();
-      });
-      controls.append(button);
     }
-    this.container.append(controls);
-    this.rangeControls = controls;
   }
 
   /**
@@ -603,8 +568,6 @@ export class RenderingManager {
     logger.log(_('rendering_manager_cleanup', '正在清理渲染管理器资源'));
     this.currentRenderer?.cleanup();
     this.currentRenderer = null;
-    this.rangeControls?.remove();
-    this.rangeControls = null;
     this.viewStateManager.svg?.on('.zoom', null);
     this.viewStateManager.svg?.selectAll('*').interrupt();
   }

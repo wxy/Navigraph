@@ -1,10 +1,15 @@
-import { Logger } from '../../../../lib/utils/logger.js';
-import { _, _Error } from '../../../../lib/utils/i18n.js'; // 新增 i18n 引入
-import type { Visualizer } from '../../../types/navigation.js';
-import type { BrowsingSession } from '../../../types/session.js';
-import { sessionServiceClient } from '../../../core/session-service-client.js';
+import { Logger } from '../utils/logger.js';
+import { _, _Error } from '../utils/i18n.js';
+import type { SessionSummary } from '../../types/session-types.js';
 
 const logger = new Logger('CalendarSessionSelector');
+
+interface CalendarSelection {
+  readonly byDay: boolean;
+  readonly day: number | undefined;
+  selectDay(day: number): void;
+  selectSession?(id: string): Promise<unknown>;
+}
 
 /**
  * 日历会话选择器
@@ -13,15 +18,16 @@ const logger = new Logger('CalendarSessionSelector');
  * 并支持从会话开始日选择会话
  */
 export class CalendarSessionSelector {
-  private visualizer: Visualizer;
   private container: HTMLElement | null = null;
   private currentMonth: number = new Date().getMonth();
   private currentYear: number = new Date().getFullYear();
-  private sessions: BrowsingSession[] = [];
+  private sessions: SessionSummary[] = [];
   private selectedSessionId: string | null = null; // 当前会话ID
   private latestSessionId: string | null = null;   // 最新会话ID - 新增
   private isLoading: boolean = false;
   private lastUpdateHash: string | null = null;
+  private displayedDate?: number;
+  private onSelection?: () => void;
   
   // 绑定this的事件处理函数
   private boundHandleCellClick = this.handleCellClick.bind(this);
@@ -32,9 +38,7 @@ export class CalendarSessionSelector {
    * 构造函数
    * @param visualizer 可视化器实例
    */
-  constructor(visualizer: Visualizer) {
-    this.visualizer = visualizer;
-  }
+  constructor(private selection: CalendarSelection) {}
   
   /**
    * 获取本地化的月份名称列表
@@ -60,7 +64,7 @@ export class CalendarSessionSelector {
    * 初始化日历会话选择器
    * @param containerId 容器元素ID或容器元素
    */
-  public initialize(): void {
+  public initialize(onSelection: () => void): void {
     this.container = document.getElementById('calendar-session-selector');
     
     if (!this.container) {
@@ -68,6 +72,8 @@ export class CalendarSessionSelector {
       return;
     }
     
+    this.onSelection = onSelection;
+
     // 创建日历结构
     this.createCalendarStructure();
     
@@ -187,9 +193,12 @@ export class CalendarSessionSelector {
     header.appendChild(title);
     
     const closeButton = document.createElement('button');
+    closeButton.type = 'button';
     closeButton.className = 'session-list-close';
     closeButton.id = 'session-list-close';
-    closeButton.innerHTML = '&times;';
+    closeButton.textContent = '×';
+    closeButton.setAttribute('aria-label', _('content_close', '关闭'));
+    closeButton.addEventListener('click', () => this.hideSessionList());
     header.appendChild(closeButton);
     
     listContainer.appendChild(header);
@@ -211,16 +220,15 @@ export class CalendarSessionSelector {
    * @param currentSessionId 当前选中的会话ID
    * @param latestSessionId 最新活跃的会话ID
    */
-  public update(sessionList: any[] = [], currentSessionId?: string, latestSessionId?: string): void {
+  public update(sessionList: SessionSummary[] = [], currentSessionId?: string, latestSessionId?: string): void {
     if (!this.container) {
       logger.warn(_('calendar_container_not_exists', '日历容器不存在，无法更新'));
       return;
     }
     
     // 创建当前更新的哈希值，包含最新会话ID
-    const tree = this.visualizer.currentView === 'tree';
-    const dayStart = tree ? this.visualizer.treeDay?.start : undefined;
-    const updateHash = `${tree}-${dayStart}-${currentSessionId}-${latestSessionId}-${sessionList.map(s => s.id).join(',')}`;
+    const selectedTime = this.selection.day;
+    const updateHash = `${this.selection.byDay}-${selectedTime}-${currentSessionId}-${latestSessionId}-${sessionList.map(s => s.id).join(',')}`;
     
     // 如果与上次更新相同，跳过更新
     if (this.lastUpdateHash === updateHash) {
@@ -229,6 +237,8 @@ export class CalendarSessionSelector {
     }
     
     this.lastUpdateHash = updateHash;
+    const selectionChanged = this.displayedDate !== selectedTime;
+    this.displayedDate = selectedTime;
     
     logger.log(_('calendar_update', '更新日历选择器，会话数量: {0}'), sessionList.length);
     
@@ -241,8 +251,7 @@ export class CalendarSessionSelector {
       this.latestSessionId = latestSessionId || null; // 保存最新会话ID
       
       // 如果有当前选中会话，定位到会话所在月份
-      const selectedTime = dayStart ?? sessionList.find(s => s.id === currentSessionId)?.startTime;
-      if (selectedTime !== undefined) {
+      if (selectionChanged && selectedTime !== undefined) {
         const date = new Date(selectedTime);
         this.currentMonth = date.getMonth();
         this.currentYear = date.getFullYear();
@@ -389,7 +398,7 @@ export class CalendarSessionSelector {
    * 创建单个日期单元格
    */
   private createDayCell(dayNumber: number, className: string = '', dateStr?: string): HTMLElement {
-    const dayButton = !!dateStr && this.visualizer.currentView === 'tree';
+    const dayButton = !!dateStr && (this.selection.byDay || className.includes('session-start'));
     const cell = document.createElement(dayButton ? 'button' : 'div');
     cell.className = `day-cell${className ? ' ' + className : ''}`;
     if (dateStr) {
@@ -541,14 +550,8 @@ export class CalendarSessionSelector {
    * 判断日期是否为当前选中会话的开始日期
    */
   private isSelectedDate(date: Date): boolean {
-    if (this.visualizer.currentView === 'tree') return date.getTime() === this.visualizer.treeDay?.start;
-    if (!this.selectedSessionId) return false;
-    
-    const selectedSession = this.sessions.find(s => s.id === this.selectedSessionId);
-    if (!selectedSession) return false;
-    
-    const sessionDate = new Date(selectedSession.startTime);
-    return this.dateToString(date) === this.dateToString(sessionDate);
+    const selectedTime = this.selection.day;
+    return selectedTime !== undefined && this.dateToString(date) === this.dateToString(new Date(selectedTime));
   }
   
   /**
@@ -611,16 +614,10 @@ export class CalendarSessionSelector {
     const target = e.target as HTMLElement;
     const cell = target.closest('.day-cell') as HTMLElement;
 
-    if (cell?.dataset.date && this.visualizer.currentView === 'tree') {
+    if (cell?.dataset.date && this.selection.byDay) {
       const date = new Date(`${cell.dataset.date}T00:00:00`).getTime();
-      const focused = document.activeElement === cell;
-      void this.visualizer.selectTreeDay(date).then(() => {
-        if (focused && this.visualizer.treeDay?.start === date) {
-          const graph = document.getElementById('navigation-svg');
-          graph?.setAttribute('tabindex', '-1');
-          graph?.focus({ preventScroll: true });
-        }
-      }).catch(error => this.visualizer.showError(String(error)));
+      this.onSelection?.();
+      this.selection.selectDay(date);
       return;
     }
     
@@ -690,7 +687,8 @@ export class CalendarSessionSelector {
       if (!session) continue;
       
       // 创建列表项容器
-      const item = document.createElement('div');
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = 'session-list-item';
       item.dataset.sessionId = sessionId;
       
@@ -742,7 +740,6 @@ export class CalendarSessionSelector {
       // 添加点击事件
       item.addEventListener('click', () => {
         this.selectSession(sessionId);
-        listContainer.style.display = 'none';
       });
       
       // 添加到列表中
@@ -752,34 +749,18 @@ export class CalendarSessionSelector {
     // 显示列表容器
     listContainer.style.display = 'block';
     
-    // 添加关闭按钮事件
-    const closeButton = document.getElementById('session-list-close');
-    if (closeButton) {
-        // 移除旧的事件监听（如果有）
-        closeButton.removeEventListener('click', () => {});
-        // 添加新的事件监听
-        closeButton.addEventListener('click', () => {
-          listContainer.style.display = 'none';
-        });
-      }
-    
-    // 添加点击外部关闭功能
-    setTimeout(() => {
-      const handleOutsideClick = (e: MouseEvent) => {
-        if (!listContainer.contains(e.target as Node) && 
-            !(e.target as Element).closest('.day-cell.session-start')) {
-          listContainer.style.display = 'none';
-          document.removeEventListener('click', handleOutsideClick);
-        }
-      };
-      document.addEventListener('click', handleOutsideClick);
-    }, 10);
   }
-  
+
+  hideSessionList(): void {
+    const list = document.getElementById('session-list-container');
+    if (list) list.style.display = 'none';
+  }
+
   /**
    * 月份导航
    */
   private navigateMonth(delta: number): void {
+    this.hideSessionList();
     this.currentMonth += delta;
     
     if (this.currentMonth > 11) {
@@ -800,7 +781,8 @@ export class CalendarSessionSelector {
     this.selectedSessionId = sessionId;
     
     // 调用会话服务加载选中会话
-    sessionServiceClient.loadSession(sessionId)
+    this.onSelection?.();
+    this.selection.selectSession?.(sessionId)
       .then(() => {
         logger.log(_('calendar_session_selected', '会话已选择: {0}'), sessionId);
         this.renderCalendarDays(); // 更新选中状态
