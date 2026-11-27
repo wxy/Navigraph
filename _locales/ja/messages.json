@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "インタラクティブなグラフィックで閲覧履歴のノードとリンクを表示し、ユーザーが閲覧パターンと行動を視覚的に分析できるよう支援します。",
+    "message": "閲覧履歴をツリー図とウォーターフォール図で確認。日付やセッションを選び、訪問の順序やページ同士のつながりをたどれます。",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,11 +2048,11 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "ページの表示、リロード",
+    "message": "ページの再読み込みを表示",
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "履歴ナビゲーションを表示",
+    "message": "履歴からの移動を表示",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "追跡ページを表示",
+    "message": "トラッキングページを表示",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -2464,7 +2464,7 @@
     "description": "显示通知消息失败错误"
   },
   "content_tree_view": {
-    "message": "スリルマップ",
+    "message": "ツリービュー",
     "description": "树形图视图按钮文本"
   },
   "state_manager_view_state_saved": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "滝の見えるめ",
+    "message": "ウォーターフォール",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {

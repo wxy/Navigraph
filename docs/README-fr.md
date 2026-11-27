@@ -14,8 +14,8 @@ Navigraph : Visualisation de l'historique de navigation
 ### Démarrage rapide
 
 1. Ouvrez la page de l'extension (cliquez sur l'icône Navigraph dans la barre d'outils).
-2. Survolez brièvement ou cliquez sur la poignée du panneau de contrôle sur le côté droit de la page pour ouvrir la barre latérale. Depuis la barre latérale, vous pouvez sélectionner des dates de session, changer de vue ou filtrer les nœuds.
-3. Utilisez la barre d'état pour changer de vue ou basculer la visibilité des nœuds masqués/fermés.
+2. Cliquez sur la date dans la barre supérieure pour ouvrir le calendrier. Choisissez un jour dans l’arbre ou une session dans la cascade. Les boutons voisins permettent de changer de vue.
+3. Ouvrez les filtres en haut à droite pour sélectionner des conditions. La barre indique le nombre d’entrées et permet d’afficher les entrées masquées ou de rétablir les filtres.
 4. Cliquez sur les nœuds pour afficher des informations détaillées.
 
 ## Guide de l'utilisateur (aperçu)
@@ -32,25 +32,11 @@ Navigraph : Visualisation de l'historique de navigation
 1. Visitez la [page Navigraph sur le Microsoft Edge Add-ons Store](https://microsoftedge.microsoft.com/addons/detail/ibcpeknflplfaljendadfkhmflhfnhdh)
 2. Cliquez sur "Obtenir" pour installer l'extension
 
-### Barre latérale
+### Barre du graphique
 
-La barre latérale est principalement utilisée pour la sélection de sessions et le filtrage des nœuds :
-
-- Changement de vue : Changez la vue actuelle (diagramme en arbre / diagramme en cascade) depuis le haut de la barre latérale
-- Calendrier des sessions : Affiche les sessions par date et vous permet de sélectionner et de charger des historiques de sessions. Si plusieurs sessions existent le même jour, elles sont affichées individuellement
-- Contrôles de filtrage : Filtrez les résultats en fonction des types de navigation ou des actions (par exemple, afficher uniquement les clics sur les liens, les soumissions de formulaires, etc.)
-
-Astuce : La barre latérale sert de point d'entrée principal pour changer les plages de données ou identifier les portées d'analyse. Il est recommandé de sélectionner d'abord une session, puis de changer de vue.
-
-### Barre d'état
-
-La barre d'état fournit un contexte concis et des interactions dans l'interface :
-
-- Affiche et change la vue actuelle (diagramme en arbre / diagramme en cascade)
-- Affiche les statistiques de session (par exemple, nombre de nœuds, durée de la session) et fournit des actions rapides liées à la vue (par exemple, basculer la visibilité des nœuds masqués)
-- Cliquez sur la date pour revenir rapidement à la session d'aujourd'hui
-
-Explication : Les contrôles de la barre d'état sont des points d'entrée d'interaction directe liés à la vue actuelle. Un filtrage plus complexe continue d'être effectué via la barre latérale.
+- Cliquez sur la date dans la barre supérieure pour ouvrir le calendrier. Choisissez un jour dans l’arbre ou une session dans la cascade. Les boutons voisins permettent de changer de vue.
+- Ouvrez les filtres en haut à droite pour sélectionner des conditions. La barre indique le nombre d’entrées et permet d’afficher les entrées masquées ou de rétablir les filtres.
+- Les commandes de repli de l’arbre sont en haut à gauche et l’ajustement à la fenêtre en bas à droite. Dans la cascade, la période affichée et la commande de taille se trouvent au-dessus de l’axe.
 
 ### Interactions avec les vues
 

@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "以交互式图形展示浏览历史节点和链接，帮助用户直观分析访问模式和行为。",
+    "message": "用树形图和瀑布图回顾浏览历史。按日期或会话查找访问记录，查看页面关联和访问顺序。",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {

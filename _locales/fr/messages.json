@@ -4,7 +4,7 @@
     "description": "扩展名称"
   },
   "appDescription": {
-    "message": "Affiche les nœuds et liens de l'historique de navigation sous forme de graphiques interactifs, aidant les utilisateurs à analyser visuellement les modèles et comportements de navigation.",
+    "message": "Explorez votre historique en arbre ou en cascade. Consultez et filtrez vos visites par date ou par session.",
     "description": "扩展描述"
   },
   "background_message_service_not_initialized": {
@@ -2048,11 +2048,11 @@
     "description": "导航行为分类"
   },
   "content_show_reload": {
-    "message": "Afficher la page de rechargement",
+    "message": "Rechargements de page",
     "description": "页面重载选项"
   },
   "content_show_history": {
-    "message": "Afficher l'historique de navigation",
+    "message": "Déplacements dans l’historique",
     "description": "历史导航选项"
   },
   "content_page_status": {
@@ -2064,7 +2064,7 @@
     "description": "显示已关闭页面选项"
   },
   "content_show_tracking": {
-    "message": "Afficher la page de suivi",
+    "message": "Pages de suivi",
     "description": "显示跟踪页面选项"
   },
   "content_loading": {
@@ -4836,7 +4836,7 @@
     "description": "从TS提取 (_): src/content/visualizer/ui/ControlPanel/ViewSwitcher.ts"
   },
   "content_waterfall_view": {
-    "message": "Vue sur la cascade",
+    "message": "Cascade",
     "description": "从HTML提取: src/content/index.html"
   },
   "timeline_view_removed": {

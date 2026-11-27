@@ -1,5 +1,7 @@
 import { _ } from '../../lib/utils/i18n.js';
 import type { BackgroundResponses } from '../../types/messages/background.js';
+import type { BaseMessage, BaseResponse, MessageHandler } from '../../types/messages/common.js';
+import { registerHandler, unregisterHandler } from '../messaging/content-message-service.js';
 
 /** Pushes are hints only; status always comes from the privileged background read. */
 export function setupRecordingHealth(): void {
@@ -31,10 +33,14 @@ export function setupRecordingHealth(): void {
             : _('recording_health_unknown', '暂时无法确认记录状态。');
       }).catch(() => {});
   };
-  const listener = (message: { target?: string; action?: string }, sender: chrome.runtime.MessageSender) => {
-    if (sender.id === chrome.runtime.id && message?.target === 'content' && message.action === 'recordingHealthChanged') refresh();
+  const handleHealthChanged: MessageHandler<BaseMessage, BaseResponse> = (_message, sender) => {
+    if (sender.id === chrome.runtime.id) refresh();
+    return false;
   };
-  chrome.runtime.onMessage.addListener(listener);
-  window.addEventListener('pagehide', () => { ++generation; chrome.runtime.onMessage.removeListener(listener); }, { once: true });
+  registerHandler('recordingHealthChanged', handleHealthChanged);
+  window.addEventListener('pagehide', () => {
+    ++generation;
+    unregisterHandler('recordingHealthChanged', handleHealthChanged);
+  }, { once: true });
   refresh();
 }
