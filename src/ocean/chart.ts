@@ -2,54 +2,17 @@ import { drawPier, type OceanArt } from './art.js';
 import { boatDesign, drawBoat } from './boats.js';
 import { placeIslands, type Berth } from './coast.js';
 import { coursePosition, Waterways, type Course, type Point } from './course.js';
-import type { Dock, Island, Ship } from './history.js';
-import { TRAIL_FADE, type ShipPosition, type TimedArrival } from './replay.js';
+import type { Arrival, Dock, Island, Ship } from './history.js';
+import { easeTravel, type ShipPosition, type TimedArrival } from './replay.js';
 import { drawSeaLife, placeSeaLife } from './sea-life.js';
+import { createWakeBrushes, drawWake } from './wake.js';
 
 interface LabelBox extends Point { width: number; height: number }
+type Pose = Point & { angle: number };
+const CAST_OFF_DISTANCE = 10;
 
-function eased(progress: number): number {
-  return progress * progress * (3 - 2 * progress);
-}
-
-function drawWake(ctx: CanvasRenderingContext2D, course: Course, start: number, end: number, time: number): void {
-  const duration = end - start;
-  const head = eased(Math.min(1, (time - start) / duration));
-  const tail = eased(Math.max(0, (time - start - TRAIL_FADE) / duration));
-  const count = Math.max(2, Math.ceil(course.length / 10));
-  for (let index = Math.max(1, Math.ceil(tail * count)); index < head * count; index++) {
-    const progress = index / count;
-    // Space the crests by distance, then recover when the eased boat passed each one.
-    const release = duration * (.5 - Math.sin(Math.asin(1 - 2 * progress) / 3));
-    const age = Math.max(0, Math.min(1, (time - start - release) / TRAIL_FADE));
-    const spread = 2.8 + 11 * age ** .66;
-    const length = 6 + 7 * age;
-    const fade = (1 - age) ** 1.6;
-    const variation = Math.sin(index * 2.39996);
-    const { x, y, angle } = coursePosition(course, progress);
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.beginPath();
-    ctx.ellipse(-4, 0, length * (.8 + variation * .1), 1.15 + spread * .24, 0, 0, 2 * Math.PI);
-    ctx.globalAlpha = .21 * fade;
-    ctx.fillStyle = '#a3d4d6';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(-1, -spread * (.59 + variation * .12));
-    ctx.quadraticCurveTo(-length * .69, -spread * .64, -length * (1 + variation * .25), -spread);
-    ctx.moveTo(-3, spread * (.57 - variation * .12));
-    ctx.quadraticCurveTo(-length * .67, spread * .73, -length * (1 - variation * .25), spread);
-    ctx.lineWidth = 3 + age * 2;
-    ctx.strokeStyle = '#78b9cb';
-    ctx.globalAlpha = .25 * fade;
-    ctx.stroke();
-    ctx.lineWidth = 1.08;
-    ctx.strokeStyle = '#d9f6ec';
-    ctx.globalAlpha = (.57 + variation * .08) * fade;
-    ctx.stroke();
-    ctx.restore();
-  }
+function shortestTurn(angle: number): number {
+  return Math.atan2(Math.sin(angle), Math.cos(angle));
 }
 
 function addClock(
@@ -78,6 +41,7 @@ export class OceanChart {
   private courses = new Map<string, Course | null>();
   private waterways?: Waterways;
   private seaLife: ReturnType<typeof placeSeaLife> = [];
+  private wakeBrushes?: HTMLCanvasElement[];
   private islandButtons = new Map<Island, HTMLButtonElement>();
   private clocks = new Map<Ship, { second: number; label: string }>();
   private islands: Island[] = [];
@@ -208,11 +172,18 @@ export class OceanChart {
     this.drawShips();
   }
 
-  private courseFor(from: Dock, to: Dock): Course | null {
-    const key = from.id + ':' + to.id;
+  private courseFor({ dock, ship, previous }: Arrival): Course | null {
+    const from = previous!.dock;
+    const key = from.id + ':' + dock.id + ':' + ship.number;
     if (this.courses.has(key)) return this.courses.get(key)!;
-    const seed = ((Math.imul(from.id, 31) + to.id) >>> 0) % 997;
-    const course = this.waterways!.course(this.berths.get(from)!, this.berths.get(to)!, seed) ?? null;
+    const seed = ((Math.imul(from.id, 31) + dock.id) >>> 0) % 997;
+    const origin = this.berths.get(from)!;
+    const destination = this.berths.get(dock)!;
+    const course = this.waterways!.course(
+      { ...origin, water: origin.slips.get(ship)! },
+      { ...destination, water: destination.slips.get(ship)! },
+      seed,
+    ) ?? null;
     if (this.courses.size >= 256) this.courses.delete(this.courses.keys().next().value!);
     this.courses.set(key, course);
     return course;
@@ -222,29 +193,56 @@ export class OceanChart {
     const ctx = this.waterLayer.getContext('2d')!;
     ctx.clearRect(0, 0, this.width, this.height);
     drawSeaLife(ctx, this.art, this.seaLife, this.seaTime);
-    ctx.lineCap = 'round';
     for (const { arrival, start, end } of this.trails) {
-      const course = this.courseFor(arrival.previous!.dock, arrival.dock);
-      if (course) drawWake(ctx, course, start, end, this.time);
+      const course = this.courseFor(arrival);
+      if (course) drawWake(ctx, this.wakeBrushes ??= createWakeBrushes(), course, start, end, this.time);
     }
+  }
+
+  private mooredPose(arrival: Arrival): Pose {
+    const berth = this.berths.get(arrival.dock)!;
+    const approach = arrival.previous ? arrival : arrival.mooredVia;
+    const course = approach && this.courseFor(approach);
+    const angle = course ? coursePosition(course, 1).angle : berth.angle;
+    return { ...berth.slips.get(arrival.ship)!, angle };
+  }
+
+  private launchPose({ ship, previous }: Arrival): Pose {
+    const departure = previous!;
+    if (departure.ship === ship) return this.mooredPose(departure);
+    const berth = this.berths.get(departure.dock)!;
+    return { ...berth.slips.get(ship)!, angle: berth.angle };
+  }
+
+  private shipPose({ arrival, fraction }: ShipPosition): Pose {
+    if (fraction === undefined) return this.mooredPose(arrival);
+    const course = this.courseFor(arrival);
+    if (!course) return this.launchPose(arrival);
+    const progress = easeTravel(fraction);
+    const position = coursePosition(course, progress);
+    const traveled = progress * course.length;
+    const turnDistance = Math.min(CAST_OFF_DISTANCE, course.length * .4);
+    if (traveled < turnDistance) {
+      const { angle } = this.launchPose(arrival);
+      // Keep the turn direction consistent when departing opposite the moored heading.
+      const forward = coursePosition(course, 0).angle;
+      const turn = shortestTurn(forward - angle) + shortestTurn(position.angle - forward);
+      position.angle = angle + turn * easeTravel(traveled / turnDistance);
+    }
+    return position;
   }
 
   private drawShips(): void {
     const ctx = this.shipLayer.getContext('2d')!;
     ctx.clearRect(0, 0, this.width, this.height);
     const scale = this.width < 600 ? .82 : 1;
-    const ships = this.fleet.map(({ arrival, fraction, timestamp, parked }) => {
-      const { ship, dock, previous } = arrival;
-      const destination = this.berths.get(dock)!;
-      const underway = fraction !== undefined;
-      const origin = previous && this.berths.get(previous.dock);
-      const course = underway && previous ? this.courseFor(previous.dock, dock) : null;
-      const berth = underway && !course && origin ? origin : destination;
-      const position = course
-        ? coursePosition(course, eased(fraction!))
-        : { ...(berth.ships.get(ship) ?? berth.water), angle: berth.angle };
-      return { position, ship, timestamp, underway, parked };
-    });
+    const ships = this.fleet.map(ship => ({
+      position: this.shipPose(ship),
+      ship: ship.arrival.ship,
+      timestamp: ship.timestamp,
+      underway: ship.fraction !== undefined,
+      parked: ship.parked,
+    }));
 
     for (const { position, ship, parked } of ships) {
       ctx.globalAlpha = parked ? .83 : 1;

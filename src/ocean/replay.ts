@@ -2,6 +2,10 @@ import { SHIP_IDLE_MS, type Arrival, type Dock, type Island, type Ship } from '.
 
 export const TRAIL_FADE = 3200;
 
+export function easeTravel(progress: number): number {
+  return progress * progress * (3 - 2 * progress);
+}
+
 export interface TimedArrival {
   arrival: Arrival;
   start: number;

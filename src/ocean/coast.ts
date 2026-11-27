@@ -4,7 +4,7 @@ import { LAND_GRID, LAND_TILES } from './land-data.js';
 import { SHORE_RADII } from './shore-data.js';
 
 export interface Berth extends Landing {
-  ships: Map<Ship, Point>;
+  slips: Map<Ship, Point>;
 }
 
 const ANCHORS = [
@@ -37,14 +37,15 @@ function mooring(dock: Dock, island: WaterObstacle, coast: typeof COASTS[number]
   const shore = polar(island.center, radius - 1.5, angle);
   const gate = polar(island.center, island.radius + Math.min(12, size * .16), angle);
   const water = berthInOpenWater(polar(island.center, radius + Math.min(15, size * .23), angle), gate, island);
-  const ships = new Map<Ship, Point>();
-  for (const { ship } of dock.arrivals) {
-    if (ships.has(ship)) continue;
-    const offset = ships.size * Math.PI * (3 - Math.sqrt(5));
-    const radius = Math.min(17, 10 * Math.sqrt(ships.size));
-    ships.set(ship, polar(water, radius, angle + Math.sin(offset) * Math.PI / 2));
+  const slips = new Map<Ship, Point>();
+  for (const ship of dock.ships) {
+    const index = slips.size;
+    const offset = index * Math.PI * (3 - Math.sqrt(5));
+    const radius = Math.min(17, 10 * Math.sqrt(index));
+    const point = polar(water, radius, angle + Math.sin(offset) * Math.PI / 2);
+    slips.set(ship, index ? berthInOpenWater(point, gate, island) : water);
   }
-  return { angle, shore, water, gate, island, ships };
+  return { angle, shore, water, gate, island, slips };
 }
 
 function onLand({ center, size, land }: WaterObstacle, point: Point): boolean {

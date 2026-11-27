@@ -16,6 +16,7 @@ export interface Dock {
   number: number;
   island: Island;
   arrivals: Arrival[];
+  ships: Set<Ship>;
 }
 
 export interface Ship {
@@ -33,6 +34,7 @@ export interface Arrival {
   island: Island;
   dock: Dock;
   previous?: Arrival;
+  mooredVia?: Arrival;
 }
 
 export function chartHistory(nodes: readonly OceanDayNode[]) {
@@ -59,7 +61,7 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
     let assigned = 0;
     for (const page of pages) {
       const slot = assigned++ % limit;
-      const dock = island.docks[slot] ?? { id: ++dockId, number: slot + 1, island, arrivals: [] };
+      const dock: Dock = island.docks[slot] ?? { id: ++dockId, number: slot + 1, island, arrivals: [], ships: new Set() };
       island.docks[slot] = dock;
       pageDocks.set(page, dock);
     }
@@ -97,11 +99,16 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
         tab.coastalLegs = 0;
       }
     }
-    const arrival = { index: arrivals.length, timestamp, sessionId, ship, island, dock, previous };
+    // A visit at the same dock preserves the pose at the end of the last voyage.
+    const mooredVia = last?.ship === ship && last.dock === dock ? (last.previous ? last : last.mooredVia) : undefined;
+    const arrival = { index: arrivals.length, timestamp, sessionId, ship, island, dock, previous, mooredVia };
     arrivals.push(arrival);
     ship.arrivals.push(arrival);
     island.arrivals.push(arrival);
     dock.arrivals.push(arrival);
+    dock.ships.add(ship);
+    // A replacement can launch here before it has made its first arrival here.
+    previous?.dock.ships.add(ship);
   }
 
   return {
