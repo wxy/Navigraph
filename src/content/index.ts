@@ -3,17 +3,6 @@
  * 主入口文件
  */
 
-import { graphViewUrl, readHistoryDay } from '../lib/graph/location.js';
-import type { NavigraphSettings } from '../lib/settings/types.js';
-import { validView } from './utils/display-settings.js';
-
-function openDefaultOceanView(settings: NavigraphSettings): boolean {
-  const params = new URLSearchParams(location.search);
-  if (settings.defaultView !== 'ocean' || validView(params.get('view'))) return false;
-  location.replace(graphViewUrl('ocean', readHistoryDay(params)).href);
-  return true;
-}
-
 // 使用立即执行的异步函数闭包
 (async function() {
   // 用于控制页面活动事件频率的变量
@@ -47,11 +36,9 @@ function openDefaultOceanView(settings: NavigraphSettings): boolean {
         const settingsService = getSettingsService();
         await settingsService.initialize();
         window.navigraphSettings = settingsService.getSettings();
-        if (openDefaultOceanView(window.navigraphSettings)) return;
         settingsService.addChangeListener(settings => {
           const previous = window.navigraphSettings;
           window.navigraphSettings = settings;
-          if (previous?.defaultView !== settings.defaultView && openDefaultOceanView(settings)) return;
           if (window.visualizer && previous) window.visualizer.applyDisplaySettings(previous, settings);
         });
         // 如果用户在设置中强制了语言，应用到 i18n（使主视图在刷新后也使用该语言）

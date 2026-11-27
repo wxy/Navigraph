@@ -66,12 +66,7 @@ export class BackgroundMessageService extends BaseMessageService<'background'> {
     if (JSON.stringify(message).length > 32768) throw new Error('Message too large');
     const extensionPages = ['content/index.html', 'options/index.html'].map(path => chrome.runtime.getURL(path));
     const senderUrl = sender.url || '';
-    const senderPage = senderUrl.split(/[?#]/)[0];
-    if (senderPage === chrome.runtime.getURL('ocean/index.html')) {
-      if (['getOceanDay', 'getSessions'].includes(message.action)) return;
-      if (message.action === 'getTreeNodes' && Array.isArray(message.ids) && message.ids.length === 1) return;
-    }
-    const privileged = extensionPages.includes(senderPage);
+    const privileged = extensionPages.includes(senderUrl.split(/[?#]/)[0]);
     const str = (value: unknown, max = 8192): value is string => typeof value === 'string' && value.length <= max;
     const http = (value: unknown): value is string => { try { return str(value) && ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; } };
     if (privileged) {

@@ -360,8 +360,6 @@ function updateViewPreview(view: ViewType): void {
       `;
 
       previewContainer.innerHTML = svg;
-    } else if (previewType === 'ocean') {
-      previewContainer.innerHTML = '<div class="ocean-preview-islands" aria-hidden="true"><span></span><span></span><span></span></div>';
     } else {
       previewContainer.innerHTML = '';
     }
@@ -460,7 +458,8 @@ function collectSettingsFromUI(): NavigraphSettings {
   // 主题
   const theme = (document.getElementById('theme') as HTMLSelectElement)?.value as 'light' | 'dark' | 'system' || 'system';
 
-  const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as ViewType || DEFAULT_SETTINGS.defaultView;
+  // 默认视图（仅支持 tree 与 waterfall）
+  const defaultView = (document.getElementById('default-view') as HTMLSelectElement)?.value as 'tree' | 'waterfall' || DEFAULT_SETTINGS.defaultView;
 
   // 会话模式 - 限制为 'daily' 或 'manual'
   const sessionMode = (document.getElementById('session-mode') as HTMLSelectElement)?.value as 'daily' | 'manual' || 'daily';

@@ -1,4 +1,3 @@
-import { GRAPH_PAGE, graphViewUrl } from '../../lib/graph/location.js';
 import { Logger } from '../../lib/utils/logger.js';
 import { isDev } from '../../lib/environment.js';
 import { _, _Error } from '../../lib/utils/i18n.js';
@@ -81,7 +80,7 @@ function handleContextMenuClicked(info: chrome.contextMenus.OnClickData, tab?: c
  */
 function handleDebugMenuAction(command: string): void {
   // 检查是否已经打开了扩展页面
-  chrome.tabs.query({ url: chrome.runtime.getURL(GRAPH_PAGE) + '*' }, (existingTabs) => {
+  chrome.tabs.query({ url: chrome.runtime.getURL('content/index.html') + '*' }, (existingTabs) => {
     if (existingTabs && existingTabs.length > 0) {
       // 找到现有标签页
       const tab = existingTabs[0];
@@ -112,7 +111,7 @@ function handleDebugMenuAction(command: string): void {
         'navigraph_debug_timestamp': Date.now()
       }, () => {
         chrome.tabs.create({
-          url: graphViewUrl('waterfall').href
+          url: chrome.runtime.getURL('content/index.html')
         });
       });
     }

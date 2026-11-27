@@ -192,7 +192,6 @@ export class SessionViewController {
       if (!session) {
         this.visualizer.currentSession = undefined;
         this.visualizer.setRawData([], [], new Map());
-        this.updateSessionUI();
         this.visualizer.refreshVisualization();
         return;
       }
