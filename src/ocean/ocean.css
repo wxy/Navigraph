@@ -70,6 +70,16 @@ main {
   background: #082236;
 }
 
+.map.can-play { cursor: pointer; }
+
+#ocean-wind {
+  position: absolute;
+  z-index: 4;
+  inset: 12px auto auto 12px;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px #03131e);
+}
+
 #ocean-surface {
   position: absolute;
   inset: 0 calc(-1 * var(--surface-period)) calc(-1 * var(--surface-period)) 0;
@@ -78,7 +88,7 @@ main {
   transform: var(--surface-shift);
 }
 
-.map canvas, #ocean-islands {
+.map canvas, #ocean-islands, #ocean-ship-targets {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -89,7 +99,22 @@ main {
 .map canvas { z-index: 1; }
 #ocean-shallows { z-index: 0; }
 #ocean-islands { z-index: 2; }
-#ocean-piers, #ocean-ships { z-index: 3; }
+#ocean-piers, #ocean-ships, #ocean-ship-targets { z-index: 3; }
+
+.ocean-ship-target {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.ocean-ship-target:hover { box-shadow: inset 0 0 0 1px #f4e2ac96; }
+.ocean-ship-target:focus-visible { outline-offset: -1px; }
 
 #ocean-reflections {
   position: absolute;
@@ -255,7 +280,7 @@ main {
 }
 
 #ocean-status.limit {
-  inset: 14px auto auto 14px;
+  inset: 17px auto auto 55px;
   transform: none;
   padding: 4px 8px;
   border-radius: 5px;
@@ -333,17 +358,19 @@ main {
   z-index: 4;
   inset: 14px 14px auto auto;
   max-height: calc(100% - 28px);
-  width: min(280px, calc(100% - 28px));
+  width: min(316px, calc(100% - 28px));
   overflow: auto;
   padding: 12px 14px;
   border: 1px solid #82a4af75;
   border-radius: 10px;
   background: #0a202ced;
   box-shadow: 0 8px 24px #030e1877;
+  cursor: default;
 }
 
-.port-heading { display: flex; align-items: start; justify-content: space-between; gap: 6px; }
-.port-heading h2 { font-size: 14px; overflow-wrap: anywhere; margin: 0; }
+.port-heading { display: flex; align-items: center; gap: 8px; }
+.port-heading h2 { flex: 1; font-size: 14px; overflow-wrap: anywhere; margin: 0; }
+#ocean-port-list, #ocean-visit { margin-top: 8px; }
 #ocean-port p { margin: 2px 0 8px; color: var(--quiet); font-size: 12px; }
 #ocean-port ol { list-style: none; padding: 0; margin: 0; }
 #ocean-port button {
@@ -354,6 +381,16 @@ main {
   padding: 4px 7px;
 }
 #ocean-port li button { width: 100%; text-align: start; margin: 2px 0; }
+#ocean-port button:hover { background: #c5e7ed26; }
+#ocean-visit-status:empty { display: none; }
+#ocean-visit .node-details-title { margin: 0 0 6px; font-size: 16px; overflow-wrap: anywhere; }
+#ocean-visit table { width: 100%; border-spacing: 0; font-size: 12px; }
+#ocean-visit td { padding: 3px 0; vertical-align: top; }
+#ocean-visit .detail-label { width: 32%; padding-inline-end: 10px; color: var(--quiet); }
+#ocean-visit .detail-value { overflow-wrap: anywhere; }
+#ocean-visit a { color: var(--accent); }
+#ocean-visit .technical-details { border-top: 1px solid var(--line); margin-top: 5px; padding-top: 6px; }
+#ocean-visit summary { cursor: pointer; }
 
 @media (max-width: 740px) {
   .playback { grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px; }

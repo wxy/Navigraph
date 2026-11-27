@@ -1,3 +1,4 @@
+import { _ } from '../lib/utils/i18n.js';
 import { drawPier, type OceanArt } from './art.js';
 import { boatDesign, drawBoat } from './boats.js';
 import { placeIslands, type Berth } from './coast.js';
@@ -46,6 +47,7 @@ export class OceanChart {
   private wakeBrushes?: HTMLCanvasElement[];
   private shallows: ShallowWater;
   private islandButtons = new Map<Island, HTMLButtonElement>();
+  private shipTargets = new Map<Ship, { button: HTMLButtonElement; arrival: Arrival }>();
   private clocks = new Map<Ship, { second: number; label: string }>();
   private islands: Island[] = [];
   private land: ReturnType<typeof placeIslands> = [];
@@ -65,9 +67,11 @@ export class OceanChart {
     private waterLayer: HTMLCanvasElement,
     private pierLayer: HTMLCanvasElement,
     private shipLayer: HTMLCanvasElement,
+    private shipTargetLayer: HTMLElement,
     private art: OceanArt,
     private clockFormat: Intl.DateTimeFormat,
     seePort: (island: Island) => void,
+    private seeVisit: (arrival: Arrival, button: HTMLButtonElement) => void,
   ) {
     this.shallows = new ShallowWater(art);
     this.islandLayer.addEventListener('click', event => {
@@ -282,21 +286,30 @@ export class OceanChart {
     const ctx = this.shipLayer.getContext('2d')!;
     ctx.clearRect(0, 0, this.width, this.height);
     const scale = this.width < 600 ? .82 : 1;
-    const ships = this.fleet.flatMap(ship => {
-      const underway = ship.fraction !== undefined;
-      const opacity = underway ? 1 : this.islandOpacity(ship.arrival.island);
-      return opacity ? [{ position: this.shipPose(ship), ship: ship.arrival.ship, timestamp: ship.timestamp,
-        underway, parked: ship.parked, opacity }] : [];
+    const ships = this.fleet.flatMap(position => {
+      const { arrival, timestamp, parked, fraction } = position;
+      const underway = fraction !== undefined;
+      const opacity = underway ? 1 : this.islandOpacity(arrival.island);
+      return opacity ? [{ position: this.shipPose(position), arrival, timestamp, underway, parked, opacity }] : [];
     });
-
-    for (const { position, ship, parked, opacity } of ships) {
+    const priority = ({ underway, parked }: typeof ships[number]) => underway ? 2 : parked ? 0 : 1;
+    const visible = new Set<Ship>();
+    for (const vessel of ships) {
+      const { position, arrival, parked, opacity } = vessel;
+      const { ship } = arrival;
       ctx.globalAlpha = opacity * (parked ? .83 : 1);
       drawBoat(ctx, this.art.boats, position.x, position.y, position.angle, scale, boatDesign(ship.tabId, ship.generation));
+      this.positionShipTarget(arrival, position, priority(vessel));
+      visible.add(ship);
+    }
+    for (const [ship, { button }] of this.shipTargets) {
+      if (visible.has(ship)) continue;
+      button.remove();
+      this.shipTargets.delete(ship);
     }
     ctx.font = '600 10px system-ui, sans-serif';
     const occupied: LabelBox[] = [];
-    const priority = ({ underway, parked }: typeof ships[number]) => underway ? 2 : parked ? 0 : 1;
-    for (const { position, ship, timestamp, parked, underway, opacity } of ships.sort((a, b) => priority(b) - priority(a))) {
+    for (const { position, arrival: { ship }, timestamp, parked, underway, opacity } of ships.sort((a, b) => priority(b) - priority(a))) {
       const second = Math.floor(timestamp / 1000);
       let clock = this.clocks.get(ship);
       if (clock?.second !== second) {
@@ -307,5 +320,30 @@ export class OceanChart {
       addClock(ctx, position, clock.label, Math.max(12, 14 * scale), occupied, this.width, this.height);
     }
     ctx.globalAlpha = 1;
+  }
+
+  private positionShipTarget(arrival: Arrival, { x, y }: Point, priority: number): void {
+    const { ship, island } = arrival;
+    let target = this.shipTargets.get(ship);
+    const changed = target?.arrival !== arrival;
+    if (!target) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ocean-ship-target';
+      const entry = { button, arrival };
+      button.addEventListener('click', () => this.seeVisit(entry.arrival, button));
+      this.shipTargetLayer.append(button);
+      this.shipTargets.set(ship, entry);
+      target = entry;
+    }
+    const { button } = target;
+    if (changed) {
+      target.arrival = arrival;
+      button.setAttribute('aria-label', `${_('ocean_visit_details', '访问详情')} · ${_('ocean_ship', '船 {0}', ship.number)} · ${island.site}`);
+    }
+    const transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    if (button.style.transform !== transform) button.style.transform = transform;
+    const layer = String(priority);
+    if (button.style.zIndex !== layer) button.style.zIndex = layer;
   }
 }

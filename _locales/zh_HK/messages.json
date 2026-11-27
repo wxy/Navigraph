@@ -5446,6 +5446,18 @@
     "message": "碼頭 {0} → 碼頭 {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "海面移動方向"
+  },
+  "ocean_visit_details": {
+    "message": "瀏覽詳情"
+  },
+  "ocean_visit_unavailable": {
+    "message": "這筆瀏覽記錄已無法查看。"
+  },
+  "ocean_port_back": {
+    "message": "返回"
+  },
   "ocean_port_counts": {
     "message": "{0} 條記錄 · {1} 個碼頭",
     "description": "Sea chart"

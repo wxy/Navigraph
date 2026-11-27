@@ -5446,6 +5446,18 @@
     "message": "Anleger {0} → Anleger {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "Bewegungsrichtung der Wasseroberfläche"
+  },
+  "ocean_visit_details": {
+    "message": "Besuchsdetails"
+  },
+  "ocean_visit_unavailable": {
+    "message": "Dieser Besuch ist nicht mehr verfügbar."
+  },
+  "ocean_port_back": {
+    "message": "Zurück"
+  },
   "ocean_port_counts": {
     "message": "Einträge {0} · Anleger {1}",
     "description": "Sea chart"

@@ -5446,6 +5446,18 @@
     "message": "Причал {0} → Причал {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "Направление движения поверхности моря"
+  },
+  "ocean_visit_details": {
+    "message": "Сведения о посещении"
+  },
+  "ocean_visit_unavailable": {
+    "message": "Это посещение больше недоступно."
+  },
+  "ocean_port_back": {
+    "message": "Назад"
+  },
   "ocean_port_counts": {
     "message": "Записи {0} · Причалы {1}",
     "description": "Sea chart"

@@ -5446,6 +5446,18 @@
     "message": "码头 {0} → 码头 {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "海面移动方向"
+  },
+  "ocean_visit_details": {
+    "message": "访问详情"
+  },
+  "ocean_visit_unavailable": {
+    "message": "这条访问记录已不可用。"
+  },
+  "ocean_port_back": {
+    "message": "返回"
+  },
   "ocean_port_counts": {
     "message": "{0} 条记录 · {1} 个码头",
     "description": "Sea chart"

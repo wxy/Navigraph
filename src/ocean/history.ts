@@ -29,6 +29,7 @@ export interface Ship {
 
 export interface Arrival {
   index: number;
+  nodeId: string;
   timestamp: number;
   sessionId: string;
   ship: Ship;
@@ -82,7 +83,7 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
   let coastalTrips = 0;
 
   for (let index = nodes.length - 1; index >= 0; index--) {
-    const { tabId, timestamp, page, sessionId } = nodes[index];
+    const { id: nodeId, tabId, timestamp, page, sessionId } = nodes[index];
     const dock = pageDocks.get(page)!;
     const { island } = dock;
     let tab = tabs.get(tabId);
@@ -108,7 +109,7 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
     }
     // A visit at the same dock preserves the pose at the end of the last voyage.
     const mooredVia = last?.ship === ship && last.dock === dock ? (last.previous ? last : last.mooredVia) : undefined;
-    const arrival = { index: arrivals.length, timestamp, sessionId, ship, island, dock, previous, mooredVia };
+    const arrival = { index: arrivals.length, nodeId, timestamp, sessionId, ship, island, dock, previous, mooredVia };
     arrivals.push(arrival);
     ship.arrivals.push(arrival);
     island.arrivals.push(arrival);

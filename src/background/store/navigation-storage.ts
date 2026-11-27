@@ -315,15 +315,15 @@ export class NavigationStorage {
           const site = (row._statsDomain ?? nodeUrlDomain(row.url)).replace(/^www\./, '');
           const tracking = row._pageTracking === undefined ? isTrackingUrl(row.url || '') : row._pageTracking === 1;
           if (site && !tracking && Number.isInteger(row.tabId) && row.tabId >= 0) {
-            // The map only needs page identity. Keep path, query and fragment here.
+            // Keep the URL in storage until the user opens the visit details.
             let page = pages.get(row.url);
             if (page === undefined) {
               page = pages.size;
               pages.set(row.url, page);
             }
-            const { timestamp, tabId } = row;
+            const { id, timestamp, tabId } = row;
             const sessionId = row.sessionId ?? '';
-            result.nodes.push({ timestamp, tabId, sessionId, site, page });
+            result.nodes.push({ id, timestamp, tabId, sessionId, site, page });
             const session = sessionsById.get(sessionId);
             if (session) {
               session.firstVisit = timestamp;

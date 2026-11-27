@@ -52,14 +52,23 @@
           <canvas id="ocean-moon" width="84" height="84"></canvas>
         </div>
         <canvas id="ocean-ships" aria-hidden="true"></canvas>
+        <div id="ocean-ship-targets"></div>
+        <img id="ocean-wind" src="../images/ocean-wind.png" width="36" height="36" alt="海面移动方向" hidden>
         <p id="ocean-status" role="status" data-i18n="content_loading">正在加载数据...</p>
         <aside id="ocean-port" aria-labelledby="ocean-port-name" hidden>
           <div class="port-heading">
+            <button id="ocean-port-back" type="button" data-i18n="ocean_port_back" hidden>返回</button>
             <h2 id="ocean-port-name"></h2>
             <button id="ocean-port-close" type="button" data-i18n="content_close">关闭</button>
           </div>
-          <p id="ocean-port-count"></p>
-          <ol id="ocean-port-visits"></ol>
+          <div id="ocean-port-list">
+            <p id="ocean-port-count"></p>
+            <ol id="ocean-port-visits"></ol>
+          </div>
+          <div id="ocean-visit" hidden>
+            <p id="ocean-visit-status" role="status"></p>
+            <div id="ocean-visit-details"></div>
+          </div>
         </aside>
       </div>
       <div class="playback">

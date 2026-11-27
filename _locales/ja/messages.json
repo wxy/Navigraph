@@ -5446,6 +5446,18 @@
     "message": "桟橋 {0} → 桟橋 {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "海面が流れる方向"
+  },
+  "ocean_visit_details": {
+    "message": "閲覧の詳細"
+  },
+  "ocean_visit_unavailable": {
+    "message": "この閲覧記録は利用できなくなりました。"
+  },
+  "ocean_port_back": {
+    "message": "戻る"
+  },
   "ocean_port_counts": {
     "message": "記録 {0} 件 · 桟橋 {1} か所",
     "description": "Sea chart"

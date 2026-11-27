@@ -5446,6 +5446,18 @@
     "message": "선착장 {0} → 선착장 {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "해수면이 움직이는 방향"
+  },
+  "ocean_visit_details": {
+    "message": "방문 상세 정보"
+  },
+  "ocean_visit_unavailable": {
+    "message": "이 방문 기록을 더 이상 볼 수 없습니다."
+  },
+  "ocean_port_back": {
+    "message": "뒤로"
+  },
   "ocean_port_counts": {
     "message": "기록 {0}개 · 선착장 {1}개",
     "description": "Sea chart"

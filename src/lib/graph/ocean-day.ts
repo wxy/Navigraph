@@ -1,6 +1,7 @@
 export const OCEAN_DAY_LIMIT = 10_000;
 
 export interface OceanDayNode {
+  id: string;
   timestamp: number;
   tabId: number;
   sessionId: string;

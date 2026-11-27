@@ -5449,6 +5449,18 @@
     "message": "Dock {0} → Dock {1}",
     "description": "Sea chart"
   },
+  "ocean_surface_direction": {
+    "message": "Direction of the sea surface movement"
+  },
+  "ocean_visit_details": {
+    "message": "Visit details"
+  },
+  "ocean_visit_unavailable": {
+    "message": "This visit is no longer available."
+  },
+  "ocean_port_back": {
+    "message": "Back"
+  },
   "ocean_port_counts": {
     "message": "Records {0} · Docks {1}",
     "description": "Sea chart"

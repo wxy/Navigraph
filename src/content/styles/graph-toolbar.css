@@ -140,7 +140,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--overlay-bg, rgba(255, 255, 255, 0.8));
+  background: var(--toolbar-bg, #fff);
+  color: var(--text-color, #1a2029);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -200,7 +201,7 @@
 }
 
 .month-nav:hover {
-  background: var(--color-bg-hover, rgba(0,0,0,0.05));
+  background: var(--toolbar-button-hover, #eff3f8);
 }
 
 .calendar-grid {
@@ -358,7 +359,7 @@ button.day-cell {
 
 /* 鼠标悬停效果 */
 .day-cell:hover {
-  background-color: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  background-color: var(--toolbar-button-hover, #eff3f8);
 }
 
 .session-start:hover {
@@ -458,7 +459,7 @@ button.day-cell {
 }
 
 .session-list-close:hover {
-  background-color: var(--hover-bg, rgba(0,0,0,0.05));
+  background-color: var(--toolbar-button-hover, #eff3f8);
 }
 
 .session-list {
@@ -470,6 +471,8 @@ button.day-cell {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
+  background: transparent;
+  border: 0;
   border-bottom: 1px solid var(--border-color, #eaeaea);
   cursor: pointer;
   transition: background-color 0.2s;
@@ -480,7 +483,7 @@ button.day-cell {
 }
 
 .session-list-item:hover {
-  background-color: var(--hover-bg, rgba(74, 108, 247, 0.08));
+  background-color: var(--toolbar-button-hover, #eff3f8);
 }
 
 .session-time {
