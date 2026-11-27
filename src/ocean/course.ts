@@ -89,15 +89,11 @@ function smoothCourse(points: Point[], islands: readonly WaterObstacle[]): Cours
       // Only round this corner if the whole control triangle is in the water.
       if (!islands.some(island => touchesTurn(entry, corner, exit, island))) {
         lineTo(entry);
-        const c1 = mix(entry, corner, .71);
-        const c2 = mix(exit, corner, .68);
-        path.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, exit.x, exit.y);
+        path.quadraticCurveTo(corner.x, corner.y, exit.x, exit.y);
         const steps = Math.max(5, Math.ceil(round / 2.5));
         for (let step = 1; step <= steps; step++) {
           const t = step / steps;
-          const p = mix(mix(entry, c1, t), mix(c1, c2, t), t);
-          const q = mix(mix(c1, c2, t), mix(c2, exit, t), t);
-          sample(mix(p, q, t));
+          sample(mix(mix(entry, corner, t), mix(corner, exit, t), t));
         }
         last = exit;
         break;

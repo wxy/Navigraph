@@ -30,8 +30,9 @@ async function initialize(): Promise<void> {
   const port = document.getElementById('ocean-port')!;
   const portVisits = document.getElementById('ocean-port-visits')!;
   const closePortButton = document.querySelector<HTMLButtonElement>('#ocean-port-close')!;
+  const map = document.getElementById('ocean-map')!;
   const chart = new OceanChart(
-    document.getElementById('ocean-map')!,
+    map,
     document.getElementById('ocean-islands')!,
     document.querySelector<HTMLCanvasElement>('#ocean-routes')!,
     document.querySelector<HTMLCanvasElement>('#ocean-ships')!,
@@ -78,6 +79,7 @@ async function initialize(): Promise<void> {
 
   function setPlaying(playing: boolean): void {
     play.classList.toggle('playing', playing);
+    map.classList.toggle('sailing', playing);
     playLabel.textContent = playing ? _('ocean_pause', '暂停') : _('ocean_play', '播放');
   }
 
