@@ -85,8 +85,6 @@ export interface Visualizer {
   readonly hasExplicitView?: boolean;
   readonly waterfallTimeline: WaterfallTimeline | null;
   readonly treeDay: FilteredTreeDay | null;
-  readonly graphDate: number | undefined;
-  readonly oceanDate: number | undefined;
   readonly graphCounts: Pick<GraphPageInfo, 'total' | 'matched'> | null;
   selectTreeDay(date: number): Promise<void>;
   reloadGraph(): Promise<void>;

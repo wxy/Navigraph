@@ -5374,10 +5374,6 @@
     "message": "Фильтр",
     "description": "Graph toolbar"
   },
-  "graph_toolbar_options": {
-    "message": "Настройки",
-    "description": "Toolbar entry that opens Navigraph options"
-  },
   "graph_toolbar_today": {
     "message": "Сегодня",
     "description": "Graph toolbar"
@@ -5385,85 +5381,5 @@
   "graph_toolbar_fit_tree": {
     "message": "Вписать в окно",
     "description": "Graph toolbar"
-  },
-  "ocean_view": {
-    "message": "Морская карта",
-    "description": "Sea chart"
-  },
-  "ocean_date": {
-    "message": "Дата карты",
-    "description": "Sea chart"
-  },
-  "ocean_play": {
-    "message": "Воспроизвести",
-    "description": "Sea chart"
-  },
-  "ocean_pause": {
-    "message": "Пауза",
-    "description": "Sea chart"
-  },
-  "ocean_timeline": {
-    "message": "Воспроизвести навигацию",
-    "description": "Sea chart"
-  },
-  "ocean_session_filter": {
-    "message": "Выбрать сеанс",
-    "description": "Sea Chart playback"
-  },
-  "ocean_ship": {
-    "message": "Корабль {0}",
-    "description": "Sea chart"
-  },
-  "ocean_all_sessions": {
-    "message": "Все сеансы",
-    "description": "Sea Chart playback"
-  },
-  "ocean_music": {
-    "message": "Фоновая музыка",
-    "description": "Sea Chart playback"
-  },
-  "ocean_counts": {
-    "message": "Острова {0} · Корабли {1} · Переходы {2} · Вдоль берега {3}",
-    "description": "Sea chart"
-  },
-  "ocean_empty": {
-    "message": "За этот день нет истории посещений.",
-    "description": "Sea chart"
-  },
-  "ocean_history_error": {
-    "message": "Не удалось загрузить историю посещений за этот день.",
-    "description": "Sea chart"
-  },
-  "ocean_day_limit": {
-    "message": "Показаны последние {0} записей навигации.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Причал {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Причал {0} → Причал {1}",
-    "description": "Sea chart"
-  },
-  "ocean_surface_direction": {
-    "message": "Направление движения поверхности моря"
-  },
-  "ocean_visit_details": {
-    "message": "Сведения о посещении"
-  },
-  "ocean_visit_unavailable": {
-    "message": "Это посещение больше недоступно."
-  },
-  "ocean_port_back": {
-    "message": "Назад"
-  },
-  "ocean_port_counts": {
-    "message": "Записи {0} · Причалы {1}",
-    "description": "Sea chart"
-  },
-  "ocean_underway": {
-    "message": "{0} кораблей в пути",
-    "description": "Ships moving at the same replay time"
   }
 }

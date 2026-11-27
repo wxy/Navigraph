@@ -22,13 +22,6 @@ function readGraphFilters(input: Partial<GraphFilters> | undefined): GraphFilter
   return filters;
 }
 
-function readDayRange(date: unknown): [number, number] | undefined | null {
-  if (date === undefined) return undefined;
-  if (typeof date !== 'number') return null;
-  const range = localDayRange(date);
-  return range.every(Number.isFinite) ? range : null;
-}
-
 /**
  * 会话相关消息处理类
  */
@@ -66,17 +59,13 @@ export class SessionMessageHandler {
 
     messageService.registerHandler<BackgroundMessages.GetTreeDayRequest, BackgroundResponses.GetTreeDayResponse>('getTreeDay', (message, sender, sendResponse) => {
       const ctx = messageService.createMessageContext(message, sender, sendResponse);
-      const range = readDayRange(message.date);
-      if (range === null) return ctx.error('Invalid date');
+      const { date } = message;
+      if (date !== undefined && typeof date !== 'number') return ctx.error('Invalid date');
+      const range = date === undefined ? undefined : localDayRange(date);
+      if (range && !range.every(Number.isFinite)) {
+        return ctx.error('Invalid date');
+      }
       void getNavigationManager().getNavigationStorage().getTreeDay(range).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
-      return true;
-    });
-
-    messageService.registerHandler<BackgroundMessages.GetOceanDayRequest, BackgroundResponses.GetOceanDayResponse>('getOceanDay', (message, sender, sendResponse) => {
-      const ctx = messageService.createMessageContext(message, sender, sendResponse);
-      const range = readDayRange(message.date);
-      if (range === null) return ctx.error('Invalid date');
-      void getNavigationManager().getNavigationStorage().getOceanDay(range).then(result => ctx.success(result)).catch(error => ctx.error(String(error)));
       return true;
     });
 

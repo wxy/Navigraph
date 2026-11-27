@@ -166,7 +166,7 @@ export class SettingsService {
   private validate(input: Partial<NavigraphSettings>): NavigraphSettings {
     const result = { ...DEFAULT_SETTINGS };
     if (!input || typeof input !== 'object') return result;
-    const enums: Partial<Record<keyof NavigraphSettings, string[]>> = { theme: ['light', 'dark', 'system'], defaultView: ['tree', 'waterfall', 'ocean'], sessionMode: ['daily', 'manual'] };
+    const enums: Partial<Record<keyof NavigraphSettings, string[]>> = { theme: ['light', 'dark', 'system'], defaultView: ['tree', 'waterfall'], sessionMode: ['daily', 'manual'] };
     for (const [rawKey, choices] of Object.entries(enums)) {
       const key = rawKey as keyof NavigraphSettings;
       if (typeof input[key] === 'string' && choices.includes(input[key] as string)) Object.assign(result, { [key]: input[key] });
