@@ -5445,5 +5445,9 @@
   "ocean_port_counts": {
     "message": "기록 {0}개 · 선착장 {1}개",
     "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "배 {0}척 동시 항해 중",
+    "description": "Ships moving at the same replay time"
   }
 }

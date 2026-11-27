@@ -4,6 +4,7 @@ import { i18n, _ } from '../lib/utils/i18n.js';
 import type { BackgroundResponses } from '../types/messages/background.js';
 import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
+import { prepareReplay, replayAt } from './replay.js';
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const inputDate = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -23,6 +24,7 @@ async function initialize(): Promise<void> {
   const shipPicker = document.querySelector<HTMLSelectElement>('#ocean-ship')!;
   const time = document.querySelector<HTMLTimeElement>('#ocean-time')!;
   const current = document.getElementById('ocean-current')!;
+  const underwayLabel = document.getElementById('ocean-underway')!;
   const firstTime = document.getElementById('ocean-first-time')!;
   const lastTime = document.getElementById('ocean-last-time')!;
   const port = document.getElementById('ocean-port')!;
@@ -36,34 +38,37 @@ async function initialize(): Promise<void> {
     openPort,
   );
   let history = chartHistory([]);
-  let timeline: Arrival[] = [];
+  let replay = prepareReplay([]);
   let selectedShip: Ship | undefined;
   let lastPortButton: HTMLElement | undefined;
-  let cursor = 0;
+  let elapsed = 0;
   let describedIndex = -2;
+  let describedUnderway = -1;
   let request = 0;
   let frame: number | undefined;
   let previousFrame = 0;
-  let elapsed = 0;
 
   function shipName(ship: Ship): string {
     return _('ocean_ship', '船 {0}', ship.number);
   }
 
-  function draw(fraction = 0): void {
-    const here = timeline[cursor];
-    const next = timeline[cursor + 1];
-    const underway = fraction > 0 && next?.from && !reducedMotion.matches ? next : undefined;
-    chart.showPosition(here, underway, fraction);
-    const shown = underway ?? here;
+  function draw(): void {
+    const { fleet, current: shown, underway } = replayAt(replay, elapsed, !reducedMotion.matches);
+    chart.showFleet(fleet, shown);
+    const progress = Math.round(elapsed / 100) * 100;
+    if (position.valueAsNumber !== progress) position.value = String(progress);
+    if (describedUnderway !== underway) {
+      describedUnderway = underway;
+      underwayLabel.hidden = underway < 2;
+      underwayLabel.textContent = underway >= 2 ? _('ocean_underway', '{0} 艘船同时航行', underway) : '';
+    }
     const index = shown?.index ?? -1;
-    if (position.valueAsNumber !== cursor) position.value = String(cursor);
     if (index === describedIndex) return;
     describedIndex = index;
     time.textContent = shown ? timeFormat.format(shown.timestamp) : '–';
     time.dateTime = shown ? new Date(shown.timestamp).toISOString() : '';
     let place = shown?.island.site;
-    if (shown?.route) place = `${shown.route.from.site} → ${shown.island.site}`;
+    if (shown?.route) place = `${shown.route.from.island.site} → ${shown.island.site}`;
     else if (shown?.from) {
       place = `${place} · ${_('ocean_coastal_move', '码头 {0} → 码头 {1}', shown.from.number, shown.dock.number)}`;
     }
@@ -82,41 +87,28 @@ async function initialize(): Promise<void> {
     setPlaying(false);
   }
 
-  function seek(step: number): void {
+  function seek(time: number): void {
     pause();
-    elapsed = 0;
-    cursor = step;
+    elapsed = time;
     draw();
   }
 
   function tick(now: number): void {
-    if (previousFrame) elapsed += now - previousFrame;
+    if (previousFrame) elapsed = Math.min(replay.duration, elapsed + now - previousFrame);
     previousFrame = now;
-    let next = timeline[cursor + 1];
-    // An arrival step skips idle time and gives the ship time to cross the water
-    // even when two visits are close together.
-    while (next) {
-      const duration = next.route ? 820 : next.from ? 380 : 180;
-      if (elapsed < duration) {
-        const t = elapsed / duration;
-        draw(t * t * (3 - 2 * t));
-        frame = requestAnimationFrame(tick);
-        return;
-      }
-      elapsed -= duration;
-      next = timeline[++cursor + 1];
-    }
-    seek(cursor);
+    draw();
+    if (elapsed === replay.duration) pause();
+    else frame = requestAnimationFrame(tick);
   }
 
   function showTimeline(arrivals: Arrival[]): void {
-    timeline = arrivals;
+    replay = prepareReplay(arrivals);
     describedIndex = -2;
-    position.max = String(Math.max(0, timeline.length - 1));
-    position.disabled = play.disabled = timeline.length < 2;
-    firstTime.textContent = timeline.length ? timeFormat.format(timeline[0].timestamp) : '';
-    lastTime.textContent = timeline.length ? timeFormat.format(timeline[timeline.length - 1].timestamp) : '';
-    seek(Math.max(0, timeline.length - 1));
+    position.max = String(replay.duration);
+    position.disabled = play.disabled = arrivals.length < 2;
+    firstTime.textContent = arrivals.length ? timeFormat.format(arrivals[0].timestamp) : '';
+    lastTime.textContent = arrivals.length ? timeFormat.format(arrivals[arrivals.length - 1].timestamp) : '';
+    seek(replay.duration);
   }
 
   function closePort(restoreFocus = false): void {
@@ -158,7 +150,7 @@ async function initialize(): Promise<void> {
     const token = ++request;
     closePort();
     history = chartHistory([]);
-    chart.setHistory([], [], []);
+    chart.setHistory([], []);
     showTimeline([]);
     shipPicker.disabled = true;
     counts.textContent = '';
@@ -177,7 +169,7 @@ async function initialize(): Promise<void> {
     if (token !== request) return;
     date.value = inputDate.format(response.start);
     history = chartHistory(response.nodes);
-    chart.setHistory(history.islands, history.ships, history.routes);
+    chart.setHistory(history.islands, history.routes);
     counts.textContent = _('ocean_counts', '{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段',
       history.islands.length.toLocaleString(), history.ships.length.toLocaleString(),
       history.voyages.toLocaleString(), history.coastalTrips.toLocaleString());
@@ -201,7 +193,7 @@ async function initialize(): Promise<void> {
       pause();
       return;
     }
-    if (cursor === timeline.length - 1) seek(0);
+    if (elapsed === replay.duration) seek(0);
     previousFrame = 0;
     setPlaying(true);
     frame = requestAnimationFrame(tick);
@@ -220,12 +212,13 @@ async function initialize(): Promise<void> {
     if (!button) return;
     const arrival = history.arrivals[Number(button.dataset.arrival)];
     if (selectedShip && arrival.ship !== selectedShip) applyShip(undefined);
-    seek(timeline.indexOf(arrival));
+    seek(replay.arrivalsAt.get(arrival)!);
     closePort(true);
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pause();
   });
+  reducedMotion.addEventListener('change', draw);
   date.addEventListener('change', () => {
     if (date.value) void load(new Date(`${date.value}T12:00:00`).getTime());
   });

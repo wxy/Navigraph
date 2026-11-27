@@ -5448,5 +5448,9 @@
   "ocean_port_counts": {
     "message": "Records {0} · Docks {1}",
     "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} ships underway",
+    "description": "Ships moving at the same replay time"
   }
 }

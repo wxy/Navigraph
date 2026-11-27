@@ -8,6 +8,7 @@ export interface Island {
 }
 
 export interface Dock {
+  page: number;
   number: number;
   island: Island;
   arrivals: Arrival[];
@@ -21,8 +22,8 @@ export interface Ship {
 }
 
 export interface Route {
-  from: Island;
-  to: Island;
+  from: Dock;
+  to: Dock;
   crossings: number;
 }
 
@@ -56,7 +57,7 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
     island.records++;
     let dock = docks.get(page);
     if (!dock) {
-      dock = { number: island.docks.length + 1, island, arrivals: [] };
+      dock = { page, number: island.docks.length + 1, island, arrivals: [] };
       island.docks.push(dock);
       docks.set(page, dock);
     }
@@ -71,10 +72,10 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
 
     let route: Route | undefined;
     if (from && from.island !== island) {
-      const key = `${from.island.site}\n${island.site}`;
+      const key = `${from.page}:${dock.page}`;
       route = routes.get(key);
       if (!route) {
-        route = { from: from.island, to: island, crossings: 0 };
+        route = { from, to: dock, crossings: 0 };
         routes.set(key, route);
       }
       route.crossings++;
@@ -99,16 +100,4 @@ export function chartHistory(nodes: readonly OceanDayNode[]) {
     voyages,
     coastalTrips,
   };
-}
-
-export function lastArrival(ship: Ship, index: number): Arrival | undefined {
-  const { arrivals } = ship;
-  let low = 0;
-  let high = arrivals.length;
-  while (low < high) {
-    const mid = (low + high) >>> 1;
-    if (arrivals[mid].index <= index) low = mid + 1;
-    else high = mid;
-  }
-  return arrivals[low - 1];
 }

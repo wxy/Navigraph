@@ -98,11 +98,7 @@ h1 {
   border-radius: 13px 13px 0 0;
   isolation: isolate;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 42% 45%, #17465645, transparent 65%),
-    repeating-linear-gradient(0deg, #b9e6f307 0 1px, transparent 1px 108px),
-    repeating-linear-gradient(90deg, #b9e6f307 0 1px, transparent 1px 108px),
-    radial-gradient(ellipse at 18% 15%, #0e3946, #081f2c 52%, #071a27);
+  background: #082236 url("../images/ocean-water.webp") center / cover no-repeat;
 }
 
 .map canvas, #ocean-islands {
@@ -112,6 +108,8 @@ h1 {
   height: 100%;
   pointer-events: none;
 }
+
+#ocean-islands { z-index: 1; }
 
 .island {
   position: absolute;
@@ -159,6 +157,7 @@ h1 {
 
 #ocean-status {
   position: absolute;
+  z-index: 2;
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
   margin: 0;
@@ -220,6 +219,7 @@ h1 {
 .timeline-caption { display: flex; gap: 8px; align-items: baseline; }
 #ocean-time { font-weight: 700; color: var(--accent); flex-shrink: 0; }
 #ocean-current { color: #e2e9e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ocean-underway { margin-inline-start: auto; flex-shrink: 0; color: #abdedf; font-size: 11px; }
 #ocean-position { accent-color: var(--accent); width: 100%; margin: 0; cursor: pointer; }
 .timeline-endpoints { display: flex; justify-content: space-between; color: var(--quiet); font-size: 11px; }
 .ship-field select { width: 100%; max-width: 240px; }

@@ -5445,5 +5445,9 @@
   "ocean_port_counts": {
     "message": "{0} 条记录 · {1} 个码头",
     "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} 艘船同时航行",
+    "description": "Ships moving at the same replay time"
   }
 }

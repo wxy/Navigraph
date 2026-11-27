@@ -5445,5 +5445,9 @@
   "ocean_port_counts": {
     "message": "Записи {0} · Причалы {1}",
     "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} кораблей в пути",
+    "description": "Ships moving at the same replay time"
   }
 }

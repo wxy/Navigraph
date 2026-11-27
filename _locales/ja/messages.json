@@ -5445,5 +5445,9 @@
   "ocean_port_counts": {
     "message": "記録 {0} 件 · 桟橋 {1} か所",
     "description": "Sea chart"
+  },
+  "ocean_underway": {
+    "message": "{0} 隻が同時に航行中",
+    "description": "Ships moving at the same replay time"
   }
 }
