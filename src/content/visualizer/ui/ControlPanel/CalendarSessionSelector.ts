@@ -225,8 +225,8 @@ export class CalendarSessionSelector {
     
     // 创建当前更新的哈希值，包含最新会话ID
     const tree = this.visualizer.currentView === 'tree';
-    const dayStart = tree ? this.visualizer.treeDay?.start : undefined;
-    const updateHash = `${tree}-${dayStart}-${currentSessionId}-${latestSessionId}-${sessionList.map(s => s.id).join(',')}`;
+    const selectedTime = this.visualizer.graphDate;
+    const updateHash = `${tree}-${selectedTime}-${currentSessionId}-${latestSessionId}-${sessionList.map(s => s.id).join(',')}`;
     
     // 如果与上次更新相同，跳过更新
     if (this.lastUpdateHash === updateHash) {
@@ -247,7 +247,6 @@ export class CalendarSessionSelector {
       this.latestSessionId = latestSessionId || null; // 保存最新会话ID
       
       // 如果有当前选中会话，定位到会话所在月份
-      const selectedTime = dayStart ?? sessionList.find(s => s.id === currentSessionId)?.startTime;
       if (selectedTime !== undefined) {
         const date = new Date(selectedTime);
         this.currentMonth = date.getMonth();
@@ -547,14 +546,8 @@ export class CalendarSessionSelector {
    * 判断日期是否为当前选中会话的开始日期
    */
   private isSelectedDate(date: Date): boolean {
-    if (this.visualizer.currentView === 'tree') return date.getTime() === this.visualizer.treeDay?.start;
-    if (!this.selectedSessionId) return false;
-    
-    const selectedSession = this.sessions.find(s => s.id === this.selectedSessionId);
-    if (!selectedSession) return false;
-    
-    const sessionDate = new Date(selectedSession.startTime);
-    return this.dateToString(date) === this.dateToString(sessionDate);
+    const selectedTime = this.visualizer.graphDate;
+    return selectedTime !== undefined && this.dateToString(date) === this.dateToString(new Date(selectedTime));
   }
   
   /**

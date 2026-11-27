@@ -2,6 +2,8 @@ import type { Session, SessionDetails } from '../types/session.js';
 import type { SessionMetadata, GraphFilters } from '../../lib/graph/query.js';
 import type { WaterfallTimeline } from '../../lib/graph/waterfall.js';
 import { DEFAULT_GRAPH_FILTERS } from '../../lib/graph/query.js';
+import { replaceHistorySelection } from '../../lib/graph/location.js';
+import { localDayRange } from '../../lib/graph/tree-day.js';
 import { sendMessage } from '../messaging/content-message-service.js';
 
 type SessionEventCallback = (session: SessionDetails | null, fitToView?: boolean) => void;
@@ -12,6 +14,7 @@ export class SessionServiceClient {
   private currentSession: SessionDetails | null = null;
   private currentSessionId: string | null = null;
   private followsLatestSession = true;
+  private datedSelection?: { day: number; sessionId?: string };
   private latestSession: SessionMetadata | null = null;
   private generation = 0;
   private pendingListRequest: Promise<SessionMetadata[]> | null = null;
@@ -29,6 +32,17 @@ export class SessionServiceClient {
   onSessionLoaded(callback: SessionEventCallback): void { this.sessionLoadListeners.push(callback); }
   onSessionsListLoaded(callback: (sessions: Session[]) => void): void { this.sessionsListLoadedListeners.push(callback); }
   onLatestSessionLoaded(callback: (session: SessionMetadata | null) => void): void { this.latestSessionLoadListeners.push(callback); }
+
+  get requestedDay(): number | undefined { return this.datedSelection?.day; }
+
+  restoreSelection(day?: number, sessionId?: string): boolean {
+    if (day === undefined) sessionId = undefined;
+    if (this.datedSelection?.day === day && this.datedSelection?.sessionId === sessionId) return false;
+    this.datedSelection = day === undefined ? undefined : { day, sessionId };
+    this.followsLatestSession = true;
+    this.generation++;
+    return true;
+  }
 
   async loadSessionList(): Promise<SessionMetadata[]> {
     if (this.pendingListRequest) return this.pendingListRequest;
@@ -98,10 +112,21 @@ export class SessionServiceClient {
       return this.loadTimeline();
     }
     this.followsLatestSession = true;
-    const latestWithRecords = latest?.nodeCount
-      ? latest
-      : this.sessionList.find(session => (session.nodeCount ?? 0) > 0);
-    const session = latestWithRecords ?? latest ?? this.sessionList[0];
+    const selection = this.datedSelection;
+    let session: SessionMetadata | undefined;
+    if (selection) {
+      const [start, end] = localDayRange(selection.day);
+      const sessions = this.sessionList.filter(({ startTime, endTime, lastActivity }) =>
+        startTime < end && (endTime ?? lastActivity ?? startTime) >= start);
+      session = sessions.find(({ id }) => id === selection.sessionId)
+        ?? sessions.find(({ nodeCount }) => (nodeCount ?? 0) > 0)
+        ?? sessions[0];
+    } else {
+      const latestWithRecords = latest?.nodeCount
+        ? latest
+        : this.sessionList.find(({ nodeCount }) => (nodeCount ?? 0) > 0);
+      session = latestWithRecords ?? latest ?? this.sessionList[0];
+    }
     if (session) return this.loadSession(session.id);
     this.setCurrentSessionId(null); this.currentSession = null; this.timeline = null;
     for (const listener of this.sessionLoadListeners) listener(null);
@@ -109,6 +134,14 @@ export class SessionServiceClient {
   }
   async switchSession(sessionId: string): Promise<SessionDetails | null> {
     this.followsLatestSession = false;
+    if (this.datedSelection) {
+      const session = this.sessionList.find(({ id }) => id === sessionId);
+      if (session) {
+        const [day] = localDayRange(session.startTime);
+        this.datedSelection = { day, sessionId };
+        replaceHistorySelection(day, sessionId);
+      }
+    }
     return this.loadSession(sessionId);
   }
   private setCurrentSessionId(sessionId: string | null): void {

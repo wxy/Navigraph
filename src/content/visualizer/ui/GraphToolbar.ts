@@ -1,3 +1,5 @@
+import { graphViewUrl } from '../../../lib/graph/location.js';
+import { localDayRange } from '../../../lib/graph/tree-day.js';
 import { _ } from '../../../lib/utils/i18n.js';
 import type { Visualizer } from '../../types/navigation.js';
 
@@ -16,14 +18,12 @@ export class GraphToolbar {
     const tree = visualizer.currentView === 'tree';
     const day = tree ? visualizer.treeDay : null;
     const session = tree ? undefined : visualizer.currentSession;
-    const start = day?.start ?? session?.startTime;
+    const start = visualizer.graphDate;
     const ocean = document.querySelector<HTMLAnchorElement>('#ocean-view');
     if (ocean) {
-      const url = new URL('../ocean/index.html', location.href);
-      if (start !== undefined) url.searchParams.set('day', String(start));
-      const locale = window.navigraphSettings?.forcedLocale;
-      if (locale && locale !== 'system') url.searchParams.set('locale', locale);
-      ocean.href = url.href;
+      const oceanDate = visualizer.oceanDate;
+      const localDay = oceanDate === undefined ? undefined : localDayRange(oceanDate)[0];
+      ocean.href = graphViewUrl('ocean', localDay, session?.id).href;
     }
 
     const graphCounts = visualizer.graphCounts;
@@ -46,12 +46,12 @@ export class GraphToolbar {
     if (start !== undefined) {
       const date = dateFormat.format(start);
       if (dateLabel) dateLabel.textContent = session ? `${date} · ${timeFormat.format(start)}` : date;
-      if (duration) {
+      if (duration && (day || session)) {
         const span = day
           ? (day.nodes[0]?.timestamp ?? 0) - (day.nodes.at(-1)?.timestamp ?? 0)
           : (session?.endTime ?? Date.now()) - start;
         duration.textContent = _('content_session_duration_label', '时长: {0}', this.formatDuration(span));
-      }
+      } else if (duration) duration.textContent = '';
     } else {
       if (dateLabel) dateLabel.textContent = _('content_session_date', '会话日期');
       if (duration) duration.textContent = '';

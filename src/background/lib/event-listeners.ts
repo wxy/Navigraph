@@ -1,5 +1,5 @@
+import { GRAPH_PAGE, OCEAN_PAGE } from '../../lib/graph/location.js';
 import { Logger } from '../../lib/utils/logger.js';
-import { NavigationManager } from '../navigation/navigation-manager.js';
 import { _, _Error } from '../../lib/utils/i18n.js';
 
 const logger = new Logger('EventListeners');
@@ -28,7 +28,7 @@ function handleExtensionInstalled(details: chrome.runtime.InstalledDetails): voi
     
     // 显示欢迎页面或教程
     chrome.tabs.create({
-      url: chrome.runtime.getURL('content/index.html'),
+      url: chrome.runtime.getURL(GRAPH_PAGE),
       active: true
     });
   } else if (details.reason === 'update') {
@@ -46,9 +46,12 @@ async function handleActionClicked(): Promise<void> {
     // 获取所有标签页
     const tabs = await chrome.tabs.query({});
     
-    // 检查是否已经打开了导航树页面
-    const indexUrl = chrome.runtime.getURL('content/index.html');
-    const existingTab = tabs.find(tab => tab.url?.startsWith(indexUrl));
+    const indexUrl = chrome.runtime.getURL(GRAPH_PAGE);
+    const oceanUrl = chrome.runtime.getURL(OCEAN_PAGE);
+    const existingTab = tabs.find(tab => {
+      const page = tab.url?.split(/[?#]/, 1)[0];
+      return page === indexUrl || page === oceanUrl;
+    });
     
     if (existingTab && existingTab.id) {
       // 如果已经打开，切换到该标签页

@@ -1,6 +1,9 @@
+import { graphViewUrl, readHistoryDay, replaceHistorySelection } from '../lib/graph/location.js';
 import { OCEAN_DAY_LIMIT } from '../lib/graph/ocean-day.js';
+import { localDayRange } from '../lib/graph/tree-day.js';
 import { sendToBackground } from '../lib/messaging/sender.js';
-import { i18n, _ } from '../lib/utils/i18n.js';
+import { getSettingsService } from '../lib/settings/service.js';
+import { I18n, _ } from '../lib/utils/i18n.js';
 import type { BackgroundResponses } from '../types/messages/background.js';
 import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
@@ -11,10 +14,17 @@ const inputDate = new Intl.DateTimeFormat('sv-SE', { year: 'numeric', month: '2-
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 async function initialize(): Promise<void> {
-  await i18n.apply();
   const params = new URLSearchParams(location.search);
-  document.documentElement.lang = (params.get('locale') ?? chrome.i18n.getUILanguage()).replace('_', '-');
+  const settings = getSettingsService();
+  await settings.initialize();
+  const locale = params.get('locale') ?? settings.getSetting('forcedLocale') ?? 'system';
+  await I18n.getInstance().setLocale(locale);
+  document.documentElement.lang = (locale === 'system' ? chrome.i18n.getUILanguage() : locale).replace('_', '-');
 
+  const initialDay = readHistoryDay(params);
+  const initialSession = params.get('session') ?? undefined;
+  const treeView = document.querySelector<HTMLAnchorElement>('#ocean-tree-view')!;
+  const waterfallView = document.querySelector<HTMLAnchorElement>('#ocean-waterfall-view')!;
   const date = document.querySelector<HTMLInputElement>('#ocean-date')!;
   const counts = document.getElementById('ocean-counts')!;
   const status = document.getElementById('ocean-status')!;
@@ -148,8 +158,15 @@ async function initialize(): Promise<void> {
     showTimeline(ship?.arrivals ?? history.arrivals);
   }
 
+  function updateViewLinks(day?: number): void {
+    treeView.href = graphViewUrl('tree', day).href;
+    waterfallView.href = graphViewUrl('waterfall', day, day === initialDay ? initialSession : undefined).href;
+  }
+
   async function load(day?: number): Promise<void> {
     const token = ++request;
+    updateViewLinks(day);
+    if (day !== undefined) date.value = inputDate.format(day);
     closePort();
     history = chartHistory([]);
     chart.setHistory([], []);
@@ -170,6 +187,7 @@ async function initialize(): Promise<void> {
     }
     if (token !== request) return;
     date.value = inputDate.format(response.start);
+    updateViewLinks(response.start);
     history = chartHistory(response.nodes);
     chart.setHistory(history.islands, history.routes);
     counts.textContent = _('ocean_counts', '{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段',
@@ -222,12 +240,14 @@ async function initialize(): Promise<void> {
   });
   reducedMotion.addEventListener('change', draw);
   date.addEventListener('change', () => {
-    if (date.value) void load(new Date(`${date.value}T12:00:00`).getTime());
+    if (!date.value || !date.validity.valid) return;
+    const [day] = localDayRange(new Date(`${date.value}T12:00:00`).getTime());
+    replaceHistorySelection(day, day === initialDay ? initialSession : undefined);
+    void load(day);
   });
 
   date.max = inputDate.format(Date.now());
-  const initialDay = params.get('day');
-  await load(initialDay && Number.isFinite(Number(initialDay)) ? Number(initialDay) : undefined);
+  await load(initialDay);
 }
 
 void initialize();
