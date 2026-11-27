@@ -13,10 +13,12 @@ export interface Landing {
   island: WaterObstacle;
 }
 
-interface Sample extends Point { distance: number }
+interface Bend { start: Point; control: Point; end: Point }
+interface Sample { distance: number; bend: number; t: number }
 
 export interface Course {
   path: Path2D;
+  bends: Bend[];
   samples: Sample[];
   length: number;
 }
@@ -36,13 +38,13 @@ function distance(a: Point, b: Point): number {
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
-function touchesIsland(a: Point, b: Point, { center, radius }: WaterObstacle): boolean {
+function touchesIsland(a: Point, b: Point, { center, radius }: WaterObstacle, clearance = 0): boolean {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const lengthSquared = dx * dx + dy * dy;
   const projection = lengthSquared ? ((center.x - a.x) * dx + (center.y - a.y) * dy) / lengthSquared : 0;
   const t = Math.max(0, Math.min(1, projection));
-  return (center.x - a.x - dx * t) ** 2 + (center.y - a.y - dy * t) ** 2 < radius * radius;
+  return (center.x - a.x - dx * t) ** 2 + (center.y - a.y - dy * t) ** 2 < (radius + clearance) ** 2;
 }
 
 function cross(a: Point, b: Point, c: Point): number {
@@ -59,54 +61,61 @@ function touchesTurn(a: Point, corner: Point, b: Point, island: WaterObstacle): 
   return signs.every(value => value >= 0) || signs.every(value => value <= 0);
 }
 
-function smoothCourse(points: Point[], islands: readonly WaterObstacle[]): Course {
-  const path = new Path2D();
-  const first = points[0];
-  path.moveTo(first.x, first.y);
-  const samples: Sample[] = [{ ...first, distance: 0 }];
-  let last = first;
-  let length = 0;
-  const sample = (point: Point) => {
-    length += distance(samples[samples.length - 1], point);
-    samples.push({ ...point, distance: length });
-  };
-  const lineTo = (point: Point) => {
-    if (distance(last, point) < .01) return;
-    path.lineTo(point.x, point.y);
-    sample(point);
-    last = point;
-  };
-
-  for (let i = 1; i < points.length - 1; i++) {
-    const before = points[i - 1];
-    const corner = points[i];
-    const after = points[i + 1];
-    let round = Math.min(distance(before, corner) * .46, distance(corner, after) * .46, 60);
-    while (round > .35) {
-      const entry = mix(corner, before, round / distance(corner, before));
-      const exit = mix(corner, after, round / distance(corner, after));
-      // A Bézier never leaves the convex hull of its control points.
-      // Only round this corner if the whole control triangle is in the water.
-      if (!islands.some(island => touchesTurn(entry, corner, exit, island))) {
-        lineTo(entry);
-        path.quadraticCurveTo(corner.x, corner.y, exit.x, exit.y);
-        const steps = Math.max(5, Math.ceil(round / 2.5));
-        for (let step = 1; step <= steps; step++) {
-          const t = step / steps;
-          sample(mix(mix(entry, corner, t), mix(corner, exit, t), t));
-        }
-        last = exit;
-        break;
-      }
-      round /= 2;
-    }
-    if (round <= .35) lineTo(corner);
-  }
-  lineTo(points[points.length - 1]);
-  return { path, samples, length };
+function directLeg(start: Point, end: Point): Bend {
+  return { start, control: mix(start, end, .5), end };
 }
 
-export function coursePosition({ samples, length }: Course, fraction: number): Point & { angle: number } {
+function fitSpline(points: Point[], islands: readonly WaterObstacle[]): Bend[] | undefined {
+  while (true) {
+    const bends: Bend[] = [];
+    const split = new Set<number>();
+    for (let i = 1; i < points.length - 1; i++) {
+      const first = i === 1;
+      const last = i === points.length - 2;
+      const control = points[i];
+      const start = first ? points[0] : mix(points[i - 1], control, .5);
+      const end = last ? points[i + 1] : mix(control, points[i + 1], .5);
+      bends.push({ start, control, end });
+      // A quadratic stays in its control triangle.
+      if (!islands.some(island => touchesTurn(start, control, end, island))) continue;
+      const left = distance(points[i - 1], control) > .5;
+      const right = distance(control, points[i + 1]) > .5;
+      if (!left && !right) return;
+      if (left) split.add(i - 1);
+      if (right) split.add(i);
+    }
+    if (!split.size) return bends;
+    // Refine only the affected guides. Midpoint joins keep adjacent tangents aligned.
+    points = points.flatMap((point, index) => split.has(index)
+      ? [point, mix(point, points[index + 1], .5)]
+      : [point]);
+  }
+}
+
+function drawCourse(bends: Bend[]): Course | undefined {
+  const path = new Path2D();
+  let last = bends[0].start;
+  path.moveTo(last.x, last.y);
+  const samples: Sample[] = [{ distance: 0, bend: 0, t: 0 }];
+  let length = 0;
+  bends.forEach(({ start, control, end }, bend) => {
+    path.quadraticCurveTo(control.x, control.y, end.x, end.y);
+    const steps = Math.max(4, Math.ceil((distance(start, control) + distance(control, end)) / 4));
+    for (let step = 1; step <= steps; step++) {
+      const t = step / steps;
+      const point = mix(mix(start, control, t), mix(control, end, t), t);
+      const traveled = distance(last, point);
+      if (traveled > .0001) {
+        length += traveled;
+        samples.push({ distance: length, bend, t });
+      }
+      last = point;
+    }
+  });
+  return samples.length > 1 ? { path, bends, samples, length } : undefined;
+}
+
+export function coursePosition({ bends, samples, length }: Course, fraction: number): Point & { angle: number } {
   const traveled = length * Math.max(0, Math.min(1, fraction));
   let low = 1;
   let high = samples.length - 1;
@@ -117,8 +126,13 @@ export function coursePosition({ samples, length }: Course, fraction: number): P
   }
   const next = samples[low];
   const previous = samples[low - 1];
-  const t = (traveled - previous.distance) / (next.distance - previous.distance);
-  return { ...mix(previous, next, t), angle: Math.atan2(next.y - previous.y, next.x - previous.x) };
+  const progress = (traveled - previous.distance) / (next.distance - previous.distance);
+  const before = previous.bend === next.bend ? previous.t : 0;
+  const t = before + (next.t - before) * progress;
+  const { start, control, end } = bends[next.bend];
+  const a = mix(start, control, t);
+  const b = mix(control, end, t);
+  return { ...mix(a, b, t), angle: Math.atan2(b.y - a.y, b.x - a.x) };
 }
 
 export class Waterways {
@@ -128,17 +142,64 @@ export class Waterways {
 
   course(from: Landing, to: Landing, seed: number): Course | undefined {
     if (!this.clear(from.water, from.gate, from.island) || !this.clear(to.gate, to.water, to.island)) return;
-    const waypoints = from.island === to.island ? this.alongCoast(from, to, seed) : this.acrossSea(from, to, seed);
-    const water = [from.gate];
-    for (const next of waypoints) {
-      if (!this.inside(next) || !this.clear(next, next)) continue;
-      const leg = this.connect(water[water.length - 1], next);
-      if (leg) water.push(...leg);
+    from = this.widerTurn(from);
+    to = this.widerTurn(to);
+    const coastal = from.island === to.island;
+    if (!coastal) {
+      const direct = this.singleBend(from, to);
+      if (direct) return drawCourse(direct);
     }
-    const finish = this.connect(water[water.length - 1], to.gate);
-    if (!finish) return;
-    const result = smoothCourse([from.water, ...water, ...finish, to.water], this.islands);
-    return result.samples.length > 1 ? result : undefined;
+    const guides = coastal ? this.alongCoast(from, to, seed) : [this.seaGuide(from, to, seed)];
+    const preferred = [...guides, to.gate];
+    const clear = preferred.every((point, index) => this.inside(point)
+      && this.clear(index ? preferred[index - 1] : from.gate, point));
+    const middle = clear ? preferred : this.connect(from.gate, to.gate);
+    if (!middle) return;
+    const channelEnd = (landing: Landing) => {
+      const { center, radius } = landing.island;
+      const waterRadius = Math.max(radius, distance(center, landing.water));
+      const room = distance(center, landing.gate) - waterRadius;
+      return polar(center, waterRadius + Math.min(2, room * .27), landing.angle);
+    };
+    const departure = channelEnd(from);
+    const arrival = channelEnd(to);
+    const guidesWithChannels = [departure, from.gate, ...middle, arrival];
+    const points = guidesWithChannels.filter((point, index) => !index || distance(guidesWithChannels[index - 1], point) > .001);
+    const bends = fitSpline(points, this.islands);
+    return bends ? drawCourse([directLeg(from.water, departure), ...bends, directLeg(arrival, to.water)]) : undefined;
+  }
+
+  private widerTurn(landing: Landing): Landing {
+    const { center, radius } = landing.island;
+    const outer = distance(center, landing.gate) + Math.min(16, radius * .25);
+    const gate = polar(center, outer, landing.angle);
+    return this.inside(gate) && this.clear(landing.gate, gate, landing.island) ? { ...landing, gate } : landing;
+  }
+
+  private singleBend(from: Landing, to: Landing): Bend[] | undefined {
+    const start = from.gate;
+    const end = to.gate;
+    const departure = polar({ x: 0, y: 0 }, 1, from.angle);
+    const arrival = polar({ x: 0, y: 0 }, 1, to.angle);
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const divisor = departure.x * arrival.y - departure.y * arrival.x;
+    if (Math.abs(divisor) < .01) return;
+    const outward = (dx * arrival.y - dy * arrival.x) / divisor;
+    const inward = (dx * departure.y - dy * departure.x) / divisor;
+    const span = Math.hypot(dx, dy);
+    if (outward <= 0 || inward <= 0 || Math.max(outward, inward) > span) return;
+    const control = polar(start, outward, from.angle);
+    if (!this.inside(control)) return;
+    if (!this.islands.some(island => touchesTurn(from.water, control, to.water, island))) {
+      return [{ start: from.water, control, end: to.water }];
+    }
+    if (this.islands.some(island => touchesTurn(start, control, end, island))) return;
+    return [
+      directLeg(from.water, start),
+      { start, control, end },
+      directLeg(end, to.water),
+    ];
   }
 
   private inside(p: Point): boolean {
@@ -146,36 +207,37 @@ export class Waterways {
   }
 
   private clear(a: Point, b: Point, coast?: WaterObstacle): boolean {
-    return this.islands.every(island => island === coast || !touchesIsland(a, b, island));
+    return this.islands.every(island => island === coast || !touchesIsland(a, b, island, Math.min(2, island.radius * .08)));
   }
 
   private alongCoast(from: Landing, to: Landing, seed: number): Point[] {
     const island = from.island;
     const turn = (to.angle - from.angle + FULL_TURN * 1.5) % FULL_TURN - Math.PI;
-    const count = Math.max(3, Math.ceil(Math.abs(turn) / .47));
-    const reach = Math.min(20, island.radius * .25);
+    const radius = distance(island.center, from.gate);
+    const reach = Math.min(20, island.radius * .25) * (.86 + (seed % 11) * .028);
+    if (Math.abs(turn) < .24) {
+      const direction = turn < 0 ? -1 : 1;
+      return [
+        polar(island.center, radius + reach * .65, from.angle - .24 * direction),
+        polar(island.center, radius + reach, to.angle + .28 * direction),
+      ];
+    }
+    const count = Math.max(2, Math.ceil(Math.abs(turn) / .53));
     const points: Point[] = [];
     for (let n = 1; n < count; n++) {
       const t = n / count;
-      const bend = Math.sin(Math.PI * t) * Math.sin(seed + t * 5) * .17;
-      const drift = (1.25 + Math.sin(seed + t * 7) * .55) * reach;
-      points.push(polar(island.center, island.radius + drift, from.angle + turn * t + bend));
+      points.push(polar(island.center, radius + Math.sin(Math.PI * t) * reach, from.angle + turn * t));
     }
     return points;
   }
 
-  private acrossSea(from: Landing, to: Landing, seed: number): Point[] {
+  private seaGuide(from: Landing, to: Landing, seed: number): Point {
     const { gate: a } = from;
     const { gate: b } = to;
     const span = distance(a, b);
-    const sweep = Math.min(53, span * .18) * (.88 + (seed % 7) * .05);
+    const sweep = Math.min(55, span * .16) * (.9 + (seed % 7) * .04);
     const heading = Math.atan2(b.y - a.y, b.x - a.x);
-    return [
-      polar(mix(a, b, .18), sweep * .65, heading + Math.PI / 2),
-      polar(mix(a, b, .37), sweep, heading + Math.PI / 2),
-      polar(mix(a, b, .58), sweep * .15, heading - Math.PI / 2),
-      polar(mix(a, b, .79), sweep * .8, heading - Math.PI / 2),
-    ];
+    return polar(mix(a, b, .5), sweep, heading + Math.PI / 2);
   }
 
   private connect(from: Point, to: Point): Point[] | undefined {
