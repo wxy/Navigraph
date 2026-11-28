@@ -1,5 +1,11 @@
 * { box-sizing: border-box; }
 
+@font-face {
+  font-family: 'UnifrakturMaguntia';
+  src: url('fonts/UnifrakturMaguntia-Book.ttf') format('truetype');
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
   color: #f2ecdc;
@@ -99,6 +105,17 @@ main {
 #ocean-image {
   opacity: 0;
   pointer-events: auto;
+}
+#ocean-nameplate {
+  inset: auto auto 11px 12px;
+  width: min(288px, calc(100% - 24px));
+  height: auto;
+  z-index: 4;
+  opacity: 0;
+}
+#ocean-nameplate.visible { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  #ocean-nameplate { transition: opacity 180ms ease-out; }
 }
 #ocean-shallows { z-index: 0; }
 #ocean-islands { z-index: 2; }
@@ -254,31 +271,41 @@ main {
   mix-blend-mode: screen;
   opacity: var(--night, 0);
 }
-.island-name {
+.island-label {
   position: absolute;
   top: calc(100% + 3px);
   left: 50%;
   transform: translateX(-50%);
-  max-width: var(--label-width);
+  width: max-content;
+  max-inline-size: var(--label-width);
+  border-radius: 4px;
+  padding: 2px 5px;
+  background: #061c29db;
+  text-align: center;
+}
+.island-label > span {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: 3px;
-  padding: 1px 4px;
-  background: #061c29db;
-  font: 650 11px/1.35 system-ui, sans-serif;
-  letter-spacing: .015em;
+}
+.island-name {
+  font: 700 12px/1.18 Georgia, 'Songti SC', serif;
+}
+.island-domain {
+  color: #aec2c6;
+  font: 500 9px/1.28 system-ui, sans-serif;
 }
 
-.island.major .island-name { font-size: 13px; }
-.island.continent .island-name {
+.island.major .island-name { font-size: 14px; }
+.island.continent .island-label {
   left: var(--coast-label-x);
   top: var(--coast-label-y);
 }
-.island.compact .island-name { visibility: hidden; }
+.island.compact .island-label { visibility: hidden; }
 .island:hover, .island:focus-visible, .island[aria-pressed="true"] { z-index: 1; }
-.island:is(:hover, :focus-visible, [aria-pressed="true"]) .island-name { visibility: visible; }
-.island[aria-pressed="true"] .island-name { color: var(--accent); }
+.island:is(:hover, :focus-visible, [aria-pressed="true"]) .island-label { visibility: visible; }
+.island[aria-pressed="true"] .island-label { color: var(--accent); }
 
 #ocean-status {
   position: absolute;
@@ -384,6 +411,7 @@ main {
 
 .port-heading { display: flex; align-items: center; gap: 8px; }
 .port-heading h2 { flex: 1; font-size: 14px; overflow-wrap: anywhere; margin: 0; }
+.port-heading small { display: block; color: var(--quiet); font-size: 11px; font-weight: 500; }
 #ocean-port-list, #ocean-visit { margin-top: 8px; }
 #ocean-port p { margin: 2px 0 8px; color: var(--quiet); font-size: 12px; }
 #ocean-port ol { list-style: none; padding: 0; margin: 0; }

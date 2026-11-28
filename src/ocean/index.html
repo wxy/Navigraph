@@ -50,12 +50,13 @@
         </div>
         <canvas id="ocean-ships" aria-hidden="true"></canvas>
         <div id="ocean-ship-targets"></div>
+        <canvas id="ocean-nameplate" width="576" height="210" role="img"></canvas>
         <img id="ocean-wind" src="../images/ocean-wind.png" width="36" height="36" alt="海面移动方向" hidden>
         <p id="ocean-status" role="status" data-i18n="content_loading">正在加载数据...</p>
         <aside id="ocean-port" aria-labelledby="ocean-port-name" hidden>
           <div class="port-heading">
             <button id="ocean-port-back" type="button" data-i18n="ocean_port_back" hidden>返回</button>
-            <h2 id="ocean-port-name"></h2>
+            <h2><span id="ocean-port-name"></span><small id="ocean-port-site"></small></h2>
             <button id="ocean-port-close" type="button" data-i18n="content_close">关闭</button>
           </div>
           <div id="ocean-port-list">

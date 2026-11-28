@@ -5410,29 +5410,29 @@
     "message": "Sitzung auswählen",
     "description": "Sea Chart playback"
   },
-  "ocean_pier_lantern": {
-    "message": "Laternenpier"
+  "ocean_pier_lighthouse": {
+    "message": "Leuchtturmkai"
   },
-  "ocean_pier_tide": {
-    "message": "Gezeitenpier"
+  "ocean_pier_crown": {
+    "message": "Kronenkai"
   },
-  "ocean_pier_sand": {
-    "message": "Weißsandpier"
+  "ocean_pier_whitecliff": {
+    "message": "Weißklippenkai"
   },
-  "ocean_pier_reef": {
-    "message": "Riffpier"
+  "ocean_pier_fort": {
+    "message": "Festungskai"
   },
-  "ocean_pier_windward": {
-    "message": "Windwärtspier"
+  "ocean_pier_northgate": {
+    "message": "Nordtorkai"
   },
-  "ocean_pier_mist": {
-    "message": "Nebelbuchtpier"
+  "ocean_pier_customs": {
+    "message": "Zollkai"
   },
-  "ocean_vessel_gull": {
-    "message": "Weiße Möwe"
+  "ocean_vessel_falcon": {
+    "message": "Seefalke"
   },
-  "ocean_vessel_tide": {
-    "message": "Gezeitenlied"
+  "ocean_vessel_stag": {
+    "message": "Goldener Hirsch"
   },
   "ocean_vessel_star": {
     "message": "Morgenstern"
@@ -5440,29 +5440,41 @@
   "ocean_vessel_wind": {
     "message": "Nordwind"
   },
-  "ocean_vessel_lantern": {
-    "message": "Hafenlicht"
+  "ocean_vessel_crown": {
+    "message": "Silberkrone"
   },
-  "ocean_vessel_sail": {
-    "message": "Fernsegler"
+  "ocean_vessel_fortuna": {
+    "message": "Fortuna"
   },
-  "ocean_vessel_bay": {
-    "message": "Klarbucht"
+  "ocean_vessel_elmo": {
+    "message": "Sankt Elmo"
   },
-  "ocean_vessel_dusk": {
-    "message": "Abendflut"
+  "ocean_vessel_westerly": {
+    "message": "Westwind"
   },
   "ocean_vessel_petrel": {
     "message": "Sturmvogel"
   },
-  "ocean_vessel_moon": {
-    "message": "Mondschatten"
+  "ocean_vessel_queen": {
+    "message": "Königin der See"
   },
-  "ocean_vessel_blue": {
-    "message": "Blaubucht"
+  "ocean_vessel_trade": {
+    "message": "Passat"
   },
-  "ocean_vessel_cloud": {
-    "message": "Wanderwolke"
+  "ocean_vessel_albatross": {
+    "message": "Albatros"
+  },
+  "ocean_plate_named": {
+    "message": "Seereise von {0}"
+  },
+  "ocean_plate_mine": {
+    "message": "Meine Seereise"
+  },
+  "options_ocean_author": {
+    "message": "Signatur der Seekarte"
+  },
+  "options_ocean_author_help": {
+    "message": "Die Signatur wird in diesem Browser gespeichert und erscheint auf exportierten Seekarten. Ist sie leer, steht dort „Meine Seereise“."
   },
   "ocean_vessel_name": {
     "message": "{0}"

@@ -5410,29 +5410,29 @@
     "message": "세션 선택",
     "description": "Sea Chart playback"
   },
-  "ocean_pier_lantern": {
-    "message": "등불 부두"
+  "ocean_pier_lighthouse": {
+    "message": "등대 부두"
   },
-  "ocean_pier_tide": {
-    "message": "물때 부두"
+  "ocean_pier_crown": {
+    "message": "왕관 부두"
   },
-  "ocean_pier_sand": {
-    "message": "흰모래 부두"
+  "ocean_pier_whitecliff": {
+    "message": "흰 절벽 부두"
   },
-  "ocean_pier_reef": {
-    "message": "암초 부두"
+  "ocean_pier_fort": {
+    "message": "요새 부두"
   },
-  "ocean_pier_windward": {
-    "message": "맞바람 부두"
+  "ocean_pier_northgate": {
+    "message": "북문 부두"
   },
-  "ocean_pier_mist": {
-    "message": "안개만 부두"
+  "ocean_pier_customs": {
+    "message": "세관 부두"
   },
-  "ocean_vessel_gull": {
-    "message": "흰갈매기"
+  "ocean_vessel_falcon": {
+    "message": "바다의 매"
   },
-  "ocean_vessel_tide": {
-    "message": "파도소리"
+  "ocean_vessel_stag": {
+    "message": "황금 사슴"
   },
   "ocean_vessel_star": {
     "message": "새벽별"
@@ -5440,29 +5440,41 @@
   "ocean_vessel_wind": {
     "message": "북풍"
   },
-  "ocean_vessel_lantern": {
-    "message": "나루등"
+  "ocean_vessel_crown": {
+    "message": "은빛 왕관"
   },
-  "ocean_vessel_sail": {
-    "message": "먼돛"
+  "ocean_vessel_fortuna": {
+    "message": "포르투나"
   },
-  "ocean_vessel_bay": {
-    "message": "맑은만"
+  "ocean_vessel_elmo": {
+    "message": "성 엘모"
   },
-  "ocean_vessel_dusk": {
-    "message": "저녁물결"
+  "ocean_vessel_westerly": {
+    "message": "서풍"
   },
   "ocean_vessel_petrel": {
     "message": "바다제비"
   },
-  "ocean_vessel_moon": {
-    "message": "달그림자"
+  "ocean_vessel_queen": {
+    "message": "바다의 여왕"
   },
-  "ocean_vessel_blue": {
-    "message": "푸른만"
+  "ocean_vessel_trade": {
+    "message": "무역풍"
   },
-  "ocean_vessel_cloud": {
-    "message": "뜬구름"
+  "ocean_vessel_albatross": {
+    "message": "앨버트로스"
+  },
+  "ocean_plate_named": {
+    "message": "{0}의 항해 기록"
+  },
+  "ocean_plate_mine": {
+    "message": "나의 항해 기록"
+  },
+  "options_ocean_author": {
+    "message": "해도 서명"
+  },
+  "options_ocean_author_help": {
+    "message": "서명은 이 브라우저에 저장되며 해도 이미지에 표시됩니다. 비워 두면 ‘나의 항해 기록’이 표시됩니다."
   },
   "ocean_vessel_name": {
     "message": "{0}호"

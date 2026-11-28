@@ -6,6 +6,7 @@ import { isTrackingUrl } from '../lib/graph/query.js';
 import { formatGraphDuration, graphDateFormat, setupGraphCalendar, setupGraphOptions } from '../lib/graph/toolbar.js';
 import { localDayRange } from '../lib/graph/tree-day.js';
 import { sendToBackground } from '../lib/messaging/sender.js';
+import { OCEAN_AUTHOR_STORAGE_KEY } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { I18n, _ } from '../lib/utils/i18n.js';
 import type { BackgroundResponses } from '../types/messages/background.js';
@@ -15,6 +16,7 @@ import { loadOceanArt } from './art.js';
 import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
 import { ChartLight } from './light.js';
+import { nameplateFont, paintNameplate } from './nameplate.js';
 import { islandVisibilityAt, prepareReplay, replayAt } from './replay.js';
 import { paintOceanImage } from './snapshot.js';
 
@@ -35,7 +37,8 @@ async function initialize(): Promise<void> {
   await settings.initialize();
   const locale = params.get('locale') ?? settings.getSetting('forcedLocale') ?? 'system';
   await I18n.getInstance().setLocale(locale);
-  document.documentElement.lang = (locale === 'system' ? chrome.i18n.getUILanguage() : locale).replace('_', '-');
+  const language = (locale === 'system' ? chrome.i18n.getUILanguage() : locale).replace(/_/g, '-');
+  document.documentElement.lang = language;
   await getThemeManager().initialize();
   setupGraphOptions();
   document.getElementById('view-switcher-container')?.setAttribute('aria-label', _('content_view', '视图'));
@@ -62,6 +65,7 @@ async function initialize(): Promise<void> {
   const lastTime = document.getElementById('ocean-last-time')!;
   const port = document.getElementById('ocean-port')!;
   const portName = document.getElementById('ocean-port-name')!;
+  const portSite = document.getElementById('ocean-port-site')!;
   const portList = document.getElementById('ocean-port-list')!;
   const portVisits = document.getElementById('ocean-port-visits')!;
   const closePortButton = document.querySelector<HTMLButtonElement>('#ocean-port-close')!;
@@ -71,6 +75,7 @@ async function initialize(): Promise<void> {
   const visitStatus = document.getElementById('ocean-visit-status')!;
   const visitDetails = document.getElementById('ocean-visit-details')!;
   const map = document.getElementById('ocean-map')!;
+  const nameplate = document.querySelector<HTMLCanvasElement>('#ocean-nameplate')!;
   const surface = document.getElementById('ocean-surface')!;
   const tileSize = Number.parseFloat(getComputedStyle(map).getPropertyValue('--surface-period'));
   const bearing = Math.random() * Math.PI * 2;
@@ -103,7 +108,7 @@ async function initialize(): Promise<void> {
     document.querySelector<HTMLCanvasElement>('#ocean-moon')!,
     art.celestial,
   );
-  let history = chartHistory([]);
+  let history = chartHistory([], language);
   let replay = prepareReplay([]);
   let dayData: BackgroundResponses.GetOceanDayResponse | undefined;
   let portIsland: Island | undefined;
@@ -122,6 +127,8 @@ async function initialize(): Promise<void> {
   let previousFrame = 0;
   let surfaceX = 0;
   let surfaceY = 0;
+  let author = localStorage.getItem(OCEAN_AUTHOR_STORAGE_KEY) ?? '';
+  let hideNameplateTimer = 0;
   const calendar = new CalendarSessionSelector({
     byDay: true,
     get day() { return dayData?.start ?? requestedDay; },
@@ -130,6 +137,20 @@ async function initialize(): Promise<void> {
   setupGraphCalendar(calendar, () => selectDay(Date.now()), () => { void loadCalendarSessions(); });
   musicOption.checked = false;
   music.volume = .32;
+
+  function renderNameplate(): void {
+    const title = author ? _('ocean_plate_named', '{0}的航海轨迹').replace('{0}', () => author)
+      : _('ocean_plate_mine', '我的航海轨迹');
+    const date = graphDateFormat.format(dayData?.start ?? requestedDay ?? Date.now());
+    paintNameplate(nameplate, title, date);
+    nameplate.setAttribute('aria-label', `Navigraph · ${title} · ${date}`);
+  }
+
+  function revealNameplate(): void {
+    nameplate.classList.add('visible');
+    window.clearTimeout(hideNameplateTimer);
+    hideNameplateTimer = window.setTimeout(() => nameplate.classList.remove('visible'), 5000);
+  }
 
   function visitLabel({ ship, dock }: Arrival): string {
     return `${ship.name} · ${dock.name}`;
@@ -162,9 +183,9 @@ async function initialize(): Promise<void> {
     }
     if (index !== describedIndex) {
       describedIndex = index;
-      let place = shown?.island.site;
+      let place = shown?.island.name;
       if (shown?.previous && shown.previous.island !== shown.island) {
-        place = `${shown.previous.island.site} → ${shown.island.site}`;
+        place = `${shown.previous.island.name} → ${shown.island.name}`;
       } else if (shown?.previous) {
         place = `${place} · ${shown.previous.dock.name} → ${shown.dock.name}`;
       }
@@ -265,7 +286,8 @@ async function initialize(): Promise<void> {
     visitDetails.replaceChildren();
     portIsland = island;
     chart.selectIsland(island);
-    portName.textContent = island.site;
+    portName.textContent = island.name;
+    portSite.textContent = island.name === island.site ? '' : island.site;
     document.getElementById('ocean-port-count')!.textContent =
       _('ocean_port_counts', '{0} 条记录 · {1} 个码头', island.records.toLocaleString(), island.docks.length.toLocaleString());
     const active = document.activeElement as HTMLButtonElement | null;
@@ -314,7 +336,8 @@ async function initialize(): Promise<void> {
     chart.selectIsland(arrival.island);
     chart.selectShip(selection.ship);
     positionVisitPanel(selection.ship);
-    portName.textContent = arrival.island.site;
+    portName.textContent = arrival.island.name;
+    portSite.textContent = arrival.island.name === arrival.island.site ? '' : arrival.island.site;
     visitLocation.textContent = visitLabel(arrival);
     portList.hidden = true;
     visitDetails.replaceChildren();
@@ -341,7 +364,7 @@ async function initialize(): Promise<void> {
     const session = sessionPicker.value;
     const savedPosition = preserve && elapsed < replay.duration ? elapsed : undefined;
     const openSite = preserve ? portIsland?.site : undefined;
-    history = chartHistory(session ? dayData.nodes.filter(node => node.sessionId === session) : dayData.nodes);
+    history = chartHistory(session ? dayData.nodes.filter(node => node.sessionId === session) : dayData.nodes, language);
     chart.setHistory(history.islands);
     counts.textContent = _('ocean_counts', '{0} 座岛 · {1} 艘船 · 跨岛 {2} 段 · 沿岸 {3} 段',
       history.islands.length.toLocaleString(), history.ships.length.toLocaleString(),
@@ -392,7 +415,8 @@ async function initialize(): Promise<void> {
     if (day !== undefined) dateLabel.textContent = graphDateFormat.format(day);
     closePort();
     dayData = undefined;
-    history = chartHistory([]);
+    renderNameplate();
+    history = chartHistory([], language);
     chart.setHistory([]);
     showTimeline([]);
     sessionPicker.replaceChildren(new Option(_('ocean_all_sessions', '全部会话'), ''));
@@ -422,6 +446,7 @@ async function initialize(): Promise<void> {
     dayData = response;
     if (!sameDay) {
       dateLabel.textContent = graphDateFormat.format(response.start);
+      renderNameplate();
       calendar.update(calendarSessions, undefined, calendarSessions[0]?.id);
     }
     today.hidden = response.start === localDayRange(Date.now())[0];
@@ -496,8 +521,20 @@ async function initialize(): Promise<void> {
   }
 
   play.addEventListener('click', togglePlayback);
+  map.addEventListener('pointerenter', revealNameplate);
+  map.addEventListener('pointermove', revealNameplate, { passive: true });
+  map.addEventListener('focusin', revealNameplate);
+  window.addEventListener('storage', event => {
+    if (event.key !== OCEAN_AUTHOR_STORAGE_KEY) return;
+    author = event.newValue ?? '';
+    renderNameplate();
+  });
+  void document.fonts.load(nameplateFont, 'Navigraph').then(renderNameplate, error => {
+    console.warn('Unable to load the sea chart nameplate font', error);
+  });
   const image = document.querySelector<HTMLCanvasElement>('#ocean-image')!;
   image.addEventListener('contextmenu', () => {
+    revealNameplate();
     paintOceanImage(image, map, art, tileSize, surfaceX, surfaceY);
   });
   image.hidden = false;

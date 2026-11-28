@@ -48,6 +48,11 @@
               <div class="description" data-i18n="options_desc_default_view">没有在链接中指定视图时使用；手动切换会保留当前页面的选择。</div>
             </div>
             <div class="setting-group">
+              <label for="ocean-chart-author" data-i18n="options_ocean_author">航海图署名</label>
+              <input id="ocean-chart-author" name="ocean-chart-author" type="text" maxlength="24" autocomplete="off" aria-describedby="ocean-author-help">
+              <div id="ocean-author-help" class="description" data-i18n="options_ocean_author_help">署名保存在此浏览器中，并随航海图图片显示。留空时显示「我的航海轨迹」。</div>
+            </div>
+            <div class="setting-group">
               <label for="force-language" data-i18n="options_label_force_language">强制使用语言：</label>
               <select id="force-language">
                 <option value="system" data-i18n="options_option_follow_system">跟随系统</option>

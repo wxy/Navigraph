@@ -84,7 +84,7 @@ export function paintOceanImage(
       ctx.restore();
     }
 
-    const label = island.querySelector('.island-name')!;
+    const label = island.querySelector('.island-label')!;
     const style = getComputedStyle(label);
     if (style.visibility === 'hidden') continue;
     const name = box(label);
@@ -92,21 +92,23 @@ export function paintOceanImage(
     ctx.beginPath();
     ctx.roundRect(name.x, name.y, name.w, name.h, Number.parseFloat(style.borderRadius));
     ctx.fill();
-    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    ctx.fillStyle = style.color;
     ctx.textBaseline = 'middle';
-    const padding = Number.parseFloat(style.paddingLeft);
-    const textWidth = name.w - 2 * padding;
-    const text = label.textContent!;
-    let visible = text;
-    if (ctx.measureText(text).width > textWidth) {
-      const letters = Array.from(text);
-      do {
-        letters.pop();
-        visible = letters.join('') + '…';
-      } while (letters.length && ctx.measureText(visible).width > textWidth);
+    for (const line of Array.from(label.children)) {
+      const { x, y, w, h } = box(line);
+      const textStyle = getComputedStyle(line);
+      ctx.font = `${textStyle.fontWeight} ${textStyle.fontSize} ${textStyle.fontFamily}`;
+      ctx.fillStyle = textStyle.color;
+      ctx.textAlign = 'center';
+      let text = line.textContent!;
+      if (ctx.measureText(text).width > w) {
+        const letters = Array.from(text);
+        do {
+          letters.pop();
+          text = letters.join('') + '…';
+        } while (letters.length && ctx.measureText(text).width > w);
+      }
+      ctx.fillText(text, x + w / 2, y + h / 2, w);
     }
-    ctx.fillText(visible, name.x + padding, name.y + name.h / 2, textWidth);
   }
 
   map.querySelectorAll<HTMLElement>('.ocean-island-piers:not([hidden]) .ocean-pier').forEach(pier => {
@@ -161,6 +163,7 @@ export function paintOceanImage(
 
   ctx.globalAlpha = 1;
   drawImage(map.querySelector<HTMLCanvasElement>('#ocean-ships')!);
+  drawImage(map.querySelector<HTMLCanvasElement>('#ocean-nameplate')!);
   const wind = map.querySelector<HTMLImageElement>('#ocean-wind')!;
   if (wind.complete && wind.naturalWidth) {
     const { x, y, w, h } = box(wind);

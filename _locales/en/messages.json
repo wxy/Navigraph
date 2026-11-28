@@ -5413,29 +5413,29 @@
     "message": "Choose a session",
     "description": "Sea Chart playback"
   },
-  "ocean_pier_lantern": {
-    "message": "Lantern Pier"
+  "ocean_pier_lighthouse": {
+    "message": "Lighthouse Quay"
   },
-  "ocean_pier_tide": {
-    "message": "Tide Pier"
+  "ocean_pier_crown": {
+    "message": "Crown Quay"
   },
-  "ocean_pier_sand": {
-    "message": "White Sand Pier"
+  "ocean_pier_whitecliff": {
+    "message": "Whitecliff Quay"
   },
-  "ocean_pier_reef": {
-    "message": "Reef Pier"
+  "ocean_pier_fort": {
+    "message": "Fort Quay"
   },
-  "ocean_pier_windward": {
-    "message": "Windward Pier"
+  "ocean_pier_northgate": {
+    "message": "North Gate Quay"
   },
-  "ocean_pier_mist": {
-    "message": "Mist Bay Pier"
+  "ocean_pier_customs": {
+    "message": "Customs Quay"
   },
-  "ocean_vessel_gull": {
-    "message": "White Gull"
+  "ocean_vessel_falcon": {
+    "message": "Sea Falcon"
   },
-  "ocean_vessel_tide": {
-    "message": "Tide Song"
+  "ocean_vessel_stag": {
+    "message": "Golden Stag"
   },
   "ocean_vessel_star": {
     "message": "Morning Star"
@@ -5443,29 +5443,41 @@
   "ocean_vessel_wind": {
     "message": "North Wind"
   },
-  "ocean_vessel_lantern": {
-    "message": "Harbor Light"
+  "ocean_vessel_crown": {
+    "message": "Silver Crown"
   },
-  "ocean_vessel_sail": {
-    "message": "Far Sail"
+  "ocean_vessel_fortuna": {
+    "message": "Fortuna"
   },
-  "ocean_vessel_bay": {
-    "message": "Clear Bay"
+  "ocean_vessel_elmo": {
+    "message": "St. Elmo"
   },
-  "ocean_vessel_dusk": {
-    "message": "Evening Tide"
+  "ocean_vessel_westerly": {
+    "message": "Westerly"
   },
   "ocean_vessel_petrel": {
-    "message": "Petrel"
+    "message": "Storm Petrel"
   },
-  "ocean_vessel_moon": {
-    "message": "Moon Shadow"
+  "ocean_vessel_queen": {
+    "message": "Sea Queen"
   },
-  "ocean_vessel_blue": {
-    "message": "Blue Bay"
+  "ocean_vessel_trade": {
+    "message": "Trade Wind"
   },
-  "ocean_vessel_cloud": {
-    "message": "Passing Cloud"
+  "ocean_vessel_albatross": {
+    "message": "Albatross"
+  },
+  "ocean_plate_named": {
+    "message": "{0}’s Voyage"
+  },
+  "ocean_plate_mine": {
+    "message": "My Voyage"
+  },
+  "options_ocean_author": {
+    "message": "Sea chart signature"
+  },
+  "options_ocean_author_help": {
+    "message": "Your signature is stored in this browser and included in chart images. Leave it blank to display “My Voyage”."
   },
   "ocean_vessel_name": {
     "message": "{0}"

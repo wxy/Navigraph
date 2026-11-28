@@ -5410,29 +5410,29 @@
     "message": "Choisir une session",
     "description": "Sea Chart playback"
   },
-  "ocean_pier_lantern": {
-    "message": "Quai de la Lanterne"
+  "ocean_pier_lighthouse": {
+    "message": "Quai du Phare"
   },
-  "ocean_pier_tide": {
-    "message": "Quai des Marées"
+  "ocean_pier_crown": {
+    "message": "Quai de la Couronne"
   },
-  "ocean_pier_sand": {
-    "message": "Quai des Sables Blancs"
+  "ocean_pier_whitecliff": {
+    "message": "Quai des Falaises blanches"
   },
-  "ocean_pier_reef": {
-    "message": "Quai du Récif"
+  "ocean_pier_fort": {
+    "message": "Quai du Fort"
   },
-  "ocean_pier_windward": {
-    "message": "Quai du Vent"
+  "ocean_pier_northgate": {
+    "message": "Quai de la Porte du Nord"
   },
-  "ocean_pier_mist": {
-    "message": "Quai de la Baie Brumeuse"
+  "ocean_pier_customs": {
+    "message": "Quai de la Douane"
   },
-  "ocean_vessel_gull": {
-    "message": "Mouette blanche"
+  "ocean_vessel_falcon": {
+    "message": "Faucon des mers"
   },
-  "ocean_vessel_tide": {
-    "message": "Chant des marées"
+  "ocean_vessel_stag": {
+    "message": "Cerf d’or"
   },
   "ocean_vessel_star": {
     "message": "Étoile du matin"
@@ -5440,29 +5440,41 @@
   "ocean_vessel_wind": {
     "message": "Vent du nord"
   },
-  "ocean_vessel_lantern": {
-    "message": "Feu du port"
+  "ocean_vessel_crown": {
+    "message": "Couronne d’argent"
   },
-  "ocean_vessel_sail": {
-    "message": "Voile lointaine"
+  "ocean_vessel_fortuna": {
+    "message": "Fortuna"
   },
-  "ocean_vessel_bay": {
-    "message": "Baie claire"
+  "ocean_vessel_elmo": {
+    "message": "Saint-Elme"
   },
-  "ocean_vessel_dusk": {
-    "message": "Marée du soir"
+  "ocean_vessel_westerly": {
+    "message": "Vent d’ouest"
   },
   "ocean_vessel_petrel": {
-    "message": "Pétrel"
+    "message": "Pétrel des tempêtes"
   },
-  "ocean_vessel_moon": {
-    "message": "Ombre de lune"
+  "ocean_vessel_queen": {
+    "message": "Reine des mers"
   },
-  "ocean_vessel_blue": {
-    "message": "Baie bleue"
+  "ocean_vessel_trade": {
+    "message": "Alizé"
   },
-  "ocean_vessel_cloud": {
-    "message": "Nuage passant"
+  "ocean_vessel_albatross": {
+    "message": "Albatros"
+  },
+  "ocean_plate_named": {
+    "message": "Voyage de {0}"
+  },
+  "ocean_plate_mine": {
+    "message": "Mon voyage"
+  },
+  "options_ocean_author": {
+    "message": "Signature de la carte marine"
+  },
+  "options_ocean_author_help": {
+    "message": "La signature est enregistrée dans ce navigateur et figure sur les images exportées. Laissez ce champ vide pour afficher « Mon voyage »."
   },
   "ocean_vessel_name": {
     "message": "{0}"

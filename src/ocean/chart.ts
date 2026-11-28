@@ -118,17 +118,27 @@ export class OceanChart {
       button.type = 'button';
       button.className = 'island';
       button.dataset.index = String(index);
-      button.setAttribute('aria-label', island.site);
+      const title = island.name === island.site ? island.site : `${island.name} · ${island.site}`;
+      button.setAttribute('aria-label', title);
       button.setAttribute('aria-pressed', 'false');
-      button.title = island.site;
+      button.title = title;
       const art = document.createElement('span');
       art.className = 'island-art';
       const town = document.createElement('span');
       town.className = 'island-town';
+      const label = document.createElement('span');
+      label.className = 'island-label';
       const name = document.createElement('span');
       name.className = 'island-name';
-      name.textContent = island.site;
-      button.append(art, town, name);
+      name.textContent = island.name;
+      label.append(name);
+      if (island.name !== island.site) {
+        const domain = document.createElement('span');
+        domain.className = 'island-domain';
+        domain.textContent = island.site;
+        label.append(domain);
+      }
+      button.append(art, town, label);
       const shallow = document.createElement('img');
       shallow.className = 'ocean-shallow-patch';
       shallow.alt = '';
@@ -387,7 +397,7 @@ export class OceanChart {
     const { button, clockTarget } = target;
     if (changed) {
       target.arrival = arrival;
-      button.setAttribute('aria-label', `${_('ocean_visit_details', '访问详情')} · ${ship.name} · ${island.site}`);
+      button.setAttribute('aria-label', `${_('ocean_visit_details', '访问详情')} · ${ship.name} · ${island.name}`);
     }
     const x = Math.round(position.x);
     const y = Math.round(position.y);

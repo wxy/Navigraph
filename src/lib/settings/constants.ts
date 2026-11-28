@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS: NavigraphSettings = {
  */
 export const SETTINGS_STORAGE_KEY = 'navigraph_settings';
 
+export const OCEAN_AUTHOR_STORAGE_KEY = 'navigraph_ocean_author';
+
 /**
  * 本地存储缓存键
  */
