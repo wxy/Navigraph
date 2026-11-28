@@ -5410,9 +5410,65 @@
     "message": "세션 선택",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "배 {0}",
-    "description": "Sea chart"
+  "ocean_pier_lantern": {
+    "message": "등불 부두"
+  },
+  "ocean_pier_tide": {
+    "message": "물때 부두"
+  },
+  "ocean_pier_sand": {
+    "message": "흰모래 부두"
+  },
+  "ocean_pier_reef": {
+    "message": "암초 부두"
+  },
+  "ocean_pier_windward": {
+    "message": "맞바람 부두"
+  },
+  "ocean_pier_mist": {
+    "message": "안개만 부두"
+  },
+  "ocean_vessel_gull": {
+    "message": "흰갈매기"
+  },
+  "ocean_vessel_tide": {
+    "message": "파도소리"
+  },
+  "ocean_vessel_star": {
+    "message": "새벽별"
+  },
+  "ocean_vessel_wind": {
+    "message": "북풍"
+  },
+  "ocean_vessel_lantern": {
+    "message": "나루등"
+  },
+  "ocean_vessel_sail": {
+    "message": "먼돛"
+  },
+  "ocean_vessel_bay": {
+    "message": "맑은만"
+  },
+  "ocean_vessel_dusk": {
+    "message": "저녁물결"
+  },
+  "ocean_vessel_petrel": {
+    "message": "바다제비"
+  },
+  "ocean_vessel_moon": {
+    "message": "달그림자"
+  },
+  "ocean_vessel_blue": {
+    "message": "푸른만"
+  },
+  "ocean_vessel_cloud": {
+    "message": "뜬구름"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}호"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}호"
   },
   "ocean_all_sessions": {
     "message": "모든 세션",
@@ -5436,14 +5492,6 @@
   },
   "ocean_day_limit": {
     "message": "최근 탐색 기록 {0}개를 표시합니다.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "선착장 {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "선착장 {0} → 선착장 {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

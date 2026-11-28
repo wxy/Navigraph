@@ -16,6 +16,7 @@ import { OceanChart } from './chart.js';
 import { chartHistory, type Arrival, type Island, type Ship } from './history.js';
 import { ChartLight } from './light.js';
 import { islandVisibilityAt, prepareReplay, replayAt } from './replay.js';
+import { paintOceanImage } from './snapshot.js';
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -66,6 +67,7 @@ async function initialize(): Promise<void> {
   const closePortButton = document.querySelector<HTMLButtonElement>('#ocean-port-close')!;
   const backButton = document.querySelector<HTMLButtonElement>('#ocean-port-back')!;
   const visit = document.getElementById('ocean-visit')!;
+  const visitLocation = document.getElementById('ocean-visit-location')!;
   const visitStatus = document.getElementById('ocean-visit-status')!;
   const visitDetails = document.getElementById('ocean-visit-details')!;
   const map = document.getElementById('ocean-map')!;
@@ -129,18 +131,22 @@ async function initialize(): Promise<void> {
   musicOption.checked = false;
   music.volume = .32;
 
-  function shipName(ship: Ship): string {
-    return _('ocean_ship', '船 {0}', ship.number);
+  function visitLabel({ ship, dock }: Arrival): string {
+    return `${ship.name} · ${dock.name}`;
   }
 
   function draw(): void {
     const animate = !reducedMotion.matches;
-    const { fleet, trails, current: shown, underway, timestamp } = replayAt(replay, elapsed, animate);
+    const { fleet, trails, current: shown, underway } = replayAt(replay, elapsed, animate);
     chart.showFleet(fleet, trails, elapsed, animate, islandVisibilityAt(replay, elapsed, animate));
-    const day = dayData?.start ?? requestedDay;
-    light.show(timestamp ?? (day === undefined ? Date.now() : new Date(day).setHours(12, 0, 0, 0)));
     const progress = Math.round(elapsed / 100) * 100;
     if (position.valueAsNumber !== progress) position.value = String(progress);
+    // The chart clock follows the slider; each ship has its own visit clock.
+    const { timeRange, duration } = replay;
+    const fraction = duration ? position.valueAsNumber / duration : 0;
+    const timestamp = timeRange && timeRange.start + (timeRange.end - timeRange.start) * fraction;
+    const day = dayData?.start ?? requestedDay;
+    light.show(timestamp ?? (day === undefined ? Date.now() : new Date(day).setHours(12, 0, 0, 0)));
     if (describedUnderway !== underway) {
       describedUnderway = underway;
       underwayLabel.hidden = underway < 2;
@@ -160,9 +166,9 @@ async function initialize(): Promise<void> {
       if (shown?.previous && shown.previous.island !== shown.island) {
         place = `${shown.previous.island.site} → ${shown.island.site}`;
       } else if (shown?.previous) {
-        place = `${place} · ${_('ocean_coastal_move', '码头 {0} → 码头 {1}', shown.previous.dock.number, shown.dock.number)}`;
+        place = `${place} · ${shown.previous.dock.name} → ${shown.dock.name}`;
       }
-      current.textContent = shown ? `${shipName(shown.ship)} · ${place}` : '';
+      current.textContent = shown ? `${shown.ship.name} · ${place}` : '';
     }
     position.setAttribute('aria-valuetext', `${time.textContent} ${current.textContent}`.trim());
   }
@@ -227,8 +233,9 @@ async function initialize(): Promise<void> {
     position.max = String(replay.duration);
     position.disabled = play.disabled = arrivals.length < 2;
     map.classList.toggle('can-play', !play.disabled);
-    firstTime.textContent = arrivals.length ? timeFormat.format(arrivals[0].timestamp) : '';
-    lastTime.textContent = arrivals.length ? timeFormat.format(arrivals[arrivals.length - 1].timestamp) : '';
+    const { timeRange } = replay;
+    firstTime.textContent = timeRange ? timeFormat.format(timeRange.start) : '';
+    lastTime.textContent = timeRange ? timeFormat.format(timeRange.end) : '';
     seek(startAt === undefined ? replay.duration : Math.min(startAt, replay.duration));
   }
 
@@ -271,7 +278,7 @@ async function initialize(): Promise<void> {
       button.type = 'button';
       button.dataset.arrival = arrival.nodeId;
       if (button.dataset.arrival === focusedArrival) focus = button;
-      button.textContent = `${timeFormat.format(arrival.timestamp)} · ${shipName(arrival.ship)} · ${_('ocean_dock', '码头 {0}', arrival.dock.number)}`;
+      button.textContent = `${timeFormat.format(arrival.timestamp)} · ${visitLabel(arrival)}`;
       item.append(button);
       fragment.append(item);
     }
@@ -308,6 +315,7 @@ async function initialize(): Promise<void> {
     chart.selectShip(selection.ship);
     positionVisitPanel(selection.ship);
     portName.textContent = arrival.island.site;
+    visitLocation.textContent = visitLabel(arrival);
     portList.hidden = true;
     visitDetails.replaceChildren();
     visitStatus.textContent = _('content_loading', '正在加载数据...');
@@ -350,6 +358,7 @@ async function initialize(): Promise<void> {
         chart.selectIsland(stillOpen);
         chart.selectShip(selection.ship);
         positionVisitPanel(selection.ship);
+        visitLocation.textContent = visitLabel(arrival);
       } else showPort(stillOpen, selection?.nodeId);
     }
     else if (portIsland) closePort();
@@ -487,8 +496,13 @@ async function initialize(): Promise<void> {
   }
 
   play.addEventListener('click', togglePlayback);
+  const image = document.querySelector<HTMLCanvasElement>('#ocean-image')!;
+  image.addEventListener('contextmenu', () => {
+    paintOceanImage(image, map, art, tileSize, surfaceX, surfaceY);
+  });
+  image.hidden = false;
   map.addEventListener('click', event => {
-    if (event.target === map) togglePlayback();
+    if (event.target === map || event.target === image) togglePlayback();
   });
   position.addEventListener('input', () => seek(position.valueAsNumber));
   musicOption.addEventListener('change', () => syncMusic(frame !== undefined));

@@ -5410,9 +5410,65 @@
     "message": "选择会话",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "船 {0}",
-    "description": "Sea chart"
+  "ocean_pier_lantern": {
+    "message": "灯湾码头"
+  },
+  "ocean_pier_tide": {
+    "message": "潮汐码头"
+  },
+  "ocean_pier_sand": {
+    "message": "白沙码头"
+  },
+  "ocean_pier_reef": {
+    "message": "礁石码头"
+  },
+  "ocean_pier_windward": {
+    "message": "迎风码头"
+  },
+  "ocean_pier_mist": {
+    "message": "雾湾码头"
+  },
+  "ocean_vessel_gull": {
+    "message": "白鸥"
+  },
+  "ocean_vessel_tide": {
+    "message": "潮声"
+  },
+  "ocean_vessel_star": {
+    "message": "晨星"
+  },
+  "ocean_vessel_wind": {
+    "message": "北风"
+  },
+  "ocean_vessel_lantern": {
+    "message": "渡灯"
+  },
+  "ocean_vessel_sail": {
+    "message": "远帆"
+  },
+  "ocean_vessel_bay": {
+    "message": "晴湾"
+  },
+  "ocean_vessel_dusk": {
+    "message": "暮潮"
+  },
+  "ocean_vessel_petrel": {
+    "message": "海燕"
+  },
+  "ocean_vessel_moon": {
+    "message": "月影"
+  },
+  "ocean_vessel_blue": {
+    "message": "蓝湾"
+  },
+  "ocean_vessel_cloud": {
+    "message": "流云"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}号"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0}{1}号"
   },
   "ocean_all_sessions": {
     "message": "全部会话",
@@ -5436,14 +5492,6 @@
   },
   "ocean_day_limit": {
     "message": "显示最近 {0} 条导航记录。",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "码头 {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "码头 {0} → 码头 {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

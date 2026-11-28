@@ -5410,9 +5410,65 @@
     "message": "Sitzung auswählen",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Schiff {0}",
-    "description": "Sea chart"
+  "ocean_pier_lantern": {
+    "message": "Laternenpier"
+  },
+  "ocean_pier_tide": {
+    "message": "Gezeitenpier"
+  },
+  "ocean_pier_sand": {
+    "message": "Weißsandpier"
+  },
+  "ocean_pier_reef": {
+    "message": "Riffpier"
+  },
+  "ocean_pier_windward": {
+    "message": "Windwärtspier"
+  },
+  "ocean_pier_mist": {
+    "message": "Nebelbuchtpier"
+  },
+  "ocean_vessel_gull": {
+    "message": "Weiße Möwe"
+  },
+  "ocean_vessel_tide": {
+    "message": "Gezeitenlied"
+  },
+  "ocean_vessel_star": {
+    "message": "Morgenstern"
+  },
+  "ocean_vessel_wind": {
+    "message": "Nordwind"
+  },
+  "ocean_vessel_lantern": {
+    "message": "Hafenlicht"
+  },
+  "ocean_vessel_sail": {
+    "message": "Fernsegler"
+  },
+  "ocean_vessel_bay": {
+    "message": "Klarbucht"
+  },
+  "ocean_vessel_dusk": {
+    "message": "Abendflut"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Sturmvogel"
+  },
+  "ocean_vessel_moon": {
+    "message": "Mondschatten"
+  },
+  "ocean_vessel_blue": {
+    "message": "Blaubucht"
+  },
+  "ocean_vessel_cloud": {
+    "message": "Wanderwolke"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "Alle Sitzungen",
@@ -5436,14 +5492,6 @@
   },
   "ocean_day_limit": {
     "message": "Die letzten {0} Navigationseinträge werden angezeigt.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Anleger {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Anleger {0} → Anleger {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

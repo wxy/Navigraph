@@ -18,15 +18,18 @@ async function loadSheet(file: string, columns: number, rows: number): Promise<S
 }
 
 export async function loadOceanArt() {
-  const [boats, marine, birds, celestial, islands, largeIslands] = await Promise.all([
+  const [boats, marine, birds, celestial, islands, largeIslands, surface, towns, piers] = await Promise.all([
     loadSheet('ocean-boats.webp', 3, 3),
     loadSheet('ocean-marine.webp', 2, 2),
     loadSheet('ocean-birds.webp', 2, 2),
     loadSheet('ocean-celestial.webp', 2, 1),
     loadSheet('ocean-islands.webp', 3, 3),
     loadSheet('ocean-large-islands.webp', 2, 2),
+    loadImage('ocean-water-tile.webp'),
+    loadSheet('ocean-towns.webp', 2, 2),
+    loadSheet('ocean-piers.webp', 2, 2),
   ]);
-  return { boats, marine, birds, celestial, islands, largeIslands };
+  return { boats, marine, birds, celestial, islands, largeIslands, surface, towns, piers };
 }
 
 export type OceanArt = Awaited<ReturnType<typeof loadOceanArt>>;

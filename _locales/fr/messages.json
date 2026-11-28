@@ -5410,9 +5410,65 @@
     "message": "Choisir une session",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Navire {0}",
-    "description": "Sea chart"
+  "ocean_pier_lantern": {
+    "message": "Quai de la Lanterne"
+  },
+  "ocean_pier_tide": {
+    "message": "Quai des Marées"
+  },
+  "ocean_pier_sand": {
+    "message": "Quai des Sables Blancs"
+  },
+  "ocean_pier_reef": {
+    "message": "Quai du Récif"
+  },
+  "ocean_pier_windward": {
+    "message": "Quai du Vent"
+  },
+  "ocean_pier_mist": {
+    "message": "Quai de la Baie Brumeuse"
+  },
+  "ocean_vessel_gull": {
+    "message": "Mouette blanche"
+  },
+  "ocean_vessel_tide": {
+    "message": "Chant des marées"
+  },
+  "ocean_vessel_star": {
+    "message": "Étoile du matin"
+  },
+  "ocean_vessel_wind": {
+    "message": "Vent du nord"
+  },
+  "ocean_vessel_lantern": {
+    "message": "Feu du port"
+  },
+  "ocean_vessel_sail": {
+    "message": "Voile lointaine"
+  },
+  "ocean_vessel_bay": {
+    "message": "Baie claire"
+  },
+  "ocean_vessel_dusk": {
+    "message": "Marée du soir"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Pétrel"
+  },
+  "ocean_vessel_moon": {
+    "message": "Ombre de lune"
+  },
+  "ocean_vessel_blue": {
+    "message": "Baie bleue"
+  },
+  "ocean_vessel_cloud": {
+    "message": "Nuage passant"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "Toutes les sessions",
@@ -5436,14 +5492,6 @@
   },
   "ocean_day_limit": {
     "message": "Affichage des {0} dernières entrées de navigation.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Quai {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Quai {0} → Quai {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

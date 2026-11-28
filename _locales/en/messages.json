@@ -5413,9 +5413,65 @@
     "message": "Choose a session",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Ship {0}",
-    "description": "Sea chart"
+  "ocean_pier_lantern": {
+    "message": "Lantern Pier"
+  },
+  "ocean_pier_tide": {
+    "message": "Tide Pier"
+  },
+  "ocean_pier_sand": {
+    "message": "White Sand Pier"
+  },
+  "ocean_pier_reef": {
+    "message": "Reef Pier"
+  },
+  "ocean_pier_windward": {
+    "message": "Windward Pier"
+  },
+  "ocean_pier_mist": {
+    "message": "Mist Bay Pier"
+  },
+  "ocean_vessel_gull": {
+    "message": "White Gull"
+  },
+  "ocean_vessel_tide": {
+    "message": "Tide Song"
+  },
+  "ocean_vessel_star": {
+    "message": "Morning Star"
+  },
+  "ocean_vessel_wind": {
+    "message": "North Wind"
+  },
+  "ocean_vessel_lantern": {
+    "message": "Harbor Light"
+  },
+  "ocean_vessel_sail": {
+    "message": "Far Sail"
+  },
+  "ocean_vessel_bay": {
+    "message": "Clear Bay"
+  },
+  "ocean_vessel_dusk": {
+    "message": "Evening Tide"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Petrel"
+  },
+  "ocean_vessel_moon": {
+    "message": "Moon Shadow"
+  },
+  "ocean_vessel_blue": {
+    "message": "Blue Bay"
+  },
+  "ocean_vessel_cloud": {
+    "message": "Passing Cloud"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "All sessions",
@@ -5439,14 +5495,6 @@
   },
   "ocean_day_limit": {
     "message": "Showing the latest {0} navigation records.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Dock {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Dock {0} → Dock {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

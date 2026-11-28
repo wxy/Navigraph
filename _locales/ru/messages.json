@@ -5410,9 +5410,65 @@
     "message": "Выбрать сеанс",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Корабль {0}",
-    "description": "Sea chart"
+  "ocean_pier_lantern": {
+    "message": "Фонарный причал"
+  },
+  "ocean_pier_tide": {
+    "message": "Причал приливов"
+  },
+  "ocean_pier_sand": {
+    "message": "Причал Белых Песков"
+  },
+  "ocean_pier_reef": {
+    "message": "Рифовый причал"
+  },
+  "ocean_pier_windward": {
+    "message": "Наветренный причал"
+  },
+  "ocean_pier_mist": {
+    "message": "Причал Туманной бухты"
+  },
+  "ocean_vessel_gull": {
+    "message": "Белая чайка"
+  },
+  "ocean_vessel_tide": {
+    "message": "Песня прилива"
+  },
+  "ocean_vessel_star": {
+    "message": "Утренняя звезда"
+  },
+  "ocean_vessel_wind": {
+    "message": "Северный ветер"
+  },
+  "ocean_vessel_lantern": {
+    "message": "Огонёк гавани"
+  },
+  "ocean_vessel_sail": {
+    "message": "Дальний парус"
+  },
+  "ocean_vessel_bay": {
+    "message": "Ясная бухта"
+  },
+  "ocean_vessel_dusk": {
+    "message": "Вечерний прилив"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Качурка"
+  },
+  "ocean_vessel_moon": {
+    "message": "Лунная тень"
+  },
+  "ocean_vessel_blue": {
+    "message": "Синяя бухта"
+  },
+  "ocean_vessel_cloud": {
+    "message": "Облако"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "Все сеансы",
@@ -5436,14 +5492,6 @@
   },
   "ocean_day_limit": {
     "message": "Показаны последние {0} записей навигации.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Причал {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Причал {0} → Причал {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

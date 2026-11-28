@@ -96,6 +96,10 @@ main {
 }
 
 .map > canvas { z-index: 1; }
+#ocean-image {
+  opacity: 0;
+  pointer-events: auto;
+}
 #ocean-shallows { z-index: 0; }
 #ocean-islands { z-index: 2; }
 #ocean-piers, #ocean-ships, #ocean-ship-targets { z-index: 3; }
@@ -137,11 +141,14 @@ main {
 .ocean-ship-target[aria-current="true"] .ocean-ship-clock { box-shadow: 0 0 0 1px var(--accent); }
 
 #ocean-light {
+  --tint-angle: 148deg;
+  --tint-start: #10233c59;
+  --tint-end: #020e2d5e;
   position: absolute;
   z-index: 3;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(148deg, #10233c59, #020e2d5e);
+  background: linear-gradient(var(--tint-angle), var(--tint-start), var(--tint-end));
   opacity: var(--night, 0);
 }
 
