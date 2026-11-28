@@ -5410,9 +5410,77 @@
     "message": "Choisir une session",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Navire {0}",
-    "description": "Sea chart"
+  "ocean_pier_lighthouse": {
+    "message": "Quai du Phare"
+  },
+  "ocean_pier_crown": {
+    "message": "Quai de la Couronne"
+  },
+  "ocean_pier_whitecliff": {
+    "message": "Quai des Falaises blanches"
+  },
+  "ocean_pier_fort": {
+    "message": "Quai du Fort"
+  },
+  "ocean_pier_northgate": {
+    "message": "Quai de la Porte du Nord"
+  },
+  "ocean_pier_customs": {
+    "message": "Quai de la Douane"
+  },
+  "ocean_vessel_falcon": {
+    "message": "Faucon des mers"
+  },
+  "ocean_vessel_stag": {
+    "message": "Cerf d’or"
+  },
+  "ocean_vessel_star": {
+    "message": "Étoile du matin"
+  },
+  "ocean_vessel_wind": {
+    "message": "Vent du nord"
+  },
+  "ocean_vessel_crown": {
+    "message": "Couronne d’argent"
+  },
+  "ocean_vessel_fortuna": {
+    "message": "Fortuna"
+  },
+  "ocean_vessel_elmo": {
+    "message": "Saint-Elme"
+  },
+  "ocean_vessel_westerly": {
+    "message": "Vent d’ouest"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Pétrel des tempêtes"
+  },
+  "ocean_vessel_queen": {
+    "message": "Reine des mers"
+  },
+  "ocean_vessel_trade": {
+    "message": "Alizé"
+  },
+  "ocean_vessel_albatross": {
+    "message": "Albatros"
+  },
+  "ocean_plate_named": {
+    "message": "Voyage de {0}"
+  },
+  "ocean_plate_mine": {
+    "message": "Mon voyage"
+  },
+  "options_ocean_author": {
+    "message": "Signature de la carte marine"
+  },
+  "options_ocean_author_help": {
+    "message": "La signature est enregistrée dans ce navigateur et figure sur les images exportées. Laissez ce champ vide pour afficher « Mon voyage »."
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "Toutes les sessions",
@@ -5436,14 +5504,6 @@
   },
   "ocean_day_limit": {
     "message": "Affichage des {0} dernières entrées de navigation.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Quai {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Quai {0} → Quai {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

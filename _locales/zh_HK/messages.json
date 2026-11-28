@@ -5410,9 +5410,77 @@
     "message": "選擇工作階段",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "船 {0}",
-    "description": "Sea chart"
+  "ocean_pier_lighthouse": {
+    "message": "燈塔碼頭"
+  },
+  "ocean_pier_crown": {
+    "message": "王冠碼頭"
+  },
+  "ocean_pier_whitecliff": {
+    "message": "白崖碼頭"
+  },
+  "ocean_pier_fort": {
+    "message": "海堡碼頭"
+  },
+  "ocean_pier_northgate": {
+    "message": "北門碼頭"
+  },
+  "ocean_pier_customs": {
+    "message": "海關碼頭"
+  },
+  "ocean_vessel_falcon": {
+    "message": "海隼"
+  },
+  "ocean_vessel_stag": {
+    "message": "金鹿"
+  },
+  "ocean_vessel_star": {
+    "message": "晨星"
+  },
+  "ocean_vessel_wind": {
+    "message": "北風"
+  },
+  "ocean_vessel_crown": {
+    "message": "銀冠"
+  },
+  "ocean_vessel_fortuna": {
+    "message": "福爾圖娜"
+  },
+  "ocean_vessel_elmo": {
+    "message": "聖埃爾莫"
+  },
+  "ocean_vessel_westerly": {
+    "message": "西風"
+  },
+  "ocean_vessel_petrel": {
+    "message": "風暴海燕"
+  },
+  "ocean_vessel_queen": {
+    "message": "海上女王"
+  },
+  "ocean_vessel_trade": {
+    "message": "信風"
+  },
+  "ocean_vessel_albatross": {
+    "message": "信天翁"
+  },
+  "ocean_plate_named": {
+    "message": "{0}的航海軌跡"
+  },
+  "ocean_plate_mine": {
+    "message": "我的航海軌跡"
+  },
+  "options_ocean_author": {
+    "message": "航海圖署名"
+  },
+  "options_ocean_author_help": {
+    "message": "署名儲存在此瀏覽器中，會隨航海圖圖片顯示。留空時顯示「我的航海軌跡」。"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}號"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0}{1}號"
   },
   "ocean_all_sessions": {
     "message": "全部工作階段",
@@ -5436,14 +5504,6 @@
   },
   "ocean_day_limit": {
     "message": "顯示最近 {0} 條導覽記錄。",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "碼頭 {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "碼頭 {0} → 碼頭 {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

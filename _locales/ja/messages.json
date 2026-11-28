@@ -5410,9 +5410,77 @@
     "message": "セッションを選択",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "船 {0}",
-    "description": "Sea chart"
+  "ocean_pier_lighthouse": {
+    "message": "灯台埠頭"
+  },
+  "ocean_pier_crown": {
+    "message": "王冠埠頭"
+  },
+  "ocean_pier_whitecliff": {
+    "message": "白崖埠頭"
+  },
+  "ocean_pier_fort": {
+    "message": "要塞埠頭"
+  },
+  "ocean_pier_northgate": {
+    "message": "北門埠頭"
+  },
+  "ocean_pier_customs": {
+    "message": "税関埠頭"
+  },
+  "ocean_vessel_falcon": {
+    "message": "海の隼"
+  },
+  "ocean_vessel_stag": {
+    "message": "黄金の雄鹿"
+  },
+  "ocean_vessel_star": {
+    "message": "暁星"
+  },
+  "ocean_vessel_wind": {
+    "message": "北風"
+  },
+  "ocean_vessel_crown": {
+    "message": "銀の王冠"
+  },
+  "ocean_vessel_fortuna": {
+    "message": "フォルトゥーナ"
+  },
+  "ocean_vessel_elmo": {
+    "message": "聖エルモ"
+  },
+  "ocean_vessel_westerly": {
+    "message": "西風"
+  },
+  "ocean_vessel_petrel": {
+    "message": "ウミツバメ"
+  },
+  "ocean_vessel_queen": {
+    "message": "海の女王"
+  },
+  "ocean_vessel_trade": {
+    "message": "貿易風"
+  },
+  "ocean_vessel_albatross": {
+    "message": "アホウドリ"
+  },
+  "ocean_plate_named": {
+    "message": "{0}の航海記録"
+  },
+  "ocean_plate_mine": {
+    "message": "わたしの航海記録"
+  },
+  "options_ocean_author": {
+    "message": "航海図の署名"
+  },
+  "options_ocean_author_help": {
+    "message": "署名はこのブラウザに保存され、航海図の画像に表示されます。空欄の場合は「わたしの航海記録」と表示されます。"
+  },
+  "ocean_vessel_name": {
+    "message": "{0}号"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0}{1}号"
   },
   "ocean_all_sessions": {
     "message": "すべてのセッション",
@@ -5436,14 +5504,6 @@
   },
   "ocean_day_limit": {
     "message": "最新のナビゲーション記録を {0} 件表示しています。",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "桟橋 {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "桟橋 {0} → 桟橋 {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

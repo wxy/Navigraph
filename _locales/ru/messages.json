@@ -5410,9 +5410,77 @@
     "message": "Выбрать сеанс",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Корабль {0}",
-    "description": "Sea chart"
+  "ocean_pier_lighthouse": {
+    "message": "Причал маяка"
+  },
+  "ocean_pier_crown": {
+    "message": "Причал Короны"
+  },
+  "ocean_pier_whitecliff": {
+    "message": "Причал Белых скал"
+  },
+  "ocean_pier_fort": {
+    "message": "Крепостной причал"
+  },
+  "ocean_pier_northgate": {
+    "message": "Причал Северных ворот"
+  },
+  "ocean_pier_customs": {
+    "message": "Таможенный причал"
+  },
+  "ocean_vessel_falcon": {
+    "message": "Морской сокол"
+  },
+  "ocean_vessel_stag": {
+    "message": "Золотой олень"
+  },
+  "ocean_vessel_star": {
+    "message": "Утренняя звезда"
+  },
+  "ocean_vessel_wind": {
+    "message": "Северный ветер"
+  },
+  "ocean_vessel_crown": {
+    "message": "Серебряная корона"
+  },
+  "ocean_vessel_fortuna": {
+    "message": "Фортуна"
+  },
+  "ocean_vessel_elmo": {
+    "message": "Святой Эльм"
+  },
+  "ocean_vessel_westerly": {
+    "message": "Западный ветер"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Качурка"
+  },
+  "ocean_vessel_queen": {
+    "message": "Королева морей"
+  },
+  "ocean_vessel_trade": {
+    "message": "Пассат"
+  },
+  "ocean_vessel_albatross": {
+    "message": "Альбатрос"
+  },
+  "ocean_plate_named": {
+    "message": "Плавание · {0}"
+  },
+  "ocean_plate_mine": {
+    "message": "Моё плавание"
+  },
+  "options_ocean_author": {
+    "message": "Подпись на морской карте"
+  },
+  "options_ocean_author_help": {
+    "message": "Подпись хранится в этом браузере и добавляется к изображениям карты. Если поле оставить пустым, отобразится «Моё плавание»."
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "Все сеансы",
@@ -5436,14 +5504,6 @@
   },
   "ocean_day_limit": {
     "message": "Показаны последние {0} записей навигации.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Причал {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Причал {0} → Причал {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

@@ -98,6 +98,7 @@ export function prepareReplay(arrivals: readonly Arrival[]) {
   return {
     tracks: [...tracks.values()], arrivalsAt, islandWindows: islandSchedule(islands, tracks.values()),
     duration: Math.max(duration, lastVoyage ? lastVoyage + TRAIL_FADE : 0),
+    timeRange: arrivals.length ? { start: arrivals[0].timestamp, end: arrivals[arrivals.length - 1].timestamp } : undefined,
   };
 }
 
@@ -128,7 +129,7 @@ export function replayAt(replay: ReturnType<typeof prepareReplay>, time: number,
   let currentAt = -1;
   let latest: Arrival | undefined;
   let underway = 0;
-  let timestamp: number | undefined;
+  let latestShipTime: number | undefined;
   for (const { legs, replacedAt } of replay.tracks) {
     let low = 0;
     let high = legs.length;
@@ -153,8 +154,8 @@ export function replayAt(replay: ReturnType<typeof prepareReplay>, time: number,
     const shipTime = fraction === undefined
       ? arrival.timestamp
       : arrival.previous!.timestamp + (arrival.timestamp - arrival.previous!.timestamp) * fraction;
-    if (timestamp === undefined || shipTime >= timestamp) {
-      timestamp = shipTime;
+    if (latestShipTime === undefined || shipTime >= latestShipTime) {
+      latestShipTime = shipTime;
       latest = arrival;
     }
     positions.push({ arrival, timestamp: shipTime, fraction, parked: time >= replacedAt, finished: time >= leg.end && leg === legs.at(-1) });
@@ -169,7 +170,7 @@ export function replayAt(replay: ReturnType<typeof prepareReplay>, time: number,
   const fleet: ShipPosition[] = [];
   const idleByDock = new Map<Dock, ShipPosition>();
   for (const position of positions) {
-    if (position.parked || (position.finished && timestamp! - position.timestamp >= SHIP_IDLE_MS)) {
+    if (position.parked || (position.finished && latestShipTime! - position.timestamp >= SHIP_IDLE_MS)) {
       const { dock } = position.arrival;
       const other = idleByDock.get(dock);
       if (!other || other.timestamp <= position.timestamp) idleByDock.set(dock, { ...position, parked: true });
@@ -186,5 +187,5 @@ export function replayAt(replay: ReturnType<typeof prepareReplay>, time: number,
     parkedCounts.set(island, count + 1);
     parked.push(position);
   }
-  return { fleet: [...parked, ...fleet], trails, current: underway ? current : latest, underway, timestamp };
+  return { fleet: [...parked, ...fleet], trails, current: underway ? current : latest, underway };
 }

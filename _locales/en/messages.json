@@ -5413,9 +5413,77 @@
     "message": "Choose a session",
     "description": "Sea Chart playback"
   },
-  "ocean_ship": {
-    "message": "Ship {0}",
-    "description": "Sea chart"
+  "ocean_pier_lighthouse": {
+    "message": "Lighthouse Quay"
+  },
+  "ocean_pier_crown": {
+    "message": "Crown Quay"
+  },
+  "ocean_pier_whitecliff": {
+    "message": "Whitecliff Quay"
+  },
+  "ocean_pier_fort": {
+    "message": "Fort Quay"
+  },
+  "ocean_pier_northgate": {
+    "message": "North Gate Quay"
+  },
+  "ocean_pier_customs": {
+    "message": "Customs Quay"
+  },
+  "ocean_vessel_falcon": {
+    "message": "Sea Falcon"
+  },
+  "ocean_vessel_stag": {
+    "message": "Golden Stag"
+  },
+  "ocean_vessel_star": {
+    "message": "Morning Star"
+  },
+  "ocean_vessel_wind": {
+    "message": "North Wind"
+  },
+  "ocean_vessel_crown": {
+    "message": "Silver Crown"
+  },
+  "ocean_vessel_fortuna": {
+    "message": "Fortuna"
+  },
+  "ocean_vessel_elmo": {
+    "message": "St. Elmo"
+  },
+  "ocean_vessel_westerly": {
+    "message": "Westerly"
+  },
+  "ocean_vessel_petrel": {
+    "message": "Storm Petrel"
+  },
+  "ocean_vessel_queen": {
+    "message": "Sea Queen"
+  },
+  "ocean_vessel_trade": {
+    "message": "Trade Wind"
+  },
+  "ocean_vessel_albatross": {
+    "message": "Albatross"
+  },
+  "ocean_plate_named": {
+    "message": "{0}’s Voyage"
+  },
+  "ocean_plate_mine": {
+    "message": "My Voyage"
+  },
+  "options_ocean_author": {
+    "message": "Sea chart signature"
+  },
+  "options_ocean_author_help": {
+    "message": "Your signature is stored in this browser and included in chart images. Leave it blank to display “My Voyage”."
+  },
+  "ocean_vessel_name": {
+    "message": "{0}"
+  },
+  "ocean_vessel_name_repeat": {
+    "message": "{0} {1}"
   },
   "ocean_all_sessions": {
     "message": "All sessions",
@@ -5439,14 +5507,6 @@
   },
   "ocean_day_limit": {
     "message": "Showing the latest {0} navigation records.",
-    "description": "Sea chart"
-  },
-  "ocean_dock": {
-    "message": "Dock {0}",
-    "description": "Sea chart"
-  },
-  "ocean_coastal_move": {
-    "message": "Dock {0} → Dock {1}",
     "description": "Sea chart"
   },
   "ocean_surface_direction": {

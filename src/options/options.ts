@@ -2,13 +2,14 @@ import { Logger } from '../lib/utils/logger.js';
 import { _, _Error, I18n } from '../lib/utils/i18n.js';
 import { NavigraphSettings } from '../lib/settings/types.js';
 import type { ViewType } from '../lib/settings/types.js';
-import { DEFAULT_SETTINGS } from '../lib/settings/constants.js';
+import { DEFAULT_SETTINGS, OCEAN_AUTHOR_STORAGE_KEY } from '../lib/settings/constants.js';
 import { getSettingsService } from '../lib/settings/service.js';
 import { sendMessage, sendToBackground } from '../lib/messaging/index.js';
 
 const logger = new Logger('OptionsPage');
 // 获取设置服务
 const settingsService = getSettingsService();
+const oceanAuthor = document.querySelector<HTMLInputElement>('#ocean-chart-author')!;
 
 // 当前设置引用
 let currentSettings: NavigraphSettings = { ...DEFAULT_SETTINGS };
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async function(): Promise<void> {
 
     // 加载设置
     await loadSettings();
+    oceanAuthor.value = localStorage.getItem(OCEAN_AUTHOR_STORAGE_KEY) ?? '';
     logger.log(_('options_settings_loaded_success', '配置加载成功: {0}'), currentSettings);
 
     // 应用主题到选项页面
@@ -500,15 +502,19 @@ async function saveSettings(): Promise<void> {
 
     // 保存现有设置的副本用于比较
     const oldSettings = { ...currentSettings };
+    const author = oceanAuthor.value.trim();
+    const authorChanged = author !== (localStorage.getItem(OCEAN_AUTHOR_STORAGE_KEY) ?? '');
 
     // 使用设置服务保存
     await settingsService.updateSettings(newSettings);
+    if (authorChanged) localStorage.setItem(OCEAN_AUTHOR_STORAGE_KEY, author);
+    oceanAuthor.value = author;
 
     // 更新当前设置引用
     currentSettings = { ...newSettings };
 
     // 检查设置变更并显示综合通知
-    showSettingsSavedNotification(oldSettings, newSettings);
+    showSettingsSavedNotification(oldSettings, newSettings, authorChanged);
   } catch (error) {
     logger.error(_('options_save_error', '保存设置时出错'), error);
     showNotification(_('options_save_failed', '保存设置失败'), 'error', 3000);
@@ -517,9 +523,9 @@ async function saveSettings(): Promise<void> {
 /**
  * 显示设置保存成功通知 - 使用单独的本地化字符串
  */
-function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettings: NavigraphSettings): void {
+function showSettingsSavedNotification(oldSettings: NavigraphSettings, newSettings: NavigraphSettings, authorChanged: boolean): void {
   // 跟踪是否有任何设置发生变化
-  const hasChanges = JSON.stringify(oldSettings) !== JSON.stringify(newSettings);
+  const hasChanges = authorChanged || JSON.stringify(oldSettings) !== JSON.stringify(newSettings);
 
   // 如果没有变化，显示信息并返回
   if (!hasChanges) {
@@ -612,9 +618,12 @@ async function resetSettings(): Promise<void> {
     if (confirm(_('options_confirm_reset', '确定要恢复所有默认设置吗？'))) {
       // 保存现有设置的副本用于比较
       const oldSettings = { ...currentSettings };
+      const authorChanged = Boolean(localStorage.getItem(OCEAN_AUTHOR_STORAGE_KEY));
 
       // 使用设置服务重置
       await settingsService.resetSettings();
+      localStorage.removeItem(OCEAN_AUTHOR_STORAGE_KEY);
+      oceanAuthor.value = '';
 
       // 更新当前设置引用
       currentSettings = settingsService.getSettings();
@@ -623,7 +632,7 @@ async function resetSettings(): Promise<void> {
       applySettingsToUI();
 
       // 显示综合重置通知
-      showSettingsSavedNotification(oldSettings, currentSettings);
+      showSettingsSavedNotification(oldSettings, currentSettings, authorChanged);
     }
   } catch (error) {
     logger.error(_('options_reset_error', '重置设置时出错'), error);

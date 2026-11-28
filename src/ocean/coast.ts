@@ -1,5 +1,5 @@
 import { berthInOpenWater, polar, type Landing, type Point, type WaterObstacle } from './course.js';
-import type { Dock, Island, Ship } from './history.js';
+import { siteHash, type Dock, type Island, type Ship } from './history.js';
 import { LAND_GRID, LAND_TILES } from './land-data.js';
 import { LARGE_LAND_TILES, LARGE_SHORE_RADII } from './large-island-data.js';
 import { SHORE_RADII } from './shore-data.js';
@@ -17,12 +17,6 @@ const coastalSamples = (atlas: readonly (readonly number[])[]) => atlas.map(samp
 ));
 const COASTS = coastalSamples(SHORE_RADII);
 const LARGE_COASTS = coastalSamples(LARGE_SHORE_RADII);
-
-function siteHash(site: string): number {
-  let hash = 0;
-  for (let i = 0; i < site.length; i++) hash = (Math.imul(hash, 31) + site.charCodeAt(i)) | 0;
-  return hash >>> 0;
-}
 
 function mooring(dock: Dock, island: WaterObstacle, coast: typeof COASTS[number]): Berth {
   const { size } = island;

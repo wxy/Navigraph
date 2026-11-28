@@ -118,17 +118,27 @@ export class OceanChart {
       button.type = 'button';
       button.className = 'island';
       button.dataset.index = String(index);
-      button.setAttribute('aria-label', island.site);
+      const title = island.name === island.site ? island.site : `${island.name} · ${island.site}`;
+      button.setAttribute('aria-label', title);
       button.setAttribute('aria-pressed', 'false');
-      button.title = island.site;
+      button.title = title;
       const art = document.createElement('span');
       art.className = 'island-art';
       const town = document.createElement('span');
       town.className = 'island-town';
+      const label = document.createElement('span');
+      label.className = 'island-label';
       const name = document.createElement('span');
       name.className = 'island-name';
-      name.textContent = island.site;
-      button.append(art, town, name);
+      name.textContent = island.name;
+      label.append(name);
+      if (island.name !== island.site) {
+        const domain = document.createElement('span');
+        domain.className = 'island-domain';
+        domain.textContent = island.site;
+        label.append(domain);
+      }
+      button.append(art, town, label);
       const shallow = document.createElement('img');
       shallow.className = 'ocean-shallow-patch';
       shallow.alt = '';
@@ -164,6 +174,7 @@ export class OceanChart {
     if (this.selectedShip) this.shipTargets.get(this.selectedShip)?.button.removeAttribute('aria-current');
     this.selectedShip = ship;
     if (ship) this.shipTargets.get(ship)?.button.setAttribute('aria-current', 'true');
+    this.drawShips();
   }
 
   shipButton(ship?: Ship): HTMLButtonElement | undefined {
@@ -350,7 +361,8 @@ export class OceanChart {
         this.clocks.set(ship, clock);
       }
       ctx.globalAlpha = opacity * (underway ? 1 : parked ? .61 : .76);
-      const clockBox = addClock(ctx, position, clock.label, Math.max(12, 14 * scale), occupied, this.width, this.height);
+      const label = ship === this.selectedShip ? `${ship.name} · ${clock.label}` : clock.label;
+      const clockBox = addClock(ctx, position, label, Math.max(12, 14 * scale), occupied, this.width, this.height);
       this.positionShipTarget(arrival, position, clockBox, priority(vessel));
       visible.add(ship);
     }
@@ -370,6 +382,7 @@ export class OceanChart {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'ocean-ship-target';
+      button.title = ship.name;
       if (this.selectedShip === ship) button.setAttribute('aria-current', 'true');
       const clockTarget = document.createElement('span');
       clockTarget.className = 'ocean-ship-clock';
@@ -384,7 +397,7 @@ export class OceanChart {
     const { button, clockTarget } = target;
     if (changed) {
       target.arrival = arrival;
-      button.setAttribute('aria-label', `${_('ocean_visit_details', '访问详情')} · ${_('ocean_ship', '船 {0}', ship.number)} · ${island.site}`);
+      button.setAttribute('aria-label', `${_('ocean_visit_details', '访问详情')} · ${ship.name} · ${island.name}`);
     }
     const x = Math.round(position.x);
     const y = Math.round(position.y);
